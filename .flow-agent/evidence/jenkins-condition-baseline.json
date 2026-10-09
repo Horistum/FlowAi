@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observed merged-main baseline for the AR-06G candidate; not AR-06 milestone completion or validation of AR-06G.",
+  "mergedMain": "ceea4cc68525bdafbeedfcad6759a11e7345b63f",
+  "tree": "7d76753c26ad51b5da5c56b0df8d75490782a2da",
+  "predecessorPullRequest": 203,
+  "flowCiRunId": 37900685791,
+  "runtimeRunId": 37900685703,
+  "junit": {
+    "tests": 1925,
+    "suites": 333,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "identitySha256": "d00fc23cd2dad8e9b85529e8b625043ea06b7dc8f7ce777d6416526c6bed90f2"
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0,
+    "orderedIdentitySha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+  },
+  "isolationInputsVerified": {
+    "kernel": 19,
+    "compiler": 95,
+    "adapter": 226,
+    "product": 429
+  },
+  "runtimeScenarios": {
+    "jenkins-checkout-runtime": {
+      "imageId": "sha256:36a72ccecd31a1893c8c3e8eeee5932590158155a716891c4f04b01b583122d8",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "marker": "selected\n"
+        },
+        {
+          "id": "omitted-checkout",
+          "result": "SUCCESS",
+          "marker": null
+        },
+        {
+          "id": "substituted-branch",
+          "result": "SUCCESS",
+          "marker": "alternate\n"
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "5a77bfc1128509c366e5233d2da6e89cb167cf9cfe1a746f5077ff2982105d5f",
+        "evidence-view.md": "b7a75923bfe02ca9623627d9f57e90b81f50da5673d61ab1d9374307489350a2"
+      }
+    },
+    "jenkins-failure-runtime": {
+      "imageId": "sha256:edf8e6414e241c9f7b4a545a3147a02e4713e715631d6d0e41c0affb42bced5d",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "marker": null
+        },
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "marker": "selected\n"
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "marker": "selected\n"
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "d65101fa1f8f8dc0d2fe5b8dd6d211245d0feac48a3268122f90c0714435909b",
+        "evidence-view.md": "3d64829ba97d2d60c6961de50512189b21a305106a64100a2fae37e43871b356"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "id": 11603111240,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "runId": 37900685791,
+      "sha256": "93dd54373317c4dceb9aee460d42974eeb1146b396e4d811b71175a11ec1a46b"
+    },
+    {
+      "id": 11603390573,
+      "name": "flow-ci-exact-head-test-reports",
+      "runId": 37900685791,
+      "sha256": "8cfe637fa5243a848e3725c6ad0833d1a32d97a71f91ae3c8d50d2fb030cb2e7"
+    },
+    {
+      "id": 11602248394,
+      "name": "flow-isolation-exact-head",
+      "runId": 37900685791,
+      "sha256": "611fb1a21bf2542fc603539ed1ec05d857b5a298852f57aebeced8b3ccf93bf7"
+    },
+    {
+      "id": 11602087816,
+      "name": "jenkins-checkout-runtime",
+      "runId": 37900685703,
+      "sha256": "d660f2bf021e7e65d78883d82449acae9b1bdfc5403a4eac907b250e05bb0393"
+    },
+    {
+      "id": 11601877534,
+      "name": "jenkins-failure-runtime",
+      "runId": 37900685703,
+      "sha256": "2fe1434988b7f6009a52ddeb5aa75d18ecbe645beeab5e68f605c4e5b14afb20"
+    }
+  ],
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06F",
+        "selectedWorkPackage": ".flow-agent/work-packages/certification-evidence-views.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime"
+          ],
+          "negativeEvidence": "Unauthenticated or changed observations, surviving mutants, invented structural coverage, failed resolution, mutation during resolver I/O, mutated output collections and unsafe display text."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06G",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-condition-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime"
+          ],
+          "negativeEvidence": "Flattened/inverted guards, omitted/wrong/extra child execution, unchanged mutant observations, infrastructure failures, substituted artifact bytes and malformed/incomplete runtime records."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06F",
+        "workPackage": ".flow-agent/work-packages/certification-evidence-views.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06G",
+        "workPackage": ".flow-agent/work-packages/jenkins-condition-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR #203.",
+    "predecessorPullRequest": 203,
+    "mergedMain": "ceea4cc68525bdafbeedfcad6759a11e7345b63f",
+    "mainWorkflowRunId": 37900685791,
+    "runtimeWorkflowRunId": 37900685703
+  },
+  "limitations": [
+    "Existing real runtime evidence covers only the two native Jenkins checkout scenarios.",
+    "The new condition runtime scenarios require their own CI evidence.",
+    "Public support, portable execution and formal AR-06 completion are not promoted."
+  ]
+}

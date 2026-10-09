@@ -7,10 +7,10 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06F"
-selectedWorkPackage: ".flow-agent/work-packages/certification-evidence-views.yaml"
+selectedSlice: "AR-06G"
+selectedWorkPackage: ".flow-agent/work-packages/jenkins-condition-certification.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "Diagnostic coverage is derived from authenticated compiler-bound observations and preserves exact scenario scope without promoting general support or portable execution."
+invariant: "Authored boolean defaults survive canonical compilation, and independently observed guarded execution distinguishes flattened or inverted conditions without promoting general support or portable execution."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
@@ -31,8 +31,9 @@ validation:
   - merge-candidate-compile-test-conformance
   - jenkins-checkout-runtime
   - jenkins-failure-runtime
-  negativeEvidence: Unauthenticated or changed observations, surviving mutants, invented structural coverage, failed resolution, mutation during resolver I/O, mutated
-    output collections and unsafe display text.
+  - jenkins-condition-runtime
+  negativeEvidence: Flattened/inverted guards, omitted/wrong/extra child execution, unchanged mutant observations, infrastructure
+    failures, substituted artifact bytes and malformed/incomplete runtime records.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."

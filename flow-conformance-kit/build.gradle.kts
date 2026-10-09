@@ -56,3 +56,21 @@ tasks.register<JavaExec>("verifyJenkinsFailureRuntime") {
     args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-failure-certification").get().asFile.absolutePath, "jenkins-failure-runtime")
     workingDir(rootProject.projectDir)
 }
+
+val conditionalRuntimeTasks = listOf("true", "false").map { value ->
+    tasks.register<JavaExec>("verifyJenkinsCondition${value.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify generated boolean guards with default $value on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-condition-certification/$value").get().asFile.absolutePath,
+            "jenkins-condition-$value-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsConditionRuntime") {
+    group = "verification"
+    description = "Execute both boolean defaults and their flattened/inverted guard mutants on real Jenkins."
+    dependsOn(conditionalRuntimeTasks)
+}

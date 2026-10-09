@@ -41,6 +41,40 @@ class CompilerStandaloneSemanticsTests {
         unit.authorization.requireIntegrity()
     }
 
+    @Test fun booleanLiteralDefaultsSurviveCanonicalAndExecutionPlanProjection() {
+        for (value in listOf(true, false)) {
+            val document = approval("Review").let { it.copy(flow = it.flow.copy(input = listOf(
+                InputNode(name = "enabled", valueType = ValueTypeNode("boolean"), default = BooleanLiteralNode(value = value))))) }
+            val unit = compiler().compile(input(document)).requireAccepted()
+            assertEquals(value.toString(), unit.graph.inputs.single().defaultValue)
+            assertEquals(value.toString(), unit.graph.inputs.single().defaultExpression)
+            assertEquals(value.toString(), unit.executionPlan.inputs.single().defaultValue)
+            assertEquals(unit.executionPlan, CanonicalExecutionGraphProjection.toExecutionPlan(
+                unit.graph, unit.authorization.inspectionView().bindings))
+        }
+    }
+
+    @Test fun intentBooleanDefaultsUseTheSameCompilerBoundary() {
+        for (value in listOf(true, false)) {
+            val intent = IntentDocument(name = "boolean-input", inputs = listOf(IntentInput("enabled", "boolean", default = IntentBoolean(value))),
+                workflows = listOf(IntentWorkflow("main", IntentWorkflowKind.RUNBOOK, listOf(IntentStep("approve", StandardCapability.APPROVE,
+                    params = mapOf("message" to IntentString("Review")))))))
+            val request = IntentCompilationInput(CompilationSource.fromBytes(CompilationFrontend.INTENT_YAML, "standalone:boolean", byteArrayOf(4)), intent)
+            val unit = compiler().compile(request).requireAccepted()
+            assertEquals(value.toString(), unit.graph.inputs.single().defaultValue)
+            assertEquals(value.toString(), unit.executionPlan.inputs.single().defaultValue)
+        }
+    }
+
+    @Test fun omittedBooleanDefaultRemainsAbsent() {
+        val document = approval("Review").let { it.copy(flow = it.flow.copy(input = listOf(
+            InputNode(name = "enabled", valueType = ValueTypeNode("boolean"))))) }
+        val unit = compiler().compile(input(document)).requireAccepted()
+        assertEquals(null, unit.graph.inputs.single().defaultValue)
+        assertEquals(null, unit.graph.inputs.single().defaultExpression)
+        assertEquals(null, unit.executionPlan.inputs.single().defaultValue)
+    }
+
     @Test fun unchangedSourceBytesCannotHideChangedAuthoredMeaning() {
         val first = compiler().compile(input(approval("First"))).requireAccepted()
         val second = compiler().compile(input(approval("Second"))).requireAccepted()

@@ -17,7 +17,9 @@ Thread.start('checkout-certification') {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def inventories = [
             'jenkins-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-branch'],
-            'jenkins-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure']
+            'jenkins-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
+            'jenkins-condition-true-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
+            'jenkins-condition-false-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions']
         ]
         if (!inventories.containsKey(scenario)) throw new IllegalArgumentException('Unknown certification scenario')
         def jenkins = Jenkins.get()

@@ -104,3 +104,26 @@ Markdown matrix. The matrix retains every uncovered construct and shows exact
 scenario/run identities, runtime prerequisites and limitations. A failed assessment
 publishes no successful view. These are bounded observation diagnostics, not target
 support declarations; `NOT_OBSERVED` does not mean `UNSUPPORTED`.
+## Conditional execution (AR-06G)
+
+`condition-true.flow` and `condition-false.flow` exercise complementary boolean
+equality guards using the existing compiler and Jenkins renderer. Run
+`./gradlew :flow-conformance-kit:verifyJenkinsConditionRuntime` with the same JDK
+and Docker prerequisites as the earlier scenarios below.
+
+The `condition-matrix.json` oracle requires exactly one checkout for each original
+artifact. Removing both guards executes two checkouts; inverting both guards
+selects the other branch. For the false default, flattening leaves the same final
+marker, so the independently observed checkout count is essential. All six runs
+must finish successfully with no checkout errors.
+
+Evidence is written to `flow-conformance-kit/build/jenkins-condition-certification/true/`
+and `false/`. Each subdirectory must be fresh before rerunning. Source bytes are
+archived as `artifacts/source.flow`; each subdirectory otherwise follows the same
+trust, signature, artifact and view format as the earlier proofs. The controller
+observes Jenkins's executed flow graph without instrumenting the positive script.
+The signing key stays outside the runtime container.
+
+This is bounded structural-occurrence evidence, not a support/maturity promotion.
+External parameter overrides, other expression forms, error boundaries and a
+second adapter remain separate follow-up work.

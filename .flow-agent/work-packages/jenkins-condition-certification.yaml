@@ -1,0 +1,58 @@
+version: "AR-06G"
+name: "Real Jenkins Conditional Execution Certification"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap slice after merging PR #203."
+  predecessorPullRequest: 203
+  mergedMain: "ceea4cc68525bdafbeedfcad6759a11e7345b63f"
+  mainWorkflowRunId: 37900685791
+  runtimeWorkflowRunId: 37900685703
+invariant: "A generated condition must execute exactly the selected native child for both boolean defaults; flattening or inverting the guards must change independently observed behavior."
+scope:
+  - "Repair the falsified planner boundary that retained boolean defaults only as expressions, causing true to render as false. Preserve existing boolean meaning without target-specific inference."
+  - "Compile two adapter-owned Flow Source fixtures through the canonical production compiler and unchanged renderer."
+  - "Execute each original artifact and its flattened/inverted guard mutants on isolated real Jenkins."
+  - "Authenticate exact artifact bytes, successful completion, workspace marker and executed checkout count/errors."
+  - "Publish bounded structural-occurrence views while retaining every unobserved construct."
+nonGoals:
+  - "No new Core semantics, renderer support, public support promotion, portable execution claim or package version change."
+  - "No milestone completion, finding closure or EF-09 resumption."
+ownershipBoundary:
+  fixtures: flow-adapter-jenkins
+  externalRunner: flow-conformance-kit
+  compiler: "Preserve authored boolean literal defaults in the existing PlanInput.defaultValue field."
+  productRuntime: unchanged
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/adapters/certification/BoundCertificationScenario.kt"
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt"
+  - "flow-compiler/src/test/kotlin/org/flowlang/compiler/CompilerStandaloneSemanticsTests.kt"
+  - "src/main/kotlin/org/flowlang/conformance/CompilerAxisConformanceChecks.kt"
+  - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
+  - "flow-adapter-jenkins/src/runtimeTest/run.groovy"
+  - "flow-conformance-kit/build.gradle.kts"
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "flow-adapter-jenkins/src/runtimeTest/condition-true.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/condition-false.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/condition-matrix.json"
+  - "src/test/kotlin/JenkinsConditionRuntimeCertificationTests.kt"
+testsToAddOrUpdate:
+  - "Compiler-isolated true/false/absent boolean defaults and Intent/Flow Source convergence."
+  - "Eight conditional runtime protocol regressions and three lifecycle regressions."
+conformanceToAddOrUpdate:
+  - "Add boolean-default vectors to the existing graph-integrity check while preserving its identity and inventory order."
+documentationToUpdate:
+  - "docs/migrations/adapter-certification-bundle.md"
+  - "flow-adapter-jenkins/src/runtimeTest/README.md"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime]
+  negativeEvidence: "Flattened/inverted guards, omitted/wrong/extra child execution, unchanged mutant observations, infrastructure failures, substituted artifact bytes and malformed/incomplete runtime records."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Extend real execution evidence to error boundaries and the remaining construct/behavior/mutant matrix."
+  - "Derive public support views only after their required behavioral and semantic evidence exists."
