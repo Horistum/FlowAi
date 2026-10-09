@@ -5,7 +5,7 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class AdapterObservationAuthenticationLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = AdapterObservationAuthenticationLifecycle.runtimeViewPredecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     @Suppress("UNCHECKED_CAST") private fun section(value: Any?) = value as Map<String, Any?>
     private fun rejected(s: WorkflowSemanticsRecoveryLifecycleSnapshot) =
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())

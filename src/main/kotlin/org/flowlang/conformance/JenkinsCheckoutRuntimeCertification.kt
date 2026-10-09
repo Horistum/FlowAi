@@ -224,13 +224,20 @@ internal object JenkinsCheckoutRuntimeCertification {
                 signer.update(CertificationObservationAuthentication.signingBytes("isolated-jenkins-runner", challenge, observation))
                 SignedCertificationObservation("isolated-jenkins-runner", challenge, observation, signer.sign())
             }
-            val report = AuthenticatedAdapterCertificationAdmission.evaluate(prepared.bundle, prepared.bundle.adapter, listOf(prepared.bound),
+            val assessment = CertificationEvidenceViews.assess(prepared.bundle, prepared.bundle.adapter, listOf(prepared.bound),
                 ReferenceTargetProjections.nativeCatalogs.getValue("jenkins"), signed, trust,
                 CertificationEvidenceResolver { prepared.evidence[it.id] })
+            val report = assessment.admission
             require(report.valid) { "Runtime certification rejected: ${report.findings}" }
+            val view = requireNotNull(assessment.view)
+            val viewJson = view.json().toByteArray(Charsets.UTF_8)
+            val viewMarkdown = view.markdown().toByteArray(Charsets.UTF_8)
+            File(output, "evidence-view.json").writeBytes(viewJson)
+            File(output, "evidence-view.md").writeBytes(viewMarkdown)
             val sourceRevision = process("source-revision", listOf("git", "rev-parse", "HEAD")).trim()
             val proof = linkedMapOf<String, Any>("status" to "passed", "claim" to "native-leaf-only", "sourceRevision" to sourceRevision,
                 "imageId" to imageId, "bundle" to prepared.bundle, "admission" to report, "publicSupportPromoted" to false,
+                "evidenceViews" to mapOf("evidence-view.json" to sha256(viewJson), "evidence-view.md" to sha256(viewMarkdown)),
                 "observations" to signed.map { mapOf("runnerId" to it.runnerId, "challenge" to it.challenge,
                     "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) })
             File(output, "proof.json").writeText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof) + "\n")

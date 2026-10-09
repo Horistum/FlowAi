@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observed merged-main baseline for the AR-06F implementation candidate; not AR-06 milestone completion or validation of AR-06F.",
+  "mergedMain": "8ca589b2ab90298bb515a1e55180f5d4c3e3e0a3",
+  "flowCiRunId": 37757809160,
+  "runtimeRunId": 37757809195,
+  "junit": {
+    "tests": 1913,
+    "suites": 331,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0
+  },
+  "isolationInputsVerified": {
+    "kernel": 19,
+    "compiler": 95,
+    "adapter": 225,
+    "product": 428
+  },
+  "runtimeScenarios": {
+    "jenkins-checkout-runtime": {
+      "imageId": "sha256:d63d80e0eb1cff6b8580523771d8f35170baeb3f9acef4e00b8c7e1f0a9250ec",
+      "verifiedSignatures": 3,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "marker": "selected\n"
+        },
+        {
+          "id": "omitted-checkout",
+          "result": "SUCCESS",
+          "marker": null
+        },
+        {
+          "id": "substituted-branch",
+          "result": "SUCCESS",
+          "marker": "alternate\n"
+        }
+      ]
+    },
+    "jenkins-failure-runtime": {
+      "imageId": "sha256:f12e2858c0dff907d67f0a424319933cb22551570b8642dee7a65f3cf9ab70c8",
+      "verifiedSignatures": 3,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "marker": null
+        },
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "marker": "selected\n"
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "marker": "selected\n"
+        }
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "id": 11542450093,
+      "name": "flow-ci-exact-head-test-reports",
+      "runId": 37757809160,
+      "sha256": "87e333d911067fef755d06945b9b2d680697ae04bad3d40016d2b0511e101d2d"
+    },
+    {
+      "id": 11541882038,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "runId": 37757809160,
+      "sha256": "a2e753e1912bfea8b0c3c450c5a33d6068027e240458094907ae5f0dd8c978c4"
+    },
+    {
+      "id": 11540743661,
+      "name": "flow-isolation-exact-head",
+      "runId": 37757809160,
+      "sha256": "c157c0f00cff3bf55233bb4c2acf09cea4e0755773b87c99d5220c08a18cfe73"
+    },
+    {
+      "id": 11541381258,
+      "name": "jenkins-checkout-runtime",
+      "runId": 37757809195,
+      "sha256": "3174b5da1b0c5e0b8c5ccd924703a9d719329fc8f4cf965b8b26bcb5339bc345"
+    },
+    {
+      "id": 11541306223,
+      "name": "jenkins-failure-runtime",
+      "runId": 37757809195,
+      "sha256": "fc62eba675d76eec4e3171200840910ceaa02692e968dad008e660bb6361a0ab"
+    }
+  ],
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06C",
+        "selectedWorkPackage": ".flow-agent/work-packages/adapter-observation-authentication.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance"
+          ],
+          "negativeEvidence": "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06F",
+        "selectedWorkPackage": ".flow-agent/work-packages/certification-evidence-views.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime"
+          ],
+          "negativeEvidence": "Unauthenticated or changed observations, surviving mutants, invented structural coverage, failed resolution, mutation during resolver I/O, mutated output collections and unsafe display text."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06C",
+        "workPackage": ".flow-agent/work-packages/adapter-observation-authentication.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06F",
+        "workPackage": ".flow-agent/work-packages/certification-evidence-views.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests continuation after PR #202 merged into main.",
+    "predecessorPullRequest": 202,
+    "mergedMain": "8ca589b2ab90298bb515a1e55180f5d4c3e3e0a3",
+    "mainWorkflowRunId": 37757809160,
+    "runtimeWorkflowRunId": 37757809195
+  },
+  "limitations": [
+    "Runtime behavior is limited to the two native Jenkins checkout scenarios.",
+    "Public support and portability are not promoted.",
+    "Formal AR-06 completion and all four owned finding closures remain pending."
+  ]
+}

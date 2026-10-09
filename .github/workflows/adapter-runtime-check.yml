@@ -38,6 +38,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
       - name: Execute Real Jenkins Checkout And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsCheckoutRuntime --stacktrace
+      - name: Publish Bounded Observation Summary
+        run: cat flow-conformance-kit/build/jenkins-runtime-certification/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,6 +72,8 @@ jobs:
         uses: gradle/actions/setup-gradle@v5
       - name: Execute Real Jenkins Failure And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsFailureRuntime --stacktrace
+      - name: Publish Bounded Observation Summary
+        run: cat flow-conformance-kit/build/jenkins-failure-certification/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
