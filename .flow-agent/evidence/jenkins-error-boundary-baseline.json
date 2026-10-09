@@ -1,0 +1,291 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observed merged-main baseline for the AR-06H candidate; not AR-06 milestone completion or validation of AR-06H.",
+  "mergedMain": "5f4eda34cf367291aeab0182df4b78309ed27e32",
+  "tree": "ed2c1f92b187e1ace5599db1ed670b164fc0da96",
+  "predecessorPullRequest": 204,
+  "flowCiRunId": 37910523520,
+  "runtimeRunId": 37910523509,
+  "junit": {
+    "tests": 1939,
+    "suites": 335,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "identitySha256": "8062267de1ed21cc1203282969b73bfa58b015330a8d47f0a867e34560d01ba3"
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0,
+    "orderedIdentitySha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+  },
+  "isolationInputsVerified": {
+    "kernel": 19,
+    "compiler": 95,
+    "adapter": 226,
+    "product": 429
+  },
+  "runtimeScenarios": {
+    "jenkins-checkout-runtime": {
+      "imageId": "sha256:b7d6ecd3765324e380d24a67f2d79ce616ca33813aac778b1f7a04c93127ed66",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "omitted-checkout",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": []
+        },
+        {
+          "id": "substituted-branch",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "a5e060480543ae0f4b5b62f776ac613b42aa495d164db9cc6fd77de5624c052f",
+        "evidence-view.md": "4556c6ec8e7a03027ba60c0b703247cfc2949057150c46158ba04ecb986203e7"
+      }
+    },
+    "jenkins-failure-runtime": {
+      "imageId": "sha256:c5dc02bcb3caaab40118a5e716d13c727705a30fda0b8b473ae9f8d6720a0228",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ]
+        },
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ]
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "35883736c3aaada7e34273daddaab4deb406f31e4fe07eb62516d8688fe20455",
+        "evidence-view.md": "55067ea8a1f5052fec9f7fcc97201448b2dc899e5a03bc26e767d7e04739364a"
+      }
+    },
+    "jenkins-condition-true-runtime": {
+      "imageId": "sha256:345b88718f41902c82a33964d750acdf9a2807b84c4df4082ff0c31a03122187",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "flattened-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": []
+        },
+        {
+          "id": "inverted-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "8ed1125debbeb60cb42e681bdbcfbb15920944cb3cc269185595076178879a81",
+        "evidence-view.md": "6b8c232244db4c473325cf051a1794e012ae1c9d4c3d9199c9d4530d0e732924"
+      }
+    },
+    "jenkins-condition-false-runtime": {
+      "imageId": "sha256:345b88718f41902c82a33964d750acdf9a2807b84c4df4082ff0c31a03122187",
+      "verifiedSignatures": 3,
+      "coverageRows": 11,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "flattened-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": []
+        },
+        {
+          "id": "inverted-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "ad133e4d12fd5e8ca3b458f7b59cef93a39577373258fdd0a968a5547bc4a820",
+        "evidence-view.md": "32b492245590b813366827e3739d5bde6ffe00f49836febd0cad9f5e6b462e1d"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "id": 11606361397,
+      "name": "jenkins-checkout-runtime",
+      "runId": 37910523509,
+      "sha256": "f5d5e2ab31c41ffeecbccc5cae34afad541bb5714dd7ea6dc510501464cf4772"
+    },
+    {
+      "id": 11606503491,
+      "name": "flow-isolation-exact-head",
+      "runId": 37910523520,
+      "sha256": "43ffa233bcca687350d787560e9cce067f0225e57060bd94c33baf25063ab29d"
+    },
+    {
+      "id": 11606531790,
+      "name": "jenkins-failure-runtime",
+      "runId": 37910523509,
+      "sha256": "a1cd61e6250452741ba6201d17b90ec0bcc329fb4746391e263b17cd42587603"
+    },
+    {
+      "id": 11606945543,
+      "name": "jenkins-condition-runtime",
+      "runId": 37910523509,
+      "sha256": "80c27f5776a68cc43d1e19daa4437ab2de9adda07cab4027a44a5aacbedddbfe"
+    },
+    {
+      "id": 11607343561,
+      "name": "flow-ci-exact-head-test-reports",
+      "runId": 37910523520,
+      "sha256": "7cebc132295e5c12150716466749bfde2102bca79fd463500aa9f75e85e1f564"
+    },
+    {
+      "id": 11607775566,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "runId": 37910523520,
+      "sha256": "3c9556b6507bc035449659f8780fdfa778a084dc7d763b5d7104ec685c4e8d63"
+    }
+  ],
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06G",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-condition-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime"
+          ],
+          "negativeEvidence": "Flattened/inverted guards, omitted/wrong/extra child execution, unchanged mutant observations, infrastructure failures, substituted artifact bytes and malformed/incomplete runtime records."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06H",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-error-boundary-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime"
+          ],
+          "negativeEvidence": "Omitted or unconditional handler, swallowed failure, omitted body, substituted artifact bytes, incorrect native errors, incomplete or malformed runtime records and historical receipt tampering."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06G",
+        "workPackage": ".flow-agent/work-packages/jenkins-condition-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06H",
+        "workPackage": ".flow-agent/work-packages/jenkins-error-boundary-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR #204.",
+    "predecessorPullRequest": 204,
+    "mergedMain": "5f4eda34cf367291aeab0182df4b78309ed27e32",
+    "mainWorkflowRunId": 37910523520,
+    "runtimeWorkflowRunId": 37910523509
+  },
+  "limitations": [
+    "Existing real runtime evidence covers native checkout/failure and two boolean conditional scenarios on Jenkins.",
+    "The new workflow error-boundary runtime scenarios require their own current-revision CI evidence.",
+    "Public support, portable execution and formal AR-06 completion are not promoted."
+  ]
+}

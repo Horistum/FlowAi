@@ -83,6 +83,11 @@ class BoundCertificationScenario private constructor(
             val structures = graph.nodes.mapNotNull { node ->
                 TargetStructuralProjectionKind.fromStepType(node.kind.name.lowercase())
                     ?.let { CertificationSubject.Structural(it) }
+            } + graph.workflows.mapNotNull { workflow ->
+                // Workflow handlers are first-class policy, not synthetic local try nodes.
+                workflow.failurePolicy.handler?.let {
+                    CertificationSubject.Structural(TargetStructuralProjectionKind.ERROR_BOUNDARY)
+                }
             }
             val nativeLeaves = provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }.toSet()
             fun leaves(step: TargetStep): List<CertificationSubject.Leaf> =

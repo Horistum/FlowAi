@@ -11,6 +11,7 @@ import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.intent.IntentYamlFrontend
+import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
@@ -84,6 +85,26 @@ class BoundAdapterCertificationTests {
         assertTrue(bound.subjects.any { it is CertificationSubject.Leaf })
         assertTrue(bound.subjects.none { it is CertificationSubject.Structural })
         assertEquals(compilation.authorization.graphDigest.value, bound.graphDigest)
+    }
+
+    @Test fun workflowFailurePolicyRetainsItsErrorBoundaryWithoutInventingALocalTryNode() {
+        for (outcome in listOf("failure", "success")) {
+            val file = File(JenkinsCheckoutRuntimeCertification.FIXTURE, "error-$outcome.flow")
+            val unit = FlowSourceFrontend(FrontendCompilerComposition.compiler(modules)).compile(file).requireAccepted()
+            assertTrue(unit.graph.nodes.none { it.kind.name == "TRY" })
+            assertNotNull(unit.graph.workflows.single().failurePolicy.handler)
+            val scenario = capture(id = "workflow-$outcome", bytes = file.readBytes(),
+                input = TargetMaterializationRequest.fromCompilation(unit, selection("jenkins")))
+            assertEquals(setOf(CertificationSubject.Structural(TargetStructuralProjectionKind.ERROR_BOUNDARY)),
+                scenario.subjects.filterIsInstance<CertificationSubject.Structural>().toSet())
+            val fixture = Fixture(listOf(scenario))
+            assertTrue(fixture.evaluate().valid)
+            fixture.externalResolutions = 0
+            val boundary = fixture.bundle.coverage.single {
+                it.subject == CertificationSubject.Structural(TargetStructuralProjectionKind.ERROR_BOUNDARY)
+            }
+            fixture.rejected(fixture.bundle.copy(coverage = fixture.bundle.coverage - boundary))
+        }
     }
 
     @Test fun changedSourceAndWrongProviderCannotBeCaptured() {

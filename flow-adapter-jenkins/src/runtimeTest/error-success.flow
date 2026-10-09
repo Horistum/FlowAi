@@ -1,0 +1,25 @@
+version "1.0"
+
+use module "git" version "1.0"
+
+flow "jenkins-error-success-runtime" {
+  systems {
+    system "source" {
+      type: git
+    }
+  }
+
+  steps {
+    git.checkout source {
+      url: "git://127.0.0.1:9418/repository.git"
+      branch: "selected"
+    } -> completedCheckout
+  }
+
+  on error {
+    git.checkout source {
+      url: "git://127.0.0.1:9418/repository.git"
+      branch: "alternate"
+    } -> handlerCheckout
+  }
+}

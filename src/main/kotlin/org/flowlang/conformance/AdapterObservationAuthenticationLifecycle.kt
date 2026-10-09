@@ -13,6 +13,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val RUNTIME_BASELINE = ".flow-agent/evidence/adapter-runtime-view-baseline.json"
     const val CONDITION_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-condition-certification.yaml"
     const val CONDITION_BASELINE = ".flow-agent/evidence/jenkins-condition-baseline.json"
+    const val ERROR_BOUNDARY_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-error-boundary-certification.yaml"
+    const val ERROR_BOUNDARY_BASELINE = ".flow-agent/evidence/jenkins-error-boundary-baseline.json"
+    private const val ERROR_BOUNDARY_BASELINE_SHA256 = "cc117ba5c48c2a2abfc4b069eb709ecf0564b8f83e3790d344d4aaa109be8375"
     private const val CONDITION_BASELINE_SHA256 = "05261471566c273815b3e6d9d518f7bb5378ca0ad593060bff8c7825f825131c"
     private const val RUNTIME_BASELINE_SHA256 = "fdbfbe150d4df3fa90213527adf9aca58243c31215d21ca67d041bc475b66183"
     private const val SHA256 = "31ccc9a76188bae91787ba5241f32c02a3c0ee6799aba256a4c178738d75c5e2"
@@ -22,6 +25,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06H" || s.release.containsKey("recoveryErrorBoundaryPreparation")) {
+            val raw = s.certificationErrorBoundaryBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != ERROR_BOUNDARY_BASELINE_SHA256) {
+                add("Workflow error-boundary certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), ERROR_BOUNDARY_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Workflow error-boundary selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Workflow error-boundary release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Workflow error-boundary work", s.certificationErrorBoundaryWorkPackage, mapOf("version" to "AR-06H", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Workflow error-boundary authorization", section(s.certificationErrorBoundaryWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Workflow error-boundary validation", section(s.certificationErrorBoundaryWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Workflow error-boundary candidate", section(s.release["recoveryErrorBoundaryPreparation"]), mapOf(
+                "candidate" to "AR-06H", "status" to "candidate", "workPackage" to ERROR_BOUNDARY_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-error-boundary-certification.md", "baselineEvidence" to ERROR_BOUNDARY_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(errorBoundaryPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06G" || s.release.containsKey("recoveryConditionPreparation")) {
             val raw = s.certificationConditionBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -124,12 +152,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun conditionPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryErrorBoundaryPreparation") || s.certificationWorkPackage["selectedSlice"] == "AR-06H")
+            return conditionPredecessor(errorBoundaryPredecessor(s))
         if (!s.release.containsKey("recoveryConditionPreparation") && s.certificationWorkPackage["selectedSlice"] != "AR-06G") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationConditionBaseline), CONDITION_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryConditionPreparation") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationConditionWorkPackage = emptyMap(), certificationConditionBaseline = null)
+    }
+
+    internal fun errorBoundaryPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryErrorBoundaryPreparation") && s.certificationWorkPackage["selectedSlice"] != "AR-06H") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationErrorBoundaryBaseline), ERROR_BOUNDARY_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryErrorBoundaryPreparation") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationErrorBoundaryWorkPackage = emptyMap(), certificationErrorBoundaryBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }

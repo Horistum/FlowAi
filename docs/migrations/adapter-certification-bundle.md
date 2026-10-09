@@ -254,3 +254,30 @@ the two boolean equality guards on the recorded runtime; it does not certify
 external parameter overrides, other expressions, general condition semantics,
 error boundaries or cross-target equivalence. Existing support/maturity labels,
 public schemas and package versions remain unchanged.
+
+## Workflow error-boundary evidence (AR-06H)
+
+Workflow handlers live in canonical workflow failure policy rather than local
+`TRY` nodes. Bound certification now retains their `ERROR_BOUNDARY` occurrence;
+otherwise a captured workflow handler could be mislabeled as native-leaf-only.
+The existing coverage admission requires that occurrence to remain associated
+with its own scenario. This correction changes no graph or public schema.
+
+The adapter-owned successful/failing Flow Source fixtures exercise the existing
+`PROPAGATE` contract on real Jenkins. Six builds compare original artifacts with
+omitted handler, suppressed propagation, unconditional handler and omitted body
+mutants. Native checkout errors and the terminal error's originating checkout
+are observed separately: a failure status cannot substitute for the required
+handler action, and an unrelated error cannot substitute for propagation.
+
+Run `:flow-conformance-kit:verifyJenkinsErrorBoundaryRuntime`. Its CI job archives
+separate `failure/` and `success/` signed assessments and JSON/Markdown views in
+`jenkins-error-boundary-runtime`. The new scenarios include `terminalError`
+inside their opaque signed observation bytes; existing scenario observations and
+the public certification contract are unchanged. Only the recorded native
+missing-revision error, originating from the first checkout, is intentional.
+
+These are bounded workflow-handler observations. Local recovery, retries,
+cancellation, general exception semantics and equivalent execution on another
+adapter remain separate obligations. Public support/maturity and version claims
+remain unchanged.

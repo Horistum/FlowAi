@@ -5,6 +5,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
+import org.jenkinsci.plugins.workflow.actions.ErrorAction
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
@@ -19,7 +20,9 @@ Thread.start('checkout-certification') {
             'jenkins-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-branch'],
             'jenkins-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-condition-true-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
-            'jenkins-condition-false-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions']
+            'jenkins-condition-false-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
+            'jenkins-error-failure-runtime': ['baseline', 'omitted-handler', 'suppressed-propagation'],
+            'jenkins-error-success-runtime': ['baseline', 'unconditional-handler', 'omitted-body']
         ]
         if (!inventories.containsKey(scenario)) throw new IllegalArgumentException('Unknown certification scenario')
         def jenkins = Jenkins.get()
@@ -66,11 +69,19 @@ Thread.start('checkout-certification') {
                 def error = it.getError().getError()
                 [type: error.getClass().getName(), message: error.getMessage()]
             }
-            results.add([id: id, result: build.getResult().toString(), finished: true,
+            def record = [id: id, result: build.getResult().toString(), finished: true,
                 marker: marker.exists() ? marker.readToString() : null,
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
-                buildNumber: build.getNumber()])
+                buildNumber: build.getNumber()]
+            if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime']) {
+                def terminal = build.getExecution().getCauseOfFailure()
+                def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
+                def checkoutIndex = origin == null ? -1 : checkouts.findIndexOf { it.getId() == origin.getId() }
+                record.terminalError = terminal == null ? null : [type: terminal.getClass().getName(),
+                    message: terminal.getMessage(), checkoutIndex: checkoutIndex < 0 ? null : checkoutIndex + 1]
+            }
+            results.add(record)
             new File('/evidence/' + id + '.log').setText(build.getLog(2000).join('\n') + '\n', 'UTF-8')
         }
         def plugins = jenkins.pluginManager.plugins.findAll { it.isActive() }

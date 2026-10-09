@@ -1,0 +1,95 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "error-boundary",
+  "scenarios": [
+    {
+      "scenario": "jenkins-error-failure-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "FAILURE",
+        "marker": "alternate\n",
+        "checkoutCount": 2,
+        "checkoutErrors": [
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          }
+        ],
+        "terminalError": {
+          "type": "hudson.AbortException",
+          "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+          "checkoutIndex": 1
+        }
+      },
+      "mutants": [
+        {
+          "id": "omitted-handler",
+          "result": "FAILURE",
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "suppressed-propagation",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-error-success-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 1,
+        "checkoutErrors": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "unconditional-handler",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-body",
+          "result": "SUCCESS",
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": [],
+          "terminalError": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "One workflow-level PROPAGATE handler with native checkout children; no local recovery, retry, cancellation or general exception semantics claim.",
+    "The failing body must skip its later checkout, run the handler and finish with the exact missing-revision error originating from its first native checkout.",
+    "Successful bodies must not execute the handler. Build result, workspace marker, native steps and terminal error origin are independent observations.",
+    "A disposable Jenkins controller and local repository; no public support promotion or cross-adapter portability claim."
+  ]
+}

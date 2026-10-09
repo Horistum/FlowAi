@@ -1,0 +1,57 @@
+version: "AR-06H"
+name: "Real Jenkins Workflow Error Boundary Certification"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap slice after merging PR #204."
+  predecessorPullRequest: 204
+  mergedMain: "5f4eda34cf367291aeab0182df4b78309ed27e32"
+  mainWorkflowRunId: 37910523520
+  runtimeWorkflowRunId: 37910523509
+invariant: "A generated workflow error handler runs only on failure, preserves its native operation, and propagates the original failure after handling; certification coverage retains the compiler-owned workflow boundary."
+scope:
+  - "Compile adapter-owned successful and failing workflow-handler fixtures through the production compiler and unchanged Jenkins renderer."
+  - "Bind workflow-level error-boundary occurrences from canonical failure policy, independently of local try nodes."
+  - "Execute the original scripts and omitted-handler, suppressed-propagation, unconditional-handler and omitted-body mutants on isolated real Jenkins."
+  - "Authenticate exact source, graph, script, completion, workspace marker and native checkout observations."
+nonGoals:
+  - "No new Core semantics, target renderer support, public support promotion, portable execution claim or package version change."
+  - "No local recovery, retry, cancellation or general exception semantics claim."
+  - "No milestone completion, finding closure or EF-09 resumption."
+ownershipBoundary:
+  fixtures: flow-adapter-jenkins
+  externalRunner: flow-conformance-kit
+  occurrenceBinding: flow-adapter-evidence
+  semanticKernel: unchanged
+  productRuntime: unchanged
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt"
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/adapters/certification/BoundCertificationScenario.kt"
+  - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
+  - "flow-adapter-jenkins/src/runtimeTest/run.groovy"
+  - "flow-conformance-kit/build.gradle.kts"
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "flow-adapter-jenkins/src/runtimeTest/error-failure.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/error-success.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/error-matrix.json"
+  - "src/test/kotlin/JenkinsErrorBoundaryRuntimeCertificationTests.kt"
+testsToAddOrUpdate:
+  - "Compiler-bound workflow policy, distinct successful/failing artifacts and unchanged baseline bytes."
+  - "Positive and negative runtime admission, exact native error identity, incomplete/substituted records and scope honesty."
+  - "Existing lifecycle selection with immutable predecessor evidence and historical acceptance replay."
+conformanceToAddOrUpdate:
+  - "Extend existing certification lifecycle validation without adding a new authority or changing the 274-check inventory."
+documentationToUpdate:
+  - "docs/migrations/adapter-certification-bundle.md"
+  - "flow-adapter-jenkins/src/runtimeTest/README.md"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime]
+  negativeEvidence: "Omitted or unconditional handler, swallowed failure, omitted body, substituted artifact bytes, incorrect native errors, incomplete or malformed runtime records and historical receipt tampering."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Extend the remaining construct/behavior/mutant matrix before deriving public support."

@@ -74,3 +74,21 @@ tasks.register("verifyJenkinsConditionRuntime") {
     description = "Execute both boolean defaults and their flattened/inverted guard mutants on real Jenkins."
     dependsOn(conditionalRuntimeTasks)
 }
+
+val errorBoundaryRuntimeTasks = listOf("failure", "success").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsError${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify workflow error handling for a $outcome body on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-error-boundary-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-error-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsErrorBoundaryRuntime") {
+    group = "verification"
+    description = "Execute successful/failing workflow handlers and their omission/propagation mutants on real Jenkins."
+    dependsOn(errorBoundaryRuntimeTasks)
+}
