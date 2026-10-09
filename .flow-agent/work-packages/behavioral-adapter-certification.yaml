@@ -7,10 +7,10 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06C"
-selectedWorkPackage: ".flow-agent/work-packages/adapter-observation-authentication.yaml"
+selectedSlice: "AR-06F"
+selectedWorkPackage: ".flow-agent/work-packages/certification-evidence-views.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "Authenticated admission accepts only complete observations signed by an independently trusted runner for caller-pinned run identities and an assessment challenge, while retaining every compiler, artifact, runtime and mutant check."
+invariant: "Diagnostic coverage is derived from authenticated compiler-bound observations and preserves exact scenario scope without promoting general support or portable execution."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
@@ -26,8 +26,13 @@ ownershipBoundary:
   conformance: "Lifecycle validation and real-provider integration tests."
 validation:
   status: current-revision-ci-required
-  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
-  negativeEvidence: "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts."
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  negativeEvidence: Unauthenticated or changed observations, surviving mutants, invented structural coverage, failed resolution, mutation during resolver I/O, mutated
+    output collections and unsafe display text.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."

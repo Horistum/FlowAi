@@ -1,0 +1,40 @@
+version: "AR-06F"
+name: "Evidence-derived Bounded Certification Views"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests continuation after PR #202 merged into main."
+  predecessorPullRequest: 202
+  mergedMain: "8ca589b2ab90298bb515a1e55180f5d4c3e3e0a3"
+  mainWorkflowRunId: 37757809160
+  runtimeWorkflowRunId: 37757809195
+invariant: "A displayed observation must be derived from complete authenticated compiler-bound admission; graph occurrence and a native leaf scenario never imply general capability support, structural equivalence or portable execution."
+scope:
+  - "Generate a deterministic immutable diagnostic view from the existing authenticated admission path, with no caller-supplied PASS report."
+  - "Retain every uncovered semantic, structural and native-leaf inventory row, exact scenario and mutant references, runtime prerequisites, runner identity and limitations."
+  - "Emit JSON and an escaped Markdown matrix in both real Jenkins jobs and bind their hashes into the runtime proof."
+  - "Record the observed merged-main baseline without treating predecessor CI as validation of this candidate."
+nonGoals:
+  - "No target support promotion, general semantic adequacy, cross-target equivalence or public schema/version change."
+  - "No new runtime, Core semantics, CLI executor or additional lifecycle authority."
+  - "Do not retire existing public support registries before wider behavior and second-adapter evidence exists."
+ownershipBoundary:
+  projection: flow-adapter-evidence
+  runtimePublication: flow-conformance-kit
+  semanticKernel: unchanged
+expectedFilesToChange:
+  - "gradle/adapter-evidence-sources.txt"
+  - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/adapters/certification/CertificationEvidenceViews.kt"
+  - "src/test/kotlin/CertificationEvidenceViewTests.kt"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime]
+  negativeEvidence: "Unauthenticated or changed observations, surviving mutants, invented structural coverage, failed resolution, mutation during resolver I/O, mutated output collections and unsafe display text."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Expand the construct/behavior/mutant matrix before deriving public support and retiring duplicate registries."
+  - "Independently accept AR-06 as a whole only after its remaining outcomes are proved."

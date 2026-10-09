@@ -93,3 +93,14 @@ and authenticated admission are shared with AR-06D.
 Observer API references: [FlowGraphWalker](https://javadoc.jenkins.io/plugin/workflow-api/org/jenkinsci/plugins/workflow/graph/FlowGraphWalker.html),
 [StepAtomNode](https://javadoc.jenkins.io/plugin/workflow-cps/org/jenkinsci/plugins/workflow/cps/nodes/StepAtomNode.html)
 and [ErrorAction](https://javadoc.jenkins.io/plugin/workflow-api/org/jenkinsci/plugins/workflow/actions/ErrorAction.html).
+
+
+## Generated observation views
+
+AR-06F adds `evidence-view.json` and `evidence-view.md` to each runtime evidence
+directory. Both are derived from the same immutable inputs that pass authenticated
+admission. The proof binds their hashes and the Actions summary displays the
+Markdown matrix. The matrix retains every uncovered construct and shows exact
+scenario/run identities, runtime prerequisites and limitations. A failed assessment
+publishes no successful view. These are bounded observation diagnostics, not target
+support declarations; `NOT_OBSERVED` does not mean `UNSUPPORTED`.

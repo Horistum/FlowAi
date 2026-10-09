@@ -9,6 +9,9 @@ import org.flowlang.serialization.FlowYaml
 internal object AdapterObservationAuthenticationLifecycle {
     const val WORK_PACKAGE = ".flow-agent/work-packages/adapter-observation-authentication.yaml"
     const val EVIDENCE = ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
+    const val VIEW_WORK_PACKAGE = ".flow-agent/work-packages/certification-evidence-views.yaml"
+    const val RUNTIME_BASELINE = ".flow-agent/evidence/adapter-runtime-view-baseline.json"
+    private const val RUNTIME_BASELINE_SHA256 = "fdbfbe150d4df3fa90213527adf9aca58243c31215d21ca67d041bc475b66183"
     private const val SHA256 = "31ccc9a76188bae91787ba5241f32c02a3c0ee6799aba256a4c178738d75c5e2"
     private val validation = mapOf(
         "status" to "current-revision-ci-required",
@@ -16,6 +19,33 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06F" || s.release.containsKey("recoveryEvidenceViews")) {
+            val raw = s.certificationRuntimeBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != RUNTIME_BASELINE_SHA256) {
+                add("Evidence views require the independently inspected merged-main runtime baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), RUNTIME_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Evidence view selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Evidence view release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Evidence view work", s.certificationViewWorkPackage, mapOf("version" to "AR-06F", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Evidence view authorization", section(s.certificationViewWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Evidence view validation", section(s.certificationViewWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Evidence view candidate", section(s.release["recoveryEvidenceViews"]), mapOf(
+                "candidate" to "AR-06F", "status" to "candidate", "workPackage" to VIEW_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/certification-evidence-views.md", "baselineEvidence" to RUNTIME_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            // This is an implementation selection, not milestone completion or support promotion.
+            // Reuse the existing gate; preserve every earlier acceptance and finding invariant.
+            addAll(errors(runtimeViewPredecessor(s)))
+            return@buildList
+        }
         val raw = s.certificationBindingEvidence
         val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
             .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
@@ -47,11 +77,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun predecessorSnapshot(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryEvidenceViews")) return predecessorSnapshot(runtimeViewPredecessor(s))
         val evidence = FlowYaml.readMap(requireNotNull(s.certificationBindingEvidence), EVIDENCE)
         val before = section(evidence["predecessorWorkFields"]).entries.associate { it.key.toString() to it.value }
         return s.copy(certificationWorkPackage = (s.certificationWorkPackage - "bindingAcceptanceEvidence" - "selectedWorkPackage") + before,
             release = s.release - "recoveryCertification", observationAuthenticationWorkPackage = emptyMap(), certificationBindingEvidence = null)
     }
+
+    internal fun runtimeViewPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryEvidenceViews") && s.certificationWorkPackage["selectedSlice"] != "AR-06F") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationRuntimeBaseline), RUNTIME_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryEvidenceViews") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationViewWorkPackage = emptyMap(), certificationRuntimeBaseline = null)
+    }
+
+    private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }
 
     private fun exact(name: String, actual: Map<*, *>, expected: Map<String, Any?>) =
         matchingFields(name, actual, expected) + if (actual.keys == expected.keys) emptyList() else listOf("$name has unsupported fields.")

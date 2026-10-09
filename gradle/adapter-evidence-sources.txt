@@ -5,6 +5,7 @@ org/flowlang/adapters/certification/AdapterCertificationBundle.kt
 org/flowlang/adapters/certification/AuthenticatedAdapterCertificationAdmission.kt
 org/flowlang/adapters/certification/BoundAdapterCertificationAdmission.kt
 org/flowlang/adapters/certification/BoundCertificationScenario.kt
+org/flowlang/adapters/certification/CertificationEvidenceViews.kt
 org/flowlang/adapters/certification/CertificationObservationAuthentication.kt
 org/flowlang/adapters/continuity/AdapterContinuityEvidenceIntegrityAuthority.kt
 org/flowlang/adapters/continuity/AdapterContinuityProjectionExecutionGate.kt

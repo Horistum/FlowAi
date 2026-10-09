@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 76
+stateVersion: 77
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -217,12 +217,12 @@ recoveryPreparation:
   supportPromotion: false
 
 recoveryCertification:
-  acceptedSlice: "AR-06B"
-  acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
+  acceptedSlice: AR-06B
+  acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-  evidence: ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
-  selectedSlice: "AR-06C"
-  workPackage: ".flow-agent/work-packages/adapter-observation-authentication.yaml"
+  evidence: .flow-agent/evidence/adapter-certification-binding-acceptance.json
+  selectedSlice: AR-06F
+  workPackage: .flow-agent/work-packages/certification-evidence-views.yaml
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -233,7 +233,7 @@ recoveryRuntimePreparation:
   report: ".flow-agent/reports/jenkins-runtime-certification.md"
   predecessorPullRequest: 200
   predecessorHead: "febe35775a333d15f71ef39068527cb116a90427"
-  activation: blocked-on-predecessor-merge-and-main-validation
+  activation: implemented-and-validated-on-main
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -245,7 +245,7 @@ recoveryFailurePreparation:
   predecessorPullRequest: 201
   predecessorMerge: "2bfb2d84f907cbaa310debf7f87a5d906f09637f"
   integrationPullRequest: 200
-  activation: blocked-on-integration-merge-and-main-validation
+  activation: implemented-and-validated-on-main
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -288,3 +288,12 @@ lastKnownValidation:
     - "C1.0 Operational Domain Adequacy is complete with distinct Flow CI #2812 implementation and #2823 completion boundaries; no successor work item is selected by the completion transition."
     - "AR0.1 Authority Responsibility Consolidation is complete with distinct Flow CI #2807 implementation and #2809 completion boundaries."
     - "The architecture stream is terminally complete at AR0.1; no successor architecture item is declared."
+
+recoveryEvidenceViews:
+  candidate: "AR-06F"
+  status: candidate
+  workPackage: ".flow-agent/work-packages/certification-evidence-views.yaml"
+  report: ".flow-agent/reports/certification-evidence-views.md"
+  baselineEvidence: ".flow-agent/evidence/adapter-runtime-view-baseline.json"
+  validation: current-revision-ci-required
+  supportPromotion: false

@@ -1,5 +1,9 @@
 # Adapter certification bundle: AR-06A candidate
 
+Current implementation: AR-06F adds evidence-derived diagnostic views, described
+at the end of this document. Earlier candidate restrictions below record their
+original preparation boundaries; PR #200 and #202 are now merged into main.
+
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
 candidate evidence contract. Existing target support, rendering authorization,
@@ -181,3 +185,35 @@ rejected. The original checkout scenario still requires all builds to succeed.
 This is a stacked candidate after PR #201 merged into PR #200. Actual-main
 acceptance remains pending. No public schema, support/maturity label or version
 changes; general error-boundary, retry and portability claims remain unproven.
+
+
+## AR-06F: evidence-derived diagnostic views
+
+`CertificationEvidenceViews.assess` runs the existing authenticated, compiler-bound
+admission and returns a view only when every signature, run, occurrence and evidence
+byte passes. It accepts the complete candidate inputs and caller-owned trust, never
+an authored PASS report. Inputs are frozen before resolver I/O so a callback cannot
+change the scope that is displayed after admission.
+
+Each runtime assessment now emits:
+
+- `evidence-view.json`: deterministic internal diagnostic data, including exact
+  source, graph, run, artifact and observation references, runner key fingerprints,
+  runtime prerequisites and limitations.
+- `evidence-view.md`: an escaped human-readable coverage table and scenario/run
+  tables, also displayed in the GitHub Actions job summary.
+- `proof.json`: the existing proof with SHA-256 values for both view files.
+
+`OBSERVED_IN_SCENARIO` means only that the construct occurs in an admitted bounded
+scenario. `NOT_OBSERVED` is missing evidence in that assessment, not an unsupported
+feature. Scenario shapes distinguish native leaves, structural occurrences and
+semantic-only occurrences; none implies general semantic adequacy or an executable
+reference promotion. Public support and portable execution remain unpromoted.
+All unobserved structural rows remain visible, including for the failure scenario.
+
+No product CLI option, public wire schema, target registry or package version
+changes. The same external Jenkins Gradle tasks regenerate both formats. Consumers
+must retain the trust declaration and original proof/evidence; a copied diagnostic
+view alone cannot authorize rendering or establish independent runtime trust.
+Equivalent execution on a second adapter and wider behavioral coverage are still
+required before replacing public support/maturity registries.
