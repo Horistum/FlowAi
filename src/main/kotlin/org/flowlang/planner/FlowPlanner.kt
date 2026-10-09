@@ -163,7 +163,13 @@ class FlowPlanner(registry: ModuleCatalog) {
 
     private fun InputNode.toPlanInput(): PlanInput {
         val choices = valueType.values.filterIsInstance<StringLiteralNode>().map { it.value }
-        val defaultValue = (default as? StringLiteralNode)?.value
+        // Preserve authored boolean literals at the same concrete-default boundary
+        // as strings. Retaining only defaultExpression makes adapters see no default.
+        val defaultValue = when (val value = default) {
+            is StringLiteralNode -> value.value
+            is BooleanLiteralNode -> value.value.toString()
+            else -> null
+        }
         val defaultExpression = default?.let(ExpressionRenderer::render)
         return PlanInput(
             name = name,

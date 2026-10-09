@@ -1,8 +1,8 @@
 # Adapter certification bundle: AR-06A candidate
 
-Current implementation: AR-06F adds evidence-derived diagnostic views, described
-at the end of this document. Earlier candidate restrictions below record their
-original preparation boundaries; PR #200 and #202 are now merged into main.
+Current implementation: AR-06G adds real Jenkins conditional execution scenarios,
+described at the end of this document. Earlier candidate restrictions below record
+their original preparation boundaries; PR #200, #202 and #203 are now merged.
 
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
@@ -217,3 +217,40 @@ must retain the trust declaration and original proof/evidence; a copied diagnost
 view alone cannot authorize rendering or establish independent runtime trust.
 Equivalent execution on a second adapter and wider behavioral coverage are still
 required before replacing public support/maturity registries.
+
+## AR-06G: real conditional execution
+
+The adapter-owned `condition-true.flow` and `condition-false.flow` compile through
+the production Flow Source frontend and canonical compiler. Each source declares
+a boolean default and two complementary equality guards around native checkout
+children. The positive Jenkinsfile is executed byte-for-byte as rendered.
+
+These fixtures exposed a compiler defect: boolean literals previously survived
+only in `PlanInput.defaultExpression`, so target input projection lost a true
+default and Jenkins substituted false. `FlowPlanner` now also carries authored
+boolean literals in the existing `defaultValue` field. Both Flow Source and
+Intent inputs cross this same correction. Omitted defaults remain absent; no
+symbolic expression is evaluated and no schema field or version changes.
+
+Run `:flow-conformance-kit:verifyJenkinsConditionRuntime` to execute both defaults
+and the flattened/inverted guard mutants. The `jenkins-condition-runtime` CI job
+archives separate `true/` and `false/` assessments, each with its own trust
+challenge, signed observations, original source/graph/artifacts and diagnostic
+views. Ordinary tests do not start Jenkins.
+
+| Scenario | Baseline | Flattened guards | Inverted guards |
+| --- | --- | --- | --- |
+| Default `true` | `selected`, one checkout | `alternate`, two checkouts | `alternate`, one checkout |
+| Default `false` | `alternate`, one checkout | `alternate`, two checkouts | `selected`, one checkout |
+
+Every build must finish successfully with no native checkout errors. Checkout
+count is part of the signed observable bytes: equal workspace contents cannot
+hide an extra child execution. Unexpected errors, missing/incomplete runs,
+substituted scripts and surviving mutants fail admission.
+
+These views identify `STRUCTURAL_OCCURRENCES`, with condition coverage confined
+to the corresponding source. Other structures remain unobserved. This proves
+the two boolean equality guards on the recorded runtime; it does not certify
+external parameter overrides, other expressions, general condition semantics,
+error boundaries or cross-target equivalence. Existing support/maturity labels,
+public schemas and package versions remain unchanged.

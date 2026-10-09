@@ -311,6 +311,34 @@ class CompilerAxisConformanceChecks(
         if (CanonicalExecutionGraphProjection.toExecutionPlan(unit.graph, unit.authorization.inspectionView().bindings) != unit.executionPlan) {
             add("Canonical graph does not reproduce its graph-derived ExecutionPlan view.")
         }
+        // A platform-neutral literal default must survive before adapter selection.
+        // These vectors falsify the old string-only default projection without adding
+        // a new check identity or importing a concrete target's runtime fixture.
+        val frontend = IntentYamlFrontend(FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File(rootDir, "modules"))))
+        for (value in listOf(true, false)) {
+            val booleanUnit = frontend.compileText("""
+                intentVersion: "2.0"
+                kind: FlowIntentDocument
+                name: boolean-default-$value
+                inputs:
+                  - name: enabled
+                    type: boolean
+                    default: $value
+                workflows:
+                  - name: review
+                    kind: RUNBOOK
+                    steps:
+                      - id: approve
+                        capability: APPROVE
+                        params:
+                          message: Review
+            """.trimIndent(), "conformance:boolean-default-$value").requireAccepted()
+            if (booleanUnit.graph.inputs.single().defaultValue != value.toString() ||
+                booleanUnit.executionPlan.inputs.single().defaultValue != value.toString() ||
+                booleanUnit.graph.inputs.single().defaultExpression != value.toString()) {
+                add("Authored boolean default $value was lost between canonical meaning and executable input projection.")
+            }
+        }
     }
 
     private fun digestDeterminismErrors(): List<String> = buildList {

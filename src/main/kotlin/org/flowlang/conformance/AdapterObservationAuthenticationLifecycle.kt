@@ -11,6 +11,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val EVIDENCE = ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
     const val VIEW_WORK_PACKAGE = ".flow-agent/work-packages/certification-evidence-views.yaml"
     const val RUNTIME_BASELINE = ".flow-agent/evidence/adapter-runtime-view-baseline.json"
+    const val CONDITION_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-condition-certification.yaml"
+    const val CONDITION_BASELINE = ".flow-agent/evidence/jenkins-condition-baseline.json"
+    private const val CONDITION_BASELINE_SHA256 = "05261471566c273815b3e6d9d518f7bb5378ca0ad593060bff8c7825f825131c"
     private const val RUNTIME_BASELINE_SHA256 = "fdbfbe150d4df3fa90213527adf9aca58243c31215d21ca67d041bc475b66183"
     private const val SHA256 = "31ccc9a76188bae91787ba5241f32c02a3c0ee6799aba256a4c178738d75c5e2"
     private val validation = mapOf(
@@ -19,6 +22,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06G" || s.release.containsKey("recoveryConditionPreparation")) {
+            val raw = s.certificationConditionBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != CONDITION_BASELINE_SHA256) {
+                add("Conditional runtime certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), CONDITION_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Conditional runtime selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Conditional runtime release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Conditional runtime work", s.certificationConditionWorkPackage, mapOf("version" to "AR-06G", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Conditional runtime authorization", section(s.certificationConditionWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Conditional runtime validation", section(s.certificationConditionWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Conditional runtime candidate", section(s.release["recoveryConditionPreparation"]), mapOf(
+                "candidate" to "AR-06G", "status" to "candidate", "workPackage" to CONDITION_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-condition-certification.md", "baselineEvidence" to CONDITION_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(conditionPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06F" || s.release.containsKey("recoveryEvidenceViews")) {
             val raw = s.certificationRuntimeBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -85,12 +113,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun runtimeViewPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryConditionPreparation") || s.certificationWorkPackage["selectedSlice"] == "AR-06G")
+            return runtimeViewPredecessor(conditionPredecessor(s))
         if (!s.release.containsKey("recoveryEvidenceViews") && s.certificationWorkPackage["selectedSlice"] != "AR-06F") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationRuntimeBaseline), RUNTIME_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryEvidenceViews") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationViewWorkPackage = emptyMap(), certificationRuntimeBaseline = null)
+    }
+
+    internal fun conditionPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryConditionPreparation") && s.certificationWorkPackage["selectedSlice"] != "AR-06G") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationConditionBaseline), CONDITION_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryConditionPreparation") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationConditionWorkPackage = emptyMap(), certificationConditionBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }

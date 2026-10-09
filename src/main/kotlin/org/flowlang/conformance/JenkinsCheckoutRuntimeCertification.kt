@@ -20,6 +20,7 @@ import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.intent.IntentYamlFrontend
+import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
@@ -35,7 +36,13 @@ internal object JenkinsCheckoutRuntimeCertification {
 
     internal enum class Scenario(val id: String, val source: String, val matrix: String, val runIds: List<String>, val version: String) {
         CHECKOUT("jenkins-checkout-runtime", "checkout.intent.yaml", "behavior-matrix.json", listOf("baseline", "omitted-checkout", "substituted-branch"), "AR-06D"),
-        FAILURE("jenkins-failure-runtime", "failure.intent.yaml", "failure-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06E")
+        FAILURE("jenkins-failure-runtime", "failure.intent.yaml", "failure-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06E"),
+        CONDITION_TRUE("jenkins-condition-true-runtime", "condition-true.flow", "condition-matrix.json", listOf("baseline", "flattened-conditions", "inverted-conditions"), "AR-06G"),
+        CONDITION_FALSE("jenkins-condition-false-runtime", "condition-false.flow", "condition-matrix.json", listOf("baseline", "flattened-conditions", "inverted-conditions"), "AR-06G");
+
+        val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
+        val recordsNativeSteps: Boolean get() = this != CHECKOUT
+        val claim: String get() = if (conditional) "bounded-structural-occurrence" else "native-leaf-only"
     }
 
     internal data class Prepared(
@@ -49,11 +56,13 @@ internal object JenkinsCheckoutRuntimeCertification {
 
     fun prepare(root: File, imageId: String, scenario: Scenario = Scenario.CHECKOUT): Prepared {
         require(Regex("sha256:[0-9a-f]{64}").matches(imageId))
-        val source = File(root, "$FIXTURE/${scenario.source}").readBytes()
+        val sourceFile = File(root, "$FIXTURE/${scenario.source}")
+        val source = sourceFile.readBytes()
         val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
         val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-        val compilation = IntentYamlFrontend(FrontendCompilerComposition.compiler(modules))
-            .compileText(source.toString(Charsets.UTF_8), scenario.source).requireAccepted()
+        val compiler = FrontendCompilerComposition.compiler(modules)
+        val compilation = (if (scenario.conditional) FlowSourceFrontend(compiler).compile(sourceFile)
+            else IntentYamlFrontend(compiler).compileText(source.toString(Charsets.UTF_8), scenario.source)).requireAccepted()
         val selection = TargetSelectionAuthority.requireSelected(TargetSelectionAuthority.fromCliOption("jenkins", targets), "runtime certification")
         val provider = ReferenceTargetProjections.nativeCatalogs.getValue("jenkins")
         val bound = BoundCertificationScenario.capture(scenario.id, source, TargetMaterializationRequest.fromCompilation(compilation, selection),
@@ -61,7 +70,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             ReferenceAdapterEvidence.rendering(rootDir = root), provider)
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
-        val branch = if (scenario == Scenario.CHECKOUT) "selected" else "missing-revision"
+        val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
         val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
         require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
         val indent = checkout.takeWhile(Char::isWhitespace)
@@ -70,14 +79,16 @@ internal object JenkinsCheckoutRuntimeCertification {
             require(text.indexOf(checkout) < text.indexOf("git branch: 'selected'"))
         }
         val runIds = scenario.runIds
-        val artifacts = linkedMapOf("baseline" to original,
+        val artifacts = if (scenario.conditional) conditionArtifacts(text, original) else linkedMapOf("baseline" to original,
             runIds[1] to replaceOnce(text, checkout, indent + "echo 'Checkout intentionally omitted by certification mutant'").toByteArray(),
             runIds[2] to replaceOnce(text, checkout, if (scenario == Scenario.CHECKOUT) checkout.replace("branch: 'selected'", "branch: 'alternate'")
                 else "${indent}catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {\n$indent    ${checkout.trim()}\n$indent}").toByteArray())
         val matrix = mapper.readTree(File(root, "$FIXTURE/${scenario.matrix}"))
-        require(matrix["version"].asInt() == 1 && matrix["scenario"].asText() == scenario.id && matrix["target"].asText() == "jenkins")
-        require(matrix["claim"].asText() == "native-leaf-only" && matrix["construct"].asText() == "git.checkout")
-        val rows = listOf(matrix["positive"]) + matrix["mutants"].toList()
+        require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
+        require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == if (scenario.conditional) "condition" else "git.checkout")
+        val scenarioMatrix = if (scenario.conditional) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
+        require(scenarioMatrix["scenario"].asText() == scenario.id)
+        val rows = listOf(scenarioMatrix["positive"]) + scenarioMatrix["mutants"].toList()
         require(rows.map { it["id"].asText() } == runIds)
         val evidence = linkedMapOf<String, ByteArray>()
         fun ref(id: String, bytes: ByteArray): CertificationEvidenceReference {
@@ -95,13 +106,15 @@ internal object JenkinsCheckoutRuntimeCertification {
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapter = CertificationAdapterIdentity("jenkins", "jenkins-native-checkout", scenario.version, sha256(implementation))
+        val adapter = CertificationAdapterIdentity("jenkins", if (scenario.conditional) "jenkins-conditional-checkout" else "jenkins-native-checkout", scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
             provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }
         val limitations = matrix["limitations"].map { it.asText() }
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
-            if (subject in bound.subjects) listOf(bound.id) else emptyList(), "Native checkout occurrences only; see bounded runtime limitations.") },
+            if (subject in bound.subjects) listOf(bound.id) else emptyList(),
+            if (scenario.conditional) "Boolean equality guards with native checkout children only; see bounded runtime limitations."
+            else "Native checkout occurrences only; see bounded runtime limitations.") },
             listOf(specification), limitations)
         return Prepared(bound, bundle, artifacts, evidence, runtime, scenario)
     }
@@ -123,7 +136,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             val bytes = prepared.artifacts.getValue(id)
             require(row["artifactSha256"]?.asText() == sha256(bytes)) { "Executed script differs from the bound artifact." }
             require(row["buildNumber"]?.isIntegralNumber == true && row["buildNumber"].canConvertToInt() && row["buildNumber"].asInt() == 1)
-            if (prepared.scenario == Scenario.FAILURE) require(row["finished"]?.isBoolean == true && row["finished"].booleanValue())
+            if (prepared.scenario.recordsNativeSteps) require(row["finished"]?.isBoolean == true && row["finished"].booleanValue())
             val observed = observationBytes(row, prepared.scenario)
             val ref = CertificationEvidenceReference("observed:$id", sha256(observed), observed.size)
             prepared.evidence[ref.id] = observed
@@ -143,7 +156,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val marker = row["marker"]
         require(marker.isNull || marker.isTextual && marker.asText().length <= 1024)
         val observation = linkedMapOf<String, Any?>("result" to row["result"].asText(), "marker" to if (marker.isNull) null else marker.asText())
-        if (scenario == Scenario.FAILURE) {
+        if (scenario.recordsNativeSteps) {
             require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() in 0..2)
             val errors = row["checkoutErrors"]
             require(errors?.isArray == true && errors.size() <= row["checkoutCount"].asInt())
@@ -161,6 +174,24 @@ internal object JenkinsCheckoutRuntimeCertification {
     internal fun replaceOnce(source: String, old: String, replacement: String): String {
         require(old.isNotEmpty() && source.indexOf(old) >= 0 && source.indexOf(old) == source.lastIndexOf(old))
         return source.replace(old, replacement)
+    }
+
+    private fun conditionArtifacts(text: String, original: ByteArray): Map<String, ByteArray> {
+        // Mutate the renderer's exact guarded blocks, never reconstruct a candidate baseline.
+        val guards = text.lineSequence().filter { it.trimStart().startsWith("if (") }.toList()
+        require(guards.size == 2 && guards.all { it.contains("params.enabled") && it.endsWith(") {") })
+        require(guards.count { it.contains("== true") } == 1 && guards.count { it.contains("== false") } == 1)
+        val indent = guards.first().takeWhile(Char::isWhitespace)
+        require(guards.all { it.takeWhile(Char::isWhitespace) == indent })
+        require(text.lineSequence().count { it == "$indent}" } == 2)
+        require(text.lineSequence().count { it.trimStart().startsWith("git branch:") } == 2)
+        val flattened = text.lineSequence().filterNot { it in guards || it == "$indent}" }.joinToString("\n")
+        val inverted = guards.fold(text) { artifact, guard ->
+            val expression = guard.trim().removePrefix("if (").removeSuffix(") {")
+            replaceOnce(artifact, guard, "${indent}if (!($expression)) {")
+        }
+        return linkedMapOf("baseline" to original, "flattened-conditions" to flattened.toByteArray(Charsets.UTF_8),
+            "inverted-conditions" to inverted.toByteArray(Charsets.UTF_8))
     }
 
     fun run(root: File, output: File, scenario: Scenario = Scenario.CHECKOUT) {
@@ -191,7 +222,8 @@ internal object JenkinsCheckoutRuntimeCertification {
             val prepared = prepare(root, imageId, scenario)
             val artifacts = File(output, "artifacts").apply { mkdirs() }
             prepared.artifacts.forEach { (id, bytes) -> File(artifacts, "$id.Jenkinsfile").writeBytes(bytes) }
-            File(artifacts, "source.intent.yaml").writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.fixture)))
+            File(artifacts, if (scenario.conditional) "source.flow" else "source.intent.yaml")
+                .writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.fixture)))
             File(artifacts, "canonical-graph.json").writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.canonicalGraph)))
             val fixture = File(output, "fixture").apply { mkdirs() }
             val working = File(fixture, "working").apply { mkdirs() }
@@ -235,7 +267,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             File(output, "evidence-view.json").writeBytes(viewJson)
             File(output, "evidence-view.md").writeBytes(viewMarkdown)
             val sourceRevision = process("source-revision", listOf("git", "rev-parse", "HEAD")).trim()
-            val proof = linkedMapOf<String, Any>("status" to "passed", "claim" to "native-leaf-only", "sourceRevision" to sourceRevision,
+            val proof = linkedMapOf<String, Any>("status" to "passed", "claim" to scenario.claim, "sourceRevision" to sourceRevision,
                 "imageId" to imageId, "bundle" to prepared.bundle, "admission" to report, "publicSupportPromoted" to false,
                 "evidenceViews" to mapOf("evidence-view.json" to sha256(viewJson), "evidence-view.md" to sha256(viewMarkdown)),
                 "observations" to signed.map { mapOf("runnerId" to it.runnerId, "challenge" to it.challenge,
