@@ -53,3 +53,11 @@ stays unknown. Nested retry, other body shapes, and absent or ambiguous topology
 declarations remain blocked. Other topology requirements are preserved. The
 first CI run exposed the missing attempt-isolation evidence and was rejected by
 the existing topology gate; this scoped resolver supplies that bounded evidence.
+
+The adapter structural catalog distinguishes `PLAN_SCOPED` implementation evidence
+from `TARGET_WIDE` support. Existing definitions default to target-wide; bounded
+Jenkins retry is explicitly plan-scoped. The maturity publisher therefore keeps
+its generic registry claim unsupported and rejects any attempted broad promotion
+backed only by scoped evidence. Target-wide definitions still require matching
+registry declarations. Installed-product and negative maturity regressions enforce
+both directions without introducing a target-specific exception in the publisher.

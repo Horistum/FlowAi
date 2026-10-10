@@ -14,6 +14,7 @@ scope:
 - Resolve attempt isolation only for retry bodies containing one native git.checkout task; retain the generic unknown topology declaration and reject other body shapes.
 - Classify only the attempt-limit control semantic as implemented; delay, variable backoff, failure filters and cancellation remain outside this certification.
 - Execute successful and exhausted retry bodies on an isolated Jenkins controller with missing, reduced or excess attempts as falsifying mutants.
+- Distinguish plan-scoped structural implementation evidence from target-wide support in the existing adapter catalog and maturity publisher; retain fail-closed checks against broad support claims.
 - Reauthenticate the expanded portfolio while preserving the shared checkout comparison and every previous scenario.
 nonGoals:
 - No general retry policy, transient recovery, cancellation, timeout or cross-target retry claim.
@@ -31,6 +32,8 @@ expectedFilesToChange:
 - adapters/controls/builtin-control-materialization.yaml
 - adapters/topology/builtin-adapter-topology.yaml
 - gradle/reference-contract-resources.txt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/adapters/maturity/AdapterTargetMaturity.kt
 - src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt

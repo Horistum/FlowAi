@@ -2,33 +2,20 @@ import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.CompatibilityReport
 import org.flowlang.capabilities.SupportLevel
-import org.flowlang.capabilities.TargetCapability
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetManifest
-import org.flowlang.generators.manifest.TargetManifestContractValidator
 import org.flowlang.generators.manifest.TargetMaterialization
-import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
-import org.flowlang.generators.manifest.TargetRenderMode
-import org.flowlang.generators.manifest.TargetRenderPolicy
-import org.flowlang.generators.manifest.TargetRendererPayload
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetInput
-import org.flowlang.planner.ExecutionPlan
 import org.flowlang.planner.TaskNode
 import org.flowlang.standard.FlowStandardVersions
-import org.flowlang.targets.TargetDescriptor
 import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 import org.flowlang.targets.builtin.JenkinsManifestRenderer
-import org.flowlang.topology.ExecutionTopologyProfile
-
 import kotlin.test.assertFails
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.FrontendCompilerComposition
@@ -38,6 +25,7 @@ import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
 import org.flowlang.topology.ExecutionTopologyKind
 import org.flowlang.topology.ExecutionTopologySupportStatus
+
 class JenkinsRetryProjectionTests {
     private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File("targets")) }
     private val declared get() = targets.getValue("jenkins")

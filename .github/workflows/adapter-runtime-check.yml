@@ -382,7 +382,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
       - name: Verify Retry Projection And Observation Boundaries
-        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsRetry*' --tests '*TargetStructuralProjectionHonestyTests' --tests '*AdapterControlMaterializationAuthorityTests' --stacktrace
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsRetry*' --tests '*TargetMaturityPublicationTests' --tests '*TargetStructuralProjectionHonestyTests' --tests '*AdapterControlMaterializationAuthorityTests' --stacktrace
       - name: Execute Real Jenkins Bounded Retry And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsRetryRuntime --stacktrace
       - name: Publish Bounded Observation Summaries

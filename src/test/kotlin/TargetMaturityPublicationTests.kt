@@ -141,6 +141,24 @@ class TargetMaturityPublicationTests {
     }
 
     @Test
+    fun planScopedRetryCannotCertifyTargetWideRetrySupport() {
+        val mutated = targets + ("jenkins" to targets.getValue("jenkins").copy(retry = SupportLevel.SUPPORTED))
+        val report = AdapterTargetMaturityPublisher(rootDir, mutated, BuiltInTargetProjections.registry).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "TARGET_MATURITY_SUPPORTED_STRUCTURE_UNOWNED" &&
+            it.target == "jenkins" && it.message.contains("retry.task") })
+    }
+
+    @Test
+    fun targetWideStructuralEvidenceStillRequiresAnHonestRegistryDeclaration() {
+        val mutated = targets + ("jenkins" to targets.getValue("jenkins").copy(conditions = SupportLevel.UNSUPPORTED))
+        val report = AdapterTargetMaturityPublisher(rootDir, mutated, BuiltInTargetProjections.registry).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "TARGET_MATURITY_PROVIDER_STRUCTURE_UNDECLARED" &&
+            it.target == "jenkins" && it.message.contains("condition") })
+    }
+
+    @Test
     fun maturityEvidenceLoaderRejectsUnknownFields() {
         val root = Files.createTempDirectory("flow-target-maturity-invalid").toFile()
         try {

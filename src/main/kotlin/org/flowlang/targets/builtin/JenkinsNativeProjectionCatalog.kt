@@ -8,6 +8,7 @@ import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetNativeProjectionDefinition
 import org.flowlang.generators.manifest.TargetNativeStructuralProjectionDefinition
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
+import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.projection.ProjectionBindingKind
 
 object JenkinsNativeProjectionCatalog {
@@ -47,7 +48,8 @@ object JenkinsNativeProjectionCatalog {
                 kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "retry",
                 implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsRetry",
-                behavioralEvidenceReference = "src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt#boundedRetryPreservesAttemptLimitAndEarlySuccess"
+                behavioralEvidenceReference = "src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt#boundedRetryPreservesAttemptLimitAndEarlySuccess",
+                supportScope = TargetStructuralProjectionSupportScope.PLAN_SCOPED
             ),
             TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.CONDITION,
