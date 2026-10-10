@@ -61,3 +61,12 @@ its generic registry claim unsupported and rejects any attempted broad promotion
 backed only by scoped evidence. Target-wide definitions still require matching
 registry declarations. Installed-product and negative maturity regressions enforce
 both directions without introducing a target-specific exception in the publisher.
+
+Frozen control and topology source manifests retain their exact historical bytes
+and pins. Reference composition validates the original active control document
+through the existing authority before adding the current provider-owned bounded
+attempt-limit evidence to its in-memory view. Explicit caller overrides are not
+rewritten; invalid source evidence cannot be repaired by this composition. The
+composed view is validated again through the same authority. Historical profile
+evidence still analyzes its explicitly supplied original documents. No historical
+source digest or acceptance receipt is repinned.

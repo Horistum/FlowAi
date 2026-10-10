@@ -17,6 +17,12 @@ import org.flowlang.targets.TargetRegistryYamlLoader
 import org.flowlang.targets.builtin.BuiltInNativeProjectionCatalogs
 import org.flowlang.targets.builtin.JenkinsManifestRenderer
 import kotlin.test.assertFails
+import kotlin.test.assertTrue
+import org.flowlang.adapters.control.AdapterControlMaterializationLoader
+import org.flowlang.adapters.control.AdapterControlFamily
+import org.flowlang.adapters.control.AdapterControlDecision
+import org.flowlang.distribution.reference.ReferenceAdapterEvidence
+import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.compiler.requireAccepted
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.source.FlowSourceFrontend
@@ -50,6 +56,12 @@ class JenkinsRetryProjectionTests {
             effective.declarations.filter { it.kind != ExecutionTopologyKind.ATTEMPT_ISOLATION })
         assertEquals(ExecutionTopologySupportStatus.UNKNOWN, original.declarations.single { it.kind == ExecutionTopologyKind.ATTEMPT_ISOLATION }.status)
         assertEquals(ExecutionTopologySupportStatus.SUPPORTED, effective.declarations.single { it.kind == ExecutionTopologyKind.ATTEMPT_ISOLATION }.status)
+        val frozen = AdapterControlMaterializationLoader.load(File(".")).targets.single { it.target == "jenkins" }
+            .claims.single { it.family == AdapterControlFamily.RETRY }
+        assertTrue("retry.attempt-limit" in frozen.semantics.unsupported)
+        val current = ReferenceAdapterEvidence.control(File("."), targets, ReferenceTargetProjections.registry)
+        assertEquals(AdapterControlDecision.MATCHED, current.assess(authorization(), "jenkins").decision)
+        assertEquals(AdapterControlDecision.BLOCKED, current.assess(authorization(source.replace("0s", "1s")), "jenkins").decision)
         assertEquals(SupportLevel.UNSUPPORTED, declared.retry)
         assertEquals(SupportLevel.UNSUPPORTED, declared.features["retry.task"])
     }
