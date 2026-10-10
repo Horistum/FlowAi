@@ -1,0 +1,47 @@
+version: AR-06N
+name: Authenticated Multi-Adapter Certification Portfolio
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 210.
+  predecessorPullRequest: 210
+  mergedMain: c85a62a39d412b3e9f323c0cb58bcaadb3b864da
+  mainWorkflowRunId: 38050155031
+  runtimeWorkflowRunId: 38050155029
+invariant: The complete portfolio reauthenticates both providers from owner-pinned same-run evidence while preserving each scenario's execution scope.
+scope:
+- Replay the native GitHub Actions checkout assessment alongside all ten Jenkins assessments.
+- Require the second producer's successful same-run receipt, exact source, workflow envelope, runtime observations, signatures and trust.
+- Derive the GitHub Actions native-checkout matrix from admitted evidence and retain scenario-level limitations in the portfolio.
+- Reject missing, substituted, stale or broadened evidence before publishing any portfolio.
+nonGoals:
+- No shared canonical scenario or cross-target equivalence claim; the two checkout fixtures remain different.
+- No public support or portable execution promotion, whole-workflow GitHub Actions claim, or additional runtime behavior.
+- No Core, production renderer, public syntax, package version, AR-06 closure or EF-09 resumption.
+ownershipBoundary:
+  production: unchanged
+  conformance: Extend existing authenticated replay and matrix derivation; no new support authority.
+  concreteAdapters: Existing outputs consumed unchanged.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
+- src/test/kotlin/AdapterCertificationPortfolioTests.kt
+- .github/workflows/adapter-runtime-check.yml
+- tools/certification_portfolio_receipt.py
+testsToAddOrUpdate:
+- Eleven assessments and thirty-five authenticated observations retain distinct fixtures, identities and scopes.
+- Missing or failed second producer, forged signatures, changed trust, raw observations, envelope, artifacts or views fail closed.
+- Historical lifecycle transitions remain immutable and the new candidate requires current-revision CI.
+conformanceToAddOrUpdate:
+- Preserve the existing ordered standalone conformance inventory.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime, github-actions-checkout-runtime, adapter-certification-portfolio]
+  negativeEvidence: Missing second-adapter receipt, mixed revisions, substituted proof or trust, invalid signatures, changed native observations and scope inflation.
+followUp:
+- Execute a shared canonical fixture on both adapters before claiming observable cross-target equivalence.
+- Complete remaining behavioral coverage before deriving public support or closing AR-06.

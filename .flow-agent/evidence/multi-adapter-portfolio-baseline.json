@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "purpose": "Select complete multi-adapter portfolio replay after the validated AR-06M native checkout merge.",
+  "predecessor": {
+    "pullRequest": 210,
+    "mergedMain": "c85a62a39d412b3e9f323c0cb58bcaadb3b864da",
+    "tree": "f4f77c2bb630f019e1073947d6609aa10f88170b",
+    "exactHead": "ba23ccfa2b4ba8c266272a63defacaf6a77bca2d",
+    "syntheticMergeCandidate": "d2df0d70517289cdbd699dccdb0f46db060242d3",
+    "flowCiRunId": 38046478110,
+    "runtimeCiRunId": 38046478081,
+    "conclusion": "success",
+    "testsPerRevision": 2013,
+    "suitesPerRevision": 347,
+    "conformanceChecksPerRevision": 274,
+    "jenkinsAssessments": 10,
+    "jenkinsSignedObservations": 32,
+    "githubActionsAssessments": 1,
+    "githubActionsSignedObservations": 3,
+    "portfolioRows": 36,
+    "publicSupportPromoted": false,
+    "githubActionsArchiveSha256": "27f89db897c105f31efbb6d1d33d355108583cbe16b5b813528f309e8a709f8b",
+    "mainFlowCiRunId": 38050155031,
+    "mainFlowCiConclusion": "success",
+    "mainRuntimeCiRunId": 38050155029,
+    "mainRuntimeConclusion": "success",
+    "scope": "Exact-head and synthetic-merge test inventories and runtime archives were independently verified. Merged main has the identical source tree and successful CI; no independently recounted main test inventory is claimed."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06M",
+        "selectedWorkPackage": ".flow-agent/work-packages/github-actions-checkout-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "adapter-certification-portfolio",
+            "github-actions-checkout-runtime"
+          ],
+          "negativeEvidence": "Omitted checkout, substituted revision, forged observations, stale source, changed workflow envelope and unsafe workspace cleanup."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06N",
+        "selectedWorkPackage": ".flow-agent/work-packages/multi-adapter-certification-portfolio.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Missing second-adapter receipt, mixed revisions, substituted proof or trust, invalid signatures, changed native observations and scope inflation."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06M",
+        "workPackage": ".flow-agent/work-packages/github-actions-checkout-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06N",
+        "workPackage": ".flow-agent/work-packages/multi-adapter-certification-portfolio.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 210.",
+    "predecessorPullRequest": 210,
+    "mergedMain": "c85a62a39d412b3e9f323c0cb58bcaadb3b864da",
+    "mainWorkflowRunId": 38050155031,
+    "runtimeWorkflowRunId": 38050155029
+  },
+  "limitations": [
+    "AR-06N requires its own exact-head, merge-candidate and all runtime/portfolio checks.",
+    "The two checkout fixtures differ; aggregation grants neither cross-target equivalence nor public support."
+  ]
+}

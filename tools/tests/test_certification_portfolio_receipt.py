@@ -59,3 +59,11 @@ class PortfolioReceiptTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.receipt()
         (path / "trust.json").unlink()
         with self.assertRaises(FileNotFoundError): self.receipt()
+
+    def test_github_actions_assessment_exports_pinned_bytes(self):
+        path = self.write(scenario="github-actions-checkout-runtime")
+        doc = MODULE.receipt(self.root, "github-actions-checkout-runtime", self.revision)
+        self.assertEqual("github-actions-checkout-runtime", doc["artifact"])
+        self.assertEqual(hashlib.sha256((path / "trust.json").read_bytes()).hexdigest(), doc["assessments"][0]["trustSha256"])
+        for artifact in ["github-actions-other-runtime", "../github-actions-checkout-runtime", "github-actions-checkout-runtime\n"]:
+            with self.assertRaises(ValueError): MODULE.receipt(self.root, artifact, self.revision)

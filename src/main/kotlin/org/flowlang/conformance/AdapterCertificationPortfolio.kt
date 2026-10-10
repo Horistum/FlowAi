@@ -27,6 +27,10 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
         private val mapper = jacksonObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
         private val scenarios = JenkinsCheckoutRuntimeCertification.Scenario.entries
+        private val githubScenario = GitHubActionsCheckoutRuntimeCertification.SCENARIO
+        private val scenarioIds = scenarios.map { it.id } + githubScenario
+        private val jobScenarios = scenarios.groupBy { relativeDirectory(it).substringBefore('/') }
+            .mapValues { (_, values) -> values.map { it.id }.toSet() } + (githubScenario to setOf(githubScenario))
 
         internal fun relativeDirectory(s: JenkinsCheckoutRuntimeCertification.Scenario): String = when (s) {
             JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> "jenkins-checkout-runtime"
@@ -45,7 +49,7 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
         fun receiptsFromJobs(bytes: ByteArray, revision: String): List<PortfolioAssessmentReceipt> {
             require(bytes.size in 1..65536) { "Producer job outputs exceed the input budget." }
             val jobs = mapper.readTree(bytes)
-            val expectedJobs = scenarios.map { relativeDirectory(it).substringBefore('/') }.toSet()
+            val expectedJobs = jobScenarios.keys
             require(jobs.isObject && jobs.fieldNames().asSequence().toSet() == expectedJobs) { "Producer job inventory differs." }
             return expectedJobs.sorted().flatMap { job ->
                 require(jobs[job]["result"]?.asText() == "success") { "Producer $job did not succeed." }
@@ -54,7 +58,7 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 val receipt = mapper.readTree(raw.asText())
                 require(receipt["sourceRevision"]?.asText() == revision && receipt["artifact"]?.asText() == job)
                 val rows = receipt["assessments"]
-                val expected = scenarios.filter { relativeDirectory(it).substringBefore('/') == job }.map { it.id }.toSet()
+                val expected = jobScenarios.getValue(job)
                 require(rows?.isArray == true && rows.size() == expected.size && rows.map { it["scenarioId"]?.asText() }.toSet() == expected)
                 rows.map { row -> PortfolioAssessmentReceipt(row["scenarioId"].asText(),
                     row["proofSha256"]?.asText().orEmpty(), row["trustSha256"]?.asText().orEmpty()) }
@@ -64,10 +68,11 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
         fun derive(root: File, revision: String, evidenceRoot: File, receipts: List<PortfolioAssessmentReceipt>): AdapterCertificationPortfolio {
             require(Regex("[0-9a-f]{40}").matches(revision)) { "Expected an exact source revision." }
             val inputs = receipts.toList()
-            require(inputs.size == scenarios.size && inputs.map { it.scenarioId }.toSet() == scenarios.map { it.id }.toSet()) {
+            require(inputs.size == scenarioIds.size && inputs.map { it.scenarioId }.toSet() == scenarioIds.toSet()) {
                 "Portfolio requires the complete, unique scenario inventory."
             }
             require(inputs.all { Regex("[0-9a-f]{64}").matches(it.proofSha256) && Regex("[0-9a-f]{64}").matches(it.trustSha256) })
+            val githubAssessment = replayGitHub(root, revision, evidenceRoot, inputs.single { it.scenarioId == githubScenario })
             val assessments = scenarios.sortedBy { it.id }.map { scenario ->
                 val receipt = inputs.single { it.scenarioId == scenario.id }
                 val directory = File(evidenceRoot, relativeDirectory(scenario))
@@ -132,12 +137,15 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                     }
                 }
                 linkedMapOf<String, Any>("scenarioId" to scenario.id, "proofSha256" to receipt.proofSha256,
-                    "trustSha256" to receipt.trustSha256, "matrix" to mapper.readTree(matrix.json()))
+                    "trustSha256" to receipt.trustSha256, "claim" to scenario.claim, "executionMode" to "generated-jenkinsfile",
+                    "matrix" to mapper.readTree(matrix.json()))
             }
+            val allAssessments = (assessments + githubAssessment)
+                .sortedBy { it.getValue("scenarioId") as String }
             // The reference catalog supplies target identities only, never behavioral support.
             val targets = ReferenceTargetProjections.nativeCatalogs.keys.sorted()
             val rows = CertificationConstruct.entries.flatMap { construct -> targets.map { target ->
-                val ids = assessments.filter { entry ->
+                val ids = allAssessments.filter { entry ->
                     val matrix = entry.getValue("matrix") as JsonNode
                     matrix["adapter"]["target"].asText() == target && matrix["rows"].any {
                         it["construct"].asText() == construct.name && it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE"
@@ -148,9 +156,9 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             } }
             val output = linkedMapOf<String, Any>("formatVersion" to 1, "scope" to "authenticated-reference-adapter-portfolio",
                 "sourceRevision" to revision, "referenceTargets" to targets, "publicSupportPromoted" to false,
-                "portableExecution" to false, "assessmentCount" to assessments.size, "rows" to rows, "assessments" to assessments)
+                "portableExecution" to false, "assessmentCount" to allAssessments.size, "rows" to rows, "assessments" to allAssessments)
             val markdown = buildString {
-                append("# Adapter certification portfolio\n\nSource revision: $revision. Reauthenticated assessments: ${assessments.size}.\n\n")
+                append("# Adapter certification portfolio\n\nSource revision: $revision. Reauthenticated assessments: ${allAssessments.size}.\n\n")
                 append("Scope: the current reference adapter catalog and the complete declared runtime scenario inventory. ")
                 append("Evidence covers bounded scenarios, not general construct support. Missing evidence is not an unsupported-feature declaration. ")
                 append("Public support is not promoted; portable execution is not established.\n\n")
@@ -159,9 +167,82 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 append("\n## Evidence boundaries\n\nEvery scenario retains its adapter identity/version/digest, source and graph digests, exact baseline and mutant observations, runtime prerequisites, runner key and limitations in the JSON portfolio. ")
                 append("Different adapter versions and runtime images are never merged into a general certification. Checkout observations do not establish artifact transfer, secrets or value/state continuity.\n\n")
                 append("Owner-pinned producer receipts bind input proof and trust bytes. CI job outputs and the assessment host remain part of the trust boundary; a signature does not prove runner honesty. ")
-                append("Another target in this table does not imply that it executed any scenario.\n")
+                append("Only targets with admitted scenario IDs have execution evidence. The GitHub Actions assessment executes one native leaf inside a checked envelope, not a complete generated workflow. ")
+                append("The Jenkins and GitHub Actions checkout fixtures and canonical graphs differ; their shared construct label does not establish cross-target equivalence.\n")
             }
             return AdapterCertificationPortfolio(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(output) + "\n", markdown)
+        }
+
+        private fun replayGitHub(root: File, revision: String, evidenceRoot: File,
+            receipt: PortfolioAssessmentReceipt): Map<String, Any> {
+            val directory = File(evidenceRoot, githubScenario)
+            val proofBytes = read(directory, "proof.json", 1024 * 1024)
+            val trustBytes = read(directory, "trust.json", 16384)
+            require(sha(proofBytes) == receipt.proofSha256 && sha(trustBytes) == receipt.trustSha256) {
+                "GitHub Actions assessment differs from the owner-pinned proof or trust."
+            }
+            val proof = mapper.readTree(proofBytes)
+            val owner = mapper.readTree(trustBytes)
+            require(proof["status"]?.asText() == "passed" && proof["sourceRevision"]?.asText() == revision)
+            for (name in listOf("sourceRevision", "workflowRevision", "runId", "attempt")) {
+                require(proof[name]?.isTextual == true && proof[name] == owner[name]) { "GitHub Actions owner metadata differs: $name" }
+            }
+            require(listOf("runId", "attempt").all { Regex("[1-9][0-9]{0,19}").matches(owner[it].asText()) })
+            require(proof["claim"]?.asText() == "native-leaf-only" &&
+                proof["executionMode"]?.asText() == "native-leaf-in-checked-envelope") { "GitHub Actions execution scope changed." }
+            for (name in listOf("publicSupportPromoted", "portableExecution"))
+                require(proof[name]?.isBoolean == true && !proof[name].booleanValue()) { "Portfolio cannot promote support or portability." }
+            val prepared = GitHubActionsCheckoutRuntimeCertification.prepare(root, revision, owner["workflowRevision"].asText(),
+                owner["runnerImage"]?.asText().orEmpty(), read(directory, "artifacts/execution-envelope.yml", 1024 * 1024))
+            require(proof["bundle"] == mapper.valueToTree<JsonNode>(prepared.bundle)) { "GitHub Actions compiler or adapter binding changed." }
+            prepared.artifacts.forEach { (id, bytes) ->
+                require(read(directory, "artifacts/$id.yml", 1024 * 1024).contentEquals(bytes)) { "GitHub Actions artifact $id differs." }
+            }
+            require(read(directory, "artifacts/source.intent.yaml", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.fixture)))
+            require(read(directory, "artifacts/canonical-graph.json", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.canonicalGraph)))
+            val runner = GitHubActionsCheckoutRuntimeCertification.RUNNER
+            val runIds = GitHubActionsCheckoutRuntimeCertification.runIds
+            val challenge = owner["challenge"]?.asText().orEmpty()
+            val key = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(
+                Base64.getDecoder().decode(owner["publicKey"]?.asText().orEmpty())))
+            val trust = CertificationObservationTrust(challenge, mapOf(runner to key), runIds.map {
+                CertificationAuthorizedRun(it, githubScenario, it.takeUnless { id -> id == "baseline" }, runner) })
+            val statements = proof["observations"]
+            require(statements?.isArray == true && statements.size() == runIds.size &&
+                statements.map { it["observation"]?.get("runId")?.asText() }.toSet() == runIds.toSet())
+            val signed = runIds.map { id ->
+                val record = mapper.readTree(read(directory, "$id.json", 8192))
+                require(record["raw"]?.isTextual == true && record["signature"]?.isTextual == true)
+                val observation = GitHubActionsCheckoutRuntimeCertification.observation(prepared, id, record["raw"].asText().toByteArray(Charsets.UTF_8))
+                val statement = statements.single { it["observation"]["runId"].asText() == id }
+                require(statement["observation"] == mapper.valueToTree<JsonNode>(observation)) { "GitHub Actions native result differs from its signed observation." }
+                require(statement["runnerId"]?.asText() == runner && statement["challenge"]?.asText() == challenge &&
+                    statement["signature"] == record["signature"]) { "GitHub Actions runner, challenge or signature differs." }
+                SignedCertificationObservation(runner, challenge, observation, Base64.getDecoder().decode(record["signature"].asText()))
+            }
+            prepared.evidence.forEach { (id, bytes) ->
+                require(read(directory, "artifacts/" + id.replace(':', '-') + ".evidence", 1024 * 1024).contentEquals(bytes)) {
+                    "GitHub Actions archived evidence $id differs from reconstructed bytes."
+                }
+            }
+            val resolver = CertificationEvidenceResolver { prepared.evidence[it.id] }
+            val assessment = CertificationEvidenceViews.assess(prepared.bundle, prepared.bundle.adapter, listOf(prepared.bound),
+                prepared.provider, signed, trust, resolver)
+            require(assessment.admission.valid) { "GitHub Actions replayed admission failed: ${assessment.admission.findings}" }
+            require(proof["admission"] == mapper.valueToTree<JsonNode>(assessment.admission)) { "GitHub Actions archived admission differs from replay." }
+            val view = requireNotNull(assessment.view)
+            val matrix = AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, resolver)
+            mapOf("evidence-view.json" to view.json(), "evidence-view.md" to view.markdown(),
+                "behavior-matrix.json" to matrix.json(), "behavior-matrix.md" to matrix.markdown()).forEach { (name, value) ->
+                val bytes = value.toByteArray(Charsets.UTF_8)
+                val field = if (name.startsWith("behavior-")) "behaviorMatrix" else "evidenceViews"
+                require(proof[field]?.get(name)?.asText() == sha(bytes) && read(directory, name, 2 * 1024 * 1024).contentEquals(bytes)) {
+                    "GitHub Actions published $name differs from authenticated replay."
+                }
+            }
+            return linkedMapOf("scenarioId" to githubScenario, "proofSha256" to receipt.proofSha256,
+                "trustSha256" to receipt.trustSha256, "claim" to "native-leaf-only", "executionMode" to "native-leaf-in-checked-envelope",
+                "matrix" to mapper.readTree(matrix.json()))
         }
 
         private fun read(directory: File, name: String, maxBytes: Int): ByteArray {
