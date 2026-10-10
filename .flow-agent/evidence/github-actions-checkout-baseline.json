@@ -1,0 +1,100 @@
+{
+  "version": 1,
+  "purpose": "Select the bounded second-adapter checkout candidate after the validated AR-06L portfolio merge.",
+  "predecessor": {
+    "pullRequest": 209,
+    "mergedMain": "2492d02a3f610a449952d7e4d1c5a2184381243c",
+    "tree": "7606a1af4066d08aff8ac93e1f709dba949fca05",
+    "exactHead": "0626d226de43111f70b4920df4813eb11108c85b",
+    "syntheticMergeCandidate": "aee9b3360de45c9f388d5c2189914cdbfc6126f8",
+    "flowCiRunId": 38042086073,
+    "runtimeCiRunId": 38042086072,
+    "conclusion": "success",
+    "testsPerRevision": 2002,
+    "suitesPerRevision": 345,
+    "conformanceChecksPerRevision": 274,
+    "runtimeAssessments": 10,
+    "signedObservations": 32,
+    "portfolioRows": 36,
+    "publicSupportPromoted": false,
+    "mainRuntimeCiRunId": 38043757586,
+    "mainRuntimeConclusion": "success",
+    "mainFlowCiRunId": 38043757653,
+    "mainFlowCiStatusAtSelection": "in_progress",
+    "scope": "PR exact head, synthetic merge and merged main have the same source tree. The in-progress main Flow CI is not claimed as passed."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06L",
+        "selectedWorkPackage": ".flow-agent/work-packages/adapter-certification-portfolio.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Missing or duplicate scenarios, mixed revisions, stale source/artifact bytes, invalid signatures, changed trust, changed observations and tampered lifecycle receipts."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06M",
+        "selectedWorkPackage": ".flow-agent/work-packages/github-actions-checkout-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "adapter-certification-portfolio",
+            "github-actions-checkout-runtime"
+          ],
+          "negativeEvidence": "Omitted checkout, substituted revision, forged observations, stale source, changed workflow envelope and unsafe workspace cleanup."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06L",
+        "workPackage": ".flow-agent/work-packages/adapter-certification-portfolio.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06M",
+        "workPackage": ".flow-agent/work-packages/github-actions-checkout-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 209.",
+    "predecessorPullRequest": 209,
+    "mergedMain": "2492d02a3f610a449952d7e4d1c5a2184381243c"
+  },
+  "limitations": [
+    "Candidate AR-06M needs its own exact-head, merge-candidate and native-provider checks.",
+    "No portable execution or public support claim; the Jenkins portfolio remains separately scoped."
+  ]
+}

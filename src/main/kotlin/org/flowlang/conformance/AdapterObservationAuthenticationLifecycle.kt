@@ -23,6 +23,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val MATRIX_BASELINE = ".flow-agent/evidence/adapter-behavior-matrix-baseline.json"
     const val PORTFOLIO_WORK_PACKAGE = ".flow-agent/work-packages/adapter-certification-portfolio.yaml"
     const val PORTFOLIO_BASELINE = ".flow-agent/evidence/adapter-certification-portfolio-baseline.json"
+    const val GITHUB_CHECKOUT_WORK_PACKAGE = ".flow-agent/work-packages/github-actions-checkout-certification.yaml"
+    const val GITHUB_CHECKOUT_BASELINE = ".flow-agent/evidence/github-actions-checkout-baseline.json"
+    private const val GITHUB_CHECKOUT_BASELINE_SHA256 = "6d85faca53c1196c13048a154370ba30481d775c6a79db6b2d1c1a674501154d"
     private const val PORTFOLIO_BASELINE_SHA256 = "88f7114db5cb1e52a81ddb02c645cfe77fcb74cbed13c151d41a6019b51a3f94"
     private const val MATRIX_BASELINE_SHA256 = "eecb0fa4dbcaf567d48d989103d3abf56db68ae9fd7502f1812c4c64946bd984"
     private const val APPROVAL_BASELINE_SHA256 = "b2dc9f7a63755c9960bc71f4a8b4a2f136ca7b918c06ad4969ff1d14c31348ba"
@@ -37,6 +40,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06M" || s.release.containsKey("recoveryGitHubCheckout")) {
+            val raw = s.certificationGitHubCheckoutBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != GITHUB_CHECKOUT_BASELINE_SHA256) {
+                add("GitHub checkout certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), GITHUB_CHECKOUT_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("GitHub checkout certification selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("GitHub checkout certification release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("GitHub checkout certification work", s.certificationGitHubCheckoutWorkPackage, mapOf("version" to "AR-06M", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("GitHub checkout certification authorization", section(s.certificationGitHubCheckoutWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("GitHub checkout certification validation", section(s.certificationGitHubCheckoutWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("GitHub checkout certification candidate", section(s.release["recoveryGitHubCheckout"]), mapOf(
+                "candidate" to "AR-06M", "status" to "candidate", "workPackage" to GITHUB_CHECKOUT_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/github-actions-checkout-certification.md", "baselineEvidence" to GITHUB_CHECKOUT_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(githubCheckoutPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06L" || s.release.containsKey("recoveryCertificationPortfolio")) {
             val raw = s.certificationPortfolioBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -319,12 +347,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun portfolioPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryGitHubCheckout") || s.certificationWorkPackage["selectedSlice"] == "AR-06M")
+            return portfolioPredecessor(githubCheckoutPredecessor(s))
         if (!s.release.containsKey("recoveryCertificationPortfolio") && s.certificationWorkPackage["selectedSlice"] != "AR-06L") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationPortfolioBaseline), PORTFOLIO_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryCertificationPortfolio") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationPortfolioWorkPackage = emptyMap(), certificationPortfolioBaseline = null)
+    }
+
+    internal fun githubCheckoutPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryGitHubCheckout") && s.certificationWorkPackage["selectedSlice"] != "AR-06M") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationGitHubCheckoutBaseline), GITHUB_CHECKOUT_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryGitHubCheckout") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationGitHubCheckoutWorkPackage = emptyMap(), certificationGitHubCheckoutBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }

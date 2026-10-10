@@ -15,6 +15,78 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  github-actions-checkout-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Stage Observer And Bind Executed Envelope
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:installDist --stacktrace
+          stage="$RUNNER_TEMP/flow-github-checkout"
+          mkdir -p "$stage/source"
+          git archive HEAD | tar -x -C "$stage/source"
+          cp -R flow-conformance-kit/build/install/flow-conformance "$stage/engine"
+          git fetch --no-tags origin "$WORKFLOW_REVISION"
+          git show "$WORKFLOW_REVISION:.github/workflows/adapter-runtime-check.yml" > "$stage/executed-workflow.yml"
+          java -cp "$stage/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli initialize "$stage"
+      # These blocks must exactly match the current renderer before any native leaf runs.
+      # FLOW NATIVE BEGIN baseline
+      - name: "checkout"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      # FLOW NATIVE END baseline
+      - name: Observe Baseline And Clear Workspace
+        run: java -cp "$RUNNER_TEMP/flow-github-checkout/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli observe "$RUNNER_TEMP/flow-github-checkout" baseline
+      # FLOW NATIVE BEGIN omitted-checkout
+      # FLOW NATIVE END omitted-checkout
+      - name: Observe Omitted Checkout And Clear Workspace
+        run: java -cp "$RUNNER_TEMP/flow-github-checkout/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli observe "$RUNNER_TEMP/flow-github-checkout" omitted-checkout
+      # FLOW NATIVE BEGIN substituted-revision
+      - name: "checkout"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "9232061af22922af33ff3a65ada81d1b0d4eedd6"
+          fetch-depth: "0"
+      # FLOW NATIVE END substituted-revision
+      - name: Observe Substituted Revision
+        run: java -cp "$RUNNER_TEMP/flow-github-checkout/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli observe "$RUNNER_TEMP/flow-github-checkout" substituted-revision
+      - name: Admit Signed Native Observations
+        run: |
+          java -cp "$RUNNER_TEMP/flow-github-checkout/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli verify "$RUNNER_TEMP/flow-github-checkout"
+          cat "$RUNNER_TEMP/flow-github-checkout/evidence/evidence-view.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Remove Ephemeral Signing Key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/flow-github-checkout/owner.pk8"
+      - name: Upload GitHub Actions Runtime Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-actions-checkout-runtime
+          path: ${{ runner.temp }}/flow-github-checkout/evidence/
+          if-no-files-found: error
+          retention-days: 7
+
   jenkins-checkout-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest

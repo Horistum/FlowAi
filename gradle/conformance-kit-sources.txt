@@ -79,6 +79,7 @@ org/flowlang/conformance/ExportManifestVerifierChecks.kt
 org/flowlang/conformance/ExternalCorpusContracts.kt
 org/flowlang/conformance/ExternalCorpusLoader.kt
 org/flowlang/conformance/FlowSensitiveConformanceChecks.kt
+org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/HumanApprovalChangeControlBaseline.kt
 org/flowlang/conformance/HumanApprovalChangeControlFalsification.kt
 org/flowlang/conformance/IncidentRemediationBaseline.kt

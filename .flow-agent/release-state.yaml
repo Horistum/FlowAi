@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 83
+stateVersion: 84
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -221,8 +221,8 @@ recoveryCertification:
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
   evidence: .flow-agent/evidence/adapter-certification-binding-acceptance.json
-  selectedSlice: AR-06L
-  workPackage: .flow-agent/work-packages/adapter-certification-portfolio.yaml
+  selectedSlice: AR-06M
+  workPackage: .flow-agent/work-packages/github-actions-checkout-certification.yaml
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -349,5 +349,14 @@ recoveryCertificationPortfolio:
   workPackage: .flow-agent/work-packages/adapter-certification-portfolio.yaml
   report: .flow-agent/reports/adapter-certification-portfolio.md
   baselineEvidence: .flow-agent/evidence/adapter-certification-portfolio-baseline.json
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryGitHubCheckout:
+  candidate: AR-06M
+  status: candidate
+  workPackage: .flow-agent/work-packages/github-actions-checkout-certification.yaml
+  report: .flow-agent/reports/github-actions-checkout-certification.md
+  baselineEvidence: .flow-agent/evidence/github-actions-checkout-baseline.json
   validation: current-revision-ci-required
   supportPromotion: false

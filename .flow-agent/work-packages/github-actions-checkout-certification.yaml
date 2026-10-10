@@ -1,0 +1,57 @@
+version: AR-06M
+name: Native GitHub Actions Checkout Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 209.
+  predecessorPullRequest: 209
+  mergedMain: 2492d02a3f610a449952d7e4d1c5a2184381243c
+invariant: A bounded checkout claim requires the compiler-derived native leaf to execute on GitHub Actions and distinguish omitted checkout
+  and substituted revision mutants.
+scope:
+- Bind a public immutable repository fixture to the existing compiler and GitHub Actions adapter.
+- Execute the exact rendered native checkout steps in an explicitly checked observation envelope on a real GitHub-hosted runner.
+- Observe independent Git HEAD and fixture-file bytes from fresh workspaces, sign observations, and admit them through the existing
+  certification contract.
+- Preserve the complete Jenkins portfolio while publishing separate bounded second-adapter evidence.
+nonGoals:
+- No whole-workflow, trigger, scheduling, credentials, workspace transfer or portable-execution certification.
+- No support promotion, new public syntax, Core change, AR-06 closure or EF-09 resumption.
+ownershipBoundary:
+  production: unchanged
+  conformance: Source-bound native-leaf runtime harness and authenticated admission.
+  concreteAdapters: Existing GitHub Actions renderer consumed unchanged.
+expectedFilesToChange:
+- .github/workflows/adapter-runtime-check.yml
+- gradle/conformance-kit-sources.txt
+expectedFilesToAdd:
+- src/main/kotlin/org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
+- src/test/kotlin/GitHubActionsCheckoutRuntimeCertificationTests.kt
+- flow-adapter-github-actions/src/runtimeTest/checkout.intent.yaml
+testsToAddOrUpdate:
+- Positive signed admission and omitted/substituted native checkout outcomes.
+- Wrong Git revision, fixture bytes, signatures, runtime inventory, envelope and source bindings fail closed.
+- Workspace cleanup is confined to the explicitly selected isolated runner workspace.
+conformanceToAddOrUpdate:
+- Preserve the existing ordered inventory and all historical acceptance boundaries.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - adapter-certification-portfolio
+  - github-actions-checkout-runtime
+  negativeEvidence: Omitted checkout, substituted revision, forged observations, stale source, changed workflow envelope and unsafe
+    workspace cleanup.
+followUp:
+- Execute a shared canonical fixture on both adapters before claiming observable cross-target equivalence.
+- Integrate second-adapter evidence into the portfolio without broadening the native-leaf claim.

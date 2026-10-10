@@ -7,10 +7,10 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06L"
-selectedWorkPackage: ".flow-agent/work-packages/adapter-certification-portfolio.yaml"
+selectedSlice: "AR-06M"
+selectedWorkPackage: ".flow-agent/work-packages/github-actions-checkout-certification.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "A portfolio includes only reauthenticated, compiler-bound assessments from the selected source revision and keeps missing target/construct evidence explicit."
+invariant: "A bounded checkout claim requires the compiler-derived native leaf to execute on GitHub Actions and distinguish omitted checkout and substituted revision mutants."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
@@ -21,6 +21,7 @@ scope:
   - "Observe a pending manual input, approval and rejection before one protected checkout, including omitted, late and suppressed-rejection mutants."
   - "Expose baseline and mutant observations together, with explicit missing construct evidence and no support inference."
   - "Aggregate reauthenticated current-revision scenarios into one honest reference adapter portfolio."
+  - "Execute the compiler-rendered GitHub Actions native checkout leaf with omitted and substituted revision mutants on a hosted runner."
 nonGoals:
   - "No product runtime execution, general semantic adequacy or portable-execution claim."
   - "No support promotion, finding closure, public version change or EF-09 resumption."
@@ -41,8 +42,9 @@ validation:
   - jenkins-local-recovery-runtime
   - jenkins-approval-runtime
   - adapter-certification-portfolio
-  negativeEvidence: Missing or duplicate scenarios, mixed revisions, stale source/artifact bytes, invalid signatures, changed
-    trust, changed observations and tampered lifecycle receipts.
+  - github-actions-checkout-runtime
+  negativeEvidence: Omitted checkout, substituted revision, forged observations, stale source, changed workflow envelope and unsafe
+    workspace cleanup.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."
