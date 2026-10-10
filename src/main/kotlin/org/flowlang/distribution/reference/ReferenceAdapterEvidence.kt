@@ -5,15 +5,11 @@ import org.flowlang.adapters.continuity.AdapterContinuityEvidenceDocument
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceIntegrityAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityProjectionExecutionGate
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
-import org.flowlang.adapters.continuity.AdapterContinuityScopedCapabilityResolver
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupport
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupportIntegrityAuthority
 import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
 import org.flowlang.adapters.control.AdapterControlMaterializationAuthority
 import org.flowlang.adapters.control.AdapterControlMaterializationDocument
-import org.flowlang.adapters.control.AdapterControlMaterializationLoader
-import org.flowlang.adapters.control.AdapterControlClaimStatus
-import org.flowlang.adapters.control.AdapterControlFamily
 import org.flowlang.adapters.portfolio.AdapterExecutableReferencePromotionAuthority
 import org.flowlang.adapters.portfolio.AdapterPortfolioAuthority
 import org.flowlang.adapters.portfolio.AdapterPortfolioDocument
@@ -29,11 +25,6 @@ import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.adapters.contract.AdapterCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
-import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
-import org.flowlang.generators.manifest.TargetStructuralProjectionKind
-import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
-import org.flowlang.generators.manifest.providerFor
-import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
 import org.flowlang.targets.TargetRegistryYamlLoader
 
 /**
@@ -112,11 +103,7 @@ object ReferenceAdapterEvidence {
         targets = targets,
         projections = projections,
         scopedSupports = BuiltInAdapterContinuityScopedSupport.declarations,
-        capabilityResolver = TargetProjectionCapabilityResolver { authorization, target, declared ->
-            val continuity = AdapterContinuityScopedCapabilityResolver().resolve(authorization, target, declared)
-            JenkinsRetryProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
-                .resolve(authorization, target, continuity)
-        }
+        capabilityResolver = ReferenceTargetProjections.capabilityResolver(projections)
     )
 
     fun continuity(
@@ -159,36 +146,8 @@ object ReferenceAdapterEvidence {
         targets: Map<String, TargetCapability>,
         projections: AdapterCatalog<TargetProjectionProvider> = ReferenceTargetProjections.registry,
         documentOverride: AdapterControlMaterializationDocument? = null
-    ): AdapterControlMaterializationAuthority {
-        val declared = AdapterControlMaterializationAuthority(rootDir, targets, projections, documentOverride)
-        // Historical profile sources remain byte-pinned. Explicit caller documents retain
-        // their own authority; invalid source evidence must never be repaired by composition.
-        if (documentOverride != null || "jenkins" !in targets) return declared
-        val retry = projections.providerFor("jenkins")?.nativeProjectionCatalog?.structuralDefinitions?.singleOrNull {
-            it.structure == TargetStructuralProjectionKind.RETRY && it.kind == "JENKINS_STRUCTURE" &&
-                it.reference == "retry" && it.supportScope == TargetStructuralProjectionSupportScope.PLAN_SCOPED
-        } ?: return declared
-        val source = AdapterControlMaterializationLoader.load(rootDir)
-        val active = source.copy(targets = source.targets.filter { it.target in targets })
-        if (declared.analyze(active).status != "PASS") return declared
-        val composed = source.copy(targets = source.targets.map { record ->
-            if (record.target != "jenkins") record else record.copy(claims = record.claims.map { claim ->
-                if (claim.family != AdapterControlFamily.RETRY) claim else claim.copy(
-                    status = AdapterControlClaimStatus.PARTIAL,
-                    mechanism = "Native Jenkins retry(count) preserves the attempt limit and early success; the projection scope admits only fixed zero-delay single-checkout bodies.",
-                    semantics = claim.semantics.copy(supported = claim.semantics.supported + "retry.attempt-limit",
-                        unsupported = claim.semantics.unsupported - "retry.attempt-limit"),
-                    evidenceReferences = (claim.evidenceReferences + listOf(retry.implementationEvidenceReference,
-                        retry.behavioralEvidenceReference,
-                        "src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt")).distinct(),
-                    prerequisites = claim.prerequisites + "The composed provider and authorized plan must satisfy JenkinsRetryProjectionScope.",
-                    limitations = listOf("Only fixed zero-delay single-checkout retry bodies are executable.",
-                        "No delay, variable backoff, failure-filter, transient-recovery or cancellation certification.")
-                )
-            })
-        })
-        return AdapterControlMaterializationAuthority(rootDir, targets, projections, composed)
-    }
+    ): AdapterControlMaterializationAuthority =
+        ReferenceTargetProjections.control(rootDir, targets, projections, documentOverride)
 
     fun topology(
         rootDir: File = File("."),

@@ -22,6 +22,7 @@ nonGoals:
 - No AR-06 closure, AR-07 activation or EF-09 resumption.
 ownershipBoundary:
   concreteAdapter: Jenkins native renderer, bounded capability scope and attempt-limit control evidence.
+  referenceComposition: Existing ReferenceTargetProjections composes concrete policy and evidence; ReferenceAdapterEvidence delegates without platform predicates.
   conformance: Actual attempt observations, independent mutant oracles and authenticated portfolio replay.
   runtime: Disposable offline Jenkins controller and its existing local Git fixture.
 expectedFilesToChange:
@@ -29,6 +30,7 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
 - src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
 - gradle/reference-contract-resources.txt
 - src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt
 - src/main/kotlin/org/flowlang/adapters/maturity/AdapterTargetMaturity.kt

@@ -70,3 +70,9 @@ rewritten; invalid source evidence cannot be repaired by this composition. The
 composed view is validated again through the same authority. Historical profile
 evidence still analyzes its explicitly supplied original documents. No historical
 source digest or acceptance receipt is repinned.
+
+The complete suite rejected concrete adapter composition in the neutral evidence
+facade. Provider-specific capability and control composition now lives in the
+existing reviewed `ReferenceTargetProjections` composition root. The evidence
+facade delegates through that root. CI/CD bias classification, lexical checks and
+conformance gates remain unchanged; no new path exemption is introduced.
