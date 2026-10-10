@@ -39,7 +39,7 @@ jobs:
       - name: Execute Real Jenkins Checkout And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsCheckoutRuntime --stacktrace
       - name: Publish Bounded Observation Summary
-        run: cat flow-conformance-kit/build/jenkins-runtime-certification/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat flow-conformance-kit/build/jenkins-runtime-certification/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -73,7 +73,7 @@ jobs:
       - name: Execute Real Jenkins Failure And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsFailureRuntime --stacktrace
       - name: Publish Bounded Observation Summary
-        run: cat flow-conformance-kit/build/jenkins-failure-certification/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat flow-conformance-kit/build/jenkins-failure-certification/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -108,8 +108,8 @@ jobs:
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsConditionRuntime --stacktrace
       - name: Publish Bounded Observation Summaries
         run: |
-          cat flow-conformance-kit/build/jenkins-condition-certification/true/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
-          cat flow-conformance-kit/build/jenkins-condition-certification/false/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-condition-certification/true/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-condition-certification/false/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -144,8 +144,8 @@ jobs:
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsErrorBoundaryRuntime --stacktrace
       - name: Publish Bounded Observation Summaries
         run: |
-          cat flow-conformance-kit/build/jenkins-error-boundary-certification/failure/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
-          cat flow-conformance-kit/build/jenkins-error-boundary-certification/success/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-error-boundary-certification/failure/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-error-boundary-certification/success/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -180,8 +180,8 @@ jobs:
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsLocalRecoveryRuntime --stacktrace
       - name: Publish Bounded Observation Summaries
         run: |
-          cat flow-conformance-kit/build/jenkins-local-recovery-certification/failure/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
-          cat flow-conformance-kit/build/jenkins-local-recovery-certification/success/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-local-recovery-certification/failure/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-local-recovery-certification/success/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -216,8 +216,8 @@ jobs:
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsApprovalRuntime --stacktrace
       - name: Publish Bounded Observation Summaries
         run: |
-          cat flow-conformance-kit/build/jenkins-approval-certification/approve/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
-          cat flow-conformance-kit/build/jenkins-approval-certification/reject/evidence-view.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-approval-certification/approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-approval-certification/reject/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4

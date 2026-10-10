@@ -227,3 +227,18 @@ source, graph, scripts, signed observations and derived bounded evidence views.
 This covers one manual gate before one native checkout. Human authorization,
 timeouts, restarts, concurrent/nested approvals, general protected-operation
 binding and portable execution remain outside the claim.
+
+### Construct behavior matrices (AR-06K)
+
+All ten scenarios now archive `behavior-matrix.json` and `behavior-matrix.md`;
+`proof.json` binds both by SHA-256. Actions summaries display the matrix with the
+baseline and every mutant's full normalized observation. The existing evidence
+views remain archived.
+
+Each matrix lists the eleven AR-06 construct categories plus native checkout,
+explicitly separating the one bounded scenario from categories without evidence
+in that assessment. The JSON retains exact expected/observed UTF-8 bytes as
+strings, compiler-bound source/graph references, runtime prerequisites, signed run
+references and limitations. These are individual assessments, not a merged target
+portfolio. Synthetic unit-test signatures validate the protocol only; real Jenkins
+runs provide runtime evidence. No public support or portable execution is claimed.

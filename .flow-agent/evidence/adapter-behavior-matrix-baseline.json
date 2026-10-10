@@ -1,0 +1,748 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observed merged-main baseline for the AR-06K candidate; not AR-06 milestone completion or validation of AR-06K.",
+  "mergedMain": "9232061af22922af33ff3a65ada81d1b0d4eedd6",
+  "tree": "a6940f8ff7c15516e05b99c6041e130ee14b19ed",
+  "predecessorPullRequest": 207,
+  "flowCiRunId": 38022817327,
+  "runtimeRunId": 38022817342,
+  "junit": {
+    "tests": 1976,
+    "suites": 341,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "identitySha256": "ccdceb823b1fd59da37d1b6d5f789ba2d9b421b5a314880045cc61ae19c48eda"
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0,
+    "orderedIdentitySha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+  },
+  "isolationInputsVerified": {
+    "kernel": 19,
+    "compiler": 95,
+    "adapter": 226,
+    "product": 429
+  },
+  "runtimeScenarios": {
+    "jenkins-checkout-runtime": {
+      "imageId": "sha256:d676f59436616abf5b0f6b0075aa72d4233dd2a3fc04b5648e350bc68684b7fe",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "omitted-checkout",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": []
+        },
+        {
+          "id": "substituted-branch",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "11ca8187766f326740a131137c6528dc8397e1b8528ebecfe0bdf60330bf2e19",
+        "evidence-view.md": "5e5abf0f50a86d6643a94052dbeee927dcfe94819950673f5a490207f8bc274a"
+      }
+    },
+    "jenkins-error-failure-runtime": {
+      "imageId": "sha256:a9966c878adf8f9b5c17435e96642ed7bb8635844ae3cb930682fae21c12d7bd",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "omitted-handler",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "suppressed-propagation",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "3e2ed9a5021502cc7d770278b82af5892754a3fe1ec46ccea45915b9e0829133",
+        "evidence-view.md": "13aa9b3a4d3f921a20662b9e957701adb7a4c0726cfd09a840ea319847591e4e"
+      }
+    },
+    "jenkins-error-success-runtime": {
+      "imageId": "sha256:a9966c878adf8f9b5c17435e96642ed7bb8635844ae3cb930682fae21c12d7bd",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "terminalError": null
+        },
+        {
+          "id": "unconditional-handler",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-body",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": [],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "aed15b3986e0a855af025afa5837639924270d6aa2637445c3b29368fff92d37",
+        "evidence-view.md": "49bee1eb155da84974847284b299a12832b2c6c534805e3164398af98f08cf11"
+      }
+    },
+    "jenkins-approval-approve-runtime": {
+      "imageId": "sha256:17b7cf8ec6587f469402cfc3841871e1315cc198f465d6f62b00dc65ee5552c2",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "decision": "approve",
+            "terminalError": null
+          }
+        },
+        {
+          "id": "omitted-approval",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 0,
+            "inputErrors": [],
+            "pending": null,
+            "decision": "none",
+            "terminalError": null
+          }
+        },
+        {
+          "id": "late-approval",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "paused": true,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false
+            },
+            "decision": "approve",
+            "terminalError": null
+          }
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "749fc3ccf1616b85e400ef17ea93fb65288937523f4ababbc3517aa0e1de5eca",
+        "evidence-view.md": "ff1f7a46c5c79b690bc346a4f27be7ce64a942624b27f2f6ff8a62b353be1fec"
+      }
+    },
+    "jenkins-approval-reject-runtime": {
+      "imageId": "sha256:17b7cf8ec6587f469402cfc3841871e1315cc198f465d6f62b00dc65ee5552c2",
+      "verifiedSignatures": 4,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "ABORTED",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ]
+              }
+            ],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "decision": "reject",
+            "terminalError": {
+              "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+              "result": "ABORTED",
+              "causes": [
+                "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+              ],
+              "inputIndex": 1
+            }
+          }
+        },
+        {
+          "id": "omitted-approval",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 0,
+            "inputErrors": [],
+            "pending": null,
+            "decision": "none",
+            "terminalError": null
+          }
+        },
+        {
+          "id": "late-approval",
+          "result": "ABORTED",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ]
+              }
+            ],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "paused": true,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false
+            },
+            "decision": "reject",
+            "terminalError": {
+              "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+              "result": "ABORTED",
+              "causes": [
+                "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+              ],
+              "inputIndex": 1
+            }
+          }
+        },
+        {
+          "id": "suppressed-rejection",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "approval": {
+            "inputCount": 1,
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ]
+              }
+            ],
+            "pending": {
+              "message": "Allow the protected checkout?",
+              "activeInputs": 1,
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "decision": "reject",
+            "terminalError": null
+          }
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "78bbe74b53e5c95c9e4fb3114b0ac8bc1edc5fd1767db66ff0fb1efbff7077d6",
+        "evidence-view.md": "4d674465db76fc4395133eadd2d9956fde3efd7a55b6b5fad0b2637caf062f3f"
+      }
+    },
+    "jenkins-recovery-failure-runtime": {
+      "imageId": "sha256:5ba552b4c54e6465ecf08ac1a675630d85c057054e8c89f584656f367e8605f1",
+      "verifiedSignatures": 4,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 3,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-handler",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        },
+        {
+          "id": "rethrown-failure",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "omitted-continuation",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "8f12203c0fd85054550a044e4795a72b28d8a3c95e67e1db5e8ef810e6aff5d5",
+        "evidence-view.md": "988495f3de07e99faf4c22ecdc57d15e7a581e7e5255eebf60ee0e787c9de9fe"
+      }
+    },
+    "jenkins-recovery-success-runtime": {
+      "imageId": "sha256:5ba552b4c54e6465ecf08ac1a675630d85c057054e8c89f584656f367e8605f1",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "unconditional-handler",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 3,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-continuation",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "45b2196633c362212d1461e8882d763c0fcba34aa1ee7656e9791a3655a45af7",
+        "evidence-view.md": "d5622504c0a72164c0eea1d46564f09b17b8c0488aea6766f9baeeb40070d7c9"
+      }
+    },
+    "jenkins-condition-true-runtime": {
+      "imageId": "sha256:187e080a513b7e4ea1fbc33c6af40420260ed8743a99894dc834f2ce855b5037",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "flattened-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": []
+        },
+        {
+          "id": "inverted-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "34e92b72ec886dc506bc5144516b64281ef7c8765e389dbd2efd1267fa8f053b",
+        "evidence-view.md": "8df7f32549763e0d11d1fca79c99707ce7c7ad990071ac62e86e1ab4f078bde2"
+      }
+    },
+    "jenkins-condition-false-runtime": {
+      "imageId": "sha256:187e080a513b7e4ea1fbc33c6af40420260ed8743a99894dc834f2ce855b5037",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "flattened-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": []
+        },
+        {
+          "id": "inverted-conditions",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "e03221cd8d1b48e18081528e12f7489b99bee69dcbfa361ae6a573bcb60f0758",
+        "evidence-view.md": "6998aa1e0d3340658f89ee42112e935a642023cfed859dc4d4882f285eaa41aa"
+      }
+    },
+    "jenkins-failure-runtime": {
+      "imageId": "sha256:3231361e5b0ad03edec488c3f080ac8623c50b08c0b9b87fee9373b927de5821",
+      "verifiedSignatures": 3,
+      "coverageRows": 12,
+      "findings": [],
+      "runs": [
+        {
+          "id": "baseline",
+          "result": "FAILURE",
+          "finished": true,
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ]
+        },
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": []
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "finished": true,
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ]
+        }
+      ],
+      "viewHashes": {
+        "evidence-view.json": "5c3f8e594fbe785a224d1df06a479bd1628e54f012ddb84ce3f676a445cb7c0d",
+        "evidence-view.md": "5f908a941e6eaf1b174df3dcbbb76c886b91df8636085008c0a1d8145097561b"
+      }
+    }
+  },
+  "artifacts": [
+    {
+      "id": 11658114801,
+      "name": "jenkins-checkout-runtime",
+      "runId": 38022817342,
+      "sha256": "b8add15fa79d4b6b823d4f2a33c4de7288bb53937e9a8b54de17b95179310980"
+    },
+    {
+      "id": 11658154736,
+      "name": "jenkins-error-boundary-runtime",
+      "runId": 38022817342,
+      "sha256": "dad479bee80633e1e5821d2adc20e1004c02c55a5a5fd696567ce9d55693cb6f"
+    },
+    {
+      "id": 11658224823,
+      "name": "jenkins-approval-runtime",
+      "runId": 38022817342,
+      "sha256": "e9f646afbf473ccef5ed3c3dad9fb99052c2037bd26c61e241253d559a3cf0e3"
+    },
+    {
+      "id": 11658499647,
+      "name": "jenkins-local-recovery-runtime",
+      "runId": 38022817342,
+      "sha256": "56c3bd3ebe4cb40cc48b88488765a662574e601cf4b2b1ee6889c2a2bc82863f"
+    },
+    {
+      "id": 11658734358,
+      "name": "jenkins-condition-runtime",
+      "runId": 38022817342,
+      "sha256": "5bd719326b693c7f998af0252fab7cbdb60b5ea7627737ac6fcb2df57d060764"
+    },
+    {
+      "id": 11658914379,
+      "name": "jenkins-failure-runtime",
+      "runId": 38022817342,
+      "sha256": "50bc138e527e696cff234b4b684f85bf20a5131e9fce16af9e3926f4a84f536e"
+    },
+    {
+      "id": 11659305371,
+      "name": "flow-isolation-exact-head",
+      "runId": 38022817327,
+      "sha256": "0b2c6bec24b88da822f75a845a6167f0babb651998996626c3260453b0bc114b"
+    },
+    {
+      "id": 11659541824,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "runId": 38022817327,
+      "sha256": "953eab9fd4af414dc47cdefd138f51c15231799d4175a45408d02294c45feba0"
+    },
+    {
+      "id": 11659856661,
+      "name": "flow-ci-exact-head-test-reports",
+      "runId": 38022817327,
+      "sha256": "da4d7d070a360b28e3f294d759d55acb41639ab15a18f195fca27592cdb47615"
+    }
+  ],
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06J",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-approval-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime"
+          ],
+          "negativeEvidence": "Omitted or late approval, suppressed rejection, premature protected execution, surviving mutants, wrong input error origin, malformed records, substituted artifacts and historical receipt tampering."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06K",
+        "selectedWorkPackage": ".flow-agent/work-packages/adapter-behavior-matrix.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime"
+          ],
+          "negativeEvidence": "Rejected assessments, missing or substituted observations, incorrect scenario mapping, implicit continuity credit, surviving mutants and historical receipt tampering."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06J",
+        "workPackage": ".flow-agent/work-packages/jenkins-approval-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06K",
+        "workPackage": ".flow-agent/work-packages/adapter-behavior-matrix.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR #207.",
+    "predecessorPullRequest": 207,
+    "mergedMain": "9232061af22922af33ff3a65ada81d1b0d4eedd6",
+    "mainWorkflowRunId": 38022817327,
+    "runtimeWorkflowRunId": 38022817342
+  },
+  "limitations": [
+    "Existing runtime evidence covers ten bounded Jenkins scenarios including approval and rejection.",
+    "Behavior matrices require their own current-revision CI; no new runtime scenario is claimed.",
+    "Public support, portable execution and formal AR-06 completion are not promoted."
+  ]
+}

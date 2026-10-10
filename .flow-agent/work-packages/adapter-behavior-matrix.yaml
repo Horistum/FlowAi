@@ -1,0 +1,48 @@
+version: "AR-06K"
+name: "Authenticated Construct Behavior Matrix"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap slice after merging PR #207."
+  predecessorPullRequest: 207
+  mergedMain: "9232061af22922af33ff3a65ada81d1b0d4eedd6"
+  mainWorkflowRunId: 38022817327
+  runtimeWorkflowRunId: 38022817342
+invariant: "A construct behavior matrix exposes authenticated baseline and mutant observations together, and keeps missing behavioral evidence explicit without inferring support from graph occurrence."
+scope:
+  - "Generate a diagnostic matrix from the same authenticated assessment as existing runtime evidence views."
+  - "List every AR-06 construct category, including categories without behavioral evidence in the assessment."
+  - "Bind each bounded behavior row to its source, graph, runtime, baseline and distinguishing mutants."
+  - "Reuse the existing behavioral oracles and preserve their exact observation bytes."
+nonGoals:
+  - "No public support promotion, portable execution claim or second-adapter runtime certification."
+  - "No new Core semantics, runtime engine, target registry or independent support truth."
+  - "No AR-06 completion, finding closure, package version change or EF-09 resumption."
+ownershipBoundary:
+  production: unchanged
+  externalRunner: flow-conformance-kit
+  semanticKernel: unchanged
+  concreteAdapters: unchanged
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt"
+  - "src/test/kotlin/AdapterBehaviorMatrixTests.kt"
+testsToAddOrUpdate:
+  - "Exact baseline/mutant observation and reference binding across all existing runtime scenarios."
+  - "Missing construct evidence, checkout versus continuity, malformed or substituted inputs, rejected admission and deterministic rendering."
+  - "Lifecycle selection preserves historical receipts and open findings."
+conformanceToAddOrUpdate:
+  - "Reuse the existing certification lifecycle gate and preserve the ordered 274-check inventory."
+documentationToUpdate:
+  - "docs/migrations/adapter-certification-bundle.md"
+  - "flow-adapter-jenkins/src/runtimeTest/README.md"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+  negativeEvidence: "Rejected assessments, missing or substituted observations, incorrect scenario mapping, implicit continuity credit, surviving mutants and historical receipt tampering."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Complete remaining behavioral coverage before deriving public support."
