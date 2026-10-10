@@ -24,9 +24,11 @@ import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
+import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 
 /** Opt-in conformance harness. The provider executes native leaves; this is not a product runtime. */
 internal object GitHubActionsCheckoutRuntimeCertification {
@@ -44,7 +46,8 @@ internal object GitHubActionsCheckoutRuntimeCertification {
 
     data class Prepared(val bound: BoundCertificationScenario, val bundle: AdapterCertificationBundle,
         val artifacts: Map<String, ByteArray>, val leaves: Map<String, String>,
-        val evidence: MutableMap<String, ByteArray>, val runtime: List<CertificationRuntimePrerequisite>)
+        val evidence: MutableMap<String, ByteArray>, val runtime: List<CertificationRuntimePrerequisite>,
+        val provider: TargetNativeProjectionCatalog)
 
     fun prepare(root: File, sourceRevision: String, workflowRevision: String, runnerImage: String, envelope: ByteArray): Prepared {
         require(listOf(sourceRevision, workflowRevision).all { Regex("[0-9a-f]{40}").matches(it) })
@@ -54,12 +57,14 @@ internal object GitHubActionsCheckoutRuntimeCertification {
         val source = sourceFile.readBytes()
         val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
         val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-        val compilation = IntentYamlFrontend(FrontendCompilerComposition.compiler(modules))
+        val compilation = IntentYamlFrontend(FrontendCompilerComposition.compiler(modules, StandardEnvironmentSafetyPolicyNotes.policy(root)))
             .compileText(source.toString(Charsets.UTF_8), sourceFile.name).requireAccepted()
-        val provider = ReferenceTargetProjections.nativeCatalogs.getValue("github-actions")
+        val projections = ReferenceTargetProjections.fromContracts(root)
+        val provider = projections.requireProvider("github-actions").nativeProjectionCatalog
         val selection = TargetSelectionAuthority.requireSelected(TargetSelectionAuthority.fromCliOption("github-actions", targets), "runtime certification")
         val bound = BoundCertificationScenario.capture(SCENARIO, source, TargetMaterializationRequest.fromCompilation(compilation, selection),
-            ReferenceTargetProjections.pipeline(targets, rootDir = root, modules = modules), ReferenceAdapterEvidence.rendering(rootDir = root), provider)
+            ReferenceTargetProjections.pipeline(targets, rootDir = root, projections = projections, modules = modules),
+            ReferenceAdapterEvidence.rendering(rootDir = root, projections = projections), provider)
         val original = requireNotNull(bound.resolve(bound.artifact))
         val rendered = original.toString(Charsets.UTF_8)
         val leaf = nativeLeaf(rendered)
@@ -94,7 +99,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
             "This second-adapter assessment is separate from the ten-scenario Jenkins portfolio.")
         val bundle = AdapterCertificationBundle(adapter, subjects.map { CertificationCoverage(it,
             if (it in bound.subjects) listOf(bound.id) else emptyList(), "Native checkout leaf only; no whole-workflow credit.") }, listOf(specification), limitations)
-        return Prepared(bound, bundle, artifacts, leaves, evidence, runtime)
+        return Prepared(bound, bundle, artifacts, leaves, evidence, runtime, provider)
     }
 
     /** Fail closed if the renderer grows another job, step, binding, guard or workspace mechanism. */
@@ -234,7 +239,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
                 SignedCertificationObservation(RUNNER, challenge, observation(p, id, record["raw"].asText().toByteArray()), Base64.getDecoder().decode(record["signature"].asText()))
             }
             val assessment = CertificationEvidenceViews.assess(p.bundle, p.bundle.adapter, listOf(p.bound),
-                ReferenceTargetProjections.nativeCatalogs.getValue("github-actions"), signed, trust, CertificationEvidenceResolver { p.evidence[it.id] })
+                p.provider, signed, trust, CertificationEvidenceResolver { p.evidence[it.id] })
             require(assessment.admission.valid) { "GitHub Actions certification rejected: ${assessment.admission.findings}" }
             val view = requireNotNull(assessment.view)
             File(output, "evidence-view.json").writeText(view.json()); File(output, "evidence-view.md").writeText(view.markdown())

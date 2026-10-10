@@ -2,8 +2,10 @@ package org.flowlang.conformance
 
 import java.io.File
 import java.nio.file.Files
+import java.net.URLClassLoader
 import java.security.KeyPairGenerator
 import java.security.Signature
+import java.util.concurrent.TimeUnit
 import kotlin.test.*
 import org.flowlang.adapters.certification.*
 import org.flowlang.distribution.reference.ReferenceTargetProjections
@@ -106,5 +108,30 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
             Files.writeString(workspace.resolve("contamination"), "stale")
             assertFails { runner.observeWorkspace(workspace.toFile()) }
         } finally { root.toFile().deleteRecursively() }
+    }
+
+    @Test fun stagedCompositionDoesNotReadContractsFromTheObservedWorkspace() {
+        val workspace = Files.createTempDirectory("flow-github-empty-workspace-").toFile()
+        val log = File.createTempFile("flow-github-staged-composition-", ".log")
+        try {
+            val classpath = generateSequence(javaClass.classLoader) { it.parent }.filterIsInstance<URLClassLoader>()
+                .flatMap { it.urLs.asSequence() }.map { File(it.toURI()).absolutePath }.distinct().joinToString(File.pathSeparator)
+            require(classpath.isNotBlank())
+            val process = ProcessBuilder(File(System.getProperty("java.home"), "bin/java").absolutePath, "-cp", classpath,
+                GitHubActionsStagedCompositionProbe::class.java.name, File(".").canonicalPath)
+                .directory(workspace).redirectErrorStream(true).redirectOutput(log).start()
+            if (!process.waitFor(60, TimeUnit.SECONDS)) { process.destroyForcibly(); fail("Staged composition timed out") }
+            assertEquals(0, process.exitValue(), log.readText())
+            assertTrue(workspace.listFiles()!!.isEmpty())
+        } finally { workspace.deleteRecursively(); log.delete() }
+    }
+}
+
+/** Runs in a fresh JVM with an empty CWD to expose accidental ambient registry or policy defaults. */
+object GitHubActionsStagedCompositionProbe {
+    @JvmStatic fun main(args: Array<String>) {
+        val root = File(args.single())
+        GitHubActionsCheckoutRuntimeCertification.prepare(root, "a".repeat(40), "b".repeat(40), "20261001.1.0",
+            File(root, GitHubActionsCheckoutRuntimeCertification.WORKFLOW).readBytes())
     }
 }
