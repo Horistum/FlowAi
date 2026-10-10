@@ -1,0 +1,23 @@
+intentVersion: "2.0"
+kind: FlowIntentDocument
+name: github-actions-checkout-runtime
+description: Bounded native checkout against two immutable public Git revisions.
+systems:
+  - name: source
+    type: git
+    purpose: Public certification fixture
+workflows:
+  - name: checkout-reference
+    kind: BUILD
+    steps:
+      - id: checkout
+        capability: CHECKOUT
+        uses: git.checkout
+        params:
+          system: source
+          url: https://github.com/Horistum/FlowAi.git
+          branch: c6149ff9ba87f88e25cdc0905cfb86cb935f7756
+failure:
+  notify: false
+  rollback: false
+  stopOnError: true

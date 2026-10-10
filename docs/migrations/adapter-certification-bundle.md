@@ -1,9 +1,10 @@
 # Adapter certification bundle: AR-06A candidate
 
-Current implementation: AR-06K exposes exact baseline and mutant observations in
-construct behavior matrices, described at the end of this document.
+Current implementation: AR-06L aggregates the authenticated Jenkins portfolio;
+AR-06M adds a separately scoped native GitHub Actions checkout experiment,
+described at the end of this document.
 Earlier candidate restrictions below record their original preparation boundaries;
-PRs through #207 are now merged.
+PRs through #209 are now merged.
 
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
@@ -396,3 +397,30 @@ statuses or the declared/analyzable/renderable/executable maturity distinctions.
 Public support and portable execution remain false. Equivalent execution on a
 second materially different adapter and the remaining behavioral oracles are still
 required before broader claims can be made.
+## Native GitHub Actions checkout candidate (AR-06M)
+
+The `github-actions-checkout-runtime` CI job provides separate second-adapter
+evidence. It compiles `flow-adapter-github-actions/src/runtimeTest/checkout.intent.yaml`,
+binds its actual GitHub Actions rendering and checks the single native leaf against
+literal workflow blocks before execution. The workflow selected by GitHub must
+match the candidate's envelope bytes. The provider then runs baseline and
+substituted-revision `actions/checkout@v4` steps; an empty native block represents
+omitted checkout. Each observation starts from a cleared workspace and records
+actual Git HEAD plus the fixture file's SHA-256.
+
+The `github-actions-checkout-runtime` artifact contains three signed observations,
+their source/canonical/artifact bindings, execution envelope, public trust,
+admission proof and JSON/Markdown views. Runtime prerequisites record the source
+and executed workflow revisions, hosted image version, action reference and
+envelope digest. Assessment trust is created before execution; the signing key
+stays outside uploaded evidence. It is a same-host trusted-observer experiment,
+not protection against a compromised provider action or runner.
+
+The claim is `native-leaf-only`, with execution mode
+`native-leaf-in-checked-envelope`. It does not certify the complete generated
+workflow, mutable action binaries, scheduling, triggers, credentials or workspace
+transfer. It does not establish cross-target equivalence or promote public support.
+AR-06L's portfolio still intentionally contains only ten Jenkins assessments;
+its missing-evidence cells are scoped to that portfolio. Integrating this new
+assessment and executing a shared canonical fixture on both providers remain
+explicit follow-up work.
