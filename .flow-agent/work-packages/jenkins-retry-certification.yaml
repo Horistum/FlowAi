@@ -34,6 +34,7 @@ expectedFilesToChange:
 - gradle/reference-contract-resources.txt
 - src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt
 - src/main/kotlin/org/flowlang/adapters/maturity/AdapterTargetMaturity.kt
+- src/main/kotlin/org/flowlang/conformance/ArchitectureRecoveryConformanceChecks.kt
 - src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt

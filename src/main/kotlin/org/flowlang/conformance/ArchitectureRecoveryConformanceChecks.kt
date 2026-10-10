@@ -14,6 +14,7 @@ import org.flowlang.capabilities.TargetCapability
 import org.flowlang.cli.Json
 import org.flowlang.generators.manifest.TargetProjectionRegistry
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
+import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.serialization.FlowYaml
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
@@ -105,7 +106,9 @@ class AdapterTargetMaturityConformanceChecks(
             val catalog = projections.providerFor(targetName)?.nativeProjectionCatalog
             TargetStructuralProjectionKind.entries.forEach { kind ->
                 val support = structuralSupport(target, kind)
-                val owned = catalog?.hasStructuralProjection(kind) == true
+                val owned = catalog?.structuralDefinitions?.any {
+                    it.structure == kind && it.supportScope == TargetStructuralProjectionSupportScope.TARGET_WIDE
+                } == true
                 if (support == SupportLevel.SUPPORTED && !owned) {
                     add("$targetName declares ${kind.capability} SUPPORTED without provider evidence.")
                 }
