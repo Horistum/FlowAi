@@ -2,7 +2,6 @@ package org.flowlang.conformance
 
 import java.io.File
 import java.nio.file.Files
-import java.net.URLClassLoader
 import java.security.KeyPairGenerator
 import java.security.Signature
 import java.util.concurrent.TimeUnit
@@ -114,8 +113,7 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
         val workspace = Files.createTempDirectory("flow-github-empty-workspace-").toFile()
         val log = File.createTempFile("flow-github-staged-composition-", ".log")
         try {
-            val classpath = generateSequence(javaClass.classLoader) { it.parent }.filterIsInstance<URLClassLoader>()
-                .flatMap { it.urLs.asSequence() }.map { File(it.toURI()).absolutePath }.distinct().joinToString(File.pathSeparator)
+            val classpath = requireNotNull(System.getProperty("flow.conformance.test.classpath"))
             require(classpath.isNotBlank())
             val process = ProcessBuilder(File(System.getProperty("java.home"), "bin/java").absolutePath, "-cp", classpath,
                 GitHubActionsStagedCompositionProbe::class.java.name, File(".").canonicalPath)

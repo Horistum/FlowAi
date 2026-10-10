@@ -3,8 +3,6 @@ package org.flowlang.conformance
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import java.nio.file.*
@@ -29,6 +27,7 @@ import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
+import org.flowlang.serialization.FlowYaml
 
 /** Opt-in conformance harness. The provider executes native leaves; this is not a product runtime. */
 internal object GitHubActionsCheckoutRuntimeCertification {
@@ -104,7 +103,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
 
     /** Fail closed if the renderer grows another job, step, binding, guard or workspace mechanism. */
     fun nativeLeaf(rendered: String): String {
-        val tree = ObjectMapper(YAMLFactory().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)).readTree(rendered)
+        val tree = FlowYaml.readStrict(rendered, JsonNode::class.java, "generated-github-actions.yml")
         val jobs = tree["jobs"]
         require(jobs?.isObject == true && jobs.size() == 1)
         val job = jobs.elements().next()

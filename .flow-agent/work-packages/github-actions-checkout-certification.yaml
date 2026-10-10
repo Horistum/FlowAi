@@ -24,6 +24,8 @@ ownershipBoundary:
   concreteAdapters: Existing GitHub Actions renderer consumed unchanged.
 expectedFilesToChange:
 - .github/workflows/adapter-runtime-check.yml
+- flow-conformance-kit/build.gradle.kts
+- standard/architecture/authority-responsibilities.yaml
 - gradle/conformance-kit-sources.txt
 expectedFilesToAdd:
 - src/main/kotlin/org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt

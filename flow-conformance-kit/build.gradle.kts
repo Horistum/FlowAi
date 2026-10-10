@@ -34,7 +34,11 @@ sourceSets.main {
     resources.setSrcDirs(listOf(rootProject.file("src/main/resources")))
     resources.exclude("standard/compatibility/capability-aliases.yaml")
 }
-tasks.test { workingDir(rootProject.projectDir) }
+tasks.test {
+    workingDir(rootProject.projectDir)
+    // Child-JVM regression probes need the actual test classpath, independent of Gradle's worker classloader implementation.
+    doFirst { systemProperty("flow.conformance.test.classpath", classpath.asPath) }
+}
 
 // Opt-in external runtime proof. Root tests and product distributions never start Docker or Jenkins.
 tasks.register<JavaExec>("verifyJenkinsCheckoutRuntime") {

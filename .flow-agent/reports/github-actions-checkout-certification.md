@@ -14,6 +14,12 @@ by GitHub must match the selected source workflow bytes, including on a PR merge
 revision. Rendering changes that introduce extra jobs, steps, guards or bindings
 are rejected rather than silently broadening the experiment.
 
+Rendering inspection uses the shared strict `FlowYaml` boundary. The runtime job
+first runs focused harness, YAML-owner and authority-catalog regressions, including
+a fresh JVM with an empty working directory and Gradle's explicit test classpath.
+This exposes integration failures before provider execution without replacing the
+required complete exact-head and merge-candidate test suites.
+
 The owner establishes an Ed25519 key and fresh challenge before native execution.
 The exact three-run inventory is signed and admitted through the existing
 compiler-bound certification contract. Evidence includes source, canonical graph,

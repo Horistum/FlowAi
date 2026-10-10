@@ -38,7 +38,11 @@ jobs:
           WORKFLOW_REVISION: ${{ github.sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          ./gradlew --no-daemon --build-cache :flow-conformance-kit:installDist --stacktrace
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test \
+            --tests 'org.flowlang.conformance.GitHubActions*' \
+            --tests 'YamlParsingUnificationTests' \
+            --tests 'AuthorityResponsibilityCatalogTests.repositoryCatalogExactlyMatchesProductionAuthorityGraph' \
+            :flow-conformance-kit:installDist --stacktrace
           stage="$RUNNER_TEMP/flow-github-checkout"
           mkdir -p "$stage/source"
           git archive HEAD | tar -x -C "$stage/source"
