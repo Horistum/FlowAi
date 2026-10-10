@@ -25,6 +25,7 @@ org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt
 org/flowlang/conformance/AdapterBehaviorMatrix.kt
 org/flowlang/conformance/AdapterBindingConformanceChecks.kt
 org/flowlang/conformance/AdapterCertificationLifecycle.kt
+org/flowlang/conformance/AdapterCertificationPortfolio.kt
 org/flowlang/conformance/AdapterContinuityConformanceChecks.kt
 org/flowlang/conformance/AdapterControlConformanceChecks.kt
 org/flowlang/conformance/AdapterExecutableContinuityConformanceChecks.kt
@@ -156,4 +157,3 @@ org/flowlang/roadmap/WorkflowBoundaryEvidence.kt
 org/flowlang/scenarios/ReferenceAdapterProjectionMatrix.kt
 org/flowlang/scenarios/ReferenceScenarioMatrix.kt
 org/flowlang/verification/VerificationCli.kt
-org/flowlang/conformance/AdapterCertificationPortfolio.kt
