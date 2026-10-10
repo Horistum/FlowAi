@@ -48,7 +48,7 @@ jobs:
           java -cp "$stage/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli initialize "$stage"
       # These blocks must exactly match the current renderer before any native leaf runs.
       # FLOW NATIVE BEGIN baseline
-      - name: "checkout"
+      - name: "git_checkout_1"
         uses: "actions/checkout@v4"
         with:
           repository: "Horistum/FlowAi"
@@ -62,7 +62,7 @@ jobs:
       - name: Observe Omitted Checkout And Clear Workspace
         run: java -cp "$RUNNER_TEMP/flow-github-checkout/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli observe "$RUNNER_TEMP/flow-github-checkout" omitted-checkout
       # FLOW NATIVE BEGIN substituted-revision
-      - name: "checkout"
+      - name: "git_checkout_1"
         uses: "actions/checkout@v4"
         with:
           repository: "Horistum/FlowAi"
