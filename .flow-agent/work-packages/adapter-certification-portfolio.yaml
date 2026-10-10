@@ -1,0 +1,43 @@
+version: "AR-06L"
+name: "Authenticated Adapter Certification Portfolio"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap slice from main after PR #208."
+  predecessorPullRequest: 208
+  mergedMain: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+  mainWorkflowRunId: 38038690853
+  runtimeWorkflowRunId: 38038690752
+invariant: "A portfolio includes only reauthenticated, compiler-bound assessments from the selected source revision and keeps missing target/construct evidence explicit."
+scope:
+  - "Rebuild scenario inputs with the current compiler and adapter before admitting archived signed observations."
+  - "Require caller-owned expected proof/trust hashes, exact revision and complete scenario inventory."
+  - "Aggregate the existing construct matrices without flattening scenario, mutant, runtime or adapter identities."
+  - "Publish a deterministic JSON and Markdown portfolio in a dependent CI job."
+nonGoals:
+  - "No support promotion, portable execution claim, new behavioral oracle or second-adapter execution."
+  - "No Core semantics, public registry, runtime engine or package version change."
+  - "No AR-06 closure, finding closure or EF-09 resumption."
+ownershipBoundary:
+  production: unchanged
+  conformance: "Source-bound replay and portfolio derivation."
+  concreteAdapters: unchanged
+expectedFilesToChange:
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt"
+  - "src/test/kotlin/AdapterCertificationPortfolioTests.kt"
+testsToAddOrUpdate:
+  - "Complete and partial coverage, duplicate/missing scenarios, wrong revision, stale artifacts, substituted keys or signatures, deterministic ordering and immutable output."
+conformanceToAddOrUpdate:
+  - "Preserve the existing ordered conformance inventory and historical lifecycle receipts."
+documentationToUpdate:
+  - "docs/migrations/adapter-certification-bundle.md"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime, adapter-certification-portfolio]
+  negativeEvidence: "Missing or duplicate scenarios, mixed revisions, stale source/artifact bytes, invalid signatures, changed trust, changed observations and tampered lifecycle receipts."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Complete remaining behavioral coverage before deriving public support."

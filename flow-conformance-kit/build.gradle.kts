@@ -128,3 +128,17 @@ tasks.register("verifyJenkinsApprovalRuntime") {
     description = "Execute manual approval and its omission, ordering and rejection mutants on real Jenkins."
     dependsOn(approvalRuntimeTasks)
 }
+
+// Replays authenticated archives from the same CI run; never starts a target runtime.
+tasks.register<JavaExec>("verifyAdapterCertificationPortfolio") {
+    group = "verification"
+    description = "Reauthenticate the complete scenario inventory and generate the reference adapter portfolio."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("org.flowlang.conformance.AdapterCertificationPortfolioCli")
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+    args(rootProject.projectDir.absolutePath,
+        rootProject.layout.buildDirectory.dir("certification-inputs").get().asFile.absolutePath,
+        layout.buildDirectory.dir("adapter-certification-portfolio").get().asFile.absolutePath,
+        providers.environmentVariable("FLOW_CERTIFICATION_REVISION").getOrElse(""))
+    workingDir(rootProject.projectDir)
+}

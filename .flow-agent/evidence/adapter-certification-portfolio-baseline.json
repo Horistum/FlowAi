@@ -1,0 +1,500 @@
+{
+  "schemaVersion": 1,
+  "purpose": "Observed predecessor validation for AR-06L; not validation of this candidate or milestone completion.",
+  "mergedMain": "c6149ff9ba87f88e25cdc0905cfb86cb935f7756",
+  "tree": "333c177f4b6295e3498ad5cb9baee8bf63a3ed46",
+  "predecessorPullRequest": 208,
+  "flowCiRunId": 38038690853,
+  "runtimeRunId": 38038690752,
+  "validationBoundary": {
+    "acceptedPullRequest": 208,
+    "exactHead": "c4296223218b049a605fb49ea96054d440e889f7",
+    "mergeCandidate": "3ccbfb275e186445febe5974dcbd9edc1d12585e",
+    "acceptedFlowCiRunId": 38024240411,
+    "identicalSourceTree": true,
+    "mainRuntime": "passed",
+    "mainIsolation": "passed",
+    "mainCompileTestConformance": "pending-at-receipt-creation",
+    "rule": "The passed exact-head and merge-candidate source tree is identical to merged main; this receipt does not claim the still-running main test job."
+  },
+  "junit": {
+    "tests": 1987,
+    "suites": 343,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "identitySha256": "7a4bf7df6ead664b413941800a39ea8781f97381433b1f2899a12433e706dd34"
+  },
+  "conformance": {
+    "passed": 274,
+    "failed": 0,
+    "orderedIdentitySha256": "4dcf459b05e41339d83439016e1ace48897f21831103a58c71cb21f609ee590d"
+  },
+  "isolationInputsVerified": {
+    "kernel": 19,
+    "compiler": 95,
+    "adapter": 226,
+    "product": 429
+  },
+  "runtimeScenarios": [
+    {
+      "artifact": "jenkins-failure-runtime",
+      "id": 11665201794,
+      "digest": "sha256:452bbc83c7679b272589f81d8eacaa5d7274b4dc6c0727dc50d7088b7125e384",
+      "scenario": "jenkins-failure-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "FAILURE",
+          null
+        ],
+        [
+          "omitted-failure",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "suppressed-failure",
+          "SUCCESS",
+          "selected\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "1fcb375208dd0e110e7ae67dc32dbddbadb2c038cd16fda845634099d1cb5e60",
+        "evidence-view.md": "7d9340d316acf819ee272be2ce0d999b4f324c745226224370f14776ce4e0605"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "6cf5e4605f87d6e8c2691b86342e88d47ca896327a94159b5fd11ac7ffa57a84",
+        "behavior-matrix.md": "7dd07544910d92913e2a621546c14b495457948553c881fa8e2d39bf1c499999"
+      }
+    },
+    {
+      "scenario": "jenkins-approval-approve-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "omitted-approval",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "late-approval",
+          "SUCCESS",
+          "selected\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "643fd1aac9c831212db39bf4c8c99c2e58bc3f998e5be0b7d133ff07690dad9c",
+        "evidence-view.md": "de165ac9cd474d7c11058878b473d91bc3972e9c2a5382ade09189ed460f565b"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "cb443b2e7dc0a7a25392474f564cb944c3279335ba7d3ff3ec53abe2481606b5",
+        "behavior-matrix.md": "32fba4c59b671e73082681681312b631af47421e4d7c96cafaa57b688f49d1c0"
+      }
+    },
+    {
+      "scenario": "jenkins-approval-reject-runtime",
+      "signatures": 4,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "ABORTED",
+          null
+        ],
+        [
+          "omitted-approval",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "late-approval",
+          "ABORTED",
+          "selected\n"
+        ],
+        [
+          "suppressed-rejection",
+          "SUCCESS",
+          "selected\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "122d4e1b28da1fa326d0f1e97dc9372dba7335aa789bddcbf36030a11a707171",
+        "evidence-view.md": "a3129b78762f7d833aed7ad8eb1504ac743760f8a9829be6ee39ebcf0f18f783"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "951089b2058fbf4ceaf208e6c5f53586dad0333d86c1bb7430dfa8f8185f254a",
+        "behavior-matrix.md": "7af2dc5dfd19051659a81a6cdce1cc80fe81233ccf4272f3e0b81dcf21b376cc"
+      }
+    },
+    {
+      "scenario": "jenkins-recovery-failure-runtime",
+      "signatures": 4,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "omitted-handler",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "rethrown-failure",
+          "FAILURE",
+          "alternate\n"
+        ],
+        [
+          "omitted-continuation",
+          "SUCCESS",
+          "alternate\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "bb3a7b6ac9bf125e083388b6ca42e1db28db543659ad634b86fcbb36e49539ec",
+        "evidence-view.md": "3bfc8fc4d14b1b081be0ea15b98a5a9916fcd6d387c84eea93fde9262e1f0e84"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "b3f02697d7705c2e4eaf509131c91be67ef7a3d7da172127720b29eb02fcf09a",
+        "behavior-matrix.md": "c96fa0cb0c24e385c4b200798646e3cafe03bb4f41bb301d60fe195968e8caa9"
+      }
+    },
+    {
+      "scenario": "jenkins-recovery-success-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "unconditional-handler",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "omitted-continuation",
+          "SUCCESS",
+          "selected\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "c1f87e28f619f3b14b20b1ea2e936a51b448b2bcf0f5e6f713b588cb8133db51",
+        "evidence-view.md": "e179a9a3ef5fe9f94d0514a2e79a8ea0b4cbc43470e62050e6915e1f97209279"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "3dec4361d5b845376f495144a286bdec22a55fc71abcef62193e9c17fee8fece",
+        "behavior-matrix.md": "26434b2c857f980ed9c18b8174e2b4c0aadc7c7c28c6ba6bdc697d2e28601de5"
+      }
+    },
+    {
+      "artifact": "jenkins-checkout-runtime",
+      "id": 11664996882,
+      "digest": "sha256:b5528ea330661f1973880a10e2eab24a076ae44a2627f95e456b054c7adfbf80",
+      "scenario": "jenkins-checkout-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "omitted-checkout",
+          "SUCCESS",
+          null
+        ],
+        [
+          "substituted-branch",
+          "SUCCESS",
+          "alternate\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "1f9f48a2db3360ec7f6494cf7818c408c05c24ecfa2cdab178e1d74fd440d4c4",
+        "evidence-view.md": "98b3fbe8fa885f27a18874eacbb59992c393e08f882df353bcef85fcb1902aea"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "6dd00068d926befae5460124a0823c584dad80911cf4e04634249530985ad544",
+        "behavior-matrix.md": "ec0d617dcd2255582f0f1e095547cacf12e03c42f4ec5c29e488227a00767d3e"
+      }
+    },
+    {
+      "scenario": "jenkins-error-failure-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "FAILURE",
+          "alternate\n"
+        ],
+        [
+          "omitted-handler",
+          "FAILURE",
+          null
+        ],
+        [
+          "suppressed-propagation",
+          "SUCCESS",
+          "alternate\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "b50154dc78dd53c267e2f11df3ca88426e137f8a1e292ff94c2cf3c95daf2597",
+        "evidence-view.md": "a4d94c3b0eaaba19b5dbf5eb4813fd002e1a955c61febc71f691ddd49d65f52c"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "53dfc7c8dbcb3b76440f1d4152f81bd6f398d4a04726ca3acada27274192a3b7",
+        "behavior-matrix.md": "83a0fa062b0e6e2877e409d6794b7fcbfa6d463e64d6882f2d412342e616bf00"
+      }
+    },
+    {
+      "scenario": "jenkins-error-success-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "unconditional-handler",
+          "SUCCESS",
+          "alternate\n"
+        ],
+        [
+          "omitted-body",
+          "SUCCESS",
+          null
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "edfd1dad0e0dde3ed072ae83fdba57612101dc1d84b259e5bc40d8afaab08707",
+        "evidence-view.md": "185a9c6359f484362f1b0898a6faf3a6184fdeb888f4e03abcc77488eadd9efd"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "8216f3dcb1bbad4fa61f1b33feb69ea26e06a6e6627bc8f5c0602fe1c1803bd7",
+        "behavior-matrix.md": "4665c2c9cd10d618da498e1725d8a62cef4a828085cdf93d7f7a6888f4f08590"
+      }
+    },
+    {
+      "scenario": "jenkins-condition-true-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "selected\n"
+        ],
+        [
+          "flattened-conditions",
+          "SUCCESS",
+          "alternate\n"
+        ],
+        [
+          "inverted-conditions",
+          "SUCCESS",
+          "alternate\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "686b6a6f603a9e399330116524cd2b224308052cfafe555c4e00d3b6db4b94a0",
+        "evidence-view.md": "b9ee3fb0b5caacbe5292e5e20641c1307b779ce74cfa98e5e4eb74a42f827e4d"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "bdc126d52ca797e792005c6f2b468e8d470f32f2dbadd036395ae15e2b812afc",
+        "behavior-matrix.md": "0972b2ef49406efa159a22ca792e259ab1e79d605ae76ff20f5f50013d6f3d22"
+      }
+    },
+    {
+      "scenario": "jenkins-condition-false-runtime",
+      "signatures": 3,
+      "coverageRows": 12,
+      "outcomes": [
+        [
+          "baseline",
+          "SUCCESS",
+          "alternate\n"
+        ],
+        [
+          "flattened-conditions",
+          "SUCCESS",
+          "alternate\n"
+        ],
+        [
+          "inverted-conditions",
+          "SUCCESS",
+          "selected\n"
+        ]
+      ],
+      "viewHashes": {
+        "evidence-view.json": "2e56b9e69ae898b36c155e3fbc0580cd490e9cc502e23a1a2a023483633877f9",
+        "evidence-view.md": "6d9e0fb03be2eb7e325d1de3dafaa25250e6c9e98356dec4333ba56dafda8977"
+      },
+      "matrixHashes": {
+        "behavior-matrix.json": "17742e7f9b78c46e5bde6045a7b32f8db345f3abe8ffb7c0b7e269c5e6b04e19",
+        "behavior-matrix.md": "b75550281127f824935593eb19af050b1a83f1d4f2d9ae95cf70a26fdc69c5e1"
+      }
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 11660034134,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "runId": 38024240411,
+      "sha256": "2957f816bbfaae6a73e029ae9793eb3d10a54ec14fbd89895d1af711664404cb"
+    },
+    {
+      "id": 11659824448,
+      "name": "flow-ci-exact-head-test-reports",
+      "runId": 38024240411,
+      "sha256": "a1de20af8ac013c9ba70135fe173fc6a06d016a2364f97cd32307c62c0a5ce78"
+    },
+    {
+      "id": 11659653802,
+      "name": "flow-ci-merge-candidate-gradle-logs",
+      "runId": 38024240411,
+      "sha256": "ab4a7cdf4c09951b07b32543158f6fd1ce62493568ed1a9605d4f0788275398b"
+    },
+    {
+      "id": 11659573930,
+      "name": "flow-ci-merge-candidate-test-reports",
+      "runId": 38024240411,
+      "sha256": "ae0f89732c6f6682990f715d14a1aa2ac21a3ff1ccff4941b9186fe38ca9b72a"
+    },
+    {
+      "id": 11664712870,
+      "name": "flow-isolation-exact-head",
+      "runId": 38038690853,
+      "sha256": "d9f76dda2158118ac6cb7e5c0ee008764cbce9dbc17216242cf6201195cda3b3"
+    },
+    {
+      "id": 11665036900,
+      "name": "jenkins-approval-runtime",
+      "runId": 38038690752,
+      "sha256": "ee8722525a05cbf230def515dace3bf6d0183676d7bb2caa8eccaccc25dd4148"
+    },
+    {
+      "id": 11664996882,
+      "name": "jenkins-checkout-runtime",
+      "runId": 38038690752,
+      "sha256": "b5528ea330661f1973880a10e2eab24a076ae44a2627f95e456b054c7adfbf80"
+    },
+    {
+      "id": 11664009782,
+      "name": "jenkins-condition-runtime",
+      "runId": 38038690752,
+      "sha256": "af6395e4fdaf19150c87e376883cc8ae8ebb300f3d59c5675aef24c68c8da256"
+    },
+    {
+      "id": 11664882122,
+      "name": "jenkins-error-boundary-runtime",
+      "runId": 38038690752,
+      "sha256": "01f87399b7f530f2a68495efdd7b170eb89ca900680997fd3a7e6b9b31bab5e3"
+    },
+    {
+      "id": 11665201794,
+      "name": "jenkins-failure-runtime",
+      "runId": 38038690752,
+      "sha256": "452bbc83c7679b272589f81d8eacaa5d7274b4dc6c0727dc50d7088b7125e384"
+    },
+    {
+      "id": 11664722266,
+      "name": "jenkins-local-recovery-runtime",
+      "runId": 38038690752,
+      "sha256": "347ac5434c63460a0e2251640fd09fd3342be1a74cd023ef56f0f4a098d24467"
+    }
+  ],
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06K",
+        "selectedWorkPackage": ".flow-agent/work-packages/adapter-behavior-matrix.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime"
+          ],
+          "negativeEvidence": "Rejected assessments, missing or substituted observations, incorrect scenario mapping, implicit continuity credit, surviving mutants and historical receipt tampering."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06L",
+        "selectedWorkPackage": ".flow-agent/work-packages/adapter-certification-portfolio.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Missing or duplicate scenarios, mixed revisions, stale source/artifact bytes, invalid signatures, changed trust, changed observations and tampered lifecycle receipts."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06K",
+        "workPackage": ".flow-agent/work-packages/adapter-behavior-matrix.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06L",
+        "workPackage": ".flow-agent/work-packages/adapter-certification-portfolio.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice from main after PR #208.",
+    "predecessorPullRequest": 208,
+    "mergedMain": "c6149ff9ba87f88e25cdc0905cfb86cb935f7756",
+    "mainWorkflowRunId": 38038690853,
+    "runtimeWorkflowRunId": 38038690752
+  },
+  "limitations": [
+    "The existing runtime inventory covers ten bounded Jenkins scenarios only.",
+    "AR-06L requires its own exact-head and merge-candidate CI and portfolio replay.",
+    "No public support, portability or finding closure is claimed."
+  ]
+}

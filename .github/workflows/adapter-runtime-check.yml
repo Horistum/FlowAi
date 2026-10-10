@@ -19,6 +19,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -40,6 +42,11 @@ jobs:
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsCheckoutRuntime --stacktrace
       - name: Publish Bounded Observation Summary
         run: cat flow-conformance-kit/build/jenkins-runtime-certification/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-runtime-certification --artifact jenkins-checkout-runtime --revision "$EXPECTED_SHA"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -53,6 +60,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -74,6 +83,11 @@ jobs:
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsFailureRuntime --stacktrace
       - name: Publish Bounded Observation Summary
         run: cat flow-conformance-kit/build/jenkins-failure-certification/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-failure-certification --artifact jenkins-failure-runtime --revision "$EXPECTED_SHA"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -87,6 +101,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -110,6 +126,11 @@ jobs:
         run: |
           cat flow-conformance-kit/build/jenkins-condition-certification/true/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-condition-certification/false/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-condition-certification --artifact jenkins-condition-runtime --revision "$EXPECTED_SHA"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -123,6 +144,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -146,6 +169,11 @@ jobs:
         run: |
           cat flow-conformance-kit/build/jenkins-error-boundary-certification/failure/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-error-boundary-certification/success/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-error-boundary-certification --artifact jenkins-error-boundary-runtime --revision "$EXPECTED_SHA"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -159,6 +187,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -182,6 +212,11 @@ jobs:
         run: |
           cat flow-conformance-kit/build/jenkins-local-recovery-certification/failure/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-local-recovery-certification/success/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-local-recovery-certification --artifact jenkins-local-recovery-runtime --revision "$EXPECTED_SHA"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -195,6 +230,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -218,11 +255,55 @@ jobs:
         run: |
           cat flow-conformance-kit/build/jenkins-approval-certification/approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-approval-certification/reject/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-approval-certification --artifact jenkins-approval-runtime --revision "$EXPECTED_SHA"
       - name: Upload Runtime Evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: jenkins-approval-runtime
           path: flow-conformance-kit/build/jenkins-approval-certification/
+          if-no-files-found: error
+          retention-days: 7
+
+  adapter-certification-portfolio:
+    needs: [jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      # Without a run-id or token, download-artifact is restricted to this workflow run.
+      # Preserve artifact directories so scenarios from separate jobs cannot overwrite each other.
+      - name: Download Same-Run Runtime Evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: jenkins-*-runtime
+          path: build/certification-inputs
+      - name: Reauthenticate And Aggregate Runtime Evidence
+        env:
+          FLOW_CERTIFICATION_REVISION: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          FLOW_CERTIFICATION_JOB_RECEIPTS: ${{ toJSON(needs) }}
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyAdapterCertificationPortfolio --stacktrace
+      - name: Publish Portfolio Summary
+        run: cat flow-conformance-kit/build/adapter-certification-portfolio/portfolio.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload Verified Portfolio
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-certification-portfolio
+          path: flow-conformance-kit/build/adapter-certification-portfolio/
           if-no-files-found: error
           retention-days: 7

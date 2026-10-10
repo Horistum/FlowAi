@@ -7,10 +7,10 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06K"
-selectedWorkPackage: ".flow-agent/work-packages/adapter-behavior-matrix.yaml"
+selectedSlice: "AR-06L"
+selectedWorkPackage: ".flow-agent/work-packages/adapter-certification-portfolio.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "A construct behavior matrix exposes authenticated baseline and mutant observations together, and keeps missing behavioral evidence explicit without inferring support from graph occurrence."
+invariant: "A portfolio includes only reauthenticated, compiler-bound assessments from the selected source revision and keeps missing target/construct evidence explicit."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
@@ -20,6 +20,7 @@ scope:
   - "Observe bounded local recovery, skipped failed-body successors and continuation independently on real Jenkins."
   - "Observe a pending manual input, approval and rejection before one protected checkout, including omitted, late and suppressed-rejection mutants."
   - "Expose baseline and mutant observations together, with explicit missing construct evidence and no support inference."
+  - "Aggregate reauthenticated current-revision scenarios into one honest reference adapter portfolio."
 nonGoals:
   - "No product runtime execution, general semantic adequacy or portable-execution claim."
   - "No support promotion, finding closure, public version change or EF-09 resumption."
@@ -39,8 +40,9 @@ validation:
   - jenkins-error-boundary-runtime
   - jenkins-local-recovery-runtime
   - jenkins-approval-runtime
-  negativeEvidence: Rejected assessments, missing or substituted observations, incorrect scenario mapping, implicit continuity
-    credit, surviving mutants and historical receipt tampering.
+  - adapter-certification-portfolio
+  negativeEvidence: Missing or duplicate scenarios, mixed revisions, stale source/artifact bytes, invalid signatures, changed
+    trust, changed observations and tampered lifecycle receipts.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."

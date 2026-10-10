@@ -21,6 +21,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val APPROVAL_BASELINE = ".flow-agent/evidence/jenkins-approval-baseline.json"
     const val MATRIX_WORK_PACKAGE = ".flow-agent/work-packages/adapter-behavior-matrix.yaml"
     const val MATRIX_BASELINE = ".flow-agent/evidence/adapter-behavior-matrix-baseline.json"
+    const val PORTFOLIO_WORK_PACKAGE = ".flow-agent/work-packages/adapter-certification-portfolio.yaml"
+    const val PORTFOLIO_BASELINE = ".flow-agent/evidence/adapter-certification-portfolio-baseline.json"
+    private const val PORTFOLIO_BASELINE_SHA256 = "88f7114db5cb1e52a81ddb02c645cfe77fcb74cbed13c151d41a6019b51a3f94"
     private const val MATRIX_BASELINE_SHA256 = "eecb0fa4dbcaf567d48d989103d3abf56db68ae9fd7502f1812c4c64946bd984"
     private const val APPROVAL_BASELINE_SHA256 = "b2dc9f7a63755c9960bc71f4a8b4a2f136ca7b918c06ad4969ff1d14c31348ba"
     private const val LOCAL_RECOVERY_BASELINE_SHA256 = "691b289deb07f766f0a247a015f5117e42f3731fb4b51e2de36aca3e500b2b8c"
@@ -34,6 +37,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06L" || s.release.containsKey("recoveryCertificationPortfolio")) {
+            val raw = s.certificationPortfolioBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != PORTFOLIO_BASELINE_SHA256) {
+                add("Certification portfolio requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), PORTFOLIO_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Certification portfolio selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Certification portfolio release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Certification portfolio work", s.certificationPortfolioWorkPackage, mapOf("version" to "AR-06L", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Certification portfolio authorization", section(s.certificationPortfolioWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Certification portfolio validation", section(s.certificationPortfolioWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Certification portfolio candidate", section(s.release["recoveryCertificationPortfolio"]), mapOf(
+                "candidate" to "AR-06L", "status" to "candidate", "workPackage" to PORTFOLIO_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/adapter-certification-portfolio.md", "baselineEvidence" to PORTFOLIO_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(portfolioPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06K" || s.release.containsKey("recoveryBehaviorMatrix")) {
             val raw = s.certificationMatrixBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -280,12 +308,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun matrixPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryCertificationPortfolio") || s.certificationWorkPackage["selectedSlice"] == "AR-06L")
+            return matrixPredecessor(portfolioPredecessor(s))
         if (!s.release.containsKey("recoveryBehaviorMatrix") && s.certificationWorkPackage["selectedSlice"] != "AR-06K") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationMatrixBaseline), MATRIX_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryBehaviorMatrix") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationMatrixWorkPackage = emptyMap(), certificationMatrixBaseline = null)
+    }
+
+    internal fun portfolioPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryCertificationPortfolio") && s.certificationWorkPackage["selectedSlice"] != "AR-06L") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationPortfolioBaseline), PORTFOLIO_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryCertificationPortfolio") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationPortfolioWorkPackage = emptyMap(), certificationPortfolioBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }
