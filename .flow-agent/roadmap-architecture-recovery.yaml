@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 23
+revision: 24
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #205 is merged into main ffcbf16b27f6ccd176038a13927638c435499a88. Independently inspected main CI 37944211606 and runtime CI 37944211585 passed: 1951 tests, 274 conformance checks, physical isolation and all six bounded Jenkins scenarios. AR-06I verifies local recovery, skipped failed-body successors and continuation on real Jenkins. Historical acceptance remains preserved; AR-06 completion and finding closures remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
+  decisionBasis: "PR #206 is merged into main 761191c6ebadeef99544f3418d29899795588397. Independently inspected main CI 37960137752 and runtime CI 37960137918 passed: 1963 tests, 274 conformance checks, physical isolation and all eight bounded Jenkins scenarios. AR-06J verifies pending manual approval, approval/rejection polarity and protected-checkout ordering on real Jenkins. Historical acceptance remains preserved; AR-06 completion and finding closures remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

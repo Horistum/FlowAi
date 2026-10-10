@@ -1,0 +1,57 @@
+version: "AR-06J"
+name: "Real Jenkins Manual Approval Certification"
+status: candidate
+stream: architecture-recovery
+roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+authorization:
+  source: "Maintainer requests the next roadmap slice after merging PR #206."
+  predecessorPullRequest: 206
+  mergedMain: "761191c6ebadeef99544f3418d29899795588397"
+  mainWorkflowRunId: 37960137752
+  runtimeWorkflowRunId: 37960137918
+invariant: "A manual approval pauses before its protected operation; approval resumes it once and rejection prevents it from executing."
+scope:
+  - "Compile an adapter-owned approval fixture through the production compiler and unchanged Jenkins renderer."
+  - "Retain provider-owned approval leaf occurrences in certification coverage."
+  - "Execute approval/rejection and omitted, late and suppressed-rejection mutants on isolated real Jenkins."
+  - "Observe a pending native input, pre-decision workspace and native steps, and final error origin independently of pipeline bytes."
+nonGoals:
+  - "No new Core semantics, public support promotion or portable-execution claim."
+  - "No human identity, submitter authorization, timeout, restart, concurrent approval or general change-control claim."
+  - "No AR-06 completion, finding closure, package version change or EF-09 resumption."
+ownershipBoundary:
+  fixtures: flow-adapter-jenkins
+  externalRunner: flow-conformance-kit
+  bindingEvidence: flow-adapter-evidence
+  semanticKernel: unchanged
+  productRuntime: unchanged
+expectedFilesToInspect:
+  - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"
+  - "src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt"
+expectedFilesToChange:
+  - "src/main/kotlin/org/flowlang/adapters/certification/BoundCertificationScenario.kt"
+  - "src/main/kotlin/org/flowlang/adapters/certification/AdapterCertificationAdmission.kt"
+  - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
+  - "flow-adapter-jenkins/src/runtimeTest/run.groovy"
+  - "flow-conformance-kit/build.gradle.kts"
+  - ".github/workflows/adapter-runtime-check.yml"
+expectedFilesToAdd:
+  - "flow-adapter-jenkins/src/runtimeTest/approval.flow"
+  - "flow-adapter-jenkins/src/runtimeTest/approval-matrix.json"
+  - "src/test/kotlin/JenkinsApprovalRuntimeCertificationTests.kt"
+testsToAddOrUpdate:
+  - "Compiler-owned approval and unchanged originals, pending input before checkout, approval and rejection polarity."
+  - "Omitted and late gates, swallowed rejection, native input origin, malformed and substituted observations."
+  - "Provider approval coverage and lifecycle selection preserving historical receipts and open findings."
+conformanceToAddOrUpdate:
+  - "Extend existing certification lifecycle and provider inventory gates while preserving the 274-check inventory."
+documentationToUpdate:
+  - "docs/migrations/adapter-certification-bundle.md"
+  - "flow-adapter-jenkins/src/runtimeTest/README.md"
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+  negativeEvidence: "Omitted or late approval, suppressed rejection, premature protected execution, surviving mutants, wrong input error origin, malformed records, substituted artifacts and historical receipt tampering."
+followUp:
+  - "Execute equivalent canonical scenarios on a materially different adapter."
+  - "Complete remaining construct/behavior/mutant coverage before deriving public support."

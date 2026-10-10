@@ -1,8 +1,9 @@
 # Adapter certification bundle: AR-06A candidate
 
-Current implementation: AR-06G adds real Jenkins conditional execution scenarios,
-described at the end of this document. Earlier candidate restrictions below record
-their original preparation boundaries; PR #200, #202 and #203 are now merged.
+Current implementation: AR-06J adds real Jenkins manual approval/rejection scenarios
+and provider-owned approval leaf coverage, described at the end of this document.
+Earlier candidate restrictions below record their original preparation boundaries;
+PRs through #206 are now merged.
 
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
@@ -296,3 +297,23 @@ error origin. Existing scenario observation formats remain unchanged. Evidence
 views remain bounded to the recorded occurrence and runtime. Run the new
 `verifyJenkinsLocalRecoveryRuntime` task with fresh evidence directories as
 described in the adapter runtime README; ordinary tests never start Jenkins.
+## AR-06J: observed manual approval decisions
+
+Certification now includes provider-owned approval payloads in the native leaf
+inventory. Existing checkout scenarios expose Jenkins `input` as unobserved;
+approval scenarios may cover it only when that leaf occurs in their compiler-bound
+artifact. A profile or an approval on another scenario cannot supply that coverage.
+
+The new bounded Jenkins scenarios share one source, canonical graph and original
+artifact. An independent controller observes a pending native input before issuing
+an automated approval or rejection. It records the pre-decision workspace and
+checkout count as well as final native steps and error origin. This detects gates
+omitted or moved after the protected checkout even when final results look correct.
+Suppressed rejection is independently falsified on the rejection path.
+
+The evidence remains `native-leaf-only` / `NATIVE_LEAF_ONLY`: a manual input and one
+checkout, without structural projection or general semantic adequacy claims.
+Generated views remain bounded observations, with public support and portable
+execution false. No human identity, submitter authorization, timeout, restart,
+concurrent approval or general change-control policy is certified. This does not
+resume EF-09 or complete AR-06.

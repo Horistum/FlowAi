@@ -34,7 +34,8 @@ object AdapterCertificationAdmission {
 
         val expectedSubjects: Set<CertificationSubject> = semanticCapabilities.map { CertificationSubject.Semantic(it) }.toSet() +
             TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
-            provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) }
+            (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
+                provider.approvalDefinitions.map { CertificationSubject.Leaf(it.kind, it.reference) })
         unique(bundle.coverage.map { it.subject }, "coverage")
         if (bundle.coverage.map { it.subject }.toSet() != expectedSubjects) reject("COVERAGE_INVENTORY_MISMATCH", "coverage")
         unique(bundle.scenarios.map { it.id }, "scenarios")
