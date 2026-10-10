@@ -15,6 +15,7 @@ import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.providerFor
 import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
+import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.serialization.FlowYaml
 
 enum class TargetMaturityStage {
@@ -370,13 +371,15 @@ class AdapterTargetMaturityPublisher(
         if (portfolio.role != AdapterPortfolioRole.TARGET_ADAPTER) return
         TargetStructuralProjectionKind.entries.forEach { kind ->
             val support = structuralSupport(target, kind)
-            val owned = catalog?.hasStructuralProjection(kind) == true
+            val owned = catalog?.structuralDefinitions?.any {
+                it.structure == kind && it.supportScope == TargetStructuralProjectionSupportScope.TARGET_WIDE
+            } == true
             if (support == SupportLevel.SUPPORTED && !owned) {
                 findings += finding(
                     "TARGET_MATURITY_SUPPORTED_STRUCTURE_UNOWNED",
                     targetName,
                     null,
-                    "Registry declares ${kind.capability} SUPPORTED without matching provider-owned structural evidence."
+                    "Registry declares ${kind.capability} SUPPORTED without matching target-wide provider-owned structural evidence."
                 )
             }
             if (owned && support != SupportLevel.SUPPORTED) {

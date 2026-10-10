@@ -5,7 +5,6 @@ import org.flowlang.adapters.continuity.AdapterContinuityEvidenceDocument
 import org.flowlang.adapters.continuity.AdapterContinuityEvidenceIntegrityAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityProjectionExecutionGate
 import org.flowlang.adapters.continuity.AdapterContinuitySatisfactionAuthority
-import org.flowlang.adapters.continuity.AdapterContinuityScopedCapabilityResolver
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupport
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupportIntegrityAuthority
 import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
@@ -104,7 +103,7 @@ object ReferenceAdapterEvidence {
         targets = targets,
         projections = projections,
         scopedSupports = BuiltInAdapterContinuityScopedSupport.declarations,
-        capabilityResolver = AdapterContinuityScopedCapabilityResolver()
+        capabilityResolver = ReferenceTargetProjections.capabilityResolver(projections)
     )
 
     fun continuity(
@@ -147,12 +146,8 @@ object ReferenceAdapterEvidence {
         targets: Map<String, TargetCapability>,
         projections: AdapterCatalog<TargetProjectionProvider> = ReferenceTargetProjections.registry,
         documentOverride: AdapterControlMaterializationDocument? = null
-    ): AdapterControlMaterializationAuthority = AdapterControlMaterializationAuthority(
-        rootDir = rootDir,
-        targets = targets,
-        projections = projections,
-        documentOverride = documentOverride
-    )
+    ): AdapterControlMaterializationAuthority =
+        ReferenceTargetProjections.control(rootDir, targets, projections, documentOverride)
 
     fun topology(
         rootDir: File = File("."),

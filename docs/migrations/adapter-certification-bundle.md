@@ -2,9 +2,9 @@
 
 Current implementation: AR-06N aggregates authenticated Jenkins and GitHub Actions
 evidence; AR-06O adds a shared canonical checkout comparison, described at the end
-of this document.
+of this document. AR-06P adds bounded native Jenkins retry.
 Earlier candidate restrictions below record their original preparation boundaries;
-PRs through #211 are now merged.
+PRs through #212 are now merged.
 
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
@@ -346,7 +346,7 @@ No second-adapter runtime or portable-execution claim is introduced.
 
 The dependent `adapter-certification-portfolio` CI job publishes one `portfolio.json`
 and `portfolio.md` after all seven Jenkins runtime jobs and the GitHub Actions runtime job succeed.
-It covers twelve current scenarios and every construct/target pair in the reference adapter catalog.
+It covers fourteen current scenarios and every construct/target pair in the reference adapter catalog.
 Targets with no submitted behavioral evidence remain explicitly unobserved. The
 catalog supplies target identities only; it cannot grant coverage.
 
@@ -367,11 +367,11 @@ An archived `passed` field or a concatenation of JSON matrices is insufficient.
 Input files have byte limits, must be regular files and cannot traverse symlinks.
 Output is published from a fresh staged directory only after every assessment passes.
 
-For a local replay, arrange the eight artifact directories under
+For a local replay, arrange the nine artifact directories under
 `build/certification-inputs/`, use JDK 25, set `FLOW_CERTIFICATION_REVISION` to the
 checked-out commit and supply the original producer job outputs in
 `FLOW_CERTIFICATION_JOB_RECEIPTS`. This variable has the same JSON shape as
-GitHub Actions `toJSON(needs)`: eight job names, each with `result: "success"` and
+GitHub Actions `toJSON(needs)`: nine job names, each with `result: "success"` and
 `outputs.receipt` containing the producer's JSON receipt string. Then run:
 
 ```sh
@@ -382,7 +382,7 @@ Use a fresh `flow-conformance-kit/build/adapter-certification-portfolio` destina
 This command does not start Docker or Jenkins. The installed product CLI does not
 include this conformance-only entry point.
 
-The JSON retains all twelve individual matrices, including source/graph references,
+The JSON retains all fourteen individual matrices, including source/graph references,
 adapter identity/version/implementation digest, runtime image/plugin versions,
 runner identity/key fingerprint, exact expected/observed bytes, mutants and limits.
 The compact Markdown table points each covered pair to its scenario IDs. Different
@@ -466,3 +466,50 @@ GitHub Actions checked native-leaf execution mode and both providers' separate
 artifact and runtime identities. It does not certify a complete GitHub workflow,
 other constructs, credentials, workspace transfer or general portable execution.
 Public support promotion and portable execution remain false.
+
+## AR-06P: bounded native Jenkins retry
+
+The concrete Jenkins adapter admits positive total attempt limits with fixed zero
+delay only. It renders native `retry(max)` under an authorized canonical plan and
+composed provider. The generic registry retains its unsupported retry declaration;
+only the current plan's `retry.task` capability can be resolved. Other delay,
+backoff, failure-filter and interruption policies remain blocked.
+
+`retry-failure.flow` executes three failed native checkouts, preserves the final
+error origin and skips its successor. `retry-success.flow` executes the body once
+and then its successor. Flattening, increasing the limit, omitting the body and
+repeating successful work are independently observable mutants. The offline
+Jenkins runner records actual checkout nodes, error positions and terminal error;
+it pins the native workflow-basic-steps plugin as well as the existing toolchain.
+
+`verifyJenkinsRetryRuntime` produces failure/success evidence under
+`jenkins-retry-runtime`. The portfolio requires fourteen assessments and forty-four
+authenticated observations across nine producers. Seven bounded construct/target
+pairs are observed; all thirty-six rows and the shared canonical checkout
+comparison remain. These are candidate retry observations, not a transient
+recovery, general policy, cross-target retry or public support certificate.
+
+The scoped attempt-isolation evidence applies only to a retry body with one native
+`git.checkout` task. Every attempt creates a distinct native execution node; it
+does not create or clear a workspace. The authored generic attempt-isolation claim
+stays unknown. Nested retry, other body shapes, and absent or ambiguous topology
+declarations remain blocked. Other topology requirements are preserved. The
+first CI run exposed the missing attempt-isolation evidence and was rejected by
+the existing topology gate; this scoped resolver supplies that bounded evidence.
+
+The adapter structural catalog distinguishes `PLAN_SCOPED` implementation evidence
+from `TARGET_WIDE` support. Existing definitions default to target-wide; bounded
+Jenkins retry is explicitly plan-scoped. The maturity publisher therefore keeps
+its generic registry claim unsupported and rejects any attempted broad promotion
+backed only by scoped evidence. Target-wide definitions still require matching
+registry declarations. Installed-product and negative maturity regressions enforce
+both directions without introducing a target-specific exception in the publisher.
+
+Frozen control and topology source manifests retain their exact historical bytes
+and pins. Reference composition validates the original active control document
+through the existing authority before adding the current provider-owned bounded
+attempt-limit evidence to its in-memory view. Explicit caller overrides are not
+rewritten; invalid source evidence cannot be repaired by this composition. The
+composed view is validated again through the same authority. Historical profile
+evidence still analyzes its explicitly supplied original documents. No historical
+source digest or acceptance receipt is repinned.

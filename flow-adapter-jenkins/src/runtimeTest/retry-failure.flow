@@ -1,0 +1,23 @@
+version "1.0"
+
+use module "git" version "1.0"
+
+flow "jenkins-retry-failure-runtime" {
+  systems {
+    system "source" {
+      type: git
+    }
+  }
+  steps {
+    retry { max: 3 delay: "0s" backoff: fixed } {
+      git.checkout source {
+        url: "git://127.0.0.1:9418/repository.git"
+        branch: "missing-revision"
+      } -> attemptedCheckout
+    }
+    git.checkout source {
+      url: "git://127.0.0.1:9418/repository.git"
+      branch: "alternate"
+    } -> afterRetry
+  }
+}

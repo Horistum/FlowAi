@@ -179,7 +179,7 @@ class AdapterControlMaterializationAuthorityTests {
             assessment.requirements.map { it.semantic }.toSet()
         )
         assertTrue(assessment.requirements.all { it.scope == AdapterControlScope.TASK })
-        assertTrue(assessment.evidence.all { it.status == AdapterControlEvidenceStatus.UNSUPPORTED })
+        assertEquals(listOf(AdapterControlEvidenceStatus.SATISFIED, AdapterControlEvidenceStatus.UNSUPPORTED), assessment.evidence.map { it.status })
         assertFailsWith<UnresolvedAdapterControlMaterializationException> {
             authority.requireMatched(plan, "jenkins")
         }

@@ -21,6 +21,8 @@ Thread.start('checkout-certification') {
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def inventories = [
+            'jenkins-retry-failure-runtime': ['baseline', 'flattened-retry', 'excess-attempts'],
+            'jenkins-retry-success-runtime': ['baseline', 'omitted-body', 'repeated-success'],
             'jenkins-shared-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-revision'],
             'jenkins-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-branch'],
             'jenkins-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
@@ -122,6 +124,8 @@ Thread.start('checkout-certification') {
             if (marker.exists() && marker.length() > 1024) throw new IllegalStateException('Oversized workspace observation')
             // Inspect actual executed native steps, including caught errors, without changing pipeline bytes.
             def checkouts = nativeSteps(build, sharedCheckout ? 'checkout' : 'git')
+            if (checkouts.collect { it.getId() }.unique().size() != checkouts.size())
+                throw new IllegalStateException('Native checkout invocations must have distinct execution identities')
             def errors = checkouts.findAll { it.getError() != null }.collect {
                 def error = it.getError().getError()
                 [type: error.getClass().getName(), message: error.getMessage()]
@@ -166,12 +170,14 @@ Thread.start('checkout-certification') {
                     pending: pending, decision: decision,
                     terminalError: terminal == null ? null : inputFailure(terminal) + [inputIndex: inputIndex < 0 ? null : inputIndex + 1]]
             }
-            if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime']) {
+            if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
+                             'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime']) {
                 record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
                     .collect { node, index -> index + 1 }
             }
             if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
-                             'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime']) {
+                             'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
+                             'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime']) {
                 def terminal = build.getExecution().getCauseOfFailure()
                 def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
                 def checkoutIndex = origin == null ? -1 : checkouts.findIndexOf { it.getId() == origin.getId() }
