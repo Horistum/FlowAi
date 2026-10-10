@@ -160,6 +160,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/conformance/AdapterControlConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/WorkflowFailureConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt"
+      - "src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt"
   - name: "AdapterControlRequirementAuthority"
     path: "src/main/kotlin/org/flowlang/adapters/control/AdapterControlRequirementAuthority.kt"
     role: "adapter-policy-owner"

@@ -76,3 +76,5 @@ facade. Provider-specific capability and control composition now lives in the
 existing reviewed `ReferenceTargetProjections` composition root. The evidence
 facade delegates through that root. CI/CD bias classification, lexical checks and
 conformance gates remain unchanged; no new path exemption is introduced.
+The authority responsibility catalog records this existing control authority's
+additional composition caller; its owner, invariant and validator are unchanged.

@@ -31,6 +31,7 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
 - src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
 - src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+- standard/architecture/authority-responsibilities.yaml
 - gradle/reference-contract-resources.txt
 - src/main/kotlin/org/flowlang/generators/manifest/TargetNativeProjectionCatalog.kt
 - src/main/kotlin/org/flowlang/adapters/maturity/AdapterTargetMaturity.kt
