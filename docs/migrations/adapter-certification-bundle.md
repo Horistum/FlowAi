@@ -1,9 +1,9 @@
 # Adapter certification bundle: AR-06A candidate
 
-Current implementation: AR-06J adds real Jenkins manual approval/rejection scenarios
-and provider-owned approval leaf coverage, described at the end of this document.
+Current implementation: AR-06K exposes exact baseline and mutant observations in
+construct behavior matrices, described at the end of this document.
 Earlier candidate restrictions below record their original preparation boundaries;
-PRs through #206 are now merged.
+PRs through #207 are now merged.
 
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
@@ -317,3 +317,26 @@ Generated views remain bounded observations, with public support and portable
 execution false. No human identity, submitter authorization, timeout, restart,
 concurrent approval or general change-control policy is certified. This does not
 resume EF-09 or complete AR-06.
+
+## AR-06K: construct behavior matrix
+
+Each admitted external Jenkins assessment also produces `behavior-matrix.json`
+and `behavior-matrix.md`, with hashes recorded in `proof.json`. The internal
+format lists all eleven roadmap construct categories and a bounded native checkout
+case. `BOUNDED_SCENARIO_EVIDENCE` belongs only to the assessed scenario's category;
+`NO_BEHAVIORAL_EVIDENCE_IN_ASSESSMENT` explicitly leaves all other categories open.
+Neither value is public support status.
+
+The conformance-owned scenario catalog assigns the category and requires its
+compiler-bound subject. Graph occurrence does not establish behavioral adequacy.
+Each populated row retains source/graph identity, adapter/runtime identity,
+limitations, baseline and negative mutants, signed run references and the exact
+expected/observed UTF-8 JSON strings. Admission and display-time size/hash checks
+must pass. The full observations distinguish mutants even when their terminal
+result and workspace marker equal the baseline. JSON is a diagnostic snapshot,
+not reusable admission input or an execution authorization.
+
+The scope is one assessment on one target. Missing rows do not claim target
+inability, and combining files is not cross-target equivalence. Checkout evidence
+does not establish artifact transfer, secrets or general value/state continuity.
+No second-adapter runtime or portable-execution claim is introduced.

@@ -453,10 +453,16 @@ internal object JenkinsCheckoutRuntimeCertification {
             val viewMarkdown = view.markdown().toByteArray(Charsets.UTF_8)
             File(output, "evidence-view.json").writeBytes(viewJson)
             File(output, "evidence-view.md").writeBytes(viewMarkdown)
+            val matrix = AdapterBehaviorMatrix.derive(assessment, scenario, CertificationEvidenceResolver { prepared.evidence[it.id] })
+            val matrixJson = matrix.json().toByteArray(Charsets.UTF_8)
+            val matrixMarkdown = matrix.markdown().toByteArray(Charsets.UTF_8)
+            File(output, "behavior-matrix.json").writeBytes(matrixJson)
+            File(output, "behavior-matrix.md").writeBytes(matrixMarkdown)
             val sourceRevision = process("source-revision", listOf("git", "rev-parse", "HEAD")).trim()
             val proof = linkedMapOf<String, Any>("status" to "passed", "claim" to scenario.claim, "sourceRevision" to sourceRevision,
                 "imageId" to imageId, "bundle" to prepared.bundle, "admission" to report, "publicSupportPromoted" to false,
                 "evidenceViews" to mapOf("evidence-view.json" to sha256(viewJson), "evidence-view.md" to sha256(viewMarkdown)),
+                "behaviorMatrix" to mapOf("behavior-matrix.json" to sha256(matrixJson), "behavior-matrix.md" to sha256(matrixMarkdown)),
                 "observations" to signed.map { mapOf("runnerId" to it.runnerId, "challenge" to it.challenge,
                     "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) })
             File(output, "proof.json").writeText(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(proof) + "\n")
