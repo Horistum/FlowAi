@@ -28,18 +28,17 @@ import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.serialization.FlowYaml
+import org.flowlang.conformance.SharedCheckoutFixture.SELECTED
+import org.flowlang.conformance.SharedCheckoutFixture.ALTERNATE
+import org.flowlang.conformance.SharedCheckoutFixture.MARKER
+import org.flowlang.conformance.SharedCheckoutFixture.runIds
+import org.flowlang.conformance.SharedCheckoutFixture.observationBytes
 
 /** Opt-in conformance harness. The provider executes native leaves; this is not a product runtime. */
 internal object GitHubActionsCheckoutRuntimeCertification {
     const val SCENARIO = "github-actions-checkout-runtime"
     const val WORKFLOW = ".github/workflows/adapter-runtime-check.yml"
-    const val SELECTED = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
-    const val ALTERNATE = "9232061af22922af33ff3a65ada81d1b0d4eedd6"
-    const val MARKER = ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-    const val SELECTED_MARKER = "fb8263618cf3a4ad5cf5704a66b746512edc2643bc2c03a211168d41663fc8fb"
-    const val ALTERNATE_MARKER = "ad91a8bf3c636f9123c83d19da1a6c55e16055e866f800630a88b4e2d08c6897"
     const val RUNNER = "github-hosted-checkout-observer"
-    val runIds = listOf("baseline", "omitted-checkout", "substituted-revision")
     private val mapper = jacksonObjectMapper().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
         .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
 
@@ -52,7 +51,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
         require(listOf(sourceRevision, workflowRevision).all { Regex("[0-9a-f]{40}").matches(it) })
         require(Regex("[A-Za-z0-9._-]{1,128}").matches(runnerImage))
         require(envelope.contentEquals(File(root, WORKFLOW).readBytes())) { "Executed workflow differs from the selected source envelope." }
-        val sourceFile = File(root, "flow-adapter-github-actions/src/runtimeTest/checkout.intent.yaml")
+        val sourceFile = File(root, SharedCheckoutFixture.SOURCE)
         val source = sourceFile.readBytes()
         val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
         val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
@@ -75,9 +74,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
         fun ref(id: String, bytes: ByteArray): CertificationEvidenceReference {
             evidence[id] = bytes.copyOf(); return CertificationEvidenceReference(id, sha256(bytes), bytes.size)
         }
-        val expected = linkedMapOf("baseline" to observationBytes(SELECTED, SELECTED_MARKER),
-            "omitted-checkout" to observationBytes(null, null), "substituted-revision" to observationBytes(ALTERNATE, ALTERNATE_MARKER))
-            .mapValues { (id, bytes) -> ref("expected:$id", bytes) }
+        val expected = runIds.associateWith { id -> ref("expected:$id", SharedCheckoutFixture.expected(id)) }
         val runtime = listOf(CertificationRuntimePrerequisite("provider", "github-actions"),
             CertificationRuntimePrerequisite("action-reference", "actions/checkout@v4"),
             CertificationRuntimePrerequisite("runner-image", runnerImage),
@@ -95,7 +92,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
             "No trigger, scheduling, credentials, workspace transfer, structural equivalence, general support or portable execution claim.",
             "Public immutable repository revisions are the oracle. The hosted runner image and action reference are recorded, not pinned provider binaries.",
             "The observation owner and native action share a trusted hosted runner. Signatures do not defend against a compromised runner or action.",
-            "This fixture differs from the Jenkins checkout fixture; a shared construct label does not establish cross-target equivalence.")
+            "Only authenticated comparison with the shared Jenkins fixture can establish bounded checkout equivalence; no whole-workflow portability claim.")
         val bundle = AdapterCertificationBundle(adapter, subjects.map { CertificationCoverage(it,
             if (it in bound.subjects) listOf(bound.id) else emptyList(), "Native checkout leaf only; no whole-workflow credit.") }, listOf(specification), limitations)
         return Prepared(bound, bundle, artifacts, leaves, evidence, runtime, provider)
@@ -129,18 +126,11 @@ internal object GitHubActionsCheckoutRuntimeCertification {
         }
     }
 
-    fun observationBytes(revision: String?, markerSha256: String?): ByteArray {
-        require(revision == null || Regex("[0-9a-f]{40}").matches(revision))
-        require(markerSha256 == null || Regex("[0-9a-f]{64}").matches(markerSha256))
-        return (mapper.writeValueAsString(linkedMapOf("revision" to revision, "markerSha256" to markerSha256)) + "\n").toByteArray()
-    }
-
     fun observation(p: Prepared, id: String, raw: ByteArray): CertificationExecutionObservation {
         require(id in runIds && raw.size in 1..4096)
         val row = mapper.readTree(raw)
         require(row.isObject && row.fieldNames().asSequence().toSet() == setOf("revision", "markerSha256"))
-        fun nullable(name: String): String? = row[name].let { require(it.isNull || it.isTextual); if (it.isNull) null else it.asText() }
-        val normalized = observationBytes(nullable("revision"), nullable("markerSha256"))
+        val normalized = SharedCheckoutFixture.observationBytes(row)
         require(raw.contentEquals(normalized)) { "Observation is not canonical." }
         val ref = CertificationEvidenceReference("observed:$id", sha256(raw), raw.size)
         p.evidence[ref.id] = raw.copyOf()

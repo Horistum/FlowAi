@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 28
+revision: 29
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #210 is merged into main c85a62a39d412b3e9f323c0cb58bcaadb3b864da with the same source tree as validated PR head and merge candidate. Flow CI 38046478110 passed 2013 tests and 274 checks per revision; runtime CI 38046478081 passed ten Jenkins assessments plus the separate native GitHub Actions checkout assessment. Main Flow CI 38050155031 and runtime CI 38050155029 also passed. AR-06N integrates both providers into authenticated portfolio replay while preserving distinct fixtures and native-leaf scope. Historical acceptance remains unchanged; cross-target equivalence, support promotion and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
+  decisionBasis: "PR #211 is merged into main d38787c3709dcb775b9bd62aa99e1ac5622b2a67 with the same source tree as validated PR head and merge candidate. Flow CI 38055215605 passed 2024 tests and 274 ordered checks per revision; runtime CI 38055215602 passed eleven assessments with 35 independently verified signatures. Main runtime CI 38060038059 passed; main Flow CI 38060038005 was still in progress at selection. AR-06O executes a shared immutable native checkout on Jenkins and GitHub Actions and compares authenticated source, graph and observable bytes. Historical acceptance remains unchanged; general portability, support promotion and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

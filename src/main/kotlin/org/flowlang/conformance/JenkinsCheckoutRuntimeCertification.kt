@@ -25,6 +25,7 @@ import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 
 /** External conformance runner only. No product entry point or runtime dependency invokes this program. */
 internal object JenkinsCheckoutRuntimeCertification {
@@ -34,7 +35,7 @@ internal object JenkinsCheckoutRuntimeCertification {
     private val plugins = linkedMapOf("git" to "5.10.1", "pipeline-model-definition" to "2.2293.v6e7193cec599", "timestamper" to "1.30")
     private const val MISSING_REVISION = "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
 
-    internal enum class Scenario(val id: String, val source: String, val matrix: String, val runIds: List<String>, val version: String) {
+    internal enum class Scenario(val id: String, val source: String, val matrix: String?, val runIds: List<String>, val version: String) {
         CHECKOUT("jenkins-checkout-runtime", "checkout.intent.yaml", "behavior-matrix.json", listOf("baseline", "omitted-checkout", "substituted-branch"), "AR-06D"),
         FAILURE("jenkins-failure-runtime", "failure.intent.yaml", "failure-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06E"),
         CONDITION_TRUE("jenkins-condition-true-runtime", "condition-true.flow", "condition-matrix.json", listOf("baseline", "flattened-conditions", "inverted-conditions"), "AR-06G"),
@@ -44,7 +45,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         RECOVERY_FAILURE("jenkins-recovery-failure-runtime", "recovery-failure.flow", "recovery-matrix.json", listOf("baseline", "omitted-handler", "rethrown-failure", "omitted-continuation"), "AR-06I"),
         RECOVERY_SUCCESS("jenkins-recovery-success-runtime", "recovery-success.flow", "recovery-matrix.json", listOf("baseline", "unconditional-handler", "omitted-continuation"), "AR-06I"),
         APPROVAL_APPROVE("jenkins-approval-approve-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval"), "AR-06J"),
-        APPROVAL_REJECT("jenkins-approval-reject-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval", "suppressed-rejection"), "AR-06J");
+        APPROVAL_REJECT("jenkins-approval-reject-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval", "suppressed-rejection"), "AR-06J"),
+        SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O");
 
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
         val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
@@ -67,22 +69,23 @@ internal object JenkinsCheckoutRuntimeCertification {
 
     fun prepare(root: File, imageId: String, scenario: Scenario = Scenario.CHECKOUT): Prepared {
         require(Regex("sha256:[0-9a-f]{64}").matches(imageId))
-        val sourceFile = File(root, "$FIXTURE/${scenario.source}")
+        val sourceFile = File(root, if (scenario == Scenario.SHARED_CHECKOUT) SharedCheckoutFixture.SOURCE else "$FIXTURE/${scenario.source}")
         val source = sourceFile.readBytes()
         val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
         val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
-        val compiler = FrontendCompilerComposition.compiler(modules)
+        val compiler = FrontendCompilerComposition.compiler(modules, StandardEnvironmentSafetyPolicyNotes.policy(root))
         val compilation = (if (scenario.flowSource) FlowSourceFrontend(compiler).compile(sourceFile)
-            else IntentYamlFrontend(compiler).compileText(source.toString(Charsets.UTF_8), scenario.source)).requireAccepted()
+            else IntentYamlFrontend(compiler).compileText(source.toString(Charsets.UTF_8), sourceFile.name)).requireAccepted()
         val selection = TargetSelectionAuthority.requireSelected(TargetSelectionAuthority.fromCliOption("jenkins", targets), "runtime certification")
-        val provider = ReferenceTargetProjections.nativeCatalogs.getValue("jenkins")
+        val projections = ReferenceTargetProjections.fromContracts(root)
+        val provider = projections.requireProvider("jenkins").nativeProjectionCatalog
         val bound = BoundCertificationScenario.capture(scenario.id, source, TargetMaterializationRequest.fromCompilation(compilation, selection),
-            ReferenceTargetProjections.pipeline(targets, rootDir = root, modules = modules),
-            ReferenceAdapterEvidence.rendering(rootDir = root), provider)
+            ReferenceTargetProjections.pipeline(targets, rootDir = root, projections = projections, modules = modules),
+            ReferenceAdapterEvidence.rendering(rootDir = root, projections = projections), provider)
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
-        val artifacts = if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
+        val artifacts = if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
             require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
@@ -97,7 +100,16 @@ internal object JenkinsCheckoutRuntimeCertification {
                 runIds[2] to replaceOnce(text, checkout, if (scenario == Scenario.CHECKOUT) checkout.replace("branch: 'selected'", "branch: 'alternate'")
                     else "${indent}catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {\n$indent    ${checkout.trim()}\n$indent}").toByteArray())
         }
-        val matrix = mapper.readTree(File(root, "$FIXTURE/${scenario.matrix}"))
+        val matrix = if (scenario == Scenario.SHARED_CHECKOUT) {
+            val rows = runIds.map { id -> (mapper.readTree(SharedCheckoutFixture.expected(id)) as com.fasterxml.jackson.databind.node.ObjectNode)
+                .put("id", id).put("result", "SUCCESS") }
+            mapper.valueToTree<JsonNode>(mapOf("version" to 1, "scenario" to scenario.id, "target" to "jenkins", "claim" to scenario.claim,
+                "construct" to "git.checkout", "positive" to rows.first(), "mutants" to rows.drop(1), "limitations" to listOf(
+                    "One immutable public Git checkout and revision/file observations; no control-flow, credentials, shallow history or workspace-transfer claim.",
+                    "This disposable Jenkins controller uses public network egress for the exact authored repository; no host ports or credentials are supplied.",
+                    "The full generated Jenkinsfile executes, while the GitHub Actions peer executes only a checked native leaf; comparison is bounded to checkout observables.",
+                    "No general public support or portable-execution promotion. The runtime host remains trusted.")))
+        } else mapper.readTree(File(root, "$FIXTURE/${requireNotNull(scenario.matrix)}"))
         require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
         val construct = when { scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
         require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == construct)
@@ -118,13 +130,14 @@ internal object JenkinsCheckoutRuntimeCertification {
         }
         val runtimePlugins = plugins + if (scenario.approval) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
-            CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) }
+            CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario == Scenario.SHARED_CHECKOUT) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
+                CertificationRuntimePrerequisite("repository", SharedCheckoutFixture.REPOSITORY)) else emptyList()
         val specification = bound.scenario(expected.getValue("baseline"), runtime, runIds.drop(1).map { id ->
             CertificationNegativeMutant(id, ref("artifact:$id", artifacts.getValue(id)), expected.getValue(id))
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapterId = when { scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
+        val adapterId = when { scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
         val adapter = CertificationAdapterIdentity("jenkins", adapterId, scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
             (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
@@ -161,6 +174,11 @@ internal object JenkinsCheckoutRuntimeCertification {
             require(row["artifactSha256"]?.asText() == sha256(bytes)) { "Executed script differs from the bound artifact." }
             require(row["buildNumber"]?.isIntegralNumber == true && row["buildNumber"].canConvertToInt() && row["buildNumber"].asInt() == 1)
             if (prepared.scenario.recordsNativeSteps) require(row["finished"]?.isBoolean == true && row["finished"].booleanValue())
+            if (prepared.scenario == Scenario.SHARED_CHECKOUT) {
+                require(row["result"]?.asText() == "SUCCESS") { "Shared checkout runtime failed." }
+                require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() == (if (id == "omitted-checkout") 0 else 1))
+                require(row["checkoutErrors"]?.isArray == true && row["checkoutErrors"].isEmpty)
+            }
             val observed = observationBytes(row, prepared.scenario)
             val ref = CertificationEvidenceReference("observed:$id", sha256(observed), observed.size)
             prepared.evidence[ref.id] = observed
@@ -186,6 +204,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         } == true)
 
     private fun observationBytes(row: JsonNode, scenario: Scenario): ByteArray {
+        if (scenario == Scenario.SHARED_CHECKOUT) return SharedCheckoutFixture.observationBytes(row)
         require(row["result"]?.isTextual == true && row.has("marker"))
         val marker = row["marker"]
         require(marker.isNull || marker.isTextual && marker.asText().length <= 1024)
@@ -381,6 +400,18 @@ internal object JenkinsCheckoutRuntimeCertification {
         return artifacts
     }
 
+    internal fun sharedCheckoutArtifacts(text: String, original: ByteArray): Map<String, ByteArray> {
+        val line = text.lineSequence().single { it.trimStart().startsWith("checkout scmGit(") }
+        val indent = line.takeWhile(Char::isWhitespace)
+        val native = "${indent}checkout scmGit(\n${indent}  branches: [[name: '${SharedCheckoutFixture.SELECTED}']],\n" +
+            "${indent}  userRemoteConfigs: [[url: '${SharedCheckoutFixture.REPOSITORY}']]\n${indent})"
+        require(text.lineSequence().count { it.trimStart().startsWith("git branch:") } == 0)
+        require(original.contentEquals(text.toByteArray(Charsets.UTF_8)))
+        val omitted = replaceOnce(text, native, "${indent}echo 'Checkout intentionally omitted by certification mutant'")
+        return linkedMapOf("baseline" to original, "omitted-checkout" to omitted.toByteArray(Charsets.UTF_8),
+            "substituted-revision" to replaceOnce(text, native, native.replace(SharedCheckoutFixture.SELECTED, SharedCheckoutFixture.ALTERNATE)).toByteArray(Charsets.UTF_8))
+    }
+
     fun run(root: File, output: File, scenario: Scenario = Scenario.CHECKOUT) {
         require(!output.exists()) { "Runtime evidence output must be fresh." }
         output.mkdirs()
@@ -413,22 +444,24 @@ internal object JenkinsCheckoutRuntimeCertification {
                 .writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.fixture)))
             File(artifacts, "canonical-graph.json").writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.canonicalGraph)))
             val fixture = File(output, "fixture").apply { mkdirs() }
-            val working = File(fixture, "working").apply { mkdirs() }
-            fun git(label: String, vararg args: String) = process(label, listOf("git", "-C", working.absolutePath) + args)
-            git("fixture-init", "init", "--initial-branch=selected")
-            git("fixture-name", "config", "user.name", "Flow Certification Fixture")
-            git("fixture-email", "config", "user.email", "fixture@example.invalid")
-            File(working, "marker.txt").writeText("selected\n")
-            git("fixture-add-selected", "add", "marker.txt"); git("fixture-commit-selected", "commit", "-m", "Selected branch fixture")
-            git("fixture-alternate", "checkout", "-b", "alternate")
-            File(working, "marker.txt").writeText("alternate\n")
-            git("fixture-add-alternate", "add", "marker.txt"); git("fixture-commit-alternate", "commit", "-m", "Alternate branch fixture")
-            git("fixture-selected", "checkout", "selected")
-            process("fixture-bare", listOf("git", "clone", "--bare", working.absolutePath, File(fixture, "repository.git").absolutePath))
+            if (scenario != Scenario.SHARED_CHECKOUT) {
+                val working = File(fixture, "working").apply { mkdirs() }
+                fun git(label: String, vararg args: String) = process(label, listOf("git", "-C", working.absolutePath) + args)
+                git("fixture-init", "init", "--initial-branch=selected")
+                git("fixture-name", "config", "user.name", "Flow Certification Fixture")
+                git("fixture-email", "config", "user.email", "fixture@example.invalid")
+                File(working, "marker.txt").writeText("selected\n")
+                git("fixture-add-selected", "add", "marker.txt"); git("fixture-commit-selected", "commit", "-m", "Selected branch fixture")
+                git("fixture-alternate", "checkout", "-b", "alternate")
+                File(working, "marker.txt").writeText("alternate\n")
+                git("fixture-add-alternate", "add", "marker.txt"); git("fixture-commit-alternate", "commit", "-m", "Alternate branch fixture")
+                git("fixture-selected", "checkout", "selected")
+                process("fixture-bare", listOf("git", "clone", "--bare", working.absolutePath, File(fixture, "repository.git").absolutePath))
+            }
             val evidence = File(output, "runtime").apply { mkdirs() }
             Files.setPosixFilePermissions(evidence.toPath(), PosixFilePermissions.fromString("rwxrwxrwx"))
             println("Executing the original artifact and declared mutants on isolated Jenkins")
-            process("controller", listOf("docker", "run", "--rm", "--name", container, "--network", "none", "--memory", "3g", "--cpus", "2",
+            process("controller", listOf("docker", "run", "--rm", "--name", container, "--network", if (scenario == Scenario.SHARED_CHECKOUT) "bridge" else "none", "--memory", "3g", "--cpus", "2",
                 "--env", "FLOW_CERTIFICATION_SCENARIO=${scenario.id}",
                 "--mount", "type=bind,src=${fixture.absolutePath},dst=/fixture,readonly",
                 "--mount", "type=bind,src=${artifacts.absolutePath},dst=/artifacts,readonly",

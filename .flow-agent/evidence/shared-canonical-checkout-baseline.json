@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "purpose": "Select shared canonical native checkout after the validated AR-06N multi-adapter portfolio merge.",
+  "predecessor": {
+    "pullRequest": 211,
+    "mergedMain": "d38787c3709dcb775b9bd62aa99e1ac5622b2a67",
+    "tree": "97e1ff0cf1f3e04758fcb2ba237bbbc0be102bf5",
+    "exactHead": "7590fefe3de94ca051586cad2be544580816916f",
+    "syntheticMergeCandidate": "d5c7f928d506ac5007a2703270676ae918785edb",
+    "flowCiRunId": 38055215605,
+    "runtimeCiRunId": 38055215602,
+    "conclusion": "success",
+    "testsPerRevision": 2024,
+    "suitesPerRevision": 348,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 11,
+    "signedObservations": 35,
+    "portfolioRows": 36,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "d9835d14a0c2240acfee4011336355b400f151ff72f33d80cad39100cb777d60",
+    "mainFlowCiRunId": 38060038005,
+    "mainFlowCiStatusAtSelection": "in_progress",
+    "mainRuntimeCiRunId": 38060038059,
+    "mainRuntimeConclusion": "success",
+    "scope": "Exact-head and synthetic-merge test inventories and all 35 runtime signatures were independently verified during PR 211. Merged main has the identical source tree; its in-progress Flow CI is not claimed as passed."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06N",
+        "selectedWorkPackage": ".flow-agent/work-packages/multi-adapter-certification-portfolio.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Missing second-adapter receipt, mixed revisions, substituted proof or trust, invalid signatures, changed native observations and scope inflation."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06O",
+        "selectedWorkPackage": ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Incorrect immutable revision, marker digest, missing checkout, stale source or graph, altered signed observations and false cross-target equivalence."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06N",
+        "workPackage": ".flow-agent/work-packages/multi-adapter-certification-portfolio.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06O",
+        "workPackage": ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 211.",
+    "predecessorPullRequest": 211,
+    "mergedMain": "d38787c3709dcb775b9bd62aa99e1ac5622b2a67"
+  },
+  "limitations": [
+    "AR-06O requires its own exact-head, merge-candidate and complete runtime/portfolio checks.",
+    "Shared native checkout observations do not establish whole-workflow portability or public support."
+  ]
+}

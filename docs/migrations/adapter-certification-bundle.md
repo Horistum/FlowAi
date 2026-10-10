@@ -1,10 +1,10 @@
 # Adapter certification bundle: AR-06A candidate
 
-Current implementation: AR-06L aggregates the authenticated Jenkins portfolio;
-AR-06M adds a separately scoped native GitHub Actions checkout experiment,
-described at the end of this document.
+Current implementation: AR-06N aggregates authenticated Jenkins and GitHub Actions
+evidence; AR-06O adds a shared canonical checkout comparison, described at the end
+of this document.
 Earlier candidate restrictions below record their original preparation boundaries;
-PRs through #209 are now merged.
+PRs through #211 are now merged.
 
 Horistum's AR-06 work starts with a typed, internal `AdapterCertificationBundle`
 and `AdapterCertificationAdmission` in `flow-adapter-evidence`. This is a
@@ -342,11 +342,11 @@ inability, and combining files is not cross-target equivalence. Checkout evidenc
 does not establish artifact transfer, secrets or general value/state continuity.
 No second-adapter runtime or portable-execution claim is introduced.
 
-## Reauthenticated reference adapter portfolio (AR-06L, extended by AR-06N)
+## Reauthenticated reference adapter portfolio (AR-06L, extended by AR-06N/O)
 
 The dependent `adapter-certification-portfolio` CI job publishes one `portfolio.json`
-and `portfolio.md` after all six Jenkins runtime jobs and the GitHub Actions runtime job succeed.
-It covers eleven current scenarios and every construct/target pair in the reference adapter catalog.
+and `portfolio.md` after all seven Jenkins runtime jobs and the GitHub Actions runtime job succeed.
+It covers twelve current scenarios and every construct/target pair in the reference adapter catalog.
 Targets with no submitted behavioral evidence remain explicitly unobserved. The
 catalog supplies target identities only; it cannot grant coverage.
 
@@ -367,11 +367,11 @@ An archived `passed` field or a concatenation of JSON matrices is insufficient.
 Input files have byte limits, must be regular files and cannot traverse symlinks.
 Output is published from a fresh staged directory only after every assessment passes.
 
-For a local replay, arrange the seven artifact directories under
+For a local replay, arrange the eight artifact directories under
 `build/certification-inputs/`, use JDK 25, set `FLOW_CERTIFICATION_REVISION` to the
 checked-out commit and supply the original producer job outputs in
 `FLOW_CERTIFICATION_JOB_RECEIPTS`. This variable has the same JSON shape as
-GitHub Actions `toJSON(needs)`: seven job names, each with `result: "success"` and
+GitHub Actions `toJSON(needs)`: eight job names, each with `result: "success"` and
 `outputs.receipt` containing the producer's JSON receipt string. Then run:
 
 ```sh
@@ -382,7 +382,7 @@ Use a fresh `flow-conformance-kit/build/adapter-certification-portfolio` destina
 This command does not start Docker or Jenkins. The installed product CLI does not
 include this conformance-only entry point.
 
-The JSON retains all eleven individual matrices, including source/graph references,
+The JSON retains all twelve individual matrices, including source/graph references,
 adapter identity/version/implementation digest, runtime image/plugin versions,
 runner identity/key fingerprint, exact expected/observed bytes, mutants and limits.
 The compact Markdown table points each covered pair to its scenario IDs. Different
@@ -394,13 +394,15 @@ secret handling or value/state continuity.
 `BOUNDED_SCENARIO_EVIDENCE` and `NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO` describe this
 assessment inventory only. They do not replace public `SUPPORTED`/`UNSUPPORTED`
 statuses or the declared/analyzable/renderable/executable maturity distinctions.
-Public support and portable execution remain false. Equivalent execution on a
-second materially different adapter and the remaining behavioral oracles are still
+Public support and portable execution remain false. The shared checkout comparison
+below covers one native construct; the remaining behavioral oracles are still
 required before broader claims can be made.
+
 ## Native GitHub Actions checkout candidate (AR-06M)
 
 The `github-actions-checkout-runtime` CI job provides bounded second-adapter
-evidence, included in the portfolio from AR-06N. It compiles `flow-adapter-github-actions/src/runtimeTest/checkout.intent.yaml`,
+evidence, included in the portfolio from AR-06N. From AR-06O it compiles the shared
+`flow-conformance-kit/src/runtimeTest/shared-checkout.intent.yaml`,
 binds its actual GitHub Actions rendering and checks the single native leaf against
 literal workflow blocks before execution. The workflow selected by GitHub must
 match the candidate's envelope bytes. The provider then runs baseline and
@@ -429,10 +431,38 @@ run/attempt; producer-owned hashes bind the original metadata. Raw records,
 admission, evidence views and behavior matrices must match the replayed bytes.
 Missing or altered inputs prevent publication of the complete portfolio.
 
-The resulting portfolio contains eleven assessments, thirty-five signed runs and
-thirty-six construct/target rows. Its GitHub Actions `NATIVE_CHECKOUT` row is the
+The AR-06N portfolio contained eleven assessments, thirty-five signed runs and
+thirty-six construct/target rows. Its GitHub Actions `NATIVE_CHECKOUT` row was the
 only newly observed pair. Every assessment carries an explicit claim and execution
-mode; structural GitHub Actions rows remain unobserved. The Jenkins and GitHub
-Actions checkout fixtures and canonical graphs differ. Aggregating them does not
-prove observable cross-target equivalence. Executing a shared canonical fixture
-on both providers remains the next bounded behavioral task.
+mode; structural GitHub Actions rows remain unobserved. The original local Jenkins
+checkout fixture and its canonical graph still differ from the GitHub Actions
+fixture; aggregating those two assessments does not prove observable equivalence.
+
+## Shared canonical checkout comparison (AR-06O)
+
+The new `jenkins-shared-checkout-runtime` job compiles the same shared source as
+GitHub Actions and executes its complete generated Jenkinsfile. Full-history
+40-character commit IDs now render through Jenkins `checkout scmGit`, which
+supports immutable revision selection; ordinary branch selections retain the
+existing `git` shorthand. Explicit shallow depth remains a native clone option.
+
+Both providers execute baseline, omitted-checkout and substituted-revision runs.
+The independent oracle pins two public repository commits and the SHA-256 of the
+fixture file at each revision. The Jenkins observer reads Git HEAD, file bytes,
+native checkout count and step errors from the finished workspace. This disposable
+scenario has public Git egress, no supplied credentials and no published ports.
+All earlier local-fixture Jenkins scenarios retain disabled networking.
+
+The portfolio now contains twelve assessments and thirty-eight signed runs, with
+the same thirty-six matrix rows. After all assessments have been reauthenticated,
+`sharedCanonicalCheckout` requires identical source and canonical-graph digests,
+the exact three-run inventory and observations equal to the independent oracle on
+both providers. Different inputs, graphs or observations fail publication, as do
+equal but incorrect observations. The original local Jenkins assessment is retained
+and cannot substitute for the shared one.
+
+The result is `bounded-native-checkout-observable-equivalence`. It preserves the
+GitHub Actions checked native-leaf execution mode and both providers' separate
+artifact and runtime identities. It does not certify a complete GitHub workflow,
+other constructs, credentials, workspace transfer or general portable execution.
+Public support promotion and portable execution remain false.

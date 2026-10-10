@@ -135,6 +135,23 @@ class CrossTargetCheckoutProjectionTests {
     }
 
     @Test
+    fun immutableCommitWithFullHistoryUsesTheNativeScmCheckoutApi() {
+        for (revision in listOf("a1".repeat(20), "A1".repeat(20))) {
+            val output = render(checkoutPlan("https://github.com/openai/openai.git", branch = revision, depth = null), "jenkins")
+            assertTrue(output.contains("checkout scmGit("))
+            assertTrue(output.contains("branches: [[name: '$revision']]"))
+            assertTrue(!output.contains("git branch:") && !output.contains("cloneOption("))
+        }
+    }
+
+    @Test
+    fun immutableCommitRetainsAnExplicitShallowDepth() {
+        val output = render(checkoutPlan("https://github.com/openai/openai.git", branch = "a1".repeat(20), depth = "3"), "jenkins")
+        assertTrue(output.contains("checkout scmGit("))
+        assertTrue(output.contains("cloneOption(depth: 3, noTags: false, shallow: true)"))
+    }
+
+    @Test
     fun githubCheckoutRejectsRepositoryOutsideGithubInsteadOfRenderingInvalidUsesInput() {
         val plan = checkoutPlan(url = "https://git.example.invalid/acme/repository.git")
         val provider = BuiltInTargetProjections.registry.requireProvider("github-actions")

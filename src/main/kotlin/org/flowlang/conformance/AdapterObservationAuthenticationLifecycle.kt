@@ -27,6 +27,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val GITHUB_CHECKOUT_BASELINE = ".flow-agent/evidence/github-actions-checkout-baseline.json"
     const val MULTI_PORTFOLIO_WORK_PACKAGE = ".flow-agent/work-packages/multi-adapter-certification-portfolio.yaml"
     const val MULTI_PORTFOLIO_BASELINE = ".flow-agent/evidence/multi-adapter-portfolio-baseline.json"
+    const val SHARED_CHECKOUT_WORK_PACKAGE = ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml"
+    const val SHARED_CHECKOUT_BASELINE = ".flow-agent/evidence/shared-canonical-checkout-baseline.json"
+    private const val SHARED_CHECKOUT_BASELINE_SHA256 = "631408a6045737a548f124e81049a139162ada5f809bf8d01c2d6a70c29d361e"
     private const val MULTI_PORTFOLIO_BASELINE_SHA256 = "cf913d74094d247578a05122a5c23c93cebfaa65a3148f40833d3c7f7d6020a3"
     private const val GITHUB_CHECKOUT_BASELINE_SHA256 = "6d85faca53c1196c13048a154370ba30481d775c6a79db6b2d1c1a674501154d"
     private const val PORTFOLIO_BASELINE_SHA256 = "88f7114db5cb1e52a81ddb02c645cfe77fcb74cbed13c151d41a6019b51a3f94"
@@ -43,6 +46,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06O" || s.release.containsKey("recoverySharedCheckout")) {
+            val raw = s.certificationSharedCheckoutBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != SHARED_CHECKOUT_BASELINE_SHA256) {
+                add("Shared canonical checkout certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), SHARED_CHECKOUT_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Shared canonical checkout certification selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Shared canonical checkout certification release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Shared canonical checkout certification work", s.certificationSharedCheckoutWorkPackage, mapOf("version" to "AR-06O", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Shared canonical checkout certification authorization", section(s.certificationSharedCheckoutWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Shared canonical checkout certification validation", section(s.certificationSharedCheckoutWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Shared canonical checkout certification candidate", section(s.release["recoverySharedCheckout"]), mapOf(
+                "candidate" to "AR-06O", "status" to "candidate", "workPackage" to SHARED_CHECKOUT_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/shared-canonical-checkout-certification.md", "baselineEvidence" to SHARED_CHECKOUT_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(sharedCheckoutPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06N" || s.release.containsKey("recoveryMultiAdapterPortfolio")) {
             val raw = s.certificationMultiPortfolioBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -397,12 +425,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun multiPortfolioPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoverySharedCheckout") || s.certificationWorkPackage["selectedSlice"] == "AR-06O")
+            return multiPortfolioPredecessor(sharedCheckoutPredecessor(s))
         if (!s.release.containsKey("recoveryMultiAdapterPortfolio") && s.certificationWorkPackage["selectedSlice"] != "AR-06N") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationMultiPortfolioBaseline), MULTI_PORTFOLIO_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryMultiAdapterPortfolio") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationMultiPortfolioWorkPackage = emptyMap(), certificationMultiPortfolioBaseline = null)
+    }
+
+    internal fun sharedCheckoutPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoverySharedCheckout") && s.certificationWorkPackage["selectedSlice"] != "AR-06O") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationSharedCheckoutBaseline), SHARED_CHECKOUT_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoverySharedCheckout") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }

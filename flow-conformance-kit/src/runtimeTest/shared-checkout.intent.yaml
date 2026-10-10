@@ -1,6 +1,6 @@
 intentVersion: "2.0"
 kind: FlowIntentDocument
-name: github-actions-checkout-runtime
+name: shared-native-checkout-runtime
 description: Bounded native checkout against two immutable public Git revisions.
 systems:
   - name: source

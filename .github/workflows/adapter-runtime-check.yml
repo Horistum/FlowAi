@@ -44,6 +44,7 @@ jobs:
             --tests 'org.flowlang.conformance.GitHubActions*' \
             --tests 'org.flowlang.conformance.AdapterCertificationPortfolioTests' \
             --tests 'org.flowlang.conformance.MultiAdapterCertificationPortfolioLifecycleTests' \
+            --tests 'org.flowlang.conformance.SharedCanonicalCheckout*' \
             --tests 'org.flowlang.conformance.AdapterBehaviorMatrixTests' \
             --tests 'YamlParsingUnificationTests' \
             --tests 'AuthorityResponsibilityCatalogTests.repositoryCatalogExactlyMatchesProductionAuthorityGraph' \
@@ -139,6 +140,51 @@ jobs:
         with:
           name: jenkins-checkout-runtime
           path: flow-conformance-kit/build/jenkins-runtime-certification/
+          if-no-files-found: error
+          retention-days: 7
+
+  jenkins-shared-checkout-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Exact Revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Execute Shared Canonical Checkout And Revision Mutants
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test \
+            --tests 'org.flowlang.conformance.SharedCanonicalCheckout*' \
+            --tests 'CrossTargetCheckoutProjectionTests' \
+            :flow-conformance-kit:verifyJenkinsSharedCheckoutRuntime --stacktrace
+      - name: Publish Bounded Observation Summary
+        run: cat flow-conformance-kit/build/jenkins-shared-checkout-certification/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-shared-checkout-certification --artifact jenkins-shared-checkout-runtime --revision "$EXPECTED_SHA"
+      - name: Upload Runtime Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-shared-checkout-runtime
+          path: flow-conformance-kit/build/jenkins-shared-checkout-certification/
           if-no-files-found: error
           retention-days: 7
 
@@ -356,7 +402,7 @@ jobs:
           retention-days: 7
 
   adapter-certification-portfolio:
-    needs: [github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    needs: [jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
