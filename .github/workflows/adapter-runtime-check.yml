@@ -19,6 +19,8 @@ jobs:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
     steps:
       - name: Checkout Exact Revision
         uses: actions/checkout@v6
@@ -40,6 +42,9 @@ jobs:
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           ./gradlew --no-daemon --build-cache :flow-conformance-kit:test \
             --tests 'org.flowlang.conformance.GitHubActions*' \
+            --tests 'org.flowlang.conformance.AdapterCertificationPortfolioTests' \
+            --tests 'org.flowlang.conformance.MultiAdapterCertificationPortfolioLifecycleTests' \
+            --tests 'org.flowlang.conformance.AdapterBehaviorMatrixTests' \
             --tests 'YamlParsingUnificationTests' \
             --tests 'AuthorityResponsibilityCatalogTests.repositoryCatalogExactlyMatchesProductionAuthorityGraph' \
             :flow-conformance-kit:installDist --stacktrace
@@ -79,6 +84,11 @@ jobs:
         run: |
           java -cp "$RUNNER_TEMP/flow-github-checkout/engine/lib/*" org.flowlang.conformance.GitHubActionsCheckoutRuntimeCertificationCli verify "$RUNNER_TEMP/flow-github-checkout"
           cat "$RUNNER_TEMP/flow-github-checkout/evidence/evidence-view.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin GitHub Actions Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 "$RUNNER_TEMP/flow-github-checkout/source/tools/certification_portfolio_receipt.py" --directory "$RUNNER_TEMP/flow-github-checkout/evidence" --artifact github-actions-checkout-runtime --revision "$EXPECTED_SHA"
       - name: Remove Ephemeral Signing Key
         if: always()
         run: rm -f "$RUNNER_TEMP/flow-github-checkout/owner.pk8"
@@ -346,7 +356,7 @@ jobs:
           retention-days: 7
 
   adapter-certification-portfolio:
-    needs: [jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    needs: [github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -367,7 +377,7 @@ jobs:
       - name: Download Same-Run Runtime Evidence
         uses: actions/download-artifact@v4
         with:
-          pattern: jenkins-*-runtime
+          pattern: "*-runtime"
           path: build/certification-inputs
       - name: Reauthenticate And Aggregate Runtime Evidence
         env:

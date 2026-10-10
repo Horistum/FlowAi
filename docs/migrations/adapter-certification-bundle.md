@@ -342,11 +342,11 @@ inability, and combining files is not cross-target equivalence. Checkout evidenc
 does not establish artifact transfer, secrets or general value/state continuity.
 No second-adapter runtime or portable-execution claim is introduced.
 
-## Reauthenticated reference adapter portfolio (AR-06L)
+## Reauthenticated reference adapter portfolio (AR-06L, extended by AR-06N)
 
 The dependent `adapter-certification-portfolio` CI job publishes one `portfolio.json`
-and `portfolio.md` after all six Jenkins runtime jobs succeed. It covers the ten
-current scenarios and every construct/target pair in the reference adapter catalog.
+and `portfolio.md` after all six Jenkins runtime jobs and the GitHub Actions runtime job succeed.
+It covers eleven current scenarios and every construct/target pair in the reference adapter catalog.
 Targets with no submitted behavioral evidence remain explicitly unobserved. The
 catalog supplies target identities only; it cannot grant coverage.
 
@@ -367,11 +367,11 @@ An archived `passed` field or a concatenation of JSON matrices is insufficient.
 Input files have byte limits, must be regular files and cannot traverse symlinks.
 Output is published from a fresh staged directory only after every assessment passes.
 
-For a local replay, arrange the six artifact directories under
+For a local replay, arrange the seven artifact directories under
 `build/certification-inputs/`, use JDK 25, set `FLOW_CERTIFICATION_REVISION` to the
 checked-out commit and supply the original producer job outputs in
 `FLOW_CERTIFICATION_JOB_RECEIPTS`. This variable has the same JSON shape as
-GitHub Actions `toJSON(needs)`: six job names, each with `result: "success"` and
+GitHub Actions `toJSON(needs)`: seven job names, each with `result: "success"` and
 `outputs.receipt` containing the producer's JSON receipt string. Then run:
 
 ```sh
@@ -382,7 +382,7 @@ Use a fresh `flow-conformance-kit/build/adapter-certification-portfolio` destina
 This command does not start Docker or Jenkins. The installed product CLI does not
 include this conformance-only entry point.
 
-The JSON retains all ten individual matrices, including source/graph references,
+The JSON retains all eleven individual matrices, including source/graph references,
 adapter identity/version/implementation digest, runtime image/plugin versions,
 runner identity/key fingerprint, exact expected/observed bytes, mutants and limits.
 The compact Markdown table points each covered pair to its scenario IDs. Different
@@ -399,8 +399,8 @@ second materially different adapter and the remaining behavioral oracles are sti
 required before broader claims can be made.
 ## Native GitHub Actions checkout candidate (AR-06M)
 
-The `github-actions-checkout-runtime` CI job provides separate second-adapter
-evidence. It compiles `flow-adapter-github-actions/src/runtimeTest/checkout.intent.yaml`,
+The `github-actions-checkout-runtime` CI job provides bounded second-adapter
+evidence, included in the portfolio from AR-06N. It compiles `flow-adapter-github-actions/src/runtimeTest/checkout.intent.yaml`,
 binds its actual GitHub Actions rendering and checks the single native leaf against
 literal workflow blocks before execution. The workflow selected by GitHub must
 match the candidate's envelope bytes. The provider then runs baseline and
@@ -410,7 +410,7 @@ actual Git HEAD plus the fixture file's SHA-256.
 
 The `github-actions-checkout-runtime` artifact contains three signed observations,
 their source/canonical/artifact bindings, execution envelope, public trust,
-admission proof and JSON/Markdown views. Runtime prerequisites record the source
+admission proof and JSON/Markdown views and behavior matrices. Runtime prerequisites record the source
 and executed workflow revisions, hosted image version, action reference and
 envelope digest. Assessment trust is created before execution; the signing key
 stays outside uploaded evidence. It is a same-host trusted-observer experiment,
@@ -420,7 +420,19 @@ The claim is `native-leaf-only`, with execution mode
 `native-leaf-in-checked-envelope`. It does not certify the complete generated
 workflow, mutable action binaries, scheduling, triggers, credentials or workspace
 transfer. It does not establish cross-target equivalence or promote public support.
-AR-06L's portfolio still intentionally contains only ten Jenkins assessments;
-its missing-evidence cells are scoped to that portfolio. Integrating this new
-assessment and executing a shared canonical fixture on both providers remain
-explicit follow-up work.
+AR-06N extends the original ten-assessment Jenkins portfolio with this assessment.
+The dependent job requires its successful producer receipt, pins proof and trust
+outside the downloaded archive, recompiles source and mutants, checks the exact
+execution envelope, reconstructs native observations and verifies every signature.
+The public trust and proof must agree on source/workflow revision and workflow
+run/attempt; producer-owned hashes bind the original metadata. Raw records,
+admission, evidence views and behavior matrices must match the replayed bytes.
+Missing or altered inputs prevent publication of the complete portfolio.
+
+The resulting portfolio contains eleven assessments, thirty-five signed runs and
+thirty-six construct/target rows. Its GitHub Actions `NATIVE_CHECKOUT` row is the
+only newly observed pair. Every assessment carries an explicit claim and execution
+mode; structural GitHub Actions rows remain unobserved. The Jenkins and GitHub
+Actions checkout fixtures and canonical graphs differ. Aggregating them does not
+prove observable cross-target equivalence. Executing a shared canonical fixture
+on both providers remains the next bounded behavioral task.

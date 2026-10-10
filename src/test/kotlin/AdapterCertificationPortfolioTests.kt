@@ -13,7 +13,7 @@ import kotlin.test.*
 import org.flowlang.adapters.certification.*
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 
-/** Synthetic signed protocol fixtures; no test claims to execute Jenkins. */
+/** Synthetic signed protocol fixtures; no unit test claims provider execution. */
 class AdapterCertificationPortfolioTests {
     companion object {
         private val mapper = jacksonObjectMapper()
@@ -66,27 +66,86 @@ class AdapterCertificationPortfolioTests {
                     "observations" to signed.map { mapOf("runnerId" to it.runnerId, "challenge" to it.challenge,
                         "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) }))
             }
+            files.putAll(githubFiles())
             files
         }
+        private fun githubFiles(): Map<String, ByteArray> {
+            val files = linkedMapOf<String, ByteArray>()
+            val id = GitHubActionsCheckoutRuntimeCertification.SCENARIO
+            fun write(name: String, bytes: ByteArray) { files["$id/$name"] = bytes }
+            fun json(name: String, value: Any) = write(name, mapper.writeValueAsBytes(value))
+            val envelope = File(GitHubActionsCheckoutRuntimeCertification.WORKFLOW).readBytes()
+            val p = GitHubActionsCheckoutRuntimeCertification.prepare(File("."), revision, "d".repeat(40), "20261010.1", envelope)
+            val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+            val runner = GitHubActionsCheckoutRuntimeCertification.RUNNER
+            val runIds = GitHubActionsCheckoutRuntimeCertification.runIds
+            val challenge = "c".repeat(32)
+            val trust = CertificationObservationTrust(challenge, mapOf(runner to key.public), runIds.map {
+                CertificationAuthorizedRun(it, id, it.takeUnless { value -> value == "baseline" }, runner) })
+            val owner = mapOf("sourceRevision" to revision, "workflowRevision" to "d".repeat(40), "runnerImage" to "20261010.1",
+                "runId" to "123", "attempt" to "1", "challenge" to challenge, "publicKey" to Base64.getEncoder().encodeToString(key.public.encoded))
+            json("trust.json", owner)
+            val spec = p.bundle.scenarios.single()
+            val signed = runIds.map { runId ->
+                val expected = spec.negativeMutants.singleOrNull { it.id == runId }?.expectedObservation ?: spec.expectedObservation
+                val raw = p.evidence.getValue(expected.id)
+                val observation = GitHubActionsCheckoutRuntimeCertification.observation(p, runId, raw)
+                val signer = Signature.getInstance("Ed25519"); signer.initSign(key.private)
+                signer.update(CertificationObservationAuthentication.signingBytes(runner, challenge, observation))
+                val signature = signer.sign()
+                json("$runId.json", mapOf("raw" to raw.toString(Charsets.UTF_8), "signature" to Base64.getEncoder().encodeToString(signature)))
+                SignedCertificationObservation(runner, challenge, observation, signature)
+            }
+            val resolver = CertificationEvidenceResolver { p.evidence[it.id] }
+            val assessment = CertificationEvidenceViews.assess(p.bundle, p.bundle.adapter, listOf(p.bound), p.provider, signed, trust, resolver)
+            check(assessment.admission.valid)
+            val view = requireNotNull(assessment.view)
+            val matrix = AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, resolver)
+            val outputs = mapOf("evidence-view.json" to view.json(), "evidence-view.md" to view.markdown(),
+                "behavior-matrix.json" to matrix.json(), "behavior-matrix.md" to matrix.markdown())
+            outputs.forEach { (name, text) -> write(name, text.toByteArray()) }
+            p.artifacts.forEach { (runId, bytes) -> write("artifacts/$runId.yml", bytes) }
+            p.evidence.forEach { (name, bytes) -> write("artifacts/" + name.replace(':', '-') + ".evidence", bytes) }
+            write("artifacts/source.intent.yaml", requireNotNull(p.bound.resolve(p.bound.fixture)))
+            write("artifacts/canonical-graph.json", requireNotNull(p.bound.resolve(p.bound.canonicalGraph)))
+            write("artifacts/execution-envelope.yml", envelope)
+            json("proof.json", mapOf("status" to "passed", "claim" to "native-leaf-only", "executionMode" to "native-leaf-in-checked-envelope",
+                "sourceRevision" to revision, "workflowRevision" to owner.getValue("workflowRevision"), "runId" to "123", "attempt" to "1",
+                "bundle" to p.bundle, "admission" to assessment.admission, "publicSupportPromoted" to false, "portableExecution" to false,
+                "evidenceViews" to outputs.filterKeys { it.startsWith("evidence-") }.mapValues { sha(it.value.toByteArray()) },
+                "behaviorMatrix" to outputs.filterKeys { it.startsWith("behavior-") }.mapValues { sha(it.value.toByteArray()) },
+                "observations" to signed.map { mapOf("runnerId" to it.runnerId, "challenge" to it.challenge,
+                    "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) }))
+            return files
+        }
+
     }
 
     private class Fixture(val directory: File) {
         val first = scenarios.first()
         fun file(name: String) = File(directory, AdapterCertificationPortfolio.relativeDirectory(first) + "/" + name)
-        fun receipts() = scenarios.map { scenario ->
-            val dir = File(directory, AdapterCertificationPortfolio.relativeDirectory(scenario))
-            PortfolioAssessmentReceipt(scenario.id, sha(File(dir, "proof.json").readBytes()), sha(File(dir, "trust.json").readBytes()))
+        fun githubFile(name: String) = File(directory, GitHubActionsCheckoutRuntimeCertification.SCENARIO + "/" + name)
+        fun receipts() = (scenarios.map { it.id to AdapterCertificationPortfolio.relativeDirectory(it) } +
+            (GitHubActionsCheckoutRuntimeCertification.SCENARIO to GitHubActionsCheckoutRuntimeCertification.SCENARIO)).map { (id, path) ->
+            val dir = File(directory, path)
+            PortfolioAssessmentReceipt(id, sha(File(dir, "proof.json").readBytes()), sha(File(dir, "trust.json").readBytes()))
         }
         fun derive(receipts: List<PortfolioAssessmentReceipt> = receipts(), selectedRevision: String = revision) =
             AdapterCertificationPortfolio.derive(File("."), selectedRevision, directory, receipts)
         fun edit(name: String, change: (JsonNode) -> Unit) {
             val node = mapper.readTree(file(name)); change(node); file(name).writeBytes(mapper.writeValueAsBytes(node))
         }
+        fun editGithub(name: String, change: (JsonNode) -> Unit) {
+            val node = mapper.readTree(githubFile(name)); change(node); githubFile(name).writeBytes(mapper.writeValueAsBytes(node))
+        }
         fun jobs(): ObjectNode {
             val rows = receipts()
             return mapper.createObjectNode().apply {
-                scenarios.groupBy { AdapterCertificationPortfolio.relativeDirectory(it).substringBefore('/') }.forEach { (job, entries) ->
-                    val receipt = mapOf("artifact" to job, "sourceRevision" to revision, "assessments" to rows.filter { row -> entries.any { it.id == row.scenarioId } })
+                val groups = scenarios.groupBy { AdapterCertificationPortfolio.relativeDirectory(it).substringBefore('/') }
+                    .mapValues { (_, entries) -> entries.map { it.id } } +
+                    (GitHubActionsCheckoutRuntimeCertification.SCENARIO to listOf(GitHubActionsCheckoutRuntimeCertification.SCENARIO))
+                groups.forEach { (job, entries) ->
+                    val receipt = mapOf("artifact" to job, "sourceRevision" to revision, "assessments" to rows.filter { row -> row.scenarioId in entries })
                     set<JsonNode>(job, mapper.valueToTree(mapOf("result" to "success", "outputs" to mapOf("receipt" to mapper.writeValueAsString(receipt)))))
                 }
             }
@@ -103,15 +162,23 @@ class AdapterCertificationPortfolioTests {
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->
         val result = f.derive(); val doc = mapper.readTree(result.json())
-        assertEquals(10, doc["assessmentCount"].asInt())
+        assertEquals(11, doc["assessmentCount"].asInt())
         assertEquals(36, doc["rows"].size())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
-        assertEquals(5, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
-        assertTrue(doc["rows"].filter { it["target"].asText() != "jenkins" }.all {
+        assertEquals(6, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
+        assertTrue(doc["rows"].filter { it["target"].asText() !in setOf("jenkins", "github-actions") }.all {
             it["scenarioIds"].isEmpty && it["status"].asText() == "NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO" })
         val matrices = doc["assessments"].map { it["matrix"] }
-        assertEquals(32, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        assertEquals(35, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        val github = doc["assessments"].single { it["scenarioId"].asText() == GitHubActionsCheckoutRuntimeCertification.SCENARIO }
+        assertEquals("native-leaf-only", github["claim"].asText())
+        assertEquals("native-leaf-in-checked-envelope", github["executionMode"].asText())
+        val covered = github["matrix"]["rows"].filter { !it["behavior"].isNull }
+        assertEquals(listOf("NATIVE_CHECKOUT"), covered.map { it["construct"].asText() })
+        val jenkins = doc["assessments"].single { it["scenarioId"].asText() == scenarios.first().id }
+        assertNotEquals(jenkins["matrix"]["rows"].single { !it["behavior"].isNull }["behavior"]["canonicalGraph"], covered.single()["behavior"]["canonicalGraph"])
         assertTrue(result.markdown().contains("not general construct support"))
+        assertTrue(result.markdown().contains("does not establish cross-target equivalence"))
     }
 
     @Test fun receiptOrderDoesNotChangeOutputAndLaterFileChangesCannotMutateSnapshot() = fixture { f ->
@@ -201,4 +268,94 @@ class AdapterCertificationPortfolioTests {
         output.put("receipt", mapper.writeValueAsString(receipt))
         assertFailsWith<IllegalArgumentException> { read(duplicate) }
     }
+
+    @Test fun secondProducerMustBePresentSuccessfulAndHaveTheExactScenario() = fixture { f ->
+        val job = GitHubActionsCheckoutRuntimeCertification.SCENARIO
+        fun read(jobs: JsonNode) = AdapterCertificationPortfolio.receiptsFromJobs(mapper.writeValueAsBytes(jobs), revision)
+        assertFailsWith<IllegalArgumentException> { read(f.jobs().apply { remove(job) }) }
+        for (status in listOf("failure", "skipped", "cancelled"))
+            assertFailsWith<IllegalArgumentException> { read(f.jobs().apply { (get(job) as ObjectNode).put("result", status) }) }
+        val jobs = f.jobs()
+        (jobs[job]["outputs"] as ObjectNode).put("receipt", f.jobs()["jenkins-checkout-runtime"]["outputs"]["receipt"].asText())
+        assertFailsWith<IllegalArgumentException> { read(jobs) }
+        assertFailsWith<IllegalArgumentException> { f.derive(f.receipts().filter { it.scenarioId != job }) }
+    }
+
+    @Test fun secondAdapterProofAndTrustStayPinnedOutsideCandidateFiles() = fixture { f ->
+        for (name in listOf("proof.json", "trust.json")) {
+            val receipts = f.receipts(); val file = f.githubFile(name); val original = file.readBytes()
+            file.appendText("\n")
+            assertFailsWith<IllegalArgumentException> { f.derive(receipts) }
+            file.writeBytes(original)
+        }
+    }
+
+    @Test fun secondAdapterCannotReplaceItsKeyOrChallengeEvenWhenRepinned() = fixture { f ->
+        val file = f.githubFile("trust.json"); val original = file.readBytes()
+        val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
+        for ((field, value) in listOf("publicKey" to Base64.getEncoder().encodeToString(key.public.encoded), "challenge" to "e".repeat(32), "runnerImage" to "forged-image")) {
+            f.editGithub("trust.json") { (it as ObjectNode).put(field, value) }
+            assertFailsWith<IllegalArgumentException> { f.derive() }
+            file.writeBytes(original)
+        }
+    }
+
+    @Test fun secondAdapterForgedSignaturesAndRawResultsFailReplay() = fixture { f ->
+        val signature = Base64.getEncoder().encodeToString(ByteArray(64))
+        val proof = f.githubFile("proof.json").readBytes(); val record = f.githubFile("baseline.json").readBytes()
+        f.editGithub("proof.json") { (it["observations"][0] as ObjectNode).put("signature", signature) }
+        f.editGithub("baseline.json") { (it as ObjectNode).put("signature", signature) }
+        assertFailsWith<IllegalArgumentException> { f.derive() }
+        f.githubFile("proof.json").writeBytes(proof); f.githubFile("baseline.json").writeBytes(record)
+        f.editGithub("baseline.json") { (it as ObjectNode).put("raw", GitHubActionsCheckoutRuntimeCertification.observationBytes(null, null).toString(Charsets.UTF_8)) }
+        assertFailsWith<IllegalArgumentException> { f.derive() }
+    }
+
+    @Test fun secondAdapterCannotBroadenItsClaimOrMixOwnerRevisions() = fixture { f ->
+        val original = f.githubFile("proof.json").readBytes()
+        for ((field, value) in listOf("claim" to "whole-workflow", "executionMode" to "whole-workflow", "sourceRevision" to "b".repeat(40),
+            "workflowRevision" to "b".repeat(40), "runId" to "456", "attempt" to "2")) {
+            f.editGithub("proof.json") { (it as ObjectNode).put(field, value) }
+            assertFailsWith<IllegalArgumentException> { f.derive() }
+            f.githubFile("proof.json").writeBytes(original)
+        }
+        for (field in listOf("publicSupportPromoted", "portableExecution")) {
+            f.editGithub("proof.json") { (it as ObjectNode).put(field, true) }
+            assertFailsWith<IllegalArgumentException> { f.derive() }
+            f.githubFile("proof.json").writeBytes(original)
+        }
+    }
+
+    @Test fun secondAdapterArtifactsEnvelopeAndDerivedViewsMustMatchCurrentCompiler() = fixture { f ->
+        for (name in listOf("artifacts/source.intent.yaml", "artifacts/canonical-graph.json", "artifacts/execution-envelope.yml", "artifacts/baseline.yml",
+            "artifacts/omitted-checkout.yml", "artifacts/substituted-revision.yml", "artifacts/observed-baseline.evidence", "evidence-view.json", "behavior-matrix.md")) {
+            val file = f.githubFile(name); val original = file.readBytes(); file.writeText("forged")
+            assertFailsWith<IllegalArgumentException>(name) { f.derive() }
+            file.writeBytes(original)
+        }
+    }
+
+    @Test fun secondAdapterMissingDuplicateOrSubstitutedRunCannotBorrowAnAdmission() = fixture { f ->
+        val file = f.githubFile("proof.json"); val original = file.readBytes()
+        for (mutation in 0..2) {
+            f.editGithub("proof.json") {
+                val rows = it["observations"] as com.fasterxml.jackson.databind.node.ArrayNode
+                when (mutation) { 0 -> rows.remove(0); 1 -> rows.set(0, rows[1]); else -> (rows[0]["observation"] as ObjectNode).put("runId", "invented") }
+            }
+            assertFailsWith<IllegalArgumentException> { f.derive() }
+            file.writeBytes(original)
+        }
+    }
+
+    @Test fun secondAdapterRuntimeRecordsObeyFileBudgetsAndSymlinkConfinement() = fixture { f ->
+        val file = f.githubFile("baseline.json"); val original = file.readBytes()
+        file.writeBytes(ByteArray(8193))
+        assertFailsWith<IllegalArgumentException> { f.derive() }
+        file.delete()
+        assertFailsWith<IllegalArgumentException> { f.derive() }
+        val target = File(f.directory, "outside-github.json").apply { writeBytes(original) }
+        java.nio.file.Files.createSymbolicLink(file.toPath(), target.toPath())
+        assertFailsWith<IllegalArgumentException> { f.derive() }
+    }
+
 }

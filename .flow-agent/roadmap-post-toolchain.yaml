@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 27
+revision: 28
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #209 is merged into main 2492d02a3f610a449952d7e4d1c5a2184381243c. Its identical source tree passed 2002 tests and 274 conformance checks on PR exact head and merge candidate in CI 38042086073; runtime CI 38042086072 passed ten Jenkins assessments and the 36-row portfolio. Main runtime CI 38043757586 passed; the main Flow CI was still running at selection and is not claimed as passed. AR-06M executes one compiler-derived GitHub Actions checkout leaf and omitted/substituted revision mutants on a real hosted runner. Historical acceptance remains preserved; support promotion, cross-target equivalence, AR-06 completion and finding closures remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
+  decisionBasis: "PR #210 is merged into main c85a62a39d412b3e9f323c0cb58bcaadb3b864da with the same source tree as validated PR head and merge candidate. Flow CI 38046478110 passed 2013 tests and 274 checks per revision; runtime CI 38046478081 passed ten Jenkins assessments plus the separate native GitHub Actions checkout assessment. Main Flow CI 38050155031 and runtime CI 38050155029 also passed. AR-06N integrates both providers into authenticated portfolio replay while preserving distinct fixtures and native-leaf scope. Historical acceptance remains unchanged; cross-target equivalence, support promotion and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"

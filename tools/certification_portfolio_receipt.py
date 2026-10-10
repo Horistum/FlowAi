@@ -17,7 +17,7 @@ def read_bounded(path: Path, limit: int) -> bytes:
 
 
 def receipt(directory: Path, artifact: str, revision: str) -> dict:
-    if not re.fullmatch(r"jenkins-[a-z-]+-runtime", artifact) or not re.fullmatch(r"[0-9a-f]{40}", revision):
+    if (artifact != "github-actions-checkout-runtime" and not re.fullmatch(r"jenkins-[a-z-]+-runtime", artifact)) or not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("Expected a runtime artifact name and exact source revision")
     paths = sorted(directory.rglob("proof.json"))
     if not 1 <= len(paths) <= 10:

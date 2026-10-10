@@ -16,8 +16,8 @@ internal enum class CertificationConstruct {
 /**
  * Conformance-owned diagnostic output. Only immutable serialized snapshots escape.
  * The runner selects the scenario's oracle; graph occurrence alone never assigns behavior.
- * This bounded implementation consumes the existing Jenkins scenario catalog. It does not
- * claim that another target was assessed, nor accept serialized evidence views as inputs.
+ * Provider-specific entry points assign the bounded oracle; serialized views are never inputs.
+ * A common construct label does not establish equivalence between different fixtures.
  */
 internal class AdapterBehaviorMatrix private constructor(private val encoded: String, private val rendered: String) {
     fun json(): String = encoded
@@ -32,11 +32,6 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
             scenario: JenkinsCheckoutRuntimeCertification.Scenario,
             resolver: CertificationEvidenceResolver
         ): AdapterBehaviorMatrix {
-            require(assessment.admission.valid) { "A rejected assessment cannot publish a behavior matrix." }
-            val view = requireNotNull(assessment.view)
-            require(assessment.admission.admittedScenarioIds == listOf(scenario.id))
-            val bound = view.scenarios.single()
-            require(bound.id == scenario.id && view.adapter.target == "jenkins")
             val construct = when (scenario) {
                 JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> CertificationConstruct.NATIVE_CHECKOUT
                 JenkinsCheckoutRuntimeCertification.Scenario.FAILURE -> CertificationConstruct.FAILURE_PROPAGATION
@@ -56,10 +51,26 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
                 CertificationConstruct.NATIVE_CHECKOUT, CertificationConstruct.FAILURE_PROPAGATION -> CertificationSubject.Semantic("git.checkout")
                 else -> error("No behavioral oracle is assigned to this construct.")
             }
-            require(view.coverage.any { it.subject == requiredSubject && scenario.id in it.scenarioIds &&
+            return derive(assessment, scenario.id, "jenkins", scenario.runIds, construct, requiredSubject, resolver)
+        }
+
+        fun deriveGitHubCheckout(assessment: CertificationEvidenceViewResult, resolver: CertificationEvidenceResolver): AdapterBehaviorMatrix =
+            derive(assessment, GitHubActionsCheckoutRuntimeCertification.SCENARIO, "github-actions",
+                GitHubActionsCheckoutRuntimeCertification.runIds, CertificationConstruct.NATIVE_CHECKOUT,
+                CertificationSubject.Semantic("git.checkout"), resolver)
+
+        private fun derive(assessment: CertificationEvidenceViewResult, scenarioId: String, target: String,
+            runIds: List<String>, construct: CertificationConstruct, requiredSubject: CertificationSubject,
+            resolver: CertificationEvidenceResolver): AdapterBehaviorMatrix {
+            require(assessment.admission.valid) { "A rejected assessment cannot publish a behavior matrix." }
+            val view = requireNotNull(assessment.view)
+            require(assessment.admission.admittedScenarioIds == listOf(scenarioId))
+            val bound = view.scenarios.single()
+            require(bound.id == scenarioId && view.adapter.target == target)
+            require(view.coverage.any { it.subject == requiredSubject && scenarioId in it.scenarioIds &&
                 it.status == CertificationOccurrenceStatus.OBSERVED_IN_SCENARIO })
-            require(bound.runs.map { it.mutantId ?: "baseline" }.toSet() == scenario.runIds.toSet())
-            require(bound.runs.size == scenario.runIds.size)
+            require(bound.runs.map { it.mutantId ?: "baseline" }.toSet() == runIds.toSet())
+            require(bound.runs.size == runIds.size)
             val baseline = bound.runs.single { it.mutantId == null }
             val mutants = bound.runs.filter { it.mutantId != null }.sortedBy { it.mutantId }
             require(mutants.isNotEmpty())

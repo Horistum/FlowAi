@@ -95,7 +95,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
             "No trigger, scheduling, credentials, workspace transfer, structural equivalence, general support or portable execution claim.",
             "Public immutable repository revisions are the oracle. The hosted runner image and action reference are recorded, not pinned provider binaries.",
             "The observation owner and native action share a trusted hosted runner. Signatures do not defend against a compromised runner or action.",
-            "This second-adapter assessment is separate from the ten-scenario Jenkins portfolio.")
+            "This fixture differs from the Jenkins checkout fixture; a shared construct label does not establish cross-target equivalence.")
         val bundle = AdapterCertificationBundle(adapter, subjects.map { CertificationCoverage(it,
             if (it in bound.subjects) listOf(bound.id) else emptyList(), "Native checkout leaf only; no whole-workflow credit.") }, listOf(specification), limitations)
         return Prepared(bound, bundle, artifacts, leaves, evidence, runtime, provider)
@@ -241,6 +241,8 @@ internal object GitHubActionsCheckoutRuntimeCertification {
                 p.provider, signed, trust, CertificationEvidenceResolver { p.evidence[it.id] })
             require(assessment.admission.valid) { "GitHub Actions certification rejected: ${assessment.admission.findings}" }
             val view = requireNotNull(assessment.view)
+            val matrix = AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, CertificationEvidenceResolver { p.evidence[it.id] })
+            File(output, "behavior-matrix.json").writeText(matrix.json()); File(output, "behavior-matrix.md").writeText(matrix.markdown())
             File(output, "evidence-view.json").writeText(view.json()); File(output, "evidence-view.md").writeText(view.markdown())
             val artifacts = File(output, "artifacts").apply { mkdirs() }
             p.artifacts.forEach { (id, bytes) -> File(artifacts, "$id.yml").writeBytes(bytes) }
@@ -253,6 +255,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
                 "workflowRevision" to owner["workflowRevision"].asText(), "runId" to owner["runId"].asText(), "attempt" to owner["attempt"].asText(),
                 "bundle" to p.bundle, "admission" to assessment.admission, "publicSupportPromoted" to false, "portableExecution" to false,
                 "observations" to signed.map { mapOf("runnerId" to it.runnerId, "challenge" to it.challenge, "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) },
+                "behaviorMatrix" to listOf("behavior-matrix.json", "behavior-matrix.md").associateWith { sha256(File(output, it).readBytes()) },
                 "evidenceViews" to listOf("evidence-view.json", "evidence-view.md").associateWith { sha256(File(output, it).readBytes()) }))
             println("PASS: $SCENARIO; baseline, omitted checkout and substituted revision authenticated; native leaf only")
         } finally { Files.deleteIfExists(privateFile.toPath()) }

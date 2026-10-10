@@ -25,6 +25,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val PORTFOLIO_BASELINE = ".flow-agent/evidence/adapter-certification-portfolio-baseline.json"
     const val GITHUB_CHECKOUT_WORK_PACKAGE = ".flow-agent/work-packages/github-actions-checkout-certification.yaml"
     const val GITHUB_CHECKOUT_BASELINE = ".flow-agent/evidence/github-actions-checkout-baseline.json"
+    const val MULTI_PORTFOLIO_WORK_PACKAGE = ".flow-agent/work-packages/multi-adapter-certification-portfolio.yaml"
+    const val MULTI_PORTFOLIO_BASELINE = ".flow-agent/evidence/multi-adapter-portfolio-baseline.json"
+    private const val MULTI_PORTFOLIO_BASELINE_SHA256 = "cf913d74094d247578a05122a5c23c93cebfaa65a3148f40833d3c7f7d6020a3"
     private const val GITHUB_CHECKOUT_BASELINE_SHA256 = "6d85faca53c1196c13048a154370ba30481d775c6a79db6b2d1c1a674501154d"
     private const val PORTFOLIO_BASELINE_SHA256 = "88f7114db5cb1e52a81ddb02c645cfe77fcb74cbed13c151d41a6019b51a3f94"
     private const val MATRIX_BASELINE_SHA256 = "eecb0fa4dbcaf567d48d989103d3abf56db68ae9fd7502f1812c4c64946bd984"
@@ -40,6 +43,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06N" || s.release.containsKey("recoveryMultiAdapterPortfolio")) {
+            val raw = s.certificationMultiPortfolioBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != MULTI_PORTFOLIO_BASELINE_SHA256) {
+                add("Multi-adapter portfolio certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), MULTI_PORTFOLIO_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Multi-adapter portfolio certification selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Multi-adapter portfolio certification release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Multi-adapter portfolio certification work", s.certificationMultiPortfolioWorkPackage, mapOf("version" to "AR-06N", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Multi-adapter portfolio certification authorization", section(s.certificationMultiPortfolioWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Multi-adapter portfolio certification validation", section(s.certificationMultiPortfolioWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Multi-adapter portfolio certification candidate", section(s.release["recoveryMultiAdapterPortfolio"]), mapOf(
+                "candidate" to "AR-06N", "status" to "candidate", "workPackage" to MULTI_PORTFOLIO_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/multi-adapter-certification-portfolio.md", "baselineEvidence" to MULTI_PORTFOLIO_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(multiPortfolioPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06M" || s.release.containsKey("recoveryGitHubCheckout")) {
             val raw = s.certificationGitHubCheckoutBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -358,12 +386,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun githubCheckoutPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryMultiAdapterPortfolio") || s.certificationWorkPackage["selectedSlice"] == "AR-06N")
+            return githubCheckoutPredecessor(multiPortfolioPredecessor(s))
         if (!s.release.containsKey("recoveryGitHubCheckout") && s.certificationWorkPackage["selectedSlice"] != "AR-06M") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationGitHubCheckoutBaseline), GITHUB_CHECKOUT_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoveryGitHubCheckout") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationGitHubCheckoutWorkPackage = emptyMap(), certificationGitHubCheckoutBaseline = null)
+    }
+
+    internal fun multiPortfolioPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryMultiAdapterPortfolio") && s.certificationWorkPackage["selectedSlice"] != "AR-06N") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationMultiPortfolioBaseline), MULTI_PORTFOLIO_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryMultiAdapterPortfolio") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationMultiPortfolioWorkPackage = emptyMap(), certificationMultiPortfolioBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }
