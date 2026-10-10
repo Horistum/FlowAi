@@ -57,7 +57,9 @@ class SharedCanonicalCheckoutRuntimeTests {
         assertTrue(original.contains("checkout scmGit(") && !original.contains("git branch:") && !original.contains("cloneOption("))
         assertTrue(original.contains("name: '${SharedCheckoutFixture.SELECTED}'"))
         assertFalse(p.artifacts.getValue("omitted-checkout").toString(Charsets.UTF_8).contains("checkout scmGit("))
-        assertEquals(original.replace(SharedCheckoutFixture.SELECTED, SharedCheckoutFixture.ALTERNATE),
+        // Preserve diagnostic comments about the authored input; only the executed SCM selection changes.
+        assertEquals(original.replace("branches: [[name: '${SharedCheckoutFixture.SELECTED}']]",
+            "branches: [[name: '${SharedCheckoutFixture.ALTERNATE}']]"),
             p.artifacts.getValue("substituted-revision").toString(Charsets.UTF_8))
         assertFails { JenkinsCheckoutRuntimeCertification.sharedCheckoutArtifacts("missing", "missing".toByteArray()) }
         assertFails { JenkinsCheckoutRuntimeCertification.sharedCheckoutArtifacts(original + original, (original + original).toByteArray()) }
