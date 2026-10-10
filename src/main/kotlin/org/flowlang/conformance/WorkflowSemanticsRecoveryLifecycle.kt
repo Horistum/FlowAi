@@ -51,7 +51,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val certificationApprovalWorkPackage: Map<String, Any?> = emptyMap(),
     val certificationApprovalBaseline: String? = null,
     val certificationMatrixWorkPackage: Map<String, Any?> = emptyMap(),
-    val certificationMatrixBaseline: String? = null
+    val certificationMatrixBaseline: String? = null,
+    val certificationPortfolioWorkPackage: Map<String, Any?> = emptyMap(),
+    val certificationPortfolioBaseline: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -149,7 +151,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             optionalMap(root, AdapterObservationAuthenticationLifecycle.APPROVAL_WORK_PACKAGE),
             File(root, AdapterObservationAuthenticationLifecycle.APPROVAL_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             optionalMap(root, AdapterObservationAuthenticationLifecycle.MATRIX_WORK_PACKAGE),
-            File(root, AdapterObservationAuthenticationLifecycle.MATRIX_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            File(root, AdapterObservationAuthenticationLifecycle.MATRIX_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            optionalMap(root, AdapterObservationAuthenticationLifecycle.PORTFOLIO_WORK_PACKAGE),
+            File(root, AdapterObservationAuthenticationLifecycle.PORTFOLIO_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 
