@@ -30,6 +30,7 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
 - adapters/controls/builtin-control-materialization.yaml
 - adapters/topology/builtin-adapter-topology.yaml
+- gradle/reference-contract-resources.txt
 - src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
