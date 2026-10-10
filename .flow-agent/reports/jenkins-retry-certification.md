@@ -45,3 +45,11 @@ come from this candidate's GitHub checks and are reported in the PR after review
 
 AR-06 remains active; only A/B are formally accepted. AR-07 stays planned, EF-09
 paused and F-20 AR-07-owned. Package and public standard versions are unchanged.
+
+The scoped attempt-isolation evidence applies only to a retry body with one native
+`git.checkout` task. Every attempt creates a distinct native execution node; it
+does not create or clear a workspace. The authored generic attempt-isolation claim
+stays unknown. Nested retry, other body shapes, and absent or ambiguous topology
+declarations remain blocked. Other topology requirements are preserved. The
+first CI run exposed the missing attempt-isolation evidence and was rejected by
+the existing topology gate; this scoped resolver supplies that bounded evidence.

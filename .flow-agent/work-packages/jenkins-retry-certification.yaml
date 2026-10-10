@@ -11,6 +11,7 @@ invariant: A bounded retry preserves its authored total attempt limit, stops aft
 scope:
 - Render fixed zero-delay retry through the native Jenkins retry block.
 - Derive plan-specific retry capability only from authorized canonical retry nodes and the composed native provider; keep the generic target registry unchanged.
+- Resolve attempt isolation only for retry bodies containing one native git.checkout task; retain the generic unknown topology declaration and reject other body shapes.
 - Classify only the attempt-limit control semantic as implemented; delay, variable backoff, failure filters and cancellation remain outside this certification.
 - Execute successful and exhausted retry bodies on an isolated Jenkins controller with missing, reduced or excess attempts as falsifying mutants.
 - Reauthenticate the expanded portfolio while preserving the shared checkout comparison and every previous scenario.
@@ -28,6 +29,7 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
 - src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
 - adapters/controls/builtin-control-materialization.yaml
+- adapters/topology/builtin-adapter-topology.yaml
 - src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt

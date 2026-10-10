@@ -124,6 +124,8 @@ Thread.start('checkout-certification') {
             if (marker.exists() && marker.length() > 1024) throw new IllegalStateException('Oversized workspace observation')
             // Inspect actual executed native steps, including caught errors, without changing pipeline bytes.
             def checkouts = nativeSteps(build, sharedCheckout ? 'checkout' : 'git')
+            if (checkouts.collect { it.getId() }.unique().size() != checkouts.size())
+                throw new IllegalStateException('Native checkout invocations must have distinct execution identities')
             def errors = checkouts.findAll { it.getError() != null }.collect {
                 def error = it.getError().getError()
                 [type: error.getClass().getName(), message: error.getMessage()]

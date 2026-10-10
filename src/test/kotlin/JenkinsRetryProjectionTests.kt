@@ -36,6 +36,8 @@ import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
+import org.flowlang.topology.ExecutionTopologyKind
+import org.flowlang.topology.ExecutionTopologySupportStatus
 class JenkinsRetryProjectionTests {
     private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File("targets")) }
     private val declared get() = targets.getValue("jenkins")
@@ -53,7 +55,13 @@ class JenkinsRetryProjectionTests {
 
     @Test fun boundedAuthorizationChangesOnlyThePlanSpecificRetryFeature() {
         assertEquals(declared.copy(features = declared.features + ("retry.task" to SupportLevel.SUPPORTED),
-            notes = scoped().notes), scoped())
+            topologyProfile = scoped().topologyProfile, notes = scoped().notes), scoped())
+        val original = declared.topologyProfile!!
+        val effective = scoped().topologyProfile!!
+        assertEquals(original.declarations.filter { it.kind != ExecutionTopologyKind.ATTEMPT_ISOLATION },
+            effective.declarations.filter { it.kind != ExecutionTopologyKind.ATTEMPT_ISOLATION })
+        assertEquals(ExecutionTopologySupportStatus.UNKNOWN, original.declarations.single { it.kind == ExecutionTopologyKind.ATTEMPT_ISOLATION }.status)
+        assertEquals(ExecutionTopologySupportStatus.SUPPORTED, effective.declarations.single { it.kind == ExecutionTopologyKind.ATTEMPT_ISOLATION }.status)
         assertEquals(SupportLevel.UNSUPPORTED, declared.retry)
         assertEquals(SupportLevel.UNSUPPORTED, declared.features["retry.task"])
     }
@@ -75,6 +83,18 @@ class JenkinsRetryProjectionTests {
     @Test fun plansWithoutRetryKeepDeclaredCapabilities() {
         val text = File("flow-adapter-jenkins/src/runtimeTest/recovery-success.flow").readText()
         assertEquals(declared, scoped(text))
+    }
+
+    @Test fun unprovenBodyAndIncompleteTopologyRemainBlocked() {
+        val nested = source.replace("retry { max: 3 delay: \"0s\" backoff: fixed } {",
+            "retry { max: 3 delay: \"0s\" backoff: fixed } { retry { max: 2 delay: \"0s\" backoff: fixed } {")
+            .replace("} -> attemptedCheckout", "} -> attemptedCheckout }")
+        assertEquals(declared, scoped(nested))
+        val profile = declared.topologyProfile!!
+        for (candidate in listOf(declared.copy(topologyProfile = null),
+            declared.copy(topologyProfile = profile.copy(declarations = profile.declarations.filter { it.kind != ExecutionTopologyKind.ATTEMPT_ISOLATION })),
+            declared.copy(topologyProfile = profile.copy(declarations = profile.declarations + profile.declarations.single { it.kind == ExecutionTopologyKind.ATTEMPT_ISOLATION }))))
+            assertEquals(candidate, JenkinsRetryProjectionScope(BuiltInNativeProjectionCatalogs.jenkins).resolve(authorization(), "jenkins", candidate))
     }
 
     @Test fun rendererRejectsIncompleteAndUnsupportedPolicies() {

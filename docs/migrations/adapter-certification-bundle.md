@@ -488,3 +488,11 @@ authenticated observations across nine producers. Seven bounded construct/target
 pairs are observed; all thirty-six rows and the shared canonical checkout
 comparison remain. These are candidate retry observations, not a transient
 recovery, general policy, cross-target retry or public support certificate.
+
+The scoped attempt-isolation evidence applies only to a retry body with one native
+`git.checkout` task. Every attempt creates a distinct native execution node; it
+does not create or clear a workspace. The authored generic attempt-isolation claim
+stays unknown. Nested retry, other body shapes, and absent or ambiguous topology
+declarations remain blocked. Other topology requirements are preserved. The
+first CI run exposed the missing attempt-isolation evidence and was rejected by
+the existing topology gate; this scoped resolver supplies that bounded evidence.

@@ -99,9 +99,9 @@ records:
       attemptIsolation:
         facet: execution_isolation
         status: unknown
-        mechanism: "No owned Jenkins retry projection proves fresh attempt scope."
+        mechanism: "Generic retry attempt scope is unproven. The adapter resolves distinct checkout invocations only for authorized fixed zero-delay single-checkout retry bodies."
         evidenceReferences: ["src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt"]
-        limitations: ["Retry attempt isolation is not certified by current renderer evidence."]
+        limitations: ["Only the plan-specific single-checkout retry scope has runtime evidence; no fresh workspace, value or state isolation is certified."]
       workflowLifetime:
         facet: state_lifetime
         status: supported
