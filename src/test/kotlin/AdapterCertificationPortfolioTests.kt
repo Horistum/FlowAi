@@ -36,6 +36,9 @@ class AdapterCertificationPortfolioTests {
                     val expected = spec.negativeMutants.singleOrNull { it.id == id }?.expectedObservation ?: spec.expectedObservation
                     (mapper.readTree(p.evidence.getValue(expected.id)) as ObjectNode).apply {
                         put("id", id); put("artifactSha256", sha(p.artifacts.getValue(id))); put("buildNumber", 1); put("finished", true)
+                        if (scenario == JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT) {
+                            put("result", "SUCCESS"); put("checkoutCount", if (id == "omitted-checkout") 0 else 1); putArray("checkoutErrors")
+                        }
                     }
                 }
                 val raw = mapper.writeValueAsBytes(mapOf("status" to "completed", "jenkins" to "2.580.1", "java" to "25",
@@ -78,7 +81,7 @@ class AdapterCertificationPortfolioTests {
             val p = GitHubActionsCheckoutRuntimeCertification.prepare(File("."), revision, "d".repeat(40), "20261010.1", envelope)
             val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
             val runner = GitHubActionsCheckoutRuntimeCertification.RUNNER
-            val runIds = GitHubActionsCheckoutRuntimeCertification.runIds
+            val runIds = SharedCheckoutFixture.runIds
             val challenge = "c".repeat(32)
             val trust = CertificationObservationTrust(challenge, mapOf(runner to key.public), runIds.map {
                 CertificationAuthorizedRun(it, id, it.takeUnless { value -> value == "baseline" }, runner) })
@@ -162,14 +165,14 @@ class AdapterCertificationPortfolioTests {
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->
         val result = f.derive(); val doc = mapper.readTree(result.json())
-        assertEquals(11, doc["assessmentCount"].asInt())
+        assertEquals(12, doc["assessmentCount"].asInt())
         assertEquals(36, doc["rows"].size())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
         assertEquals(6, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertTrue(doc["rows"].filter { it["target"].asText() !in setOf("jenkins", "github-actions") }.all {
             it["scenarioIds"].isEmpty && it["status"].asText() == "NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO" })
         val matrices = doc["assessments"].map { it["matrix"] }
-        assertEquals(35, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        assertEquals(38, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
         val github = doc["assessments"].single { it["scenarioId"].asText() == GitHubActionsCheckoutRuntimeCertification.SCENARIO }
         assertEquals("native-leaf-only", github["claim"].asText())
         assertEquals("native-leaf-in-checked-envelope", github["executionMode"].asText())
@@ -177,6 +180,11 @@ class AdapterCertificationPortfolioTests {
         assertEquals(listOf("NATIVE_CHECKOUT"), covered.map { it["construct"].asText() })
         val jenkins = doc["assessments"].single { it["scenarioId"].asText() == scenarios.first().id }
         assertNotEquals(jenkins["matrix"]["rows"].single { !it["behavior"].isNull }["behavior"]["canonicalGraph"], covered.single()["behavior"]["canonicalGraph"])
+        val shared = doc["sharedCanonicalCheckout"]
+        assertTrue(shared["observableEquivalence"].asBoolean())
+        assertEquals("bounded-native-checkout-observable-equivalence", shared["scope"].asText())
+        assertEquals(SharedCheckoutFixture.runIds, shared["runs"].map { it["runId"].asText() })
+        assertEquals(2, shared["scenarioIds"].size())
         assertTrue(result.markdown().contains("not general construct support"))
         assertTrue(result.markdown().contains("does not establish cross-target equivalence"))
     }
@@ -307,7 +315,7 @@ class AdapterCertificationPortfolioTests {
         f.editGithub("baseline.json") { (it as ObjectNode).put("signature", signature) }
         assertFailsWith<IllegalArgumentException> { f.derive() }
         f.githubFile("proof.json").writeBytes(proof); f.githubFile("baseline.json").writeBytes(record)
-        f.editGithub("baseline.json") { (it as ObjectNode).put("raw", GitHubActionsCheckoutRuntimeCertification.observationBytes(null, null).toString(Charsets.UTF_8)) }
+        f.editGithub("baseline.json") { (it as ObjectNode).put("raw", SharedCheckoutFixture.observationBytes(null, null).toString(Charsets.UTF_8)) }
         assertFailsWith<IllegalArgumentException> { f.derive() }
     }
 
@@ -356,6 +364,36 @@ class AdapterCertificationPortfolioTests {
         val target = File(f.directory, "outside-github.json").apply { writeBytes(original) }
         java.nio.file.Files.createSymbolicLink(file.toPath(), target.toPath())
         assertFailsWith<IllegalArgumentException> { f.derive() }
+    }
+
+
+    @Test fun sharedComparisonRequiresBothProvidersAndCannotUseTheOlderLocalFixture() = fixture { f ->
+        val doc = mapper.readTree(f.derive().json())
+        val sharedIds = doc["sharedCanonicalCheckout"]["scenarioIds"].map { it.asText() }.toSet()
+        val pair = doc["assessments"].filter { it["scenarioId"].asText() in sharedIds }.map { it["matrix"] }
+        assertEquals(doc["sharedCanonicalCheckout"], mapper.valueToTree<JsonNode>(AdapterCertificationPortfolio.sharedCheckoutComparison(pair.reversed())))
+        for (bad in listOf(pair.take(1), pair + pair.first(), listOf(pair.first(), pair.first())))
+            assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedCheckoutComparison(bad) }
+        val old = doc["assessments"].single { it["scenarioId"].asText() == "jenkins-checkout-runtime" }["matrix"]
+        assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedCheckoutComparison(listOf(pair.first { it["adapter"]["target"].asText() == "github-actions" }, old)) }
+    }
+
+    @Test fun sharedComparisonRejectsDifferentSourcesGraphsAndEquallyWrongObservations() = fixture { f ->
+        val doc = mapper.readTree(f.derive().json())
+        val ids = doc["sharedCanonicalCheckout"]["scenarioIds"].map { it.asText() }.toSet()
+        val original = doc["assessments"].filter { it["scenarioId"].asText() in ids }.map { it["matrix"] }
+        fun behavior(node: JsonNode) = node["rows"].single { !it["behavior"].isNull }["behavior"]
+        for (field in listOf("source", "canonicalGraph")) {
+            val pair = original.map { it.deepCopy<JsonNode>() }
+            (behavior(pair.first())[field] as ObjectNode).put("sha256", "f".repeat(64))
+            assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedCheckoutComparison(pair) }
+        }
+        val pair = original.map { it.deepCopy<JsonNode>() }
+        pair.forEach { (behavior(it)["baseline"] as ObjectNode).put("observedUtf8", "same forged observation") }
+        assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedCheckoutComparison(pair) }
+        val widened = original.map { it.deepCopy<JsonNode>() }
+        (behavior(widened.first()) as ObjectNode).put("shape", "STRUCTURAL")
+        assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedCheckoutComparison(widened) }
     }
 
 }

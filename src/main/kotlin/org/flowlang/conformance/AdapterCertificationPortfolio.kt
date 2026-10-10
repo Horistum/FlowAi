@@ -34,6 +34,7 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
 
         internal fun relativeDirectory(s: JenkinsCheckoutRuntimeCertification.Scenario): String = when (s) {
             JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> "jenkins-checkout-runtime"
+            JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT -> "jenkins-shared-checkout-runtime"
             JenkinsCheckoutRuntimeCertification.Scenario.FAILURE -> "jenkins-failure-runtime"
             JenkinsCheckoutRuntimeCertification.Scenario.CONDITION_TRUE -> "jenkins-condition-runtime/true"
             JenkinsCheckoutRuntimeCertification.Scenario.CONDITION_FALSE -> "jenkins-condition-runtime/false"
@@ -142,6 +143,8 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             }
             val allAssessments = (assessments + githubAssessment)
                 .sortedBy { it.getValue("scenarioId") as String }
+            val sharedIds = setOf(githubScenario, JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT.id)
+            val shared = sharedCheckoutComparison(allAssessments.filter { it["scenarioId"] in sharedIds }.map { it.getValue("matrix") as JsonNode })
             // The reference catalog supplies target identities only, never behavioral support.
             val targets = ReferenceTargetProjections.nativeCatalogs.keys.sorted()
             val rows = CertificationConstruct.entries.flatMap { construct -> targets.map { target ->
@@ -156,7 +159,7 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             } }
             val output = linkedMapOf<String, Any>("formatVersion" to 1, "scope" to "authenticated-reference-adapter-portfolio",
                 "sourceRevision" to revision, "referenceTargets" to targets, "publicSupportPromoted" to false,
-                "portableExecution" to false, "assessmentCount" to allAssessments.size, "rows" to rows, "assessments" to allAssessments)
+                "portableExecution" to false, "assessmentCount" to allAssessments.size, "sharedCanonicalCheckout" to shared, "rows" to rows, "assessments" to allAssessments)
             val markdown = buildString {
                 append("# Adapter certification portfolio\n\nSource revision: $revision. Reauthenticated assessments: ${allAssessments.size}.\n\n")
                 append("Scope: the current reference adapter catalog and the complete declared runtime scenario inventory. ")
@@ -168,9 +171,66 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 append("Different adapter versions and runtime images are never merged into a general certification. Checkout observations do not establish artifact transfer, secrets or value/state continuity.\n\n")
                 append("Owner-pinned producer receipts bind input proof and trust bytes. CI job outputs and the assessment host remain part of the trust boundary; a signature does not prove runner honesty. ")
                 append("Only targets with admitted scenario IDs have execution evidence. The GitHub Actions assessment executes one native leaf inside a checked envelope, not a complete generated workflow. ")
-                append("The Jenkins and GitHub Actions checkout fixtures and canonical graphs differ; their shared construct label does not establish cross-target equivalence.\n")
+                append("The shared checkout pair has identical source and canonical graph hashes, and identical authenticated revision/file observations for the baseline and both mutants. ")
+                append("This is bounded native-checkout observable equivalence only. The older local Jenkins fixture remains distinct; a shared construct label alone does not establish cross-target equivalence.\n")
             }
             return AdapterCertificationPortfolio(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(output) + "\n", markdown)
+        }
+
+        /** Diagnostic comparison only; derive() supplies matrices reconstructed by authenticated replay. */
+        internal fun sharedCheckoutComparison(matrices: List<JsonNode>): Map<String, Any> {
+            val scenarios = mapOf("github-actions" to githubScenario, "jenkins" to JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT.id)
+            require(matrices.size == 2 && matrices.map { it["adapter"]?.get("target")?.asText() }.toSet() == scenarios.keys) {
+                "The shared checkout comparison requires both distinct providers."
+            }
+            val behaviors = matrices.associate { matrix ->
+                require(matrix["scope"]?.asText() == "authenticated-single-scenario-behavior-matrix")
+                require(listOf("publicSupportPromoted", "portableExecution").all { matrix[it]?.isBoolean == true && !matrix[it].booleanValue() })
+                val target = matrix["adapter"]["target"].asText()
+                val rows = matrix["rows"]
+                require(rows?.isArray == true && rows.map { it["construct"]?.asText() } == CertificationConstruct.entries.map { it.name })
+                val covered = rows.filter { !it["behavior"].isNull }
+                require(covered.size == 1 && covered.single()["construct"].asText() == "NATIVE_CHECKOUT")
+                val b = covered.single()["behavior"]
+                require(b["scenarioId"]?.asText() == scenarios.getValue(target) && b["shape"]?.asText() == "NATIVE_LEAF_ONLY")
+                target to b
+            }
+            val ordered = scenarios.keys.sorted()
+            val first = behaviors.getValue(ordered.first())
+            for (field in listOf("source", "canonicalGraph")) {
+                val reference = first[field]
+                require(reference["sha256"]?.asText()?.matches(Regex("[0-9a-f]{64}")) == true && reference["sizeBytes"]?.asInt()?.let { it > 0 } == true)
+                require(behaviors.values.all { it[field]["sha256"] == reference["sha256"] && it[field]["sizeBytes"] == reference["sizeBytes"] }) {
+                    "Shared checkout $field differs between providers."
+                }
+            }
+            val inventories = behaviors.mapValues { (_, behavior) ->
+                val runs = listOf(behavior["baseline"]) + behavior["negativeMutants"].toList()
+                require(runs.size == SharedCheckoutFixture.runIds.size && runs.map { it["evidence"]["runId"].asText() }.toSet() == SharedCheckoutFixture.runIds.toSet())
+                runs.associateBy { it["evidence"]["runId"].asText() }
+            }
+            val runs = SharedCheckoutFixture.runIds.map { id ->
+                val expected = SharedCheckoutFixture.expected(id)
+                val digest = sha(expected)
+                val artifacts = ordered.associateWith { target ->
+                    val run = inventories.getValue(target).getValue(id)
+                    require(run["expectedObservationUtf8"]?.asText() == expected.toString(Charsets.UTF_8) &&
+                        run["observedUtf8"]?.asText() == expected.toString(Charsets.UTF_8) &&
+                        run["evidence"]["observed"]["sha256"]?.asText() == digest && run["evidence"]["observed"]["sizeBytes"]?.asInt() == expected.size) {
+                        "Shared checkout $id does not match the independent immutable oracle on $target."
+                    }
+                    run["evidence"]["artifact"]
+                }
+                linkedMapOf<String, Any>("runId" to id, "observationSha256" to digest,
+                    "observation" to mapper.readTree(expected), "artifacts" to artifacts)
+            }
+            return linkedMapOf("scope" to "bounded-native-checkout-observable-equivalence", "observableEquivalence" to true,
+                "publicSupportPromoted" to false, "portableExecution" to false, "scenarioIds" to ordered.map { scenarios.getValue(it) },
+                "sourceSha256" to first["source"]["sha256"].asText(), "canonicalGraphSha256" to first["canonicalGraph"]["sha256"].asText(),
+                "runs" to runs, "limitations" to listOf(
+                    "Only the shared native checkout's revision and fixture-file bytes are compared; no general portability or structural equivalence.",
+                    "Jenkins executes the generated Jenkinsfile; GitHub Actions executes its rendered native leaf inside the checked observation envelope.",
+                    "Both runtime hosts remain trusted; provider credentials, triggers, scheduling and workspace transfer are outside this comparison."))
         }
 
         private fun replayGitHub(root: File, revision: String, evidenceRoot: File,
@@ -201,7 +261,7 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             require(read(directory, "artifacts/source.intent.yaml", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.fixture)))
             require(read(directory, "artifacts/canonical-graph.json", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.canonicalGraph)))
             val runner = GitHubActionsCheckoutRuntimeCertification.RUNNER
-            val runIds = GitHubActionsCheckoutRuntimeCertification.runIds
+            val runIds = SharedCheckoutFixture.runIds
             val challenge = owner["challenge"]?.asText().orEmpty()
             val key = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(
                 Base64.getDecoder().decode(owner["publicKey"]?.asText().orEmpty())))

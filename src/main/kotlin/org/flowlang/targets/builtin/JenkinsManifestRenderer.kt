@@ -250,12 +250,12 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
                 require(urlBinding.value != null && branchBinding.value != null)
                 val url = groovyString(urlValue)
                 val branch = groovyString(branchValue)
-                if (depth == 0) {
+                if (depth == 0 && !Regex("[0-9a-fA-F]{40}").matches(branchValue)) {
                     sb.appendLine("${indent}git branch: $branch, url: $url")
                 } else {
                     sb.appendLine("${indent}checkout scmGit(")
                     sb.appendLine("${indent}  branches: [[name: $branch]],")
-                    sb.appendLine("${indent}  extensions: [cloneOption(depth: $depth, noTags: false, shallow: true)],")
+                    if (depth > 0) sb.appendLine("${indent}  extensions: [cloneOption(depth: $depth, noTags: false, shallow: true)],")
                     sb.appendLine("${indent}  userRemoteConfigs: [[url: $url]]")
                     sb.appendLine("${indent})")
                 }

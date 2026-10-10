@@ -16,11 +16,11 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
         runner.prepare(File("."), source, "b".repeat(40), "20261001.1.0", envelope)
     private fun expected(p: GitHubActionsCheckoutRuntimeCertification.Prepared, id: String) = p.evidence.getValue("expected:$id")
 
-    private fun assess(p: GitHubActionsCheckoutRuntimeCertification.Prepared, values: Map<String, ByteArray> = runner.runIds.associateWith { expected(p, it) },
+    private fun assess(p: GitHubActionsCheckoutRuntimeCertification.Prepared, values: Map<String, ByteArray> = SharedCheckoutFixture.runIds.associateWith { expected(p, it) },
         corruptSignature: Boolean = false, substitutedKey: Boolean = false): CertificationAdmissionReport {
         val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val trust = CertificationObservationTrust("a".repeat(32), mapOf("test" to if (substitutedKey) KeyPairGenerator.getInstance("Ed25519").generateKeyPair().public else key.public),
-            runner.runIds.map { CertificationAuthorizedRun(it, runner.SCENARIO, it.takeUnless { id -> id == "baseline" }, "test") })
+            SharedCheckoutFixture.runIds.map { CertificationAuthorizedRun(it, runner.SCENARIO, it.takeUnless { id -> id == "baseline" }, "test") })
         val signed = values.map { (id, raw) ->
             val observation = runner.observation(p, id, raw)
             val signer = Signature.getInstance("Ed25519"); signer.initSign(key.private)
@@ -37,7 +37,7 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
         assertContentEquals(p.bound.resolve(p.bound.artifact), p.artifacts.getValue("baseline"))
         assertEquals(3, p.artifacts.values.map(runner::sha256).toSet().size)
         assertEquals("", p.leaves.getValue("omitted-checkout"))
-        assertTrue(p.leaves.getValue("substituted-revision").contains(runner.ALTERNATE))
+        assertTrue(p.leaves.getValue("substituted-revision").contains(SharedCheckoutFixture.ALTERNATE))
         assertTrue(p.bound.subjects.any { it is CertificationSubject.Leaf && it.reference == "actions/checkout@v4" })
         assertTrue(p.bound.subjects.none { it is CertificationSubject.Structural })
         assertTrue(p.bundle.coverage.filter { it.subject !in p.bound.subjects }.all { it.scenarioIds.isEmpty() })
@@ -45,9 +45,9 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
     }
 
     @Test fun wrongHeadWrongBytesAndSurvivingMutantsAreNotAdmitted() {
-        val p = prepare(); val values = runner.runIds.associateWith { expected(p, it) }
-        for ((id, bytes) in listOf("baseline" to runner.observationBytes(runner.ALTERNATE, runner.SELECTED_MARKER),
-            "baseline" to runner.observationBytes(runner.SELECTED, runner.ALTERNATE_MARKER),
+        val p = prepare(); val values = SharedCheckoutFixture.runIds.associateWith { expected(p, it) }
+        for ((id, bytes) in listOf("baseline" to SharedCheckoutFixture.observationBytes(SharedCheckoutFixture.ALTERNATE, SharedCheckoutFixture.SELECTED_MARKER),
+            "baseline" to SharedCheckoutFixture.observationBytes(SharedCheckoutFixture.SELECTED, SharedCheckoutFixture.ALTERNATE_MARKER),
             "omitted-checkout" to expected(p, "baseline"), "substituted-revision" to expected(p, "baseline"))) {
             val result = assess(p, values + (id to bytes))
             assertFalse(result.valid); assertTrue(result.findings.any { it.code == "OBSERVATION_MISMATCH" })
@@ -58,7 +58,7 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
         val p = prepare()
         assertFalse(assess(p, corruptSignature = true).valid)
         assertFalse(assess(p, substitutedKey = true).valid)
-        assertFalse(assess(p, runner.runIds.dropLast(1).associateWith { expected(p, it) }).valid)
+        assertFalse(assess(p, SharedCheckoutFixture.runIds.dropLast(1).associateWith { expected(p, it) }).valid)
         assertFails { runner.observation(p, "unexpected", expected(p, "baseline")) }
     }
 
@@ -67,7 +67,7 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
         assertFails { prepare(bytes + "\n".toByteArray()) }
         assertFails { prepare(source = "main") }
         val p = prepare(); val text = bytes.toString(Charsets.UTF_8)
-        for (changed in listOf(text.replace(runner.SELECTED, runner.ALTERNATE),
+        for (changed in listOf(text.replace(SharedCheckoutFixture.SELECTED, SharedCheckoutFixture.ALTERNATE),
             text.replace("      # FLOW NATIVE BEGIN baseline\n", ""),
             text.replace("      # FLOW NATIVE END baseline\n", "      # FLOW NATIVE END baseline\n      # FLOW NATIVE END baseline\n"),
             text.replace("      # FLOW NATIVE END omitted-checkout\n", "      - run: echo forged\n      # FLOW NATIVE END omitted-checkout\n")))
@@ -103,7 +103,7 @@ class GitHubActionsCheckoutRuntimeCertificationTests {
             assertFails { runner.clearWorkspace(alias, alias) }
             runner.clearWorkspace(workspace, workspace)
             assertTrue(Files.exists(sentinel)); assertTrue(workspace.toFile().listFiles()!!.isEmpty())
-            assertContentEquals(runner.observationBytes(null, null), runner.observeWorkspace(workspace.toFile()))
+            assertContentEquals(SharedCheckoutFixture.observationBytes(null, null), runner.observeWorkspace(workspace.toFile()))
             Files.writeString(workspace.resolve("contamination"), "stale")
             assertFails { runner.observeWorkspace(workspace.toFile()) }
         } finally { root.toFile().deleteRecursively() }

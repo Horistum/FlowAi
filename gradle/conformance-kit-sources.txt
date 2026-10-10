@@ -125,6 +125,7 @@ org/flowlang/conformance/SemanticEquivalenceRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/SemanticIdentityConformanceChecks.kt
 org/flowlang/conformance/SemanticImplementationObservationAuthority.kt
 org/flowlang/conformance/SemanticObservationAuthority.kt
+org/flowlang/conformance/SharedCheckoutFixture.kt
 org/flowlang/conformance/SourceDeclarationConformanceChecks.kt
 org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
 org/flowlang/conformance/StandardEvidenceChecks.kt

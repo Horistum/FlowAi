@@ -12,7 +12,8 @@ import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
-// Test controller only: no listening host ports, credentials, production jobs or external network.
+// Test controller only: no published host ports, credentials or production jobs.
+// Only the shared immutable checkout scenario gets public Git egress; legacy fixtures stay offline.
 Thread.start('checkout-certification') {
     def output = new File('/evidence/runtime.json')
     def daemon = null
@@ -20,6 +21,7 @@ Thread.start('checkout-certification') {
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def inventories = [
+            'jenkins-shared-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-revision'],
             'jenkins-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-branch'],
             'jenkins-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-condition-true-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
@@ -32,6 +34,7 @@ Thread.start('checkout-certification') {
             'jenkins-approval-reject-runtime': ['baseline', 'omitted-approval', 'late-approval', 'suppressed-rejection']
         ]
         if (!inventories.containsKey(scenario)) throw new IllegalArgumentException('Unknown certification scenario')
+        def sharedCheckout = scenario == 'jenkins-shared-checkout-runtime'
         def jenkins = Jenkins.get()
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(120)
         while (jenkins.getInitLevel() != InitMilestone.COMPLETED) {
@@ -39,25 +42,27 @@ Thread.start('checkout-certification') {
             Thread.sleep(100)
         }
         jenkins.setNumExecutors(1)
-        daemon = new ProcessBuilder('git', '-c', 'safe.directory=/fixture/repository.git', 'daemon', '--export-all', '--reuseaddr',
-            '--base-path=/fixture', '--listen=127.0.0.1', '--port=9418')
-            .redirectErrorStream(true).redirectOutput(new File('/evidence/git-daemon.log')).start()
-        // Establish repository availability separately from the behavior under test.
-        boolean available = false
-        for (int attempt = 0; attempt < 30 && !available; attempt++) {
-            def probe = new ProcessBuilder('git', 'ls-remote', 'git://127.0.0.1:9418/repository.git')
-                .redirectErrorStream(true).redirectOutput(new File('/evidence/git-probe.log')).start()
-            if (!probe.waitFor(2, TimeUnit.SECONDS)) probe.destroyForcibly()
-            else {
-                def refs = new File('/evidence/git-probe.log').getText('UTF-8').readLines()
-                available = probe.exitValue() == 0 &&
-                    refs.any { it.endsWith('\trefs/heads/selected') } &&
-                    refs.any { it.endsWith('\trefs/heads/alternate') } &&
-                    !refs.any { it.endsWith('\trefs/heads/missing-revision') }
+        if (!sharedCheckout) {
+            daemon = new ProcessBuilder('git', '-c', 'safe.directory=/fixture/repository.git', 'daemon', '--export-all', '--reuseaddr',
+                '--base-path=/fixture', '--listen=127.0.0.1', '--port=9418')
+                .redirectErrorStream(true).redirectOutput(new File('/evidence/git-daemon.log')).start()
+            // Establish repository availability separately from the behavior under test.
+            boolean available = false
+            for (int attempt = 0; attempt < 30 && !available; attempt++) {
+                def probe = new ProcessBuilder('git', 'ls-remote', 'git://127.0.0.1:9418/repository.git')
+                    .redirectErrorStream(true).redirectOutput(new File('/evidence/git-probe.log')).start()
+                if (!probe.waitFor(2, TimeUnit.SECONDS)) probe.destroyForcibly()
+                else {
+                    def refs = new File('/evidence/git-probe.log').getText('UTF-8').readLines()
+                    available = probe.exitValue() == 0 &&
+                        refs.any { it.endsWith('\trefs/heads/selected') } &&
+                        refs.any { it.endsWith('\trefs/heads/alternate') } &&
+                        !refs.any { it.endsWith('\trefs/heads/missing-revision') }
+                }
+                if (!available) Thread.sleep(200)
             }
-            if (!available) Thread.sleep(200)
+            if (!available) throw new IllegalStateException('Fixture Git server is unavailable')
         }
-        if (!available) throw new IllegalStateException('Fixture Git server is unavailable')
         def results = []
         def nativeSteps = { build, name ->
             new FlowGraphWalker(build.getExecution()).findAll {
@@ -116,7 +121,7 @@ Thread.start('checkout-certification') {
             def marker = workspace.child('marker.txt')
             if (marker.exists() && marker.length() > 1024) throw new IllegalStateException('Oversized workspace observation')
             // Inspect actual executed native steps, including caught errors, without changing pipeline bytes.
-            def checkouts = nativeSteps(build, 'git')
+            def checkouts = nativeSteps(build, sharedCheckout ? 'checkout' : 'git')
             def errors = checkouts.findAll { it.getError() != null }.collect {
                 def error = it.getError().getError()
                 [type: error.getClass().getName(), message: error.getMessage()]
@@ -126,6 +131,31 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
+            if (sharedCheckout) {
+                // Observe the completed workspace independently; the pipeline bytes are unchanged.
+                if (workspace.isRemote()) throw new IllegalStateException('Expected the disposable controller workspace')
+                def repository = workspace.child('.git')
+                def observed = workspace.child('.flow-agent/work-packages/behavioral-adapter-certification.yaml')
+                if (!repository.exists()) {
+                    if (workspace.exists() && !workspace.list().isEmpty()) throw new IllegalStateException('Omitted checkout workspace is not empty')
+                    record.revision = null
+                    record.markerSha256 = null
+                } else {
+                    if (!repository.isDirectory() || !observed.exists() || observed.length() < 1 || observed.length() > 65536)
+                        throw new IllegalStateException('Missing or oversized shared fixture observation')
+                    def probeLog = new File('/evidence/' + id + '-revision.log')
+                    def probe = new ProcessBuilder('git', '-C', workspace.getRemote(), 'rev-parse', 'HEAD')
+                        .redirectErrorStream(true).redirectOutput(probeLog).start()
+                    if (!probe.waitFor(30, TimeUnit.SECONDS)) {
+                        probe.destroyForcibly()
+                        throw new IllegalStateException('Git revision observation timed out')
+                    }
+                    def revision = probeLog.getText('UTF-8').trim()
+                    if (probe.exitValue() != 0 || !(revision ==~ /[0-9a-f]{40}/)) throw new IllegalStateException('Invalid Git revision observation')
+                    record.revision = revision
+                    record.markerSha256 = observed.read().withCloseable { input -> sha256(input.readAllBytes()) }
+                }
+            }
             if (scenario.startsWith('jenkins-approval-')) {
                 def inputs = nativeSteps(build, 'input')
                 def terminal = build.getExecution().getCauseOfFailure()

@@ -1,0 +1,48 @@
+version: AR-06O
+name: Shared Canonical Checkout Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 211.
+  predecessorPullRequest: 211
+  mergedMain: d38787c3709dcb775b9bd62aa99e1ac5622b2a67
+invariant: Bounded cross-target checkout equivalence requires identical authored source and canonical graph, independently executed native artifacts and equal authenticated baseline and mutant observations.
+scope:
+- Move the immutable public checkout fixture and its independent revision/file oracles to a shared conformance input.
+- Render full-history immutable Git revisions with Jenkins checkout scmGit rather than the branch-only git shorthand.
+- Execute that same fixture on Jenkins and GitHub Actions, including omitted-checkout and substituted-revision mutants.
+- Reauthenticate all twelve portfolio assessments and compare the shared pair's source, graph and exact observable bytes.
+- Preserve explicit native-leaf scope, provider execution modes, runtime prerequisites and complete historical evidence.
+nonGoals:
+- No general portable execution, whole-workflow GitHub Actions certification or public support promotion.
+- No Core semantics, public syntax, credentials, control-flow or workspace-transfer expansion.
+- No AR-06 closure, finding closure, version bump or EF-09 resumption.
+ownershipBoundary:
+  production: Bounded correction to the existing Jenkins native checkout renderer.
+  conformance: Shared immutable fixture, provider execution observations and authenticated comparison.
+  runtime: Disposable Jenkins controller with public Git egress; all previous local-fixture scenarios retain network isolation.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- flow-adapter-jenkins/src/runtimeTest/run.groovy
+- flow-conformance-kit/build.gradle.kts
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- SHA checkout uses the full native SCM API while ordinary full-history branch output remains unchanged.
+- Both compilers bind identical source and graph bytes; baseline and both mutants have independent immutable oracles.
+- Wrong revisions, file bytes, incomplete runs, mismatched graphs or observations and widened claims fail closed.
+- Preserve all previous tests, historical lifecycle transitions and ordered standalone conformance checks.
+conformanceToAddOrUpdate:
+- Run the actual generated Jenkins artifact and the checked GitHub Actions native leaf for the shared fixture.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime, github-actions-checkout-runtime, jenkins-shared-checkout-runtime, adapter-certification-portfolio]
+  negativeEvidence: Incorrect immutable revision, marker digest, missing checkout, stale source or graph, altered signed observations and false cross-target equivalence.
+followUp:
+- Extend shared canonical behavioral coverage beyond checkout before claiming portable execution.
+- Complete remaining AR-06 construct coverage and evidence-derived public support gates.

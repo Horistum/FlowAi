@@ -33,7 +33,8 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
             resolver: CertificationEvidenceResolver
         ): AdapterBehaviorMatrix {
             val construct = when (scenario) {
-                JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> CertificationConstruct.NATIVE_CHECKOUT
+                JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT,
+                JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT -> CertificationConstruct.NATIVE_CHECKOUT
                 JenkinsCheckoutRuntimeCertification.Scenario.FAILURE -> CertificationConstruct.FAILURE_PROPAGATION
                 JenkinsCheckoutRuntimeCertification.Scenario.CONDITION_TRUE,
                 JenkinsCheckoutRuntimeCertification.Scenario.CONDITION_FALSE -> CertificationConstruct.CONDITIONS
@@ -56,7 +57,7 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
 
         fun deriveGitHubCheckout(assessment: CertificationEvidenceViewResult, resolver: CertificationEvidenceResolver): AdapterBehaviorMatrix =
             derive(assessment, GitHubActionsCheckoutRuntimeCertification.SCENARIO, "github-actions",
-                GitHubActionsCheckoutRuntimeCertification.runIds, CertificationConstruct.NATIVE_CHECKOUT,
+                SharedCheckoutFixture.runIds, CertificationConstruct.NATIVE_CHECKOUT,
                 CertificationSubject.Semantic("git.checkout"), resolver)
 
         private fun derive(assessment: CertificationEvidenceViewResult, scenarioId: String, target: String,

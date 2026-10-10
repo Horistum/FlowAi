@@ -5,5 +5,6 @@ RUN jenkins-plugin-cli --latest=false --plugins \
     timestamper:1.30 \
     pipeline-input-step:534.v352f0a_e98918
 ENV JAVA_OPTS="-Djenkins.install.runSetupWizard=false"
-# Runtime networking is disabled by the host. The only Git server is loopback.
+# Legacy fixtures have no runtime networking. The shared immutable checkout opts into public Git egress.
+# Jenkins HTTP stays on loopback and no host ports are published.
 ENV JENKINS_OPTS="--httpListenAddress=127.0.0.1"
