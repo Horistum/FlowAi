@@ -126,27 +126,30 @@ targets:
         limitations:
           - "The current payload does not model submitter identity, approver groups or approval timeout."
       - family: RETRY
-        status: UNSUPPORTED
-        mechanism: "RetryGroupNode is preserved in the target manifest but the Jenkins renderer currently emits only its children."
+        status: PARTIAL
+        mechanism: "Native Jenkins retry(count) preserves the total attempt limit and stops after success; only fixed zero-delay policies receive plan-specific capability evidence."
         ownership: WORKFLOW_DEFINITION
         scopes: [TASK]
         semantics:
-          supported: []
+          supported:
+            - retry.attempt-limit
           unsupported:
-            retry.attempt-limit: "The renderer does not emit retry count."
-            retry.delay.fixed: "The renderer does not emit delay."
-            retry.backoff.variable: "The renderer does not emit backoff."
+            retry.delay.fixed: "Nonzero delay is not implemented."
+            retry.backoff.variable: "Variable backoff is not implemented."
             retry.failure-filter: "No failure filter contract is represented."
             retry.cancellation: "Cancellation behavior is not certified."
           unknown: {}
         evidenceReferences:
-          - "src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt#RetryGroupNode"
-          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsStep"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsRetry"
+          - "src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt"
+          - "src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt#boundedRetryPreservesAttemptLimitAndEarlySuccess"
         platformReferences:
           - "https://www.jenkins.io/doc/pipeline/steps/workflow-basic-steps/#retry-retry-the-body-up-to-n-times"
-        prerequisites: []
+        prerequisites:
+          - "The composed provider must retain the JENKINS_STRUCTURE/retry definition."
         limitations:
-          - "General Jenkins capability does not compensate for missing Flow provider behavior."
+          - "Only task-scoped total attempt limits with fixed zero delay are executable."
+          - "No delay, backoff, failure-filter, transient-recovery or cancellation certification."
       - family: TIMEOUT
         status: UNSUPPORTED
         mechanism: "No timeout node, target manifest control payload or Jenkins renderer contract exists in the current distribution."

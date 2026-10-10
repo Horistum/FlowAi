@@ -43,6 +43,13 @@ object JenkinsNativeProjectionCatalog {
         ),
         structuralDefinitions = listOf(
             TargetNativeStructuralProjectionDefinition(
+                structure = TargetStructuralProjectionKind.RETRY,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
+                reference = "retry",
+                implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsRetry",
+                behavioralEvidenceReference = "src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt#boundedRetryPreservesAttemptLimitAndEarlySuccess"
+            ),
+            TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.CONDITION,
                 kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "if",

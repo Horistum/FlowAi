@@ -358,6 +358,51 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  jenkins-retry-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Exact Revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Verify Retry Projection And Observation Boundaries
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsRetry*' --tests '*TargetStructuralProjectionHonestyTests' --tests '*AdapterControlMaterializationAuthorityTests' --stacktrace
+      - name: Execute Real Jenkins Bounded Retry And Mutants
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsRetryRuntime --stacktrace
+      - name: Publish Bounded Observation Summaries
+        run: |
+          cat flow-conformance-kit/build/jenkins-retry-certification/failure/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-retry-certification/success/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-retry-certification --artifact jenkins-retry-runtime --revision "$EXPECTED_SHA"
+      - name: Upload Runtime Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-retry-runtime
+          path: flow-conformance-kit/build/jenkins-retry-certification/
+          if-no-files-found: error
+          retention-days: 7
+
   jenkins-approval-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -402,7 +447,7 @@ jobs:
           retention-days: 7
 
   adapter-certification-portfolio:
-    needs: [jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    needs: [jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

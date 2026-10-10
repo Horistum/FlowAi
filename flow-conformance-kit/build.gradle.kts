@@ -126,6 +126,24 @@ tasks.register("verifyJenkinsLocalRecoveryRuntime") {
     dependsOn(localRecoveryRuntimeTasks)
 }
 
+val retryRuntimeTasks = listOf("failure", "success").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsRetry${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify bounded retry for a $outcome body on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-retry-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-retry-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsRetryRuntime") {
+    group = "verification"
+    description = "Execute bounded retry and its attempt-count mutants on real Jenkins."
+    dependsOn(retryRuntimeTasks)
+}
+
 val approvalRuntimeTasks = listOf("approve", "reject").map { outcome ->
     tasks.register<JavaExec>("verifyJenkinsApproval${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
         group = "verification"

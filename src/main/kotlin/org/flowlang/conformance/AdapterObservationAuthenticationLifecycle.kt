@@ -29,6 +29,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val MULTI_PORTFOLIO_BASELINE = ".flow-agent/evidence/multi-adapter-portfolio-baseline.json"
     const val SHARED_CHECKOUT_WORK_PACKAGE = ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml"
     const val SHARED_CHECKOUT_BASELINE = ".flow-agent/evidence/shared-canonical-checkout-baseline.json"
+    const val RETRY_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-retry-certification.yaml"
+    const val RETRY_BASELINE = ".flow-agent/evidence/jenkins-retry-baseline.json"
+    private const val RETRY_BASELINE_SHA256 = "f1044b17c0196172a6f437c89ef521b9e79f94ccedd8cfaed282c2a0f9d6a2cb"
     private const val SHARED_CHECKOUT_BASELINE_SHA256 = "631408a6045737a548f124e81049a139162ada5f809bf8d01c2d6a70c29d361e"
     private const val MULTI_PORTFOLIO_BASELINE_SHA256 = "cf913d74094d247578a05122a5c23c93cebfaa65a3148f40833d3c7f7d6020a3"
     private const val GITHUB_CHECKOUT_BASELINE_SHA256 = "6d85faca53c1196c13048a154370ba30481d775c6a79db6b2d1c1a674501154d"
@@ -46,6 +49,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06P" || s.release.containsKey("recoveryRetryCertification")) {
+            val raw = s.certificationRetryBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != RETRY_BASELINE_SHA256) {
+                add("Jenkins bounded retry certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), RETRY_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Jenkins bounded retry certification selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Jenkins bounded retry certification release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Jenkins bounded retry certification work", s.certificationRetryWorkPackage, mapOf("version" to "AR-06P", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Jenkins bounded retry certification authorization", section(s.certificationRetryWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Jenkins bounded retry certification validation", section(s.certificationRetryWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Jenkins bounded retry certification candidate", section(s.release["recoveryRetryCertification"]), mapOf(
+                "candidate" to "AR-06P", "status" to "candidate", "workPackage" to RETRY_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-retry-certification.md", "baselineEvidence" to RETRY_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(retryPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06O" || s.release.containsKey("recoverySharedCheckout")) {
             val raw = s.certificationSharedCheckoutBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -436,12 +464,23 @@ internal object AdapterObservationAuthenticationLifecycle {
     }
 
     internal fun sharedCheckoutPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryRetryCertification") || s.certificationWorkPackage["selectedSlice"] == "AR-06P")
+            return sharedCheckoutPredecessor(retryPredecessor(s))
         if (!s.release.containsKey("recoverySharedCheckout") && s.certificationWorkPackage["selectedSlice"] != "AR-06O") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationSharedCheckoutBaseline), SHARED_CHECKOUT_BASELINE)["transition"])
         return s.copy(
             certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
             release = (s.release - "recoverySharedCheckout") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
             certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
+    }
+
+    internal fun retryPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryRetryCertification") && s.certificationWorkPackage["selectedSlice"] != "AR-06P") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationRetryBaseline), RETRY_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryRetryCertification") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationRetryWorkPackage = emptyMap(), certificationRetryBaseline = null)
     }
 
     private fun stringMap(value: Any?): Map<String, Any?> = section(value).entries.associate { it.key.toString() to it.value }

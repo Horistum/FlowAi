@@ -114,9 +114,10 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         TargetProjectionDiagnostics.append(JenkinsProjectionSyntax, step, manifest.inputs, sb, indent, "//")
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
-            "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match", "retry" ->
+            "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match" ->
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
             "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
+            "retry" -> renderJenkinsRetry(step, manifest, sb, indent)
             "approval" -> renderJenkinsApproval(step, sb, indent)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
@@ -193,6 +194,18 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
     }
 
     private val JENKINS_IDENTIFIER = Regex("[A-Za-z_][A-Za-z0-9_]*")
+
+    private fun renderJenkinsRetry(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        requireJenkinsStructure(step, "retry")
+        require(step.params.keys == setOf("max", "delay", "backoff")) { "Jenkins retry requires the complete authored policy." }
+        val max = requireNotNull(step.params["max"]?.toIntOrNull()) { "Jenkins retry requires an integer total attempt limit." }
+        require(JenkinsRetryProjectionScope.supports(max, step.params.getValue("delay"), step.params.getValue("backoff"))) {
+            "Jenkins retry supports only a positive total attempt limit with fixed zero delay."
+        }
+        sb.appendLine("${indent}retry($max) {")
+        step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        sb.appendLine("${indent}}")
+    }
 
     private fun requireJenkinsStructure(step: TargetStep, reference: String) {
         val payload = requireNotNull(step.rendererPayload) {

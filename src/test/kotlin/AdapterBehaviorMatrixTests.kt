@@ -57,6 +57,7 @@ class AdapterBehaviorMatrixTests {
             assertEquals(CertificationConstruct.entries.map { it.name }, rows(value).map { it["construct"].asText() })
             val b = behavior(value)
             val expectedCategory = when {
+                s.retry -> "RETRY"
                 s.approval -> "APPROVALS"
                 s.conditional -> "CONDITIONS"
                 s.terminalEvidence -> "ERROR_HANDLING"

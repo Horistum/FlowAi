@@ -26,6 +26,9 @@ import org.flowlang.adapters.trigger.AdapterTriggerMaterializationAuthority
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.adapters.contract.AdapterCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
+import org.flowlang.generators.manifest.providerFor
+import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
 import org.flowlang.targets.TargetRegistryYamlLoader
 
 /**
@@ -104,7 +107,11 @@ object ReferenceAdapterEvidence {
         targets = targets,
         projections = projections,
         scopedSupports = BuiltInAdapterContinuityScopedSupport.declarations,
-        capabilityResolver = AdapterContinuityScopedCapabilityResolver()
+        capabilityResolver = TargetProjectionCapabilityResolver { authorization, target, declared ->
+            val continuity = AdapterContinuityScopedCapabilityResolver().resolve(authorization, target, declared)
+            JenkinsRetryProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
+                .resolve(authorization, target, continuity)
+        }
     )
 
     fun continuity(

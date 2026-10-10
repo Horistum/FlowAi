@@ -1,0 +1,54 @@
+version: AR-06P
+name: Jenkins Bounded Retry Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 212.
+  predecessorPullRequest: 212
+  mergedMain: fda0e823af8e71cf94e416029c91bb6a865735d7
+invariant: A bounded retry preserves its authored total attempt limit, stops after a successful body and propagates the final failure without executing its successor.
+scope:
+- Render fixed zero-delay retry through the native Jenkins retry block.
+- Derive plan-specific retry capability only from authorized canonical retry nodes and the composed native provider; keep the generic target registry unchanged.
+- Classify only the attempt-limit control semantic as implemented; delay, variable backoff, failure filters and cancellation remain outside this certification.
+- Execute successful and exhausted retry bodies on an isolated Jenkins controller with missing, reduced or excess attempts as falsifying mutants.
+- Reauthenticate the expanded portfolio while preserving the shared checkout comparison and every previous scenario.
+nonGoals:
+- No general retry policy, transient recovery, cancellation, timeout or cross-target retry claim.
+- No Core semantics, public syntax, generic registry support promotion, finding closure or version change.
+- No AR-06 closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  concreteAdapter: Jenkins native renderer, bounded capability scope and attempt-limit control evidence.
+  conformance: Actual attempt observations, independent mutant oracles and authenticated portfolio replay.
+  runtime: Disposable offline Jenkins controller and its existing local Git fixture.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceAdapterEvidence.kt
+- adapters/controls/builtin-control-materialization.yaml
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- flow-adapter-jenkins/src/runtimeTest/
+- flow-conformance-kit/build.gradle.kts
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- Accepted fixed zero-delay retry uses the native block and preserves exact total attempts.
+- Other policies, incomplete provider evidence and malformed renderer inputs fail closed.
+- Successful bodies execute once; exhausted bodies execute exactly the limit and skip the successor.
+- Falsified attempt counts, error origins, final results, observations and lifecycle receipts are rejected.
+- Preserve all prior test identities, scenario evidence and ordered conformance checks.
+conformanceToAddOrUpdate:
+- Observe actual native checkout executions and terminal error identity in generated Jenkinsfiles.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime, github-actions-checkout-runtime, jenkins-shared-checkout-runtime, jenkins-retry-runtime, adapter-certification-portfolio]
+  negativeEvidence: Flattened retry, changed attempt limit, repeated successful body, omitted body, wrong terminal failure, continued execution after exhaustion and altered signed observations.
+followUp:
+- Extend shared canonical behavioral coverage beyond checkout before claiming portable execution.
+- Certify transient recovery, delay, backoff and interruption separately before expanding retry policy support.
+- Complete remaining AR-06 construct coverage and evidence-derived public support gates.

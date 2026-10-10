@@ -1,0 +1,136 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "retry",
+  "scenarios": [
+    {
+      "scenario": "jenkins-retry-failure-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "FAILURE",
+        "marker": null,
+        "checkoutCount": 3,
+        "checkoutErrors": [
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          },
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          },
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          }
+        ],
+        "checkoutErrorIndices": [
+          1,
+          2,
+          3
+        ],
+        "terminalError": {
+          "type": "hudson.AbortException",
+          "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+          "checkoutIndex": 3
+        }
+      },
+      "mutants": [
+        {
+          "id": "flattened-retry",
+          "result": "FAILURE",
+          "marker": null,
+          "checkoutCount": 1,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 1
+          }
+        },
+        {
+          "id": "excess-attempts",
+          "result": "FAILURE",
+          "marker": null,
+          "checkoutCount": 4,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            },
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            },
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            },
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutErrorIndices": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "terminalError": {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+            "checkoutIndex": 4
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-retry-success-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "alternate\n",
+        "checkoutCount": 2,
+        "checkoutErrors": [],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "omitted-body",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "repeated-success",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 4,
+          "checkoutErrors": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Task-scoped total attempt limit with fixed zero delay on the recorded native Jenkins runtime only.",
+    "Persistent missing-revision failure and first-attempt success are observed; no transient-recovery, delay, backoff, cancellation, timeout or failure-filter claim.",
+    "The observer counts actual native checkout executions and identifies the final error origin without modifying the generated pipeline.",
+    "Generic target registry support, cross-target equivalence and portable execution are not promoted."
+  ]
+}
