@@ -83,7 +83,7 @@ class JenkinsLoopProjectionTests {
             assertEquals(false, JenkinsLoopProjectionScope.safeItem(name))
         assertTrue(JenkinsLoopProjectionScope.safeItem("entry_1"))
         assertEquals(declared, scoped(source.replace("item", "params")))
-        val collision = source.replace("  systems {", "  input { item: string default \"selected\" }\n  systems {")
+        val collision = source.replace("  systems {", "  input { item: text default \"selected\" }\n  systems {")
         assertEquals(declared, scoped(collision))
     }
 

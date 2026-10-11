@@ -35,23 +35,23 @@ class JenkinsLoopRuntimeCertificationTests {
             .put("timestamper", "1.30").put("workflow-basic-steps", "1079.vce64b_a_929c5a_")
         val records = root.putArray("runs")
         for ((id, bytes) in p.artifacts) {
-                val branches: List<String> = when (p.scenario) {
-                    scenarios[0] -> when (id) {
-                        "baseline" -> listOf("selected", "selected", "alternate", "selected")
-                        "reversed-items" -> listOf("alternate", "selected", "selected", "selected")
-                        else -> listOf("selected", "alternate", "selected")
-                    }
-                    scenarios[1] -> when (id) {
-                        "baseline" -> listOf("selected"); "forced-iteration" -> listOf("missing-revision"); else -> emptyList()
-                    }
-                    else -> when (id) {
-                        "baseline" -> listOf("selected", "missing-revision")
-                        "omitted-failure" -> listOf("selected", "alternate", "selected")
-                        else -> listOf("selected", "missing-revision", "alternate", "selected")
-                    }
+            val branches: List<String> = when (p.scenario) {
+                scenarios[0] -> when (id) {
+                    "baseline" -> listOf("selected", "selected", "alternate", "selected")
+                    "reversed-items" -> listOf("alternate", "selected", "selected", "selected")
+                    else -> listOf("selected", "alternate", "selected")
                 }
-                val index = branches.indexOf("missing-revision") + 1
-                val failure = index > 0 && id != "suppressed-failure"
+                scenarios[1] -> when (id) {
+                    "baseline" -> listOf("selected"); "forced-iteration" -> listOf("missing-revision"); else -> emptyList()
+                }
+                else -> when (id) {
+                    "baseline" -> listOf("selected", "missing-revision")
+                    "omitted-failure" -> listOf("selected", "alternate", "selected")
+                    else -> listOf("selected", "missing-revision", "alternate", "selected")
+                }
+            }
+            val index = branches.indexOf("missing-revision") + 1
+            val failure = index > 0 && id != "suppressed-failure"
             val row = records.addObject().put("id", id).put("result", if (failure) "FAILURE" else "SUCCESS")
                 .put("finished", true).put("buildNumber", 1).put("artifactSha256", sha(bytes)).put("checkoutCount", branches.size)
             if (p.scenario == scenarios[1] && id != "baseline") row.putNull("marker") else row.put("marker", "selected\n")
