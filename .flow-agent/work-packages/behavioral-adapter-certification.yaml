@@ -7,10 +7,10 @@ authorization:
   source: "Maintainer requests the next roadmap step after merging PR #199."
   acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
   workflowRunId: 37636042462
-selectedSlice: "AR-06O"
-selectedWorkPackage: ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml"
+selectedSlice: "AR-06P"
+selectedWorkPackage: ".flow-agent/work-packages/jenkins-retry-certification.yaml"
 acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "Bounded cross-target checkout equivalence requires identical authored source and canonical graph, independently executed native artifacts and equal authenticated baseline and mutant observations."
+invariant: "A bounded retry preserves its authored total attempt limit, stops after a successful body and propagates the final failure without executing its successor."
 scope:
   - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
   - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
@@ -24,13 +24,14 @@ scope:
   - "Execute the compiler-rendered GitHub Actions native checkout leaf with omitted and substituted revision mutants on a hosted runner."
   - "Include the second adapter in the complete source-bound portfolio while preserving native-leaf scope and distinct canonical fixtures."
   - "Execute one shared canonical native checkout scenario on both providers and compare authenticated baseline and mutant observations."
+  - "Certify native fixed zero-delay Jenkins retry with exact exhaustion and early-success observations and falsifying attempt mutants."
 nonGoals:
   - "No product runtime execution, general semantic adequacy or portable-execution claim."
   - "No support promotion, finding closure, public version change or EF-09 resumption."
 ownershipBoundary:
-  production: unchanged
+  production: "Adapter-owned fixed zero-delay retry rendering and scoped capability; Core unchanged."
   semanticKernel: unchanged
-  concreteAdapters: unchanged
+  concreteAdapters: "Jenkins retry only; generic target registry unchanged."
   conformance: "Lifecycle validation and real-provider integration tests."
 validation:
   status: current-revision-ci-required
@@ -45,9 +46,10 @@ validation:
   - jenkins-approval-runtime
   - github-actions-checkout-runtime
   - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
   - adapter-certification-portfolio
-  negativeEvidence: Incorrect immutable revision, marker digest, missing checkout, stale source or graph, altered signed observations
-    and false cross-target equivalence.
+  negativeEvidence: Flattened retry, changed attempt limit, repeated successful body, omitted body, wrong terminal failure,
+    continued execution after exhaustion and altered signed observations.
 followUp:
   - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
   - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."

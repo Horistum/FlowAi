@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 29
+revision: 30
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #211 is merged into main d38787c3709dcb775b9bd62aa99e1ac5622b2a67 with the same source tree as validated PR head and merge candidate. Flow CI 38055215605 passed 2024 tests and 274 ordered checks per revision; runtime CI 38055215602 passed eleven assessments with 35 independently verified signatures. Main runtime CI 38060038059 passed; main Flow CI 38060038005 was still in progress at selection. AR-06O executes a shared immutable native checkout on Jenkins and GitHub Actions and compares authenticated source, graph and observable bytes. Historical acceptance remains unchanged; general portability, support promotion and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
+  decisionBasis: "PR #212 is merged into main fda0e823af8e71cf94e416029c91bb6a865735d7 with the same source tree as validated PR head and merge candidate. Flow CI 38061220444 passed 2037 tests and 274 ordered checks per revision; runtime CI 38061220446 passed twelve assessments with 38 independently verified signatures. Main runtime CI 38068371090 passed; main Flow CI 38068371091 was still in progress at selection. AR-06P certifies bounded native Jenkins retry with fixed zero delay, exact exhaustion and early-success observations. Historical acceptance and generic target registry remain unchanged; general retry policies, portability and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

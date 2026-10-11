@@ -1,0 +1,106 @@
+{
+  "version": 1,
+  "purpose": "Select bounded native Jenkins retry after the validated AR-06O shared canonical checkout merge.",
+  "predecessor": {
+    "pullRequest": 212,
+    "mergedMain": "fda0e823af8e71cf94e416029c91bb6a865735d7",
+    "tree": "a3b88668d6e7db73d8c2a9ffec4803bb95e9f153",
+    "exactHead": "aa75a72027c195baab35702d1a96c1b4b635ef43",
+    "syntheticMergeCandidate": "1fc96e46cba1abf715c1fe1b092c3525616481e2",
+    "flowCiRunId": 38061220444,
+    "runtimeCiRunId": 38061220446,
+    "conclusion": "success",
+    "testsPerRevision": 2037,
+    "suitesPerRevision": 350,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 12,
+    "signedObservations": 38,
+    "portfolioRows": 36,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "082b7d4c9ea26d30d63e0f6ae4586d7e9440a7a89ae6c5c76990fd6241a2f9c4",
+    "mainFlowCiRunId": 38068371091,
+    "mainFlowCiStatusAtSelection": "in_progress",
+    "mainRuntimeCiRunId": 38068371090,
+    "mainRuntimeConclusion": "success",
+    "scope": "Exact-head and synthetic-merge test inventories and all 38 runtime signatures were independently verified during PR 212. Merged main has the identical source tree; its in-progress Flow CI is not claimed as passed."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06O",
+        "selectedWorkPackage": ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Incorrect immutable revision, marker digest, missing checkout, stale source or graph, altered signed observations and false cross-target equivalence."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06P",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-retry-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened retry, changed attempt limit, repeated successful body, omitted body, wrong terminal failure, continued execution after exhaustion and altered signed observations."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06O",
+        "workPackage": ".flow-agent/work-packages/shared-canonical-checkout-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06P",
+        "workPackage": ".flow-agent/work-packages/jenkins-retry-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 212.",
+    "predecessorPullRequest": 212,
+    "mergedMain": "fda0e823af8e71cf94e416029c91bb6a865735d7"
+  },
+  "limitations": [
+    "AR-06P requires its own exact-head, merge-candidate and complete runtime/portfolio checks.",
+    "Fixed zero-delay retry does not establish general retry policy support or cross-target portability."
+  ]
+}

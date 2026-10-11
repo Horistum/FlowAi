@@ -12,6 +12,7 @@ import org.flowlang.adapters.portfolio.AdapterPortfolioLoader
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.conformance.ArchitectureRecoveryConformanceRunner
+import org.flowlang.conformance.AdapterTargetMaturityConformanceChecks
 import org.flowlang.targets.builtin.BuiltInTargetProjections
 
 class TargetMaturityPublicationTests {
@@ -138,6 +139,30 @@ class TargetMaturityPublicationTests {
             it.code == "TARGET_MATURITY_SUPPORTED_STRUCTURE_UNOWNED" &&
                 it.target == "github-actions"
         })
+    }
+
+    @Test
+    fun planScopedRetryCannotCertifyTargetWideRetrySupport() {
+        val mutated = targets + ("jenkins" to targets.getValue("jenkins").copy(retry = SupportLevel.SUPPORTED))
+        val report = AdapterTargetMaturityPublisher(rootDir, mutated, BuiltInTargetProjections.registry).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "TARGET_MATURITY_SUPPORTED_STRUCTURE_UNOWNED" &&
+            it.target == "jenkins" && it.message.contains("retry.task") })
+        val check = AdapterTargetMaturityConformanceChecks(rootDir, mutated, BuiltInTargetProjections.registry).checks()
+            .single { it.name == AdapterTargetMaturityConformanceChecks.STRUCTURAL_EVIDENCE_CHECK }
+        assertFalse(check.passed)
+    }
+
+    @Test
+    fun targetWideStructuralEvidenceStillRequiresAnHonestRegistryDeclaration() {
+        val mutated = targets + ("jenkins" to targets.getValue("jenkins").copy(conditions = SupportLevel.UNSUPPORTED))
+        val report = AdapterTargetMaturityPublisher(rootDir, mutated, BuiltInTargetProjections.registry).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "TARGET_MATURITY_PROVIDER_STRUCTURE_UNDECLARED" &&
+            it.target == "jenkins" && it.message.contains("condition") })
+        val check = AdapterTargetMaturityConformanceChecks(rootDir, mutated, BuiltInTargetProjections.registry).checks()
+            .single { it.name == AdapterTargetMaturityConformanceChecks.STRUCTURAL_EVIDENCE_CHECK }
+        assertFalse(check.passed)
     }
 
     @Test

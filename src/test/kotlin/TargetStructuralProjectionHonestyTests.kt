@@ -120,14 +120,15 @@ class TargetStructuralProjectionHonestyTests {
         assertEquals(
             setOf(
                 TargetStructuralProjectionKind.CONDITION,
-                TargetStructuralProjectionKind.ERROR_BOUNDARY
+                TargetStructuralProjectionKind.ERROR_BOUNDARY,
+                TargetStructuralProjectionKind.RETRY
             ),
             structures
         )
         assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
         assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.LOOP))
         assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
-        assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.RETRY))
+        assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.RETRY))
     }
 
     @Test
@@ -136,8 +137,7 @@ class TargetStructuralProjectionHonestyTests {
         val unsupported = listOf(
             TargetStructuralProjectionKind.PARALLEL,
             TargetStructuralProjectionKind.LOOP,
-            TargetStructuralProjectionKind.MATCH,
-            TargetStructuralProjectionKind.RETRY
+            TargetStructuralProjectionKind.MATCH
         )
 
         unsupported.forEach { structure ->

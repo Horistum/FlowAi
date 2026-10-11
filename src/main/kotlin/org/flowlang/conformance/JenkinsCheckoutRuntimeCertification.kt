@@ -46,16 +46,19 @@ internal object JenkinsCheckoutRuntimeCertification {
         RECOVERY_SUCCESS("jenkins-recovery-success-runtime", "recovery-success.flow", "recovery-matrix.json", listOf("baseline", "unconditional-handler", "omitted-continuation"), "AR-06I"),
         APPROVAL_APPROVE("jenkins-approval-approve-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval"), "AR-06J"),
         APPROVAL_REJECT("jenkins-approval-reject-runtime", "approval.flow", "approval-matrix.json", listOf("baseline", "omitted-approval", "late-approval", "suppressed-rejection"), "AR-06J"),
+        RETRY_FAILURE("jenkins-retry-failure-runtime", "retry-failure.flow", "retry-matrix.json", listOf("baseline", "flattened-retry", "excess-attempts"), "AR-06P"),
+        RETRY_SUCCESS("jenkins-retry-success-runtime", "retry-success.flow", "retry-matrix.json", listOf("baseline", "omitted-body", "repeated-success"), "AR-06P"),
         SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O");
 
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
         val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
         val localRecovery: Boolean get() = this == RECOVERY_FAILURE || this == RECOVERY_SUCCESS
-        val terminalEvidence: Boolean get() = errorBoundary || localRecovery
+        val retry: Boolean get() = this == RETRY_FAILURE || this == RETRY_SUCCESS
+        val terminalEvidence: Boolean get() = errorBoundary || localRecovery || retry
         val flowSource: Boolean get() = source.endsWith(".flow")
         val recordsNativeSteps: Boolean get() = this != CHECKOUT
-        val claim: String get() = if (conditional || errorBoundary || localRecovery) "bounded-structural-occurrence" else "native-leaf-only"
+        val claim: String get() = if (conditional || errorBoundary || localRecovery || retry) "bounded-structural-occurrence" else "native-leaf-only"
     }
 
     internal data class Prepared(
@@ -85,7 +88,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
-        val artifacts = if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
+        val artifacts = if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
             require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
@@ -111,7 +114,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                     "No general public support or portable-execution promotion. The runtime host remains trusted.")))
         } else mapper.readTree(File(root, "$FIXTURE/${requireNotNull(scenario.matrix)}"))
         require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
-        val construct = when { scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
+        val construct = when { scenario.retry -> "retry"; scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
         require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == construct)
         val scenarioMatrix = if (scenario.conditional || scenario.terminalEvidence || scenario.approval) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
         require(scenarioMatrix["scenario"].asText() == scenario.id)
@@ -124,11 +127,11 @@ internal object JenkinsCheckoutRuntimeCertification {
         val expected = rows.associate { row ->
             val expectedResult = if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
                 scenario == Scenario.ERROR_FAILURE && row["id"].asText() != "suppressed-propagation" ||
-                scenario == Scenario.RECOVERY_FAILURE && row["id"].asText() == "rethrown-failure") "FAILURE" else "SUCCESS"
+                scenario == Scenario.RECOVERY_FAILURE && row["id"].asText() == "rethrown-failure" || scenario == Scenario.RETRY_FAILURE) "FAILURE" else "SUCCESS"
             require(row["result"].asText() == expectedResult)
             row["id"].asText() to ref("expected:${row["id"].asText()}", observationBytes(row, scenario))
         }
-        val runtimePlugins = plugins + if (scenario.approval) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
+        val runtimePlugins = plugins + (if (scenario.retry) mapOf("workflow-basic-steps" to "1079.vce64b_a_929c5a_") else emptyMap()) + if (scenario.approval) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
             CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario == Scenario.SHARED_CHECKOUT) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
                 CertificationRuntimePrerequisite("repository", SharedCheckoutFixture.REPOSITORY)) else emptyList()
@@ -137,7 +140,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapterId = when { scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
+        val adapterId = when { scenario.retry -> "jenkins-bounded-retry"; scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
         val adapter = CertificationAdapterIdentity("jenkins", adapterId, scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
             (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
@@ -146,7 +149,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.approval) "Manual input occurrence before one protected native checkout; automated decisions, no human authorization claim."
+            if (scenario.retry) "Fixed zero-delay retry occurrence with native checkout children only; see bounded runtime limitations."
+            else if (scenario.approval) "Manual input occurrence before one protected native checkout; automated decisions, no human authorization claim."
             else if (scenario.localRecovery) "Local recovery occurrence and continuation with native checkout children only; see bounded runtime limitations."
             else if (scenario.errorBoundary) "Workflow error-handler occurrence with native checkout children only; see bounded runtime limitations."
             else if (scenario.conditional) "Boolean equality guards with native checkout children only; see bounded runtime limitations."
@@ -162,6 +166,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(result["jenkins"]?.asText() == "2.580.1") { "Unexpected Jenkins version." }
         require(result["java"]?.asText()?.let { it == "25" || it.startsWith("25.") || it.startsWith("25+") } == true)
         require(plugins.all { (id, version) -> result["plugins"]?.get(id)?.asText() == version }) { "Unexpected runtime plugins." }
+        if (prepared.scenario.retry) require(result["plugins"]?.get("workflow-basic-steps")?.asText() == "1079.vce64b_a_929c5a_")
         if (prepared.scenario.approval) require(result["plugins"]?.get("pipeline-input-step")?.asText() == "534.v352f0a_e98918")
         val runIds = prepared.scenario.runIds
         require(result["runs"]?.isArray == true && result["runs"].size() == runIds.size)
@@ -190,6 +195,11 @@ internal object JenkinsCheckoutRuntimeCertification {
     }
 
     private fun completed(row: JsonNode, scenario: Scenario): Boolean = row["result"].asText() == "SUCCESS" ||
+        scenario == Scenario.RETRY_FAILURE && row["result"].asText() == "FAILURE" &&
+            row["checkoutErrors"].size() == row["checkoutCount"].asInt() && row["checkoutCount"].asInt() > 0 &&
+            row["checkoutErrors"].all { it["type"].asText() == "hudson.AbortException" && it["message"].asText() == MISSING_REVISION } &&
+            row["terminalError"]?.let { terminal -> terminal["type"]?.asText() == "hudson.AbortException" &&
+                terminal["message"]?.asText() == MISSING_REVISION && terminal["checkoutIndex"]?.asInt() == row["checkoutCount"].asInt() } == true ||
         scenario == Scenario.APPROVAL_REJECT && row["result"].asText() == "ABORTED" &&
             row["approval"]["decision"].asText() == "reject" &&
             row["approval"]["inputErrors"].size() == 1 &&
@@ -210,7 +220,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(marker.isNull || marker.isTextual && marker.asText().length <= 1024)
         val observation = linkedMapOf<String, Any?>("result" to row["result"].asText(), "marker" to if (marker.isNull) null else marker.asText())
         if (scenario.recordsNativeSteps) {
-            require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() in 0..(if (scenario.localRecovery) 4 else 2))
+            require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() in 0..(if (scenario.localRecovery || scenario.retry) 4 else 2))
             val errors = row["checkoutErrors"]
             require(errors?.isArray == true && errors.size() <= row["checkoutCount"].asInt())
             observation["checkoutCount"] = row["checkoutCount"].asInt()
@@ -222,7 +232,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             }
         }
         if (scenario.approval) observation["approval"] = approvalObservation(row["approval"])
-        if (scenario.localRecovery) {
+        if (scenario.localRecovery || scenario.retry) {
             val indices = row["checkoutErrorIndices"]
             require(indices?.isArray == true && indices.size() == row["checkoutErrors"].size())
             val values = indices.map { index ->
@@ -398,6 +408,32 @@ internal object JenkinsCheckoutRuntimeCertification {
         artifacts["omitted-continuation"] = replaceOnce(text, "\n$continuation\n", "\n${indent}echo 'Continuation intentionally omitted by certification mutant'\n").toByteArray()
         require(artifacts.keys.toList() == scenario.runIds)
         return artifacts
+    }
+
+    internal fun retryArtifacts(text: String, original: ByteArray, scenario: Scenario): Map<String, ByteArray> {
+        require(scenario.retry && original.contentEquals(text.toByteArray(Charsets.UTF_8)))
+        val lines = text.lineSequence().toList()
+        val start = lines.single { it.trim() == "retry(3) {" }
+        val indent = start.takeWhile(Char::isWhitespace)
+        val end = "$indent}"
+        require(lines.count { it == end } == 1)
+        val branch = if (scenario == Scenario.RETRY_FAILURE) "missing-revision" else "selected"
+        val body = "$indent  git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'"
+        val successor = "${indent}git branch: 'alternate', url: 'git://127.0.0.1:9418/repository.git'"
+        require(lines.count { it == body } == 1 && lines.count { it == successor } == 1)
+        require(lines.count { it.trimStart().startsWith("git branch:") } == 2)
+        require(text.indexOf(start) < text.indexOf(body) && text.indexOf(body) < text.indexOf("\n$end\n") &&
+            text.indexOf("\n$end\n") < text.indexOf(successor))
+        val result = linkedMapOf("baseline" to original)
+        if (scenario == Scenario.RETRY_FAILURE) {
+            result["flattened-retry"] = replaceOnce(replaceOnce(text, start + "\n", ""), "\n$end\n", "\n").toByteArray()
+            result["excess-attempts"] = replaceOnce(text, start, "${indent}retry(4) {").toByteArray()
+        } else {
+            result["omitted-body"] = replaceOnce(text, body, "$indent  echo 'Retry body intentionally omitted'").toByteArray()
+            result["repeated-success"] = replaceOnce(text, start, "${indent}for (int certificationAttempt = 0; certificationAttempt < 3; certificationAttempt++) {").toByteArray()
+        }
+        require(result.keys.toList() == scenario.runIds)
+        return result
     }
 
     internal fun sharedCheckoutArtifacts(text: String, original: ByteArray): Map<String, ByteArray> {

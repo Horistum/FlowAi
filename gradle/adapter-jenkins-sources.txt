@@ -4,4 +4,5 @@ org/flowlang/targets/builtin/JenkinsManifestGenerator.kt
 org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
 org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
 org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
+org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
 org/flowlang/targets/builtin/JenkinsTargetExpressionTranslator.kt

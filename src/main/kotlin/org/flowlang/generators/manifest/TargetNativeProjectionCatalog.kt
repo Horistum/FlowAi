@@ -114,6 +114,9 @@ enum class TargetStructuralProjectionKind(
     }
 }
 
+/** Owning a bounded implementation does not establish target-wide semantic support. */
+enum class TargetStructuralProjectionSupportScope { TARGET_WIDE, PLAN_SCOPED }
+
 /**
  * Provider-owned proof that one structural construct has both production behavior
  * and an independent behavioral test. A platform capability declaration is not
@@ -124,7 +127,8 @@ data class TargetNativeStructuralProjectionDefinition(
     val kind: String,
     val reference: String,
     val implementationEvidenceReference: String,
-    val behavioralEvidenceReference: String
+    val behavioralEvidenceReference: String,
+    val supportScope: TargetStructuralProjectionSupportScope = TargetStructuralProjectionSupportScope.TARGET_WIDE
 ) {
     init {
         require(kind.isNotBlank()) { "Native structural projection '${structure.name}' must declare a payload kind." }

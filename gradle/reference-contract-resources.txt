@@ -116,6 +116,7 @@ src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlann
 src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt
 src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
 src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
 src/main/kotlin/org/flowlang/targets/builtin/TektonManifestGenerator.kt
 src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
 src/main/kotlin/org/flowlang/targets/builtin/TektonNativeProjectionCatalog.kt
@@ -126,6 +127,7 @@ src/test/kotlin/AdapterControlProviderBehaviorTests.kt
 src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt
 src/test/kotlin/CrossTargetCheckoutProjectionTests.kt
 src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt
+src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt
 src/test/kotlin/ProjectionStabilitySmokeTests.kt
 src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt
 src/test/kotlin/TargetNeutralProjectionPayloadTests.kt
