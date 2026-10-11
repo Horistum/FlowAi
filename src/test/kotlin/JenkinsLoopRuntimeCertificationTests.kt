@@ -31,11 +31,11 @@ class JenkinsLoopRuntimeCertificationTests {
         .joinToString("") { "%02x".format(it.toInt() and 255) }
     private fun record(p: JenkinsCheckoutRuntimeCertification.Prepared): ObjectNode {
         val error = mapOf("type" to "hudson.AbortException", "message" to missing)
-        return mapper.valueToTree(mapOf("status" to "completed", "jenkins" to "2.580.1", "java" to "25.0.1",
+        return mapper.valueToTree(mapOf<String, Any?>("status" to "completed", "jenkins" to "2.580.1", "java" to "25.0.1",
             "plugins" to mapOf("git" to "5.10.1", "pipeline-model-definition" to "2.2293.v6e7193cec599", "timestamper" to "1.30",
                 "workflow-basic-steps" to "1079.vce64b_a_929c5a_"),
             "runs" to p.artifacts.map { (id, bytes) ->
-                val branches = when (p.scenario) {
+                val branches: List<String> = when (p.scenario) {
                     scenarios[0] -> when (id) {
                         "baseline" -> listOf("selected", "selected", "alternate", "selected")
                         "reversed-items" -> listOf("alternate", "selected", "selected", "selected")
@@ -52,7 +52,7 @@ class JenkinsLoopRuntimeCertificationTests {
                 }
                 val index = branches.indexOf("missing-revision") + 1
                 val failure = index > 0 && id != "suppressed-failure"
-                mapOf("id" to id, "result" to if (failure) "FAILURE" else "SUCCESS", "finished" to true,
+                mapOf<String, Any?>("id" to id, "result" to if (failure) "FAILURE" else "SUCCESS", "finished" to true,
                     "buildNumber" to 1, "artifactSha256" to sha(bytes), "checkoutBranches" to branches,
                     "checkoutErrors" to if (index > 0) listOf(error) else emptyList(),
                     "checkoutErrorIndices" to if (index > 0) listOf(index) else emptyList(),
