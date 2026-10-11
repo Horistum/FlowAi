@@ -129,8 +129,8 @@ class MatchBranchProjectionTests {
     }
 
     @Test fun derivedWrapperCollisionsFailBeforeAnyProviderCanEmitAManifest() {
-        fun task(id: String) = TaskNode(id = id, module = "git", action = "checkout", target = "source",
-            params = mapOf("url" to "https://example.invalid/repository.git", "branch" to "selected"))
+        val prototype = (unit.authorization.executionPlan.nodes.single() as MatchPlanNode).cases[1].steps.first() as TaskNode
+        fun task(id: String) = prototype.copy(id = id)
         for (id in listOf("routing_case_1", "routing_error", "routing_default", "ROUTING_CASE_1")) {
             val plan = ExecutionPlan(flowName = "collision", nodes = listOf(
                 MatchPlanNode(id = "routing", source = "\"selected\"", cases = listOf(MatchCase("true", listOf(task("body"))))), task(id)))
@@ -148,7 +148,8 @@ class MatchBranchProjectionTests {
             assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, root(manifest).materialization.status)
             assertFalse(TargetRenderPolicy.evaluate(manifest).executable)
             assertFalse(ReferenceTargetProjections.nativeCatalogs.getValue(target).hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
-            assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(unit, testTargetSelection(target, targets))) }
+            assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(unit, testTargetSelection(target, targets), strict = true)) }
+            assertFails { ReferenceTargetProjections.registry.requireProvider(target).render(manifest) }
         }
         assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").match)
     }
