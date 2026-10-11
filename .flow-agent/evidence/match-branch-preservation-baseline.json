@@ -1,0 +1,110 @@
+{
+  "version": 1,
+  "purpose": "Preserve match branch meaning at the target-neutral projection boundary before native match certification.",
+  "predecessor": {
+    "pullRequest": 214,
+    "mergedMain": "edc0cef40bf4615c760eae9c08f1503ed9ef91bf",
+    "tree": "a3973dfe46a782d177d7791a7de8093f19e65fe4",
+    "exactHead": "9e5526b1ed20921ccb3afe459cd8aa9a5f3d8fa2",
+    "syntheticMergeCandidate": "ec33c12e4f94bf8e7d6c04761532d40a8f696f0d",
+    "flowCiRunId": 38150661388,
+    "runtimeCiRunId": 38150661381,
+    "conclusion": "success",
+    "testsPerRevision": 2069,
+    "suitesPerRevision": 356,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 17,
+    "signedObservations": 53,
+    "portfolioRows": 36,
+    "observedConstructTargetPairs": 8,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "dcc09a25967e443ff9e2b12716842e9fe5ca7bd0019d22434938aaa2e9003a54",
+    "mainFlowCiRunId": 38154628323,
+    "mainFlowCiStatusAtSelection": "in_progress",
+    "mainRuntimeCiRunId": 38154628346,
+    "mainRuntimeConclusion": "success",
+    "scope": "PR 214 exact-head and synthetic-merge inventories and all 53 runtime signatures were independently verified. Merged main has the same tree. Its runtime workflow passed; its Flow CI was still running at selection. The counts above refer to the validated PR revisions, not a preclaimed main result."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06Q",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-loop-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Reordered or deduplicated iterations, forced empty-loop execution, omitted successor, omitted or suppressed failure, wrong native branch order or failure origin and altered signed observations."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06R",
+        "selectedWorkPackage": ".flow-agent/work-packages/match-branch-preservation.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened branches, missing source or condition, invalid branch order, duplicate error/default, detached wrappers and derived identity collisions; historical receipt and invented validation mutations."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06Q",
+        "workPackage": ".flow-agent/work-packages/jenkins-loop-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06R",
+        "workPackage": ".flow-agent/work-packages/match-branch-preservation.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 214.",
+    "predecessorPullRequest": 214,
+    "mergedMain": "edc0cef40bf4615c760eae9c08f1503ed9ef91bf"
+  },
+  "limitations": [
+    "AR-06R requires its own exact-head, merge-candidate and complete runtime/portfolio checks.",
+    "Match branch retention is a projection prerequisite; no match execution, support promotion or portable-execution claim."
+  ]
+}

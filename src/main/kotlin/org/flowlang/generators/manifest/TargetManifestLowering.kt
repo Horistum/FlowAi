@@ -152,13 +152,32 @@ internal fun PlanNode.toTargetSteps(
             name = id,
             type = TargetStructuralProjectionKind.MATCH.stepType,
             params = mapOf("source" to source),
-            children = cases.flatMap { case ->
-                case.steps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) }
-            } + errorCase.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) } +
-                defaultSteps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
+            children = cases.mapIndexed { index, case ->
+                TargetStep(
+                    id = sanitizeId(TargetProjectionIdentityChecks.matchCaseId(id, index)),
+                    name = "$id case ${index + 1}",
+                    type = "match-case",
+                    params = mapOf("condition" to case.condition),
+                    children = case.steps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
+                    metadata = mapOf("caseIndex" to index.toString())
+                )
+            } + listOf(
+                TargetStep(
+                    id = sanitizeId(TargetProjectionIdentityChecks.matchErrorId(id)),
+                    name = "$id error",
+                    type = "match-error",
+                    children = errorCase.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) }
+                ),
+                TargetStep(
+                    id = sanitizeId(TargetProjectionIdentityChecks.matchDefaultId(id)),
+                    name = "$id default",
+                    type = "match-default",
+                    children = defaultSteps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) }
+                )
+            ),
             materialization = structural.materialization,
             rendererPayload = structural.rendererPayload,
-            metadata = mapOf("sourceNodeKind" to kind)
+            metadata = mapOf("sourceNodeKind" to kind, "caseCount" to cases.size.toString())
         ))
     }
     is RetryGroupNode -> {

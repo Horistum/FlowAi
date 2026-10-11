@@ -208,7 +208,7 @@ object TargetRenderPolicy {
 
     private fun TargetStep.isMaterializationLeaf(): Boolean = children.isEmpty() &&
         TargetStructuralProjectionKind.fromStepType(type) == null &&
-        type !in setOf("try-body", "error-handler", "parallel-branch")
+        type !in setOf("try-body", "error-handler", "parallel-branch", "match-case", "match-error", "match-default")
 
     private fun TargetStep.flattenForReadiness(): List<TargetStep> =
         listOf(this) + children.flatMap { it.flattenForReadiness() }

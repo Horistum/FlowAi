@@ -530,3 +530,28 @@ native error origins from actual execution nodes. Baseline bytes are the exact
 compiler output. The expanded portfolio requires 17 assessments and 53 signed
 observations, with 8 bounded construct/target pairs across 36 rows. A valid
 assessment does not promote public support or establish portable execution.
+
+## AR-06R: preserve match branches before native certification
+
+The target-neutral projection previously flattened all `match` bodies and lost
+case conditions. Generated diagnostic manifests now keep the source expression
+on the `match` parent and emit ordered `match-case` wrappers, followed by one
+`match-error` and one `match-default` wrapper. A case carries its unchanged Flow
+`condition` and zero-based `caseIndex`; the parent records `caseCount`. Empty
+bodies remain explicit. The execution plan does not distinguish an omitted
+fallback from an explicitly empty fallback, so both project as an empty wrapper.
+
+Consumers of diagnostic `match` manifests must traverse these wrappers instead
+of treating the parent children as unconditional actions. Regenerate old
+flattened manifests from source: lost case conditions cannot be reconstructed.
+The contract validator rejects flattened branches, missing conditions, invalid
+ordinals, duplicate or missing fallback wrappers, detached wrappers and execution
+bindings on a wrapper. Derived wrapper IDs participate in the same collision
+checks as other emitted steps. Empty wrappers do not count as materialized work
+or review inventory leaves.
+
+This is a correction inside the existing Target Manifest 3.0 `TargetStep`
+structure; it adds no wire field or public syntax. Canonical match meaning is
+unchanged. All reference providers still lack native match evidence, so a match
+remains non-executable even when its leaves have native bindings. Native branch
+selection, error behavior and portability require later runtime certification.

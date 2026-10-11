@@ -1,39 +1,61 @@
-version: "AR-06"
-name: "Behavioral Adapter Certification and Honest Target Portfolio"
+version: AR-06
+name: Behavioral Adapter Certification and Honest Target Portfolio
 status: active
 stream: architecture-recovery
-roadmapReference: ".flow-agent/roadmap-architecture-recovery.yaml#AR-06"
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
 authorization:
-  source: "Maintainer requests the next roadmap step after merging PR #199."
-  acceptedMain: "4bea533762e3cff83192c7f9d8ba8244dd3c2598"
+  source: 'Maintainer requests the next roadmap step after merging PR #199.'
+  acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: "AR-06Q"
-selectedWorkPackage: ".flow-agent/work-packages/jenkins-loop-certification.yaml"
-acceptedSlices: ["AR-06A", "AR-06B"]
-invariant: "A sequential loop preserves literal-list order and multiplicity, skips an empty list and propagates a body failure before any later iteration or successor."
+selectedSlice: AR-06R
+selectedWorkPackage: .flow-agent/work-packages/match-branch-preservation.yaml
+acceptedSlices:
+- AR-06A
+- AR-06B
+invariant: Target projection preserves every match case condition, authored case order
+  and branch body, with distinct error and default branches; unsupported match remains
+  non-executable.
 scope:
-  - "Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary."
-  - "Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage."
-  - "Authenticate every observation against caller-owned runner keys, assessment challenge and exact run inventory."
-  - "Accept AR-06B against independently verified PR and actual-main receipts while preserving every historical acceptance gate."
-  - "Retain compiler-owned workflow failure-boundary occurrences and independently observe handler routing and terminal error origin."
-  - "Observe bounded local recovery, skipped failed-body successors and continuation independently on real Jenkins."
-  - "Observe a pending manual input, approval and rejection before one protected checkout, including omitted, late and suppressed-rejection mutants."
-  - "Expose baseline and mutant observations together, with explicit missing construct evidence and no support inference."
-  - "Aggregate reauthenticated current-revision scenarios into one honest reference adapter portfolio."
-  - "Execute the compiler-rendered GitHub Actions native checkout leaf with omitted and substituted revision mutants on a hosted runner."
-  - "Include the second adapter in the complete source-bound portfolio while preserving native-leaf scope and distinct canonical fixtures."
-  - "Execute one shared canonical native checkout scenario on both providers and compare authenticated baseline and mutant observations."
-  - "Certify native fixed zero-delay Jenkins retry with exact exhaustion and early-success observations and falsifying attempt mutants."
-  - "Certify sequential native Jenkins loops with ordered duplicate items, empty input and fail-fast native body errors."
+- Freeze source, canonical graph and actual rendered artifact at the existing compiler
+  and adapter authority boundary.
+- Require exact scenario bindings and derive per-scenario semantic, structural and
+  native-leaf occurrence coverage.
+- Authenticate every observation against caller-owned runner keys, assessment challenge
+  and exact run inventory.
+- Accept AR-06B against independently verified PR and actual-main receipts while preserving
+  every historical acceptance gate.
+- Retain compiler-owned workflow failure-boundary occurrences and independently observe
+  handler routing and terminal error origin.
+- Observe bounded local recovery, skipped failed-body successors and continuation
+  independently on real Jenkins.
+- Observe a pending manual input, approval and rejection before one protected checkout,
+  including omitted, late and suppressed-rejection mutants.
+- Expose baseline and mutant observations together, with explicit missing construct
+  evidence and no support inference.
+- Aggregate reauthenticated current-revision scenarios into one honest reference adapter
+  portfolio.
+- Execute the compiler-rendered GitHub Actions native checkout leaf with omitted and
+  substituted revision mutants on a hosted runner.
+- Include the second adapter in the complete source-bound portfolio while preserving
+  native-leaf scope and distinct canonical fixtures.
+- Execute one shared canonical native checkout scenario on both providers and compare
+  authenticated baseline and mutant observations.
+- Certify native fixed zero-delay Jenkins retry with exact exhaustion and early-success
+  observations and falsifying attempt mutants.
+- Certify sequential native Jenkins loops with ordered duplicate items, empty input
+  and fail-fast native body errors.
+- Preserve match case conditions, authored order and distinct error/default bodies
+  in diagnostic target manifests before native certification.
 nonGoals:
-  - "No product runtime execution, general semantic adequacy or portable-execution claim."
-  - "No support promotion, finding closure, public version change or EF-09 resumption."
+- No product runtime execution, general semantic adequacy or portable-execution claim.
+- No support promotion, finding closure, public version change or EF-09 resumption.
 ownershipBoundary:
-  production: "Adapter-owned sequential literal-list loop rendering and scoped capability; Core unchanged."
+  production: Target-neutral adapter lowering, manifest validation and projection
+    identities; Core unchanged.
   semanticKernel: unchanged
-  concreteAdapters: "Jenkins literal loops only; generic target registry unchanged."
-  conformance: "Lifecycle validation and real-provider integration tests."
+  concreteAdapters: Native catalogs and generic target registry unchanged.
+  conformance: Projection regressions, lifecycle validation and retained real-provider
+    portfolio.
 validation:
   status: current-revision-ci-required
   requiredChecks:
@@ -50,16 +72,18 @@ validation:
   - jenkins-retry-runtime
   - jenkins-loop-runtime
   - adapter-certification-portfolio
-  negativeEvidence: Reordered or deduplicated iterations, forced empty-loop execution,
-    omitted successor, omitted or suppressed failure, wrong native branch order or
-    failure origin and altered signed observations.
+  negativeEvidence: Flattened branches, missing source or condition, invalid branch
+    order, duplicate error/default, detached wrappers and derived identity collisions;
+    historical receipt and invented validation mutations.
 followUp:
-  - "Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions."
-  - "Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters."
-  - "Evidence-derived public views with separate profile, leaf and scenario claims."
+- Adapter-owned behavioral scenarios and external runner integration for Jenkins and
+  GitHub Actions.
+- Construct/target/behavior/mutant matrix and equivalent execution on two materially
+  different adapters.
+- Evidence-derived public views with separate profile, leaf and scenario claims.
 activationEvidence:
-  path: ".flow-agent/evidence/adapter-certification-activation-baseline.json"
-  sha256: "a6460739813c3f7b136888918e181e1bc3070ae08a5d6b5e909c7db14500f0f8"
+  path: .flow-agent/evidence/adapter-certification-activation-baseline.json
+  sha256: a6460739813c3f7b136888918e181e1bc3070ae08a5d6b5e909c7db14500f0f8
 bindingAcceptanceEvidence:
-  path: ".flow-agent/evidence/adapter-certification-binding-acceptance.json"
-  sha256: "31ccc9a76188bae91787ba5241f32c02a3c0ee6799aba256a4c178738d75c5e2"
+  path: .flow-agent/evidence/adapter-certification-binding-acceptance.json
+  sha256: 31ccc9a76188bae91787ba5241f32c02a3c0ee6799aba256a4c178738d75c5e2

@@ -152,7 +152,8 @@ object TargetManifestContractValidator {
         step: TargetStep,
         path: String,
         stepIds: MutableSet<String>,
-        issues: MutableList<TargetManifestContractIssue>
+        issues: MutableList<TargetManifestContractIssue>,
+        parentType: String? = null
     ) {
         fun error(code: String, issuePath: String, message: String) {
             issues += TargetManifestContractIssue("error", code, issuePath, message)
@@ -162,6 +163,32 @@ object TargetManifestContractValidator {
             error("STEP_ID_DUPLICATE", "$path.id", "Step id '${step.id}' is duplicated in the manifest.")
         }
         if (step.type.isBlank()) error("STEP_TYPE_BLANK", "$path.type", "TargetStep.type must be present.")
+        if (step.type == "match") {
+            if (step.params.keys != setOf("source") || step.params["source"].isNullOrBlank()) {
+                error("MATCH_SOURCE_INVALID", "$path.params", "Match must carry exactly its authored source expression.")
+            }
+            val cases = step.children.takeWhile { it.type == "match-case" }
+            if (step.metadata["caseCount"] != cases.size.toString() ||
+                step.children.map { it.type } != List(cases.size) { "match-case" } + listOf("match-error", "match-default")) {
+                error("MATCH_BRANCHES_INVALID", "$path.children", "Match must preserve its declared case count and ordered case, error and default wrappers, including empty branches.")
+            }
+            cases.forEachIndexed { index, case ->
+                if (case.metadata["caseIndex"] != index.toString()) {
+                    error("MATCH_CASE_ORDER_INVALID", "$path.children[$index].metadata.caseIndex", "Match cases must retain their zero-based authored order.")
+                }
+            }
+        }
+        if (step.type in setOf("match-case", "match-error", "match-default")) {
+            if (parentType != "match") error("MATCH_BRANCH_PARENT_INVALID", path, "Match branch wrappers must be direct children of a match.")
+            val expectedParams = if (step.type == "match-case") setOf("condition") else emptySet()
+            if (step.params.keys != expectedParams || step.type == "match-case" && step.params["condition"].isNullOrBlank()) {
+                error("MATCH_BRANCH_PARAMS_INVALID", "$path.params", "Only a match case carries its unchanged, non-blank condition expression.")
+            }
+            if (step.rendererPayload != null || step.materialization.status != TargetMaterializationStatus.SEMANTIC_ONLY ||
+                step.module != null || step.action != null || step.target != null || step.dependsOn.isNotEmpty()) {
+                error("MATCH_BRANCH_EXECUTION_INVALID", path, "Match wrappers group branch meaning and must not carry independent execution bindings.")
+            }
+        }
         validateNotes(step.mappingNotes, "$path.mappingNotes", issues)
         step.rendererPayload?.let { payload ->
             if (payload.kind.isBlank()) {
@@ -246,7 +273,7 @@ object TargetManifestContractValidator {
         }
 
         step.children.forEachIndexed { index, child ->
-            validateStep(child, "$path.children[$index]", stepIds, issues)
+            validateStep(child, "$path.children[$index]", stepIds, issues, step.type)
         }
     }
 
