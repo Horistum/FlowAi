@@ -1,0 +1,24 @@
+version "1.0"
+
+use module "git" version "1.0"
+
+flow "jenkins-loop-empty-runtime" {
+  systems {
+    system "source" {
+      type: git
+    }
+  }
+
+  steps {
+    for item in [] {
+      git.checkout source {
+        url: "git://127.0.0.1:9418/repository.git"
+        branch: "missing-revision"
+      } -> unreachableCheckout
+    }
+    git.checkout source {
+      url: "git://127.0.0.1:9418/repository.git"
+      branch: "selected"
+    } -> successorCheckout
+  }
+}

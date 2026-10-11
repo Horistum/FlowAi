@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "purpose": "Select native Jenkins literal loops after the validated AR-06P bounded retry merge.",
+  "predecessor": {
+    "pullRequest": 213,
+    "mergedMain": "e24f81d3888bc78a89975280c593b1d4059b7864",
+    "tree": "001f64c7c1d373c12a90bc10da5a8ff4e32f3817",
+    "exactHead": "ae7ef1c5471dc5eeca87fdd19c6aba0337be5b20",
+    "syntheticMergeCandidate": "b48f11762da896a879fb65f8d0c48f6d02b0b603",
+    "flowCiRunId": 38073053296,
+    "runtimeCiRunId": 38073053275,
+    "conclusion": "success",
+    "testsPerRevision": 2054,
+    "suitesPerRevision": 353,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 14,
+    "signedObservations": 44,
+    "portfolioRows": 36,
+    "observedConstructTargetPairs": 7,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "b0b1a6f275790957af8474b554ceeb9e84313734792cd59c6c7caef3cb147f63",
+    "mainFlowCiRunId": 38104661178,
+    "mainFlowCiConclusion": "success",
+    "mainRuntimeCiRunId": 38104661177,
+    "mainRuntimeConclusion": "success",
+    "scope": "PR 213 exact-head and synthetic-merge inventories and all 44 runtime signatures were independently verified. Merged main has the same tree; both main workflows completed successfully before selection. The PR test counts above refer to the validated PR revisions."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06P",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-retry-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened retry, changed attempt limit, repeated successful body, omitted body, wrong terminal failure, continued execution after exhaustion and altered signed observations."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06Q",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-loop-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Reordered or deduplicated iterations, forced empty-loop execution, omitted successor, omitted or suppressed failure, wrong native branch order or failure origin and altered signed observations."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06P",
+        "workPackage": ".flow-agent/work-packages/jenkins-retry-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06Q",
+        "workPackage": ".flow-agent/work-packages/jenkins-loop-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 213.",
+    "predecessorPullRequest": 213,
+    "mergedMain": "e24f81d3888bc78a89975280c593b1d4059b7864"
+  },
+  "limitations": [
+    "AR-06Q requires its own exact-head, merge-candidate and complete runtime/portfolio checks.",
+    "String-literal-list loops do not establish dynamic collection, nested-loop, loop-output or cross-target execution support."
+  ]
+}

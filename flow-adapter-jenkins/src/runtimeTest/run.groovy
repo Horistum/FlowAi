@@ -5,6 +5,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
+import org.jenkinsci.plugins.workflow.actions.ArgumentsAction
 import org.jenkinsci.plugins.workflow.actions.ErrorAction
 import org.jenkinsci.plugins.workflow.support.steps.input.InputAction
 import org.jenkinsci.plugins.workflow.support.actions.PauseAction
@@ -21,6 +22,9 @@ Thread.start('checkout-certification') {
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def inventories = [
+            'jenkins-loop-order-runtime': ['baseline', 'reversed-items', 'deduplicated-items'],
+            'jenkins-loop-empty-runtime': ['baseline', 'forced-iteration', 'omitted-successor'],
+            'jenkins-loop-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-retry-failure-runtime': ['baseline', 'flattened-retry', 'excess-attempts'],
             'jenkins-retry-success-runtime': ['baseline', 'omitted-body', 'repeated-success'],
             'jenkins-shared-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-revision'],
@@ -135,6 +139,14 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
+            if (scenario.startsWith('jenkins-loop-')) {
+                record.checkoutBranches = checkouts.collect { node ->
+                    def branch = ArgumentsAction.getArguments(node).get('branch')
+                    if (!(branch instanceof String) || branch.length() < 1 || branch.length() > 256)
+                        throw new IllegalStateException('Missing or invalid native checkout branch argument')
+                    branch
+                }
+            }
             if (sharedCheckout) {
                 // Observe the completed workspace independently; the pipeline bytes are unchanged.
                 if (workspace.isRemote()) throw new IllegalStateException('Expected the disposable controller workspace')
@@ -171,13 +183,15 @@ Thread.start('checkout-certification') {
                     terminalError: terminal == null ? null : inputFailure(terminal) + [inputIndex: inputIndex < 0 ? null : inputIndex + 1]]
             }
             if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
-                             'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime']) {
+                             'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
+                             'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime']) {
                 record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
                     .collect { node, index -> index + 1 }
             }
             if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
                              'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
-                             'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime']) {
+                             'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
+                             'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime']) {
                 def terminal = build.getExecution().getCauseOfFailure()
                 def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
                 def checkoutIndex = origin == null ? -1 : checkouts.findIndexOf { it.getId() == origin.getId() }

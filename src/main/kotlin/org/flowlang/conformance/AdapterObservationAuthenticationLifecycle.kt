@@ -31,6 +31,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val SHARED_CHECKOUT_BASELINE = ".flow-agent/evidence/shared-canonical-checkout-baseline.json"
     const val RETRY_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-retry-certification.yaml"
     const val RETRY_BASELINE = ".flow-agent/evidence/jenkins-retry-baseline.json"
+    const val LOOP_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-loop-certification.yaml"
+    const val LOOP_BASELINE = ".flow-agent/evidence/jenkins-loop-baseline.json"
+    private const val LOOP_BASELINE_SHA256 = "c57621fe0cc44fba575474b16727e695eb924945d20102846c9c1a1eb97085c2"
     private const val RETRY_BASELINE_SHA256 = "f1044b17c0196172a6f437c89ef521b9e79f94ccedd8cfaed282c2a0f9d6a2cb"
     private const val SHARED_CHECKOUT_BASELINE_SHA256 = "631408a6045737a548f124e81049a139162ada5f809bf8d01c2d6a70c29d361e"
     private const val MULTI_PORTFOLIO_BASELINE_SHA256 = "cf913d74094d247578a05122a5c23c93cebfaa65a3148f40833d3c7f7d6020a3"
@@ -49,6 +52,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06Q" || s.release.containsKey("recoveryLoopCertification")) {
+            val raw = s.certificationLoopBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != LOOP_BASELINE_SHA256) {
+                add("Jenkins literal loop certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), LOOP_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Jenkins literal loop certification selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Jenkins literal loop certification release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Jenkins literal loop certification work", s.certificationLoopWorkPackage, mapOf("version" to "AR-06Q", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Jenkins literal loop certification authorization", section(s.certificationLoopWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Jenkins literal loop certification validation", section(s.certificationLoopWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Jenkins literal loop certification candidate", section(s.release["recoveryLoopCertification"]), mapOf(
+                "candidate" to "AR-06Q", "status" to "candidate", "workPackage" to LOOP_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-loop-certification.md", "baselineEvidence" to LOOP_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(loopPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06P" || s.release.containsKey("recoveryRetryCertification")) {
             val raw = s.certificationRetryBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -474,7 +502,18 @@ internal object AdapterObservationAuthenticationLifecycle {
             certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
     }
 
+    internal fun loopPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryLoopCertification") && s.certificationWorkPackage["selectedSlice"] != "AR-06Q") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationLoopBaseline), LOOP_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryLoopCertification") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationLoopWorkPackage = emptyMap(), certificationLoopBaseline = null)
+    }
+
     internal fun retryPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryLoopCertification") || s.certificationWorkPackage["selectedSlice"] == "AR-06Q")
+            return retryPredecessor(loopPredecessor(s))
         if (!s.release.containsKey("recoveryRetryCertification") && s.certificationWorkPackage["selectedSlice"] != "AR-06P") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationRetryBaseline), RETRY_BASELINE)["transition"])
         return s.copy(

@@ -1,0 +1,38 @@
+version "1.0"
+
+use module "git" version "1.0"
+
+flow "jenkins-loop-failure-runtime" {
+  systems {
+    system "source" {
+      type: git
+    }
+  }
+
+  steps {
+    for item in ["selected", "missing", "alternate"] {
+      if item == "selected" {
+        git.checkout source {
+          url: "git://127.0.0.1:9418/repository.git"
+          branch: "selected"
+        } -> selectedCheckout
+      }
+      if item == "missing" {
+        git.checkout source {
+          url: "git://127.0.0.1:9418/repository.git"
+          branch: "missing-revision"
+        } -> missingCheckout
+      }
+      if item == "alternate" {
+        git.checkout source {
+          url: "git://127.0.0.1:9418/repository.git"
+          branch: "alternate"
+        } -> alternateCheckout
+      }
+    }
+    git.checkout source {
+      url: "git://127.0.0.1:9418/repository.git"
+      branch: "selected"
+    } -> successorCheckout
+  }
+}

@@ -34,6 +34,9 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
 
         internal fun relativeDirectory(s: JenkinsCheckoutRuntimeCertification.Scenario): String = when (s) {
             JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> "jenkins-checkout-runtime"
+            JenkinsCheckoutRuntimeCertification.Scenario.LOOP_ORDER -> "jenkins-loop-runtime/order"
+            JenkinsCheckoutRuntimeCertification.Scenario.LOOP_EMPTY -> "jenkins-loop-runtime/empty"
+            JenkinsCheckoutRuntimeCertification.Scenario.LOOP_FAILURE -> "jenkins-loop-runtime/failure"
             JenkinsCheckoutRuntimeCertification.Scenario.RETRY_FAILURE -> "jenkins-retry-runtime/failure"
             JenkinsCheckoutRuntimeCertification.Scenario.RETRY_SUCCESS -> "jenkins-retry-runtime/success"
             JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT -> "jenkins-shared-checkout-runtime"

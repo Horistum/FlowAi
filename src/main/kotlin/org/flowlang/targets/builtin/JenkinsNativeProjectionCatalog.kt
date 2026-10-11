@@ -44,6 +44,14 @@ object JenkinsNativeProjectionCatalog {
         ),
         structuralDefinitions = listOf(
             TargetNativeStructuralProjectionDefinition(
+                structure = TargetStructuralProjectionKind.LOOP,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
+                reference = "for-in",
+                implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsLoop",
+                behavioralEvidenceReference = "src/test/kotlin/JenkinsLoopRuntimeCertificationTests.kt#literalLoopPreservesOrderEmptyInputAndFailure",
+                supportScope = TargetStructuralProjectionSupportScope.PLAN_SCOPED
+            ),
+            TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.RETRY,
                 kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "retry",

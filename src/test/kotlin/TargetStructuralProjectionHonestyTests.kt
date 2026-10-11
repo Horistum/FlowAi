@@ -121,12 +121,13 @@ class TargetStructuralProjectionHonestyTests {
             setOf(
                 TargetStructuralProjectionKind.CONDITION,
                 TargetStructuralProjectionKind.ERROR_BOUNDARY,
-                TargetStructuralProjectionKind.RETRY
+                TargetStructuralProjectionKind.RETRY,
+                TargetStructuralProjectionKind.LOOP
             ),
             structures
         )
         assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
-        assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.LOOP))
+        assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.LOOP))
         assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.RETRY))
     }
@@ -136,7 +137,6 @@ class TargetStructuralProjectionHonestyTests {
         val child = jenkinsCheckoutStep("checkout")
         val unsupported = listOf(
             TargetStructuralProjectionKind.PARALLEL,
-            TargetStructuralProjectionKind.LOOP,
             TargetStructuralProjectionKind.MATCH
         )
 
