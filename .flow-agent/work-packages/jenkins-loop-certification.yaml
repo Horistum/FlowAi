@@ -1,0 +1,68 @@
+version: AR-06Q
+name: Jenkins Literal Loop Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 213.
+  predecessorPullRequest: 213
+  mergedMain: e24f81d3888bc78a89975280c593b1d4059b7864
+invariant: A sequential loop preserves literal-list order and multiplicity, skips an empty list and propagates a body failure before any later iteration or successor.
+scope:
+- Render a native Jenkins for loop over an authored finite string-literal list.
+- Resolve plan-specific loop support only for a composed provider and authorized loops containing native checkout tasks and conditions; reject nested loops and other bodies.
+- Preserve loop item identity in conditions without admitting dynamic checkout bindings or unproven value/state continuity.
+- Observe ordered native checkout branch arguments, empty-loop behavior and terminal failure origin on the isolated controller.
+- Falsify reordered or deduplicated iterations, omitted successor, forced empty-loop execution, and suppressed body failure.
+- Reauthenticate the full portfolio including all earlier retry and shared checkout scenarios.
+nonGoals:
+- No dynamic collection, nested-loop, loop-output, general loop-policy or portable-execution claim.
+- No Core semantics, public syntax, frozen source manifest, generic registry support or version change.
+- No AR-06 closure, AR-07 activation, finding closure or EF-09 resumption.
+ownershipBoundary:
+  concreteAdapter: Native rendering and bounded capability resolution.
+  referenceComposition: Existing ReferenceTargetProjections composes the adapter scope.
+  conformance: External runtime observations, independent oracles and authenticated portfolio replay.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsLoopProjectionScope.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+- gradle/adapter-jenkins-sources.txt
+- gradle/reference-contract-resources.txt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+- flow-adapter-jenkins/src/runtimeTest/
+- flow-conformance-kit/build.gradle.kts
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- Literal-list validation, scope authorization, safe loop variables and unchanged generic support.
+- Ordered and empty loops plus fail-fast body failure on the actual generated artifact.
+- Tampered branch order, occurrence count, error identity, oracle and signed evidence fail closed.
+- Preserve all previous test identities, lifecycle receipts and ordered conformance checks.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Reordered or deduplicated iterations, forced empty-loop execution,
+    omitted successor, omitted or suppressed failure, wrong native branch order or
+    failure origin and altered signed observations.
+followUp:
+- Certify remaining constructs and shared canonical scenarios before broader support or portability claims.

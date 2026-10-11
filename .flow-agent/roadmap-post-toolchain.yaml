@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 30
+revision: 31
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #212 is merged into main fda0e823af8e71cf94e416029c91bb6a865735d7 with the same source tree as validated PR head and merge candidate. Flow CI 38061220444 passed 2037 tests and 274 ordered checks per revision; runtime CI 38061220446 passed twelve assessments with 38 independently verified signatures. Main runtime CI 38068371090 passed; main Flow CI 38068371091 was still in progress at selection. AR-06P certifies bounded native Jenkins retry with fixed zero delay, exact exhaustion and early-success observations. Historical acceptance and generic target registry remain unchanged; general retry policies, portability and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
+  decisionBasis: "PR #213 is merged into main e24f81d3888bc78a89975280c593b1d4059b7864 with the same source tree as validated PR head and merge candidate. Flow CI 38073053296 passed 2054 tests and 274 ordered checks per revision; runtime CI 38073053275 passed fourteen assessments with 44 independently verified signatures. Both merged-main workflows 38104661178 and 38104661177 passed. AR-06Q certifies sequential native Jenkins loops over string-literal lists with ordered duplicate items, empty input and fail-fast body failure. Historical acceptance and generic target registry remain unchanged; dynamic collections, nested loops, portability and AR-06 closure remain pending. EF-09 stays paused and F-20 stays AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"

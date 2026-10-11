@@ -142,6 +142,18 @@ class TargetMaturityPublicationTests {
     }
 
     @Test
+    fun planScopedLoopCannotCertifyTargetWideLoopSupport() {
+        val mutated = targets + ("jenkins" to targets.getValue("jenkins").copy(dynamicLoops = SupportLevel.SUPPORTED))
+        val report = AdapterTargetMaturityPublisher(rootDir, mutated, BuiltInTargetProjections.registry).analyze()
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "TARGET_MATURITY_SUPPORTED_STRUCTURE_UNOWNED" &&
+            it.target == "jenkins" && it.message.contains("loop.dynamic") })
+        val check = AdapterTargetMaturityConformanceChecks(rootDir, mutated, BuiltInTargetProjections.registry).checks()
+            .single { it.name == AdapterTargetMaturityConformanceChecks.STRUCTURAL_EVIDENCE_CHECK }
+        assertFalse(check.passed)
+    }
+
+    @Test
     fun planScopedRetryCannotCertifyTargetWideRetrySupport() {
         val mutated = targets + ("jenkins" to targets.getValue("jenkins").copy(retry = SupportLevel.SUPPORTED))
         val report = AdapterTargetMaturityPublisher(rootDir, mutated, BuiltInTargetProjections.registry).analyze()

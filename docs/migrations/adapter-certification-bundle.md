@@ -513,3 +513,20 @@ rewritten; invalid source evidence cannot be repaired by this composition. The
 composed view is validated again through the same authority. Historical profile
 evidence still analyzes its explicitly supplied original documents. No historical
 source digest or acceptance receipt is repinned.
+
+## AR-06Q: sequential literal-list Jenkins loops
+
+The bounded Jenkins catalog adds plan-scoped native `for` rendering for authored
+string-literal lists, including duplicate items and empty input. Only native
+checkout tasks and existing conditions are admitted inside the loop. Safe loop
+variables may drive conditions; dynamic checkout bindings, dynamic collections,
+nested loops and loop-output continuity are not certified. Generic registry
+support remains unchanged.
+
+Three isolated runtime scenarios observe order/multiplicity, empty-loop skipping
+and failure propagation before later iterations or successors. Six mutants alter
+those obligations. The observer reads ordered checkout branch arguments and
+native error origins from actual execution nodes. Baseline bytes are the exact
+compiler output. The expanded portfolio requires 17 assessments and 53 signed
+observations, with 8 bounded construct/target pairs across 36 rows. A valid
+assessment does not promote public support or establish portable execution.

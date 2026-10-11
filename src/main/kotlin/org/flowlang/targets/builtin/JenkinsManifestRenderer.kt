@@ -114,10 +114,11 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         TargetProjectionDiagnostics.append(JenkinsProjectionSyntax, step, manifest.inputs, sb, indent, "//")
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
-            "try-body", "error-handler", "parallel", "parallel-branch", "loop", "match" ->
+            "try-body", "error-handler", "parallel", "parallel-branch", "match" ->
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
             "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
             "retry" -> renderJenkinsRetry(step, manifest, sb, indent)
+            "loop" -> renderJenkinsLoop(step, manifest, sb, indent)
             "approval" -> renderJenkinsApproval(step, sb, indent)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
@@ -203,6 +204,21 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "Jenkins retry supports only a positive total attempt limit with fixed zero delay."
         }
         sb.appendLine("${indent}retry($max) {")
+        step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        sb.appendLine("${indent}}")
+    }
+
+    private fun renderJenkinsLoop(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        requireJenkinsStructure(step, "for-in")
+        require(step.params.keys == setOf("item", "source")) { "Jenkins loop requires exactly its authored item and source." }
+        val item = step.params.getValue("item")
+        require(JenkinsLoopProjectionScope.safeItem(item) && manifest.inputs.none { it.name == item }) {
+            "Jenkins loop item '$item' conflicts with the native execution scope."
+        }
+        val items = requireNotNull(JenkinsLoopProjectionScope.literalItems(step.params.getValue("source"))) {
+            "Jenkins loop supports only an authored string-literal list."
+        }
+        sb.appendLine("${indent}for (def $item in ${items.joinToString(", ", "[", "]") { groovyString(it) }}) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
         sb.appendLine("${indent}}")
     }

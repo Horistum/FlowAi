@@ -14,6 +14,7 @@ import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.generators.manifest.providerFor
 import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
+import org.flowlang.targets.builtin.JenkinsLoopProjectionScope
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.safety.EnvironmentSafetyPolicy
 import org.flowlang.generators.manifest.TargetEnvironmentSafetyEvidenceResolver
@@ -45,8 +46,10 @@ object ReferenceTargetProjections {
         projections: AdapterCatalog<TargetProjectionProvider>
     ): TargetProjectionCapabilityResolver = TargetProjectionCapabilityResolver { authorization, target, declared ->
         val continuity = AdapterContinuityScopedCapabilityResolver().resolve(authorization, target, declared)
-        JenkinsRetryProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
+        val retry = JenkinsRetryProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
             .resolve(authorization, target, continuity)
+        JenkinsLoopProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
+            .resolve(authorization, target, retry)
     }
 
     internal fun control(
