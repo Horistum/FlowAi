@@ -30,11 +30,11 @@ class JenkinsLoopRuntimeCertificationTests {
     private fun sha(bytes: ByteArray) = MessageDigest.getInstance("SHA-256").digest(bytes)
         .joinToString("") { "%02x".format(it.toInt() and 255) }
     private fun record(p: JenkinsCheckoutRuntimeCertification.Prepared): ObjectNode {
-        val error = mapOf("type" to "hudson.AbortException", "message" to missing)
-        return mapper.valueToTree(mapOf<String, Any?>("status" to "completed", "jenkins" to "2.580.1", "java" to "25.0.1",
-            "plugins" to mapOf("git" to "5.10.1", "pipeline-model-definition" to "2.2293.v6e7193cec599", "timestamper" to "1.30",
-                "workflow-basic-steps" to "1079.vce64b_a_929c5a_"),
-            "runs" to p.artifacts.map { (id, bytes) ->
+        val root = mapper.createObjectNode().put("status", "completed").put("jenkins", "2.580.1").put("java", "25.0.1")
+        root.putObject("plugins").put("git", "5.10.1").put("pipeline-model-definition", "2.2293.v6e7193cec599")
+            .put("timestamper", "1.30").put("workflow-basic-steps", "1079.vce64b_a_929c5a_")
+        val records = root.putArray("runs")
+        for ((id, bytes) in p.artifacts) {
                 val branches: List<String> = when (p.scenario) {
                     scenarios[0] -> when (id) {
                         "baseline" -> listOf("selected", "selected", "alternate", "selected")
@@ -52,13 +52,21 @@ class JenkinsLoopRuntimeCertificationTests {
                 }
                 val index = branches.indexOf("missing-revision") + 1
                 val failure = index > 0 && id != "suppressed-failure"
-                mapOf<String, Any?>("id" to id, "result" to if (failure) "FAILURE" else "SUCCESS", "finished" to true,
-                    "buildNumber" to 1, "artifactSha256" to sha(bytes), "checkoutBranches" to branches,
-                    "checkoutErrors" to if (index > 0) listOf(error) else emptyList(),
-                    "checkoutErrorIndices" to if (index > 0) listOf(index) else emptyList(),
-                    "terminalError" to if (failure) error + ("checkoutIndex" to index) else null,
-                    "checkoutCount" to branches.size, "marker" to if (p.scenario == scenarios[1] && id != "baseline") null else "selected\n")
-            }))
+            val row = records.addObject().put("id", id).put("result", if (failure) "FAILURE" else "SUCCESS")
+                .put("finished", true).put("buildNumber", 1).put("artifactSha256", sha(bytes)).put("checkoutCount", branches.size)
+            if (p.scenario == scenarios[1] && id != "baseline") row.putNull("marker") else row.put("marker", "selected\n")
+            val observedBranches = row.putArray("checkoutBranches")
+            branches.forEach { observedBranches.add(it) }
+            val errors = row.putArray("checkoutErrors")
+            val indices = row.putArray("checkoutErrorIndices")
+            if (index > 0) {
+                errors.addObject().put("type", "hudson.AbortException").put("message", missing)
+                indices.add(index)
+            }
+            if (failure) row.putObject("terminalError").put("type", "hudson.AbortException").put("message", missing).put("checkoutIndex", index)
+            else row.putNull("terminalError")
+        }
+        return root
     }
     private fun runs(p: JenkinsCheckoutRuntimeCertification.Prepared, raw: ObjectNode) =
         JenkinsCheckoutRuntimeCertification.observations(p, mapper.writeValueAsBytes(raw))
