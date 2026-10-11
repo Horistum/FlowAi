@@ -57,7 +57,7 @@ class JenkinsLoopRuntimeCertificationTests {
                     "checkoutErrors" to if (index > 0) listOf(error) else emptyList(),
                     "checkoutErrorIndices" to if (index > 0) listOf(index) else emptyList(),
                     "terminalError" to if (failure) error + ("checkoutIndex" to index) else null,
-                    "checkoutCount" to branches.size(), "marker" to if (p.scenario == scenarios[1] && id != "baseline") null else "selected\n")
+                    "checkoutCount" to branches.size, "marker" to if (p.scenario == scenarios[1] && id != "baseline") null else "selected\n")
             }))
     }
     private fun runs(p: JenkinsCheckoutRuntimeCertification.Prepared, raw: ObjectNode) =
