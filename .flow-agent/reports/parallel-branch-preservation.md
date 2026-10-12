@@ -7,6 +7,9 @@ lowering retained wrappers but the manifest boundary accepted flattened bodies,
 detached wrappers and missing or malformed failure policies. Presentation names
 also conflated an absent label with an authored ordinal-looking label. This slice
 preserves and validates that existing meaning before native parallel certification.
+Job-per-task projection now retains the group as one diagnostic structural job
+instead of flattening its branches into separate jobs. Its identity inventory uses
+the same retained parent and wrapper structure.
 
 ## Production and negative evidence
 
@@ -32,6 +35,9 @@ checks passed before the release-state update. The pinned Kotlin 2.4.10 plugin i
 absent from the offline cache; the local Gradle attempt stopped before compilation.
 Fresh exact-head and synthetic-merge compilation, tests, ordered conformance,
 isolation, every existing native runtime producer and the portfolio remain required.
+The first CI revision exposed remaining branch flattening in job-per-task lowering;
+six new cross-provider regressions failed while existing tests remained intact.
+That lowering and its identity inventory were corrected without weakening the tests.
 Final candidate receipts will be attached to the PR without preclaiming CI success
 inside the committed candidate.
 

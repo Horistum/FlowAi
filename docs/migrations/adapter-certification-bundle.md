@@ -582,7 +582,10 @@ execution claim. No public syntax, Core or artifact version changes are required
 ## AR-06T parallel branch prerequisite
 
 Diagnostic target manifests preserve parallel failure policy and branch identity
-before any native parallel execution is certified. A `parallel` step records
+before any native parallel execution is certified. Job-per-task projections retain
+one structural job for a parallel group instead of dropping its parent and emitting
+independent branch jobs. This keeps failure policy and empty branches visible.
+A `parallel` step records
 `failFast` as exactly `true` or `false` and `branchCount` as a canonical decimal
 count. Its direct children are ordered `parallel-branch` wrappers. Each wrapper
 records its zero-based `branchIndex`; `branchName` exists only when a label was

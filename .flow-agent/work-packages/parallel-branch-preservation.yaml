@@ -10,6 +10,7 @@ authorization:
 invariant: Target projection preserves parallel branch identity, authored order, optional labels, empty
   and nested bodies and explicit failFast; malformed structure fails closed and parallel remains non-executable.
 scope:
+- Retain the parallel parent in job-per-task projection instead of flattening its branches, including its derived identity inventory.
 - Preserve branch count and ordinal metadata with distinct authored optional labels, including duplicate
   and empty labels.
 - Validate direct branch ownership, exact failFast booleans, grouping-only bindings and complete ordered
@@ -26,6 +27,8 @@ ownershipBoundary:
   conformance: Negative projection regressions and lifecycle validation; the existing runtime portfolio
     remains live.
 expectedFilesToChange:
+- src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionIdentityChecks.kt
 - src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt
 - src/main/kotlin/org/flowlang/generators/manifest/TargetManifestContractValidator.kt
 - src/main/kotlin/org/flowlang/generators/manifest/TargetRendererContractValidator.kt

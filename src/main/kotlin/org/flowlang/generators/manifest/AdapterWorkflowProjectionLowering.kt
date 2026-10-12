@@ -135,8 +135,6 @@ object AdapterWorkflowProjectionLowering {
                 then.forEach { it.toTargetJobs(authorization, out, combineConditions(condition, this.condition), targetName, projectionRules, nativeProjections) }
                 otherwise.forEach { it.toTargetJobs(authorization, out, combineConditions(condition, "not (${this.condition})"), targetName, projectionRules, nativeProjections) }
             }
-            is ParallelGroupNode -> branches.flatMap { it.steps }
-                .forEach { it.toTargetJobs(authorization, out, condition, targetName, projectionRules, nativeProjections) }
             is RetryGroupNode -> body.forEach { it.toTargetJobs(authorization, out, condition, targetName, projectionRules, nativeProjections) }
             is TryPlanNode -> {
                 val previousJobIds = out.map { it.id }
@@ -150,12 +148,12 @@ object AdapterWorkflowProjectionLowering {
                     job.copy(dependsOn = (job.dependsOn + guardDependencies).distinct(), metadata = job.metadata + ("errorHandler" to "true"))
                 }
             }
-            is LoopNode, is MatchPlanNode, is DataOpNode, is ControlNode -> out += TargetJob(
+            is LoopNode, is MatchPlanNode, is ParallelGroupNode, is DataOpNode, is ControlNode -> out += TargetJob(
                 id = sanitizeId(id),
                 name = id,
                 steps = toTargetSteps(authorization, targetName, projectionRules, nativeProjections),
                 metadata = when (this) {
-                    is LoopNode, is MatchPlanNode -> mapOfNotNull("condition" to condition, "supportLevel" to "partial")
+                    is LoopNode, is MatchPlanNode, is ParallelGroupNode -> mapOfNotNull("condition" to condition, "supportLevel" to "partial")
                     else -> mapOfNotNull("condition" to condition)
                 }
             )
