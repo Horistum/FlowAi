@@ -136,12 +136,13 @@ internal fun PlanNode.toTargetSteps(
                     name = branch.name ?: "branch-${index + 1}",
                     type = "parallel-branch",
                     children = branch.steps.flatMap { it.toTargetSteps(authorization, targetName, projectionRules, nativeProjections) },
-                    metadata = mapOf("sourceNodeKind" to "ParallelBranch")
+                    metadata = mapOf("sourceNodeKind" to "ParallelBranch", "branchIndex" to index.toString()) +
+                        (branch.name?.let { mapOf("branchName" to it) } ?: emptyMap())
                 )
             },
             materialization = structural.materialization,
             rendererPayload = structural.rendererPayload,
-            metadata = mapOf("sourceNodeKind" to kind, "failFast" to failFast.toString())
+            metadata = mapOf("sourceNodeKind" to kind, "failFast" to failFast.toString(), "branchCount" to branches.size.toString())
         ))
     }
     is MatchPlanNode -> {

@@ -4,7 +4,7 @@ import java.io.File
 import kotlin.test.*
 
 class JenkinsMatchCertificationLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = AdapterObservationAuthenticationLifecycle.parallelProjectionPredecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     private fun rejected(s: WorkflowSemanticsRecoveryLifecycleSnapshot) =
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 

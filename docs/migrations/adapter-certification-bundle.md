@@ -578,3 +578,27 @@ identical final markers cannot conceal incorrect branch selection. The portfolio
 reauthenticates all four assessments along with every existing scenario before
 publishing a bounded `MATCH` row. It still makes no general support or portable
 execution claim. No public syntax, Core or artifact version changes are required.
+
+## AR-06T parallel branch prerequisite
+
+Diagnostic target manifests preserve parallel failure policy and branch identity
+before any native parallel execution is certified. A `parallel` step records
+`failFast` as exactly `true` or `false` and `branchCount` as a canonical decimal
+count. Its direct children are ordered `parallel-branch` wrappers. Each wrapper
+records its zero-based `branchIndex`; `branchName` exists only when a label was
+authored. The existing presentation name uses that exact label or `branch-N` for
+an unnamed branch. Duplicate labels are retained and do not identify work. Authored labels must remain
+non-blank, as required by the canonical graph.
+Owner and ordinal continue to derive collision-checked wrapper IDs.
+
+Empty groups and branches remain diagnostic structures. Wrappers cannot carry
+parameters, native payloads, leaf bindings or dependencies of their own. Their
+children preserve body order and nested boundaries. Flattened, omitted, reordered,
+detached or executable wrappers and malformed failure policies fail the manifest
+contract. Regenerate older diagnostic parallel manifests to obtain the required
+metadata; no versioned fields or canonical semantics change.
+
+This preservation gate grants no native parallel execution, cancellation, workspace
+isolation or portable behavior. Existing provider admission and all current runtime
+certification scenarios remain required. Shape checks complement, but do not replace,
+compiler authorization and exact source/artifact receipts.

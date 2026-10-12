@@ -163,6 +163,34 @@ object TargetManifestContractValidator {
             error("STEP_ID_DUPLICATE", "$path.id", "Step id '${step.id}' is duplicated in the manifest.")
         }
         if (step.type.isBlank()) error("STEP_TYPE_BLANK", "$path.type", "TargetStep.type must be present.")
+        if (step.type == "parallel") {
+            if (step.params.isNotEmpty()) {
+                error("PARALLEL_PARAMS_INVALID", "$path.params", "Parallel has no independent execution parameters.")
+            }
+            if (step.metadata["failFast"] !in setOf("true", "false")) {
+                error("PARALLEL_FAIL_FAST_INVALID", "$path.metadata.failFast", "Parallel must preserve its explicit canonical failFast boolean.")
+            }
+            if (step.metadata["branchCount"] != step.children.size.toString() || step.children.any { it.type != "parallel-branch" }) {
+                error("PARALLEL_BRANCHES_INVALID", "$path.children", "Parallel must retain its declared branch count and direct branch wrappers, including empty branches.")
+            }
+            step.children.forEachIndexed { index, branch ->
+                if (branch.metadata["branchIndex"] != index.toString()) {
+                    error("PARALLEL_BRANCH_ORDER_INVALID", "$path.children[$index].metadata.branchIndex", "Parallel branches must retain their zero-based authored order, not runtime scheduling order.")
+                }
+                val authoredName = branch.metadata["branchName"]
+                if (authoredName != null && authoredName.isBlank() || branch.name != (authoredName ?: "branch-${index + 1}")) {
+                    error("PARALLEL_BRANCH_NAME_INVALID", "$path.children[$index].name", "Branch presentation must retain its authored label or ordinal default; labels do not identify branches.")
+                }
+            }
+        }
+        if (step.type == "parallel-branch") {
+            if (parentType != "parallel") error("PARALLEL_BRANCH_PARENT_INVALID", path, "Parallel branch wrappers must be direct children of a parallel group.")
+            if (step.params.isNotEmpty()) error("PARALLEL_BRANCH_PARAMS_INVALID", "$path.params", "Parallel branch wrappers have no independent execution parameters.")
+            if (step.rendererPayload != null || step.materialization.status != TargetMaterializationStatus.SEMANTIC_ONLY ||
+                step.module != null || step.action != null || step.target != null || step.dependsOn.isNotEmpty()) {
+                error("PARALLEL_BRANCH_EXECUTION_INVALID", path, "Parallel wrappers group branch meaning and must not carry independent execution bindings.")
+            }
+        }
         if (step.type == "match") {
             if (step.params.keys != setOf("source") || step.params["source"].isNullOrBlank()) {
                 error("MATCH_SOURCE_INVALID", "$path.params", "Match must carry exactly its authored source expression.")
