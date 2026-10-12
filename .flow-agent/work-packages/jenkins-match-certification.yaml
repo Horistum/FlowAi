@@ -1,0 +1,71 @@
+version: AR-06S
+name: Bounded Jenkins Match Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 215.
+  predecessorPullRequest: 215
+  mergedMain: e2d3747f06f778b97979c07b56d27aa041e65c4a
+invariant: A bounded native match executes only its selected or default branch, preserves an empty
+  selected branch, and propagates native body failure without executing later work.
+scope:
+- Authorize only string-literal sources, literal boolean cases with at most one true case, empty
+  error branches and native checkout bodies through an adapter-owned plan scope.
+- Render preserved case wrappers as native mutually exclusive guards without flattening or promoting
+  generic match support.
+- Execute compiler-produced baseline and falsifying mutants for selected, default, empty selected
+  and failing selected branches on pinned Jenkins.
+- Authenticate all observations and include the new scenarios in the complete current-revision portfolio.
+nonGoals:
+- No dynamic source, implicit-result binding, overlapping predicates, nonempty error handler, nested
+  match or branch-output continuity claim.
+- No Core semantic, public syntax, generic registry support or version change.
+- No AR-06 closure, AR-07 activation, finding closure, portability claim or EF-09 resumption.
+ownershipBoundary:
+  production: Jenkins adapter scope and renderer, composed only by the reference distribution.
+  semanticKernel: Unchanged; the bounded disjoint literal cases do not invent precedence or implicit-result
+    semantics.
+  conformance: External Jenkins runner, authenticated observations, behavior matrix and lifecycle
+    regressions.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsMatchProjectionScope.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- flow-adapter-jenkins/src/runtimeTest
+- flow-conformance-kit/build.gradle.kts
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- Positive admission and strict rejection of dynamic, overlapping, nested, error-handler and unsupported-body
+  shapes.
+- Real native branch identity/order, empty-body default suppression, failure origin and skipped successor;
+  omitted, flattened or substituted mutants.
+- Current-head exact/merge tests, ordered conformance inventory, isolation and complete authenticated
+  portfolio.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Flattened cases, omitted selected body, substituted default, omitted default,
+    empty-case fallthrough, omitted successor, omitted or suppressed native failure; invalid scope
+    and altered signed observations.
+followUp:
+- Extend match only with independently justified source binding and error semantics.
+- Certify remaining constructs and shared canonical scenarios before broader support or portability
+  claims.

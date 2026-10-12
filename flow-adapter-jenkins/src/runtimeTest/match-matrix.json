@@ -1,0 +1,205 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "match",
+  "scenarios": [
+    {
+      "scenario": "jenkins-match-selected-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 2,
+        "checkoutErrors": [],
+        "checkoutBranches": [
+          "selected",
+          "selected"
+        ],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "flattened-cases",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 4,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "alternate",
+            "selected",
+            "alternate",
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-selected",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-match-default-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 2,
+        "checkoutErrors": [],
+        "checkoutBranches": [
+          "alternate",
+          "selected"
+        ],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "substituted-default",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-default",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-match-empty-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 1,
+        "checkoutErrors": [],
+        "checkoutBranches": [
+          "selected"
+        ],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "empty-fallthrough",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "alternate",
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-successor",
+          "result": "SUCCESS",
+          "marker": null,
+          "checkoutCount": 0,
+          "checkoutErrors": [],
+          "checkoutBranches": [],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-match-failure-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "FAILURE",
+        "marker": null,
+        "checkoutCount": 1,
+        "checkoutErrors": [
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          }
+        ],
+        "checkoutBranches": [
+          "missing-revision"
+        ],
+        "checkoutErrorIndices": [
+          1
+        ],
+        "terminalError": {
+          "type": "hudson.AbortException",
+          "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+          "checkoutIndex": 1
+        }
+      },
+      "mutants": [
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "alternate",
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 3,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutBranches": [
+            "missing-revision",
+            "alternate",
+            "selected"
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "String-literal sources and disjoint literal boolean cases with at most one true case; native checkout bodies and empty error branches only.",
+    "No dynamic predicate, implicit-result binding, overlapping-case precedence, nonempty error handler, nested match or branch-output continuity claim.",
+    "Native checkout arguments, occurrence counts, failure origins and skipped successors are observed independently; final workspace markers alone cannot distinguish branches.",
+    "The full unmodified generated Jenkinsfile runs in a disposable pinned Jenkins controller with network disabled and a local Git fixture.",
+    "No general public support or portable-execution promotion. The runtime host remains trusted."
+  ]
+}

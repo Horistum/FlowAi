@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "purpose": "A bounded native match executes only its selected or default branch, preserves an empty selected branch, and propagates native body failure without executing later work.",
+  "predecessor": {
+    "pullRequest": 215,
+    "mergedMain": "e2d3747f06f778b97979c07b56d27aa041e65c4a",
+    "tree": "4f3a79bafe5941eaa0477aff8a7354b3901dcb72",
+    "exactHead": "81425ac2208119dbf7c6c5abb8e7b774535f264e",
+    "syntheticMergeCandidate": "2b0a312d8454307f34d223d32610678aec02fbb9",
+    "flowCiRunId": 38156886301,
+    "runtimeCiRunId": 38156886072,
+    "conclusion": "success",
+    "testsPerRevision": 2080,
+    "suitesPerRevision": 358,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 17,
+    "signedObservations": 53,
+    "portfolioRows": 36,
+    "observedConstructTargetPairs": 8,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "4148639299ea0ed32662669015bdbc607caea44ac24d37486695d22bf43e7906",
+    "mainFlowCiRunId": 38195574099,
+    "mainFlowCiConclusion": "success",
+    "mainRuntimeCiRunId": 38195574143,
+    "mainRuntimeConclusion": "success",
+    "scope": "PR 215 exact-head and synthetic-merge test identities, ordered conformance checks, source isolation hashes, all 53 signatures and 16 archive digests were independently verified. Actual merged main has the same tree and both main workflows passed. Counts refer to the validated PR revisions."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06R",
+        "selectedWorkPackage": ".flow-agent/work-packages/match-branch-preservation.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened branches, missing source or condition, invalid branch order, duplicate error/default, detached wrappers and derived identity collisions; historical receipt and invented validation mutations."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06S",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-match-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened cases, omitted selected body, substituted default, omitted default, empty-case fallthrough, omitted successor, omitted or suppressed native failure; invalid scope and altered signed observations."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06R",
+        "workPackage": ".flow-agent/work-packages/match-branch-preservation.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06S",
+        "workPackage": ".flow-agent/work-packages/jenkins-match-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 215.",
+    "predecessorPullRequest": 215,
+    "mergedMain": "e2d3747f06f778b97979c07b56d27aa041e65c4a"
+  },
+  "limitations": [
+    "AR-06S requires fresh exact-head, synthetic-merge and complete runtime/portfolio checks.",
+    "Disjoint literal cases do not establish dynamic source binding, predicate precedence, error-handler semantics or general match support."
+  ]
+}

@@ -114,11 +114,12 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         TargetProjectionDiagnostics.append(JenkinsProjectionSyntax, step, manifest.inputs, sb, indent, "//")
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
-            "try-body", "error-handler", "parallel", "parallel-branch", "match" ->
+            "try-body", "error-handler", "parallel", "parallel-branch" ->
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
             "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
             "retry" -> renderJenkinsRetry(step, manifest, sb, indent)
             "loop" -> renderJenkinsLoop(step, manifest, sb, indent)
+            "match" -> renderJenkinsMatch(step, manifest, sb, indent)
             "approval" -> renderJenkinsApproval(step, sb, indent)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
@@ -220,6 +221,30 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         }
         sb.appendLine("${indent}for (def $item in ${items.joinToString(", ", "[", "]") { groovyString(it) }}) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        sb.appendLine("${indent}}")
+    }
+
+    private fun renderJenkinsMatch(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        requireJenkinsStructure(step, "literal-match")
+        val cases = step.children.filter { it.type == "match-case" }
+        require(JenkinsMatchProjectionScope.supports(step.params.getValue("source"), cases.map { it.params.getValue("condition") })) {
+            "Jenkins match requires a string-literal source and disjoint literal boolean cases."
+        }
+        require(step.children.single { it.type == "match-error" }.children.isEmpty()) {
+            "Jenkins literal match cannot execute an error branch."
+        }
+        require(step.children.flatMap { it.children }.all { it.type == "action" && it.module == "git" && it.action == "checkout" }) {
+            "Jenkins literal match supports native checkout bodies only."
+        }
+        // The source is an inert literal; no implicit result is introduced into the native scope.
+        cases.forEachIndexed { index, branch ->
+            val guard = JenkinsTargetExpressionTranslator.groovy(branch.params.getValue("condition"),
+                manifest.inputs, manifest.compatibility.expressionSupport)
+            sb.appendLine("$indent${if (index == 0) "if" else "} else if"} ($guard) {")
+            branch.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
+        }
+        sb.appendLine("${indent}} else {")
+        step.children.single { it.type == "match-default" }.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ") }
         sb.appendLine("${indent}}")
     }
 

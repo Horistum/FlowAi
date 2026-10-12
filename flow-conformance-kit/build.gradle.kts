@@ -126,6 +126,24 @@ tasks.register("verifyJenkinsLocalRecoveryRuntime") {
     dependsOn(localRecoveryRuntimeTasks)
 }
 
+val matchRuntimeTasks = listOf("selected", "default", "empty", "failure").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsMatch${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify bounded match for a $outcome body on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-match-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-match-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsMatchRuntime") {
+    group = "verification"
+    description = "Execute bounded match and its branch mutants on real Jenkins."
+    dependsOn(matchRuntimeTasks)
+}
+
 val loopRuntimeTasks = listOf("order", "empty", "failure").map { outcome ->
     tasks.register<JavaExec>("verifyJenkinsLoop${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
         group = "verification"

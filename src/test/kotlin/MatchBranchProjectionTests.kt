@@ -145,9 +145,9 @@ class MatchBranchProjectionTests {
 
     @Test fun preservingMatchDoesNotGrantExecutionOrPromoteAnyTarget() {
         for ((target, manifest) in manifests) {
-            assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, root(manifest).materialization.status)
+            assertEquals(if (target == "jenkins") TargetMaterializationStatus.NATIVE else TargetMaterializationStatus.ADAPTER_REQUIRED, root(manifest).materialization.status)
             assertFalse(TargetRenderPolicy.evaluate(manifest).executable)
-            assertFalse(ReferenceTargetProjections.nativeCatalogs.getValue(target).hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
+            assertEquals(target == "jenkins", ReferenceTargetProjections.nativeCatalogs.getValue(target).hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
             assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(unit, testTargetSelection(target, targets), strict = true)) }
             assertFails { ReferenceTargetProjections.registry.requireProvider(target).render(manifest) }
         }

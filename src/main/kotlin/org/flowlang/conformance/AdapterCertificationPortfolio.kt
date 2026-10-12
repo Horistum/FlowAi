@@ -34,6 +34,10 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
 
         internal fun relativeDirectory(s: JenkinsCheckoutRuntimeCertification.Scenario): String = when (s) {
             JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> "jenkins-checkout-runtime"
+            JenkinsCheckoutRuntimeCertification.Scenario.MATCH_SELECTED -> "jenkins-match-runtime/selected"
+            JenkinsCheckoutRuntimeCertification.Scenario.MATCH_DEFAULT -> "jenkins-match-runtime/default"
+            JenkinsCheckoutRuntimeCertification.Scenario.MATCH_EMPTY -> "jenkins-match-runtime/empty"
+            JenkinsCheckoutRuntimeCertification.Scenario.MATCH_FAILURE -> "jenkins-match-runtime/failure"
             JenkinsCheckoutRuntimeCertification.Scenario.LOOP_ORDER -> "jenkins-loop-runtime/order"
             JenkinsCheckoutRuntimeCertification.Scenario.LOOP_EMPTY -> "jenkins-loop-runtime/empty"
             JenkinsCheckoutRuntimeCertification.Scenario.LOOP_FAILURE -> "jenkins-loop-runtime/failure"

@@ -44,6 +44,14 @@ object JenkinsNativeProjectionCatalog {
         ),
         structuralDefinitions = listOf(
             TargetNativeStructuralProjectionDefinition(
+                structure = TargetStructuralProjectionKind.MATCH,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
+                reference = "literal-match",
+                implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsMatch",
+                behavioralEvidenceReference = "src/test/kotlin/JenkinsMatchRuntimeCertificationTests.kt#literalMatchPreservesSelectedDefaultEmptyAndFailure",
+                supportScope = TargetStructuralProjectionSupportScope.PLAN_SCOPED
+            ),
+            TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.LOOP,
                 kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "for-in",
