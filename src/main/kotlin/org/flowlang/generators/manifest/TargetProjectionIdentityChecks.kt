@@ -26,6 +26,9 @@ object TargetProjectionIdentityChecks {
 
     // A branch label is presentation. Its structural owner and ordinal identify the emitted wrapper.
     internal fun branchId(parentId: String, index: Int): String = "${parentId}_branch_${index + 1}"
+    internal fun matchCaseId(parentId: String, index: Int): String = "${parentId}_case_${index + 1}"
+    internal fun matchErrorId(parentId: String): String = "${parentId}_error"
+    internal fun matchDefaultId(parentId: String): String = "${parentId}_default"
 
     private fun stepNames(nodes: List<PlanNode>): List<String> = nodes.flatMap { node -> when (node) {
         is ConditionNode -> (if (node.then.isEmpty()) emptyList() else listOf("${node.id}_then") + stepNames(node.then)) +
@@ -36,8 +39,10 @@ object TargetProjectionIdentityChecks {
         is TryPlanNode -> listOf(node.id, "${node.id}_body", "${node.id}_handler") + stepNames(node.body) + stepNames(node.errorHandler)
         is LoopNode -> listOf(node.id) + stepNames(node.body)
         is RetryGroupNode -> listOf(node.id) + stepNames(node.body)
-        is MatchPlanNode -> listOf(node.id) + node.cases.flatMap { stepNames(it.steps) } +
-            stepNames(node.errorCase) + stepNames(node.defaultSteps)
+        is MatchPlanNode -> listOf(node.id) + node.cases.flatMapIndexed { index, case ->
+            listOf(matchCaseId(node.id, index)) + stepNames(case.steps)
+        } + listOf(matchErrorId(node.id)) + stepNames(node.errorCase) +
+            listOf(matchDefaultId(node.id)) + stepNames(node.defaultSteps)
         is TaskNode, is ApprovalNode, is DataOpNode, is ControlNode -> listOf(node.id)
     } }
 

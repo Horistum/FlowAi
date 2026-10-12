@@ -94,6 +94,9 @@ object TargetReviewArtifactRenderer {
         "parallel-branch",
         "loop",
         "match",
+        "match-case",
+        "match-error",
+        "match-default",
         "retry",
         "condition"
     )

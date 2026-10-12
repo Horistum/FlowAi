@@ -1,0 +1,76 @@
+version: AR-06R
+name: Match Branch Preservation
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 214.
+  predecessorPullRequest: 214
+  mergedMain: edc0cef40bf4615c760eae9c08f1503ed9ef91bf
+invariant: Target projection preserves every match case condition, authored case order
+  and branch body, with distinct error and default branches; unsupported match remains
+  non-executable.
+scope:
+- Replace flattened match children with explicit target-neutral case, error and default
+  wrappers.
+- Preserve empty case bodies and branch order without interpreting or rewriting authored
+  conditions.
+- Include all derived wrapper identities in the projection collision checks.
+- Reject flattened, misordered or misplaced branch wrappers at the manifest contract
+  boundary.
+- Retain unsupported match claims and revalidate every existing runtime certification
+  scenario.
+nonGoals:
+- No native match execution or behavioral certification claim in this prerequisite
+  slice.
+- No Core semantic, public syntax, frozen manifest, generic registry support or version
+  change.
+- No AR-06 closure, AR-07 activation, finding closure or EF-09 resumption.
+ownershipBoundary:
+  adapterContract: Target-neutral manifest lowering, validation and derived identity
+    checks.
+  semanticKernel: Unchanged canonical match semantics.
+  conformance: Negative projection regressions and lifecycle validation; existing
+    runtime portfolio retained.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionIdentityChecks.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetManifestContractValidator.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetRenderPolicy.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetCompatibilityReadinessAnalyzer.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetReviewArtifactRenderer.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+testsToAddOrUpdate:
+- Actual frontend-to-manifest projection preserves source, case conditions, order,
+  nested and empty bodies across reference targets.
+- Flattened, missing-condition, reordered, duplicate, misplaced and identity-colliding
+  branch shapes fail closed.
+- Match stays non-executable with native leaves; all predecessor test identities and
+  ordered conformance checks remain.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Flattened branches, missing source or condition, invalid branch
+    order, duplicate error/default, detached wrappers and derived identity collisions;
+    historical receipt and invented validation mutations.
+followUp:
+- Implement and independently certify bounded native match selection only after the
+  adapter boundary retains branch meaning.
+- Certify remaining constructs and shared canonical scenarios before broader support
+  or portability claims.
