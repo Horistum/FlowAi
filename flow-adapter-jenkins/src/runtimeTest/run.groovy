@@ -22,6 +22,10 @@ Thread.start('checkout-certification') {
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def inventories = [
+            'jenkins-match-selected-runtime': ['baseline', 'flattened-cases', 'omitted-selected'],
+            'jenkins-match-default-runtime': ['baseline', 'substituted-default', 'omitted-default'],
+            'jenkins-match-empty-runtime': ['baseline', 'empty-fallthrough', 'omitted-successor'],
+            'jenkins-match-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-loop-order-runtime': ['baseline', 'reversed-items', 'deduplicated-items'],
             'jenkins-loop-empty-runtime': ['baseline', 'forced-iteration', 'omitted-successor'],
             'jenkins-loop-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
@@ -139,7 +143,7 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
-            if (scenario.startsWith('jenkins-loop-')) {
+            if (scenario.startsWith('jenkins-loop-') || scenario.startsWith('jenkins-match-')) {
                 record.checkoutBranches = checkouts.collect { node ->
                     def branch = ArgumentsAction.getArguments(node).get('branch')
                     if (!(branch instanceof String) || branch.length() < 1 || branch.length() > 256)
@@ -184,14 +188,16 @@ Thread.start('checkout-certification') {
             }
             if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
                              'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
-                             'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime']) {
+                             'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime',
+                             'jenkins-match-selected-runtime', 'jenkins-match-default-runtime', 'jenkins-match-empty-runtime', 'jenkins-match-failure-runtime']) {
                 record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
                     .collect { node, index -> index + 1 }
             }
             if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
                              'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
                              'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
-                             'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime']) {
+                             'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime',
+                             'jenkins-match-selected-runtime', 'jenkins-match-default-runtime', 'jenkins-match-empty-runtime', 'jenkins-match-failure-runtime']) {
                 def terminal = build.getExecution().getCauseOfFailure()
                 def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
                 def checkoutIndex = origin == null ? -1 : checkouts.findIndexOf { it.getId() == origin.getId() }

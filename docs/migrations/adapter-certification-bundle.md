@@ -555,3 +555,26 @@ structure; it adds no wire field or public syntax. Canonical match meaning is
 unchanged. All reference providers still lack native match evidence, so a match
 remains non-executable even when its leaves have native bindings. Native branch
 selection, error behavior and portability require later runtime certification.
+
+## AR-06S: bounded native Jenkins match
+
+Jenkins can now materialize the AR-06R wrappers for an explicitly bounded plan:
+a string-literal source, one or more literal boolean cases with at most one true
+case, an empty error branch, and checkout-only case/default bodies. Empty bodies
+are valid. Unsupported shapes remain non-executable; generic `match` support
+stays unsupported. The source is inert and creates no native result binding.
+
+The adapter emits mutually exclusive native guards. A selected empty body does
+not fall through to default. A native body error stops later actions and the
+successor. Disjoint literal conditions establish neither overlapping-case
+precedence nor dynamic/implicit-result semantics. Nonempty error handlers and
+nested match are outside this scope.
+
+`jenkins-match-runtime` runs the complete generated artifact for selected, default,
+empty and failing branches. Its mutants test flattened/omitted bodies, default
+substitution/omission, empty fallthrough, omitted continuation and suppressed
+failure. Observations include native checkout arguments and error origin, so
+identical final markers cannot conceal incorrect branch selection. The portfolio
+reauthenticates all four assessments along with every existing scenario before
+publishing a bounded `MATCH` row. It still makes no general support or portable
+execution claim. No public syntax, Core or artifact version changes are required.

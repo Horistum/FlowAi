@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 32
+revision: 33
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #214 is merged into main edc0cef40bf4615c760eae9c08f1503ed9ef91bf with the same tree as validated PR head and merge candidate. Flow CI 38150661388 passed 2069 tests and 274 ordered checks per revision; runtime CI 38150661381 passed seventeen assessments with 53 independently verified signatures. Merged-main runtime 38154628346 passed; Flow CI 38154628323 was still running at selection. AR-06R preserves match case conditions, order and branch membership at the target-neutral adapter boundary, correcting flattened diagnostic manifests before native match certification. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  decisionBasis: "PR #215 is merged into main e2d3747f06f778b97979c07b56d27aa041e65c4a with the same tree as its validated PR revisions. Flow CI 38156886301 passed 2080 tests and 274 ordered checks per revision; runtime CI 38156886072 passed seventeen assessments with 53 independently verified signatures. Actual-main Flow CI 38195574099 and runtime CI 38195574143 passed. AR-06S builds on preserved match branches to certify disjoint literal cases, default and empty-case selection and native body failure on Jenkins. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"

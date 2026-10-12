@@ -35,6 +35,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val LOOP_BASELINE = ".flow-agent/evidence/jenkins-loop-baseline.json"
     const val MATCH_PROJECTION_WORK_PACKAGE = ".flow-agent/work-packages/match-branch-preservation.yaml"
     const val MATCH_PROJECTION_BASELINE = ".flow-agent/evidence/match-branch-preservation-baseline.json"
+    const val MATCH_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-match-certification.yaml"
+    const val MATCH_BASELINE = ".flow-agent/evidence/jenkins-match-baseline.json"
+    private const val MATCH_BASELINE_SHA256 = "b645db90beb45d8f05f131f09c616cfe88a7e995d5973567d22537af9b3ee3f8"
     private const val MATCH_PROJECTION_BASELINE_SHA256 = "23c4b92c66ff670102d3df83886009f37fd7372e5db2f2d9919565eb727b6304"
     private const val LOOP_BASELINE_SHA256 = "c57621fe0cc44fba575474b16727e695eb924945d20102846c9c1a1eb97085c2"
     private const val RETRY_BASELINE_SHA256 = "f1044b17c0196172a6f437c89ef521b9e79f94ccedd8cfaed282c2a0f9d6a2cb"
@@ -55,6 +58,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06S" || s.release.containsKey("recoveryMatchCertification")) {
+            val raw = s.certificationMatchBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != MATCH_BASELINE_SHA256) {
+                add("Jenkins literal match certification requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), MATCH_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Jenkins literal match certification selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Jenkins literal match certification release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Jenkins literal match certification work", s.certificationMatchWorkPackage, mapOf("version" to "AR-06S", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Jenkins literal match certification authorization", section(s.certificationMatchWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Jenkins literal match certification validation", section(s.certificationMatchWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Jenkins literal match certification candidate", section(s.release["recoveryMatchCertification"]), mapOf(
+                "candidate" to "AR-06S", "status" to "candidate", "workPackage" to MATCH_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-match-certification.md", "baselineEvidence" to MATCH_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(matchPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06R" || s.release.containsKey("recoveryMatchProjection")) {
             val raw = s.certificationMatchProjectionBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -530,7 +558,18 @@ internal object AdapterObservationAuthenticationLifecycle {
             certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
     }
 
+    internal fun matchPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryMatchCertification") && s.certificationWorkPackage["selectedSlice"] != "AR-06S") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationMatchBaseline), MATCH_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryMatchCertification") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationMatchWorkPackage = emptyMap(), certificationMatchBaseline = null)
+    }
+
     internal fun matchProjectionPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryMatchCertification") || s.certificationWorkPackage["selectedSlice"] == "AR-06S")
+            return matchProjectionPredecessor(matchPredecessor(s))
         if (!s.release.containsKey("recoveryMatchProjection") && s.certificationWorkPackage["selectedSlice"] != "AR-06R") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationMatchProjectionBaseline), MATCH_PROJECTION_BASELINE)["transition"])
         return s.copy(

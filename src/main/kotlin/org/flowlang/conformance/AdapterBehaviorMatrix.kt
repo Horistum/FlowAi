@@ -35,6 +35,10 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
             val construct = when (scenario) {
                 JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT,
                 JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT -> CertificationConstruct.NATIVE_CHECKOUT
+                JenkinsCheckoutRuntimeCertification.Scenario.MATCH_SELECTED,
+                JenkinsCheckoutRuntimeCertification.Scenario.MATCH_DEFAULT,
+                JenkinsCheckoutRuntimeCertification.Scenario.MATCH_EMPTY,
+                JenkinsCheckoutRuntimeCertification.Scenario.MATCH_FAILURE -> CertificationConstruct.MATCH
                 JenkinsCheckoutRuntimeCertification.Scenario.LOOP_ORDER,
                 JenkinsCheckoutRuntimeCertification.Scenario.LOOP_EMPTY,
                 JenkinsCheckoutRuntimeCertification.Scenario.LOOP_FAILURE -> CertificationConstruct.LOOPS
@@ -51,6 +55,7 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
                 JenkinsCheckoutRuntimeCertification.Scenario.APPROVAL_REJECT -> CertificationConstruct.APPROVALS
             }
             val requiredSubject = when (construct) {
+                CertificationConstruct.MATCH -> CertificationSubject.Structural(TargetStructuralProjectionKind.MATCH)
                 CertificationConstruct.LOOPS -> CertificationSubject.Structural(TargetStructuralProjectionKind.LOOP)
                 CertificationConstruct.RETRY -> CertificationSubject.Structural(TargetStructuralProjectionKind.RETRY)
                 CertificationConstruct.CONDITIONS -> CertificationSubject.Structural(TargetStructuralProjectionKind.CONDITION)
