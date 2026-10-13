@@ -135,14 +135,29 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         require(step.metadata["failFast"] in setOf("false", "true") && step.children.size == 2) {
             "Jenkins parallel requires exactly two approval branches with a boolean failFast policy."
         }
+        val workspaceBodies = step.children.all { it.children.size == 2 }
+        require(!workspaceBodies || step.metadata["failFast"] == "false") {
+            "Jenkins parallel checkout bodies require failFast false."
+        }
         val gates = step.children.map { branch ->
-            require(branch.type == "parallel-branch")
-            requireNotNull(branch.children.singleOrNull()).also { gate ->
+            require(branch.type == "parallel-branch" && branch.children.size == (if (workspaceBodies) 2 else 1))
+            requireNotNull(branch.children.firstOrNull()).also { gate ->
                 require(gate.type == "approval" && gate.params["mode"] == "manual" &&
                     gate.metadata["resultName"] == null && gate.dependsOn.isEmpty() && gate.children.isEmpty()) {
                     "Jenkins parallel supports only unbound manual approval gates."
                 }
             }
+        }
+        if (workspaceBodies) step.children.forEachIndexed { index, branch ->
+            require(branch.id.length <= 128 && Regex("[a-z0-9_-]+").matches(branch.id))
+            val task = branch.children[1]
+            val payload = requireNotNull(task.rendererPayload)
+            require(task.type == "action" && task.module == "git" && task.action == "checkout" &&
+                task.metadata["resultName"] == null && task.children.isEmpty() && task.dependsOn.all { it == gates[index].id } &&
+                payload.kind == JenkinsProjectionPayloadKinds.JENKINS_STEP && payload.reference == "git")
+            val context = "Jenkins parallel checkout '${task.id}'"
+            require((payload.bindings["depth"]?.let { CheckoutProjectionValues.depth(payload, "depth", context) } ?: 0) == 0)
+            require(!Regex("[0-9a-fA-F]{40}").matches(CheckoutProjectionValues.branch(payload, "branch", context)))
         }
         val messages = gates.map { it.rendererPayload?.bindings?.get("message")?.value }
         require(messages.all { !it.isNullOrBlank() } && messages.distinct().size == 2)
@@ -150,7 +165,12 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         step.children.forEach { branch ->
             // Authored labels may repeat; preserved wrapper IDs are the native branch keys.
             sb.appendLine("${indent}  ${groovyString(branch.id)}: {")
-            renderJenkinsStep(branch.children.single(), manifest, sb, "$indent    ")
+            renderJenkinsStep(branch.children.first(), manifest, sb, "$indent    ")
+            if (workspaceBodies) {
+                sb.appendLine("${indent}    dir(${groovyString(".flow-parallel/${branch.id}")}) {")
+                renderJenkinsStep(branch.children[1], manifest, sb, "$indent      ")
+                sb.appendLine("${indent}    }")
+            }
             sb.appendLine("${indent}  },")
         }
         sb.appendLine("${indent}  failFast: ${step.metadata.getValue("failFast")}")

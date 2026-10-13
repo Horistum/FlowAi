@@ -108,4 +108,61 @@ class JenkinsParallelProjectionTests {
             provider.render(original.copy(jobs = original.jobs.map { job -> job.copy(steps = job.steps.map { if (it.id == group.id) replacement else it }) }))
         }
     }
+
+    @Test fun boundedCheckoutBodiesUseDistinctIdentityDerivedDirectories() {
+        val text = File("flow-adapter-jenkins/src/runtimeTest/parallel-workspaces.flow").readText()
+        val candidate = compile(text)
+        val generated = pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate,
+            testTargetSelection("jenkins", targets), strict = true))
+        val group = generated.jobs.flatMap { it.steps }.single { it.type == "parallel" }
+        assertEquals(listOf("review", "review"), group.children.map { it.name })
+        val rendered = provider.render(generated)
+        assertEquals(2, rendered.lineSequence().count { it.trimStart().startsWith("dir(") })
+        assertEquals(3, rendered.lineSequence().count { it.trimStart().startsWith("git branch:") })
+        for (branch in group.children) {
+            assertContains(rendered, "dir('.flow-parallel/${branch.id}') {")
+            assertEquals(listOf("approval", "action"), branch.children.map { it.type })
+        }
+        val scoped = JenkinsParallelProjectionScope(catalog).resolve(candidate.authorization, "jenkins", targets.getValue("jenkins"))
+        assertEquals(SupportLevel.SUPPORTED, scoped.features["parallel.dag"])
+        assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").parallel)
+        assertTrue(scoped.topologyProfile!!.declarations.single { it.kind == ExecutionTopologyKind.BRANCH_ISOLATION }
+            .evidenceReference!!.contains("JenkinsParallelWorkspaceRuntimeTests"))
+    }
+
+    @Test fun workspaceBodiesRejectUnprovenFailurePoliciesBindingsAndNativeModes() {
+        val text = File("flow-adapter-jenkins/src/runtimeTest/parallel-workspaces.flow").readText()
+        val checkout = "git.checkout source { url: \"git://127.0.0.1:9418/repository.git\" branch: \"selected\" }"
+        for (changed in listOf(text.replace("failFast false", "failFast true"),
+            text.replace(checkout, "$checkout -> branchResult"),
+            text.replace(checkout, checkout.replace(" }", " depth: 1 }")),
+            text.replace(checkout, checkout.replace("selected", "a".repeat(40))),
+            text.replace(checkout, ""))) {
+            val candidate = compile(changed)
+            assertEquals(targets.getValue("jenkins"), JenkinsParallelProjectionScope(catalog)
+                .resolve(candidate.authorization, "jenkins", targets.getValue("jenkins")))
+            assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate,
+                testTargetSelection("jenkins", targets), strict = true)) }
+        }
+    }
+
+    @Test fun rendererRejectsForgedWorkspacePathsWorkAndPolicy() {
+        val candidate = compile(File("flow-adapter-jenkins/src/runtimeTest/parallel-workspaces.flow").readText())
+        val original = pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate,
+            testTargetSelection("jenkins", targets), strict = true))
+        val group = original.jobs.flatMap { it.steps }.single { it.type == "parallel" }
+        val branch = group.children.first(); val task = branch.children[1]
+        val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "true")),
+            group.copy(children = listOf(branch.copy(id = "../shared")) + group.children.drop(1)),
+            group.copy(children = listOf(branch.copy(children = branch.children.reversed())) + group.children.drop(1)),
+            group.copy(children = listOf(branch.copy(children = listOf(branch.children.first(), task.copy(
+                metadata = task.metadata + ("resultName" to "exported"))))) + group.children.drop(1)),
+            group.copy(children = listOf(branch.copy(children = listOf(branch.children.first(), task.copy(
+                children = listOf(task.copy(id = "injected_work")))))) + group.children.drop(1)))
+        for (replacement in mutations) assertFails {
+            provider.render(original.copy(jobs = original.jobs.map { job -> job.copy(steps = job.steps.map {
+                if (it.id == group.id) replacement else it }) }))
+        }
+    }
+
 }

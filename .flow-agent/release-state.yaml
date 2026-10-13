@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 93
+stateVersion: 94
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -221,8 +221,8 @@ recoveryCertification:
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
   evidence: .flow-agent/evidence/adapter-certification-binding-acceptance.json
-  selectedSlice: AR-06V
-  workPackage: .flow-agent/work-packages/jenkins-parallel-cancellation.yaml
+  selectedSlice: AR-06W
+  workPackage: .flow-agent/work-packages/jenkins-parallel-workspaces.yaml
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -439,5 +439,14 @@ recoveryParallelCancellation:
   workPackage: .flow-agent/work-packages/jenkins-parallel-cancellation.yaml
   report: .flow-agent/reports/jenkins-parallel-cancellation.md
   baselineEvidence: .flow-agent/evidence/jenkins-parallel-cancellation-baseline.json
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryParallelWorkspaces:
+  candidate: AR-06W
+  status: candidate
+  workPackage: .flow-agent/work-packages/jenkins-parallel-workspaces.yaml
+  report: .flow-agent/reports/jenkins-parallel-workspaces.md
+  baselineEvidence: .flow-agent/evidence/jenkins-parallel-workspaces-baseline.json
   validation: current-revision-ci-required
   supportPromotion: false

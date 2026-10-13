@@ -641,3 +641,21 @@ disabled cancellation, swallowed rejection and premature continuation. A bounded
 external observation window is not a cancellation latency guarantee. Only pending
 native inputs are certified; broader branch work, workspace/output isolation,
 human authorization, public support promotion and portability remain unproven.
+
+### Bounded parallel branch directories (AR-06W)
+
+Jenkins may execute one pair of manual-approval then unbound literal checkout
+branches with `failFast false`. Each checkout runs inside
+`.flow-parallel/<preserved-branch-id>`; duplicate authored labels remain distinct.
+The completed left branch is observed before the right decision, and continuation
+requires the join. A rejected branch performs no checkout while its approved
+sibling may finish; the original rejection still propagates.
+
+Authenticated workspace evidence includes each native checkout's branch and
+working-directory identity plus independently read directory contents. Mutants
+alias or swap directories, omit branch work, run work before approval, continue
+early or swallow rejection. The portfolio labels this ARTIFACTS_WORKSPACES
+scenario evidence; it does not grant artifact transfer, workspace export,
+security/freshness guarantees, generic support or portability. Checkout bodies
+with `failFast true` remain outside this slice; the existing gate-only
+cancellation proof is retained.

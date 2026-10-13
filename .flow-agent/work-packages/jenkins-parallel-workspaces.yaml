@@ -1,0 +1,73 @@
+version: AR-06W
+name: Bounded Jenkins Parallel Branch Workspaces
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 219.
+  predecessorPullRequest: 219
+  mergedMain: 0bb90fefb8319ffdbafc99aad1cfd4ff3009c70e
+invariant: Each of two approved native parallel branches writes only its own checkout directory; rejection
+  skips that branch work, the sibling remains independent, and continuation waits for the join.
+scope:
+- Extend the existing plan-scoped parallel provider only to two manual-approval then unbound native-checkout
+  branches with failFast false.
+- Render a distinct adapter-owned relative directory per preserved branch identity, with no branch output or
+  workspace-export claim.
+- Observe concurrent pending gates, complete branch work before the second decision, native directory/branch
+  identities, directory contents and terminal rejection.
+- Falsify aliased and swapped workspaces, omitted branch work, premature continuation and swallowed rejection
+  using exact-artifact mutants.
+- Retain all gate-only parallel, cancellation, predecessor tests and historical acceptance.
+nonGoals:
+- No failFast-true checkout bodies, nested or arbitrary branch work, branch output export, state transfer,
+  fresh-workspace or security isolation, human authorization or portability claim.
+- No Core semantics, public syntax, artifact version, generic registry support or package version change.
+- No AR-06 closure, AR-07 activation, finding closure or EF-09 resumption.
+ownershipBoundary:
+  adapter: Bounded Jenkins admission and rendering consume unchanged canonical parallel contracts.
+  conformance: Disposable external runtime observer and authenticated portfolio; no Core executor.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsParallelProjectionScope.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+- flow-adapter-jenkins/src/runtimeTest/
+- .github/workflows/adapter-runtime-check.yml
+- src/main/kotlin/org/flowlang/conformance/JenkinsParallelWorkspaceCertification.kt
+testsToAddOrUpdate:
+- Bounded workspace admission/rendering and unsupported body, binding, depth, immutable-revision and failure-policy
+  rejection.
+- Authenticated native observations preserve branch-directory ownership, work ordering, join and rejection;
+  malformed fields and forged evidence fail closed.
+- Historical lifecycle evidence, test identities and construct inventory remain enforced.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Aliased or swapped workspaces, omitted branch work, premature continuation, swallowed rejection,
+    forged native observations and invented validation fail certification.
+followUp:
+- Certify failFast-true branch work, broader branch bodies and shared canonical scenarios separately before
+  support or portability expansion.

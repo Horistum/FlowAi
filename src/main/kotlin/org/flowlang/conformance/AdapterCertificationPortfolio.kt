@@ -38,6 +38,8 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_REJECT -> "jenkins-parallel-runtime/reject"
             JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_FAIL_FAST_APPROVE -> "jenkins-parallel-runtime/fail-fast-approve"
             JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_CANCEL -> "jenkins-parallel-runtime/cancel"
+            JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_APPROVE -> "jenkins-parallel-runtime/workspaces-approve"
+            JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_REJECT -> "jenkins-parallel-runtime/workspaces-reject"
             JenkinsCheckoutRuntimeCertification.Scenario.MATCH_SELECTED -> "jenkins-match-runtime/selected"
             JenkinsCheckoutRuntimeCertification.Scenario.MATCH_DEFAULT -> "jenkins-match-runtime/default"
             JenkinsCheckoutRuntimeCertification.Scenario.MATCH_EMPTY -> "jenkins-match-runtime/empty"
