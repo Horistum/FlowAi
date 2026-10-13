@@ -82,8 +82,6 @@ object TargetRendererContractValidator {
             if (dep !in knownDependencyIds) error("STEP_DEPENDENCY_UNKNOWN", "$path.dependsOn", "Step '${step.id}' depends on unknown projected id '$dep'.")
         }
         when (step.type) {
-            "parallel" -> if (step.children.isEmpty()) error("PARALLEL_STEP_EMPTY", "$path.children", "Parallel step '${step.id}' must contain branches.")
-            "parallel-branch" -> if (step.children.isEmpty()) error("PARALLEL_BRANCH_EMPTY", "$path.children", "Parallel branch '${step.id}' must contain projected work.")
             "condition" -> {
                 if (step.params["condition"].isNullOrBlank()) error("CONDITION_EXPRESSION_BLANK", "$path.params.condition", "Condition step '${step.id}' must carry the Flow condition expression.")
                 if (step.children.isEmpty()) error("CONDITION_BODY_EMPTY", "$path.children", "Condition step '${step.id}' must contain projected work.")

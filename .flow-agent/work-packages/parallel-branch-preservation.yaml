@@ -1,0 +1,68 @@
+version: AR-06T
+name: Parallel Branch Contract Preservation
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 216.
+  predecessorPullRequest: 216
+  mergedMain: 8e9a1f217138db3f364bc9210eca341aa0892486
+invariant: Target projection preserves parallel branch identity, authored order, optional labels, empty
+  and nested bodies and explicit failFast; malformed structure fails closed and parallel remains non-executable.
+scope:
+- Retain the parallel parent in job-per-task projection instead of flattening its branches, including its derived identity inventory.
+- Preserve branch count and ordinal metadata with distinct authored optional labels, including duplicate
+  and empty labels.
+- Validate direct branch ownership, exact failFast booleans, grouping-only bindings and complete ordered
+  wrapper inventory.
+- Keep empty groups and branches representable for diagnosis without granting native execution.
+- Retain derived wrapper collision checks and all current runtime certification scenarios.
+nonGoals:
+- No native parallel execution, scheduling, cancellation, shared workspace or behavioral certification
+  claim.
+- No Core semantic, public syntax, frozen manifest field, generic registry support or version change.
+- No AR-06 closure, AR-07 activation, finding closure or EF-09 resumption.
+ownershipBoundary:
+  adapterContract: Target-neutral manifest lowering and validation; canonical semantics unchanged.
+  conformance: Negative projection regressions and lifecycle validation; the existing runtime portfolio
+    remains live.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionIdentityChecks.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetManifestLowering.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetManifestContractValidator.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetRendererContractValidator.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+testsToAddOrUpdate:
+- Frontend-to-manifest parity for true/false failFast, unnamed/duplicate/whitespace-bearing labels, empty and nested
+  branches across all reference providers.
+- Flattened, omitted, reordered, detached or executable wrappers, malformed failFast/count/ordinal, injected
+  parameters and identity collisions fail closed.
+- Retain unsupported parallel admission, all predecessor test identities, ordered checks and authenticated
+  runtime scenarios.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Flattened, omitted, reordered and detached parallel wrappers; malformed failFast/count/ordinal,
+    injected bindings and identity collisions; changed historical receipts and invented validation.
+followUp:
+- Implement and independently certify bounded native parallel behavior only after branch and failure-policy
+  contracts are preserved.
+- Certify remaining constructs and shared canonical scenarios before broader support or portability claims.

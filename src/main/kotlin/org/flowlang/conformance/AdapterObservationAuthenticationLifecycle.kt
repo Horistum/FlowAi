@@ -35,6 +35,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val LOOP_BASELINE = ".flow-agent/evidence/jenkins-loop-baseline.json"
     const val MATCH_PROJECTION_WORK_PACKAGE = ".flow-agent/work-packages/match-branch-preservation.yaml"
     const val MATCH_PROJECTION_BASELINE = ".flow-agent/evidence/match-branch-preservation-baseline.json"
+    const val PARALLEL_PROJECTION_WORK_PACKAGE = ".flow-agent/work-packages/parallel-branch-preservation.yaml"
+    const val PARALLEL_PROJECTION_BASELINE = ".flow-agent/evidence/parallel-branch-preservation-baseline.json"
+    private const val PARALLEL_PROJECTION_BASELINE_SHA256 = "82ec00a471e166c4d29076c7925faa9797aefc582c5e169650b8e4b37a524571"
     const val MATCH_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-match-certification.yaml"
     const val MATCH_BASELINE = ".flow-agent/evidence/jenkins-match-baseline.json"
     private const val MATCH_BASELINE_SHA256 = "b645db90beb45d8f05f131f09c616cfe88a7e995d5973567d22537af9b3ee3f8"
@@ -58,6 +61,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06T" || s.release.containsKey("recoveryParallelProjection")) {
+            val raw = s.certificationParallelProjectionBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != PARALLEL_PROJECTION_BASELINE_SHA256) {
+                add("Parallel branch preservation requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), PARALLEL_PROJECTION_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Parallel branch preservation selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Parallel branch preservation release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Parallel branch preservation work", s.certificationParallelProjectionWorkPackage, mapOf("version" to "AR-06T", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Parallel branch preservation authorization", section(s.certificationParallelProjectionWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Parallel branch preservation validation", section(s.certificationParallelProjectionWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Parallel branch preservation candidate", section(s.release["recoveryParallelProjection"]), mapOf(
+                "candidate" to "AR-06T", "status" to "candidate", "workPackage" to PARALLEL_PROJECTION_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/parallel-branch-preservation.md", "baselineEvidence" to PARALLEL_PROJECTION_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(parallelProjectionPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06S" || s.release.containsKey("recoveryMatchCertification")) {
             val raw = s.certificationMatchBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -558,7 +586,18 @@ internal object AdapterObservationAuthenticationLifecycle {
             certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
     }
 
+    internal fun parallelProjectionPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryParallelProjection") && s.certificationWorkPackage["selectedSlice"] != "AR-06T") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationParallelProjectionBaseline), PARALLEL_PROJECTION_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryParallelProjection") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationParallelProjectionWorkPackage = emptyMap(), certificationParallelProjectionBaseline = null)
+    }
+
     internal fun matchPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryParallelProjection") || s.certificationWorkPackage["selectedSlice"] == "AR-06T")
+            return matchPredecessor(parallelProjectionPredecessor(s))
         if (!s.release.containsKey("recoveryMatchCertification") && s.certificationWorkPackage["selectedSlice"] != "AR-06S") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationMatchBaseline), MATCH_BASELINE)["transition"])
         return s.copy(
