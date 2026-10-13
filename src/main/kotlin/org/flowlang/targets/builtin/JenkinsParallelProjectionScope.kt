@@ -26,7 +26,7 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         val bound = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<ParallelGroupNode>()
         if (groups.size != 1 || bound.size != 1) return declared
         val group = bound.single()
-        if (group !in authorization.executionPlan.nodes || group.failFast || group.branches.size != 2) return declared
+        if (group !in authorization.executionPlan.nodes || group.branches.size != 2) return declared
         val approvals = group.branches.map { it.steps.singleOrNull() as? ApprovalNode ?: return declared }
         if (approvals.any { it.mode != "manual" || it.message.isNullOrBlank() || it.resultName != null ||
                 it.outputs.isNotEmpty() || it.dependsOn.isNotEmpty() || it.dependencies.isNotEmpty() } ||
@@ -37,11 +37,13 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         val scopedTopology = topology.copy(declarations = topology.declarations.map { declaration ->
             if (declaration.kind != ExecutionTopologyKind.BRANCH_ISOLATION) declaration else declaration.copy(
                 status = ExecutionTopologySupportStatus.SUPPORTED,
-                evidenceReference = "src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt#parallelGatesPreserveConcurrentPendingJoinAndRejection",
+                evidenceReference = if (group.failFast)
+                    "src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt#cancellationAndSuccessfulJoinRequireAuthenticatedNativeEvidence"
+                else "src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt#parallelGatesPreserveConcurrentPendingJoinAndRejection",
                 detail = "Two distinct native input executions remain independently pending in parallel branches; no branch workspace mutation, result bindings or state-isolation claim.")
         })
         return declared.copy(features = declared.features + ("parallel.dag" to SupportLevel.SUPPORTED),
             topologyProfile = scopedTopology,
-            notes = declared.notes + "Parallel supports one top-level pair of manual approval gates with distinct messages and failFast false; no cancellation, branch workspace or output-continuity claim.")
+            notes = declared.notes + "Parallel supports one top-level pair of manual approval gates with distinct messages and either failFast policy; no branch workspace or output-continuity claim.")
     }
 }

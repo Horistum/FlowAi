@@ -57,8 +57,7 @@ class JenkinsParallelProjectionTests {
     @Test fun unsupportedFailurePolicyBodiesBindingsAndMessagesFailClosed() {
         val gate = "approve manual { message: \"Approve left branch?\" }"
         val checkout = "git.checkout source { url: \"git://127.0.0.1:9418/repository.git\" branch: \"selected\" }"
-        for (text in listOf(source.replace("failFast false", "failFast true"), source.replace(" failFast false", ""),
-            source.replace(gate, ""), source.replace(gate, checkout), source.replace(gate, "$gate -> decision"),
+        for (text in listOf(source.replace(gate, ""), source.replace(gate, checkout), source.replace(gate, "$gate -> decision"),
             source.replace("Approve right branch?", "Approve left branch?"),
             source.replace(gate, "parallel failFast false { branch \"nested\" { $gate } }"),
             source.replace(gate, "$gate approve manual { message: \"Extra gate?\" }"))) {
@@ -80,13 +79,27 @@ class JenkinsParallelProjectionTests {
         assertTrue(rendered.indexOf("])") < rendered.indexOf("git branch:"))
     }
 
+    @Test fun explicitAndDefaultFailFastPreserveNativeCancellationPolicy() {
+        for (text in listOf(source.replace("failFast false", "failFast true"), source.replace(" failFast false", ""))) {
+            val candidate = compile(text)
+            val manifest = pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate,
+                testTargetSelection("jenkins", targets), strict = true))
+            val rendered = provider.render(manifest)
+            assertContains(rendered, "failFast: true")
+            assertFalse(rendered.contains("failFast: false"))
+            assertEquals(2, rendered.lineSequence().count { it.trimStart().startsWith("input message:") })
+            assertTrue(rendered.indexOf("])") < rendered.indexOf("git branch:"))
+            assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").parallel)
+        }
+    }
+
     @Test fun rendererRejectsForgedBranchScopeAndPayload() {
         val original = manifest()
         val group = original.jobs.flatMap { it.steps }.single { it.type == "parallel" }
         val branch = group.children.first()
         val gate = branch.children.single()
         val injected = original.jobs.flatMap { it.steps }.single { it.type == "action" }.copy(id = "injected_checkout")
-        val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "true")),
+        val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "unknown")),
             group.copy(rendererPayload = group.rendererPayload!!.copy(reference = "if")),
             group.copy(children = listOf(branch.copy(children = emptyList())) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = listOf(gate.copy(children = listOf(injected))))) + group.children.drop(1)),

@@ -389,6 +389,8 @@ jobs:
         run: |
           cat flow-conformance-kit/build/jenkins-parallel-certification/reject/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-parallel-certification/approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-parallel-certification/cancel/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-parallel-certification/fail-fast-approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Pin Assessment Proof And Trust
         id: receipt
         env:

@@ -7,13 +7,14 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: AR-06U
-selectedWorkPackage: .flow-agent/work-packages/jenkins-parallel-certification.yaml
+selectedSlice: AR-06V
+selectedWorkPackage: .flow-agent/work-packages/jenkins-parallel-cancellation.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
-invariant: Two native manual approval branches are simultaneously pending, join before continuation, and
-  preserve rejection while waiting for the other branch when failFast is false.
+invariant: For two simultaneously pending native manual approval branches, failFast true cancels the undecided
+  sibling after rejection, preserves the original rejection and prevents successor execution; successful
+  approvals still join.
 scope:
 - Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority
   boundary.
@@ -50,6 +51,8 @@ scope:
   failFast before native parallel certification.
 - Certify two simultaneously pending native approval branches, successful join and rejection propagation
   with failFast false on real Jenkins.
+- Certify native cancellation of an undecided sibling and original rejection propagation with failFast
+  true, while retaining both successful join and false-policy evidence.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
@@ -74,8 +77,8 @@ validation:
   - jenkins-match-runtime
   - jenkins-parallel-runtime
   - adapter-certification-portfolio
-  negativeEvidence: Serialized or missing branches, premature continuation, suppressed rejection, altered
-    observation identities and invented validation fail certification.
+  negativeEvidence: Disabled cancellation, premature continuation, suppressed rejection, forged native
+    error causes and invented validation fail certification.
 followUp:
 - Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
 - Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.

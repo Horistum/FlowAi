@@ -626,3 +626,18 @@ with `failFast false`. It establishes no cancellation, arbitrary branch executio
 workspace isolation, human authorization, general support or portability. Native
 Jenkins behavior uses the documented [parallel step](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/);
 documentation alone is not certification evidence.
+
+### Bounded Jenkins parallel cancellation (AR-06V)
+
+The existing two-manual-gate parallel shape now preserves both canonical
+`failFast` policies (including the canonical true default). With true, rejection
+of the left input cancels the still-undecided right input and prevents the
+successor checkout. Native error evidence must distinguish sibling cancellation
+from the original rejection and retain the latter's terminal origin. Successful
+approvals still require a joined pair before continuation.
+
+Two additional authenticated scenarios retain the false-policy proof and falsify
+disabled cancellation, swallowed rejection and premature continuation. A bounded
+external observation window is not a cancellation latency guarantee. Only pending
+native inputs are certified; broader branch work, workspace/output isolation,
+human authorization, public support promotion and portability remain unproven.

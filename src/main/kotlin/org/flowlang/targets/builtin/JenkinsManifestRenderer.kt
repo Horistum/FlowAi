@@ -132,8 +132,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             manifest.jobs.flatMap { it.steps }.flatMap { it.flatten() }.count { it.type == "parallel" } == 1) {
             "Jenkins parallel requires one top-level group."
         }
-        require(step.metadata["failFast"] == "false" && step.children.size == 2) {
-            "Jenkins parallel requires exactly two approval branches with failFast false."
+        require(step.metadata["failFast"] in setOf("false", "true") && step.children.size == 2) {
+            "Jenkins parallel requires exactly two approval branches with a boolean failFast policy."
         }
         val gates = step.children.map { branch ->
             require(branch.type == "parallel-branch")
@@ -153,7 +153,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             renderJenkinsStep(branch.children.single(), manifest, sb, "$indent    ")
             sb.appendLine("${indent}  },")
         }
-        sb.appendLine("${indent}  failFast: false")
+        sb.appendLine("${indent}  failFast: ${step.metadata.getValue("failFast")}")
         sb.appendLine("${indent}])")
     }
 
