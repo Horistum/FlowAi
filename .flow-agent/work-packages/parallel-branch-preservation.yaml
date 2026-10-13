@@ -12,7 +12,7 @@ invariant: Target projection preserves parallel branch identity, authored order,
 scope:
 - Retain the parallel parent in job-per-task projection instead of flattening its branches, including its derived identity inventory.
 - Preserve branch count and ordinal metadata with distinct authored optional labels, including duplicate
-  and empty labels.
+  and whitespace-bearing nonblank labels.
 - Validate direct branch ownership, exact failFast booleans, grouping-only bindings and complete ordered
   wrapper inventory.
 - Keep empty groups and branches representable for diagnosis without granting native execution.

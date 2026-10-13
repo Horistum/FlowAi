@@ -44,6 +44,14 @@ object JenkinsNativeProjectionCatalog {
         ),
         structuralDefinitions = listOf(
             TargetNativeStructuralProjectionDefinition(
+                structure = TargetStructuralProjectionKind.PARALLEL,
+                kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
+                reference = "approval-parallel",
+                implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsParallel",
+                behavioralEvidenceReference = "src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt#parallelGatesPreserveConcurrentPendingJoinAndRejection",
+                supportScope = TargetStructuralProjectionSupportScope.PLAN_SCOPED
+            ),
+            TargetNativeStructuralProjectionDefinition(
                 structure = TargetStructuralProjectionKind.MATCH,
                 kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "literal-match",

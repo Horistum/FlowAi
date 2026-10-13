@@ -55,8 +55,11 @@ internal object JenkinsCheckoutRuntimeCertification {
         MATCH_DEFAULT("jenkins-match-default-runtime", "match-default.flow", "match-matrix.json", listOf("baseline", "substituted-default", "omitted-default"), "AR-06S"),
         MATCH_EMPTY("jenkins-match-empty-runtime", "match-empty.flow", "match-matrix.json", listOf("baseline", "empty-fallthrough", "omitted-successor"), "AR-06S"),
         MATCH_FAILURE("jenkins-match-failure-runtime", "match-failure.flow", "match-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06S"),
+        PARALLEL_APPROVE("jenkins-parallel-approve-runtime", "parallel.flow", "parallel-matrix.json", listOf("baseline", "serialized-branches", "omitted-parallel", "early-successor"), "AR-06U"),
+        PARALLEL_REJECT("jenkins-parallel-reject-runtime", "parallel.flow", "parallel-matrix.json", listOf("baseline", "suppressed-rejection", "early-successor"), "AR-06U"),
         SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O");
 
+        val parallel: Boolean get() = this == PARALLEL_APPROVE || this == PARALLEL_REJECT
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
         val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
@@ -67,7 +70,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val terminalEvidence: Boolean get() = errorBoundary || localRecovery || retry || loop || match
         val flowSource: Boolean get() = source.endsWith(".flow")
         val recordsNativeSteps: Boolean get() = this != CHECKOUT
-        val claim: String get() = if (conditional || errorBoundary || localRecovery || retry || loop || match) "bounded-structural-occurrence" else "native-leaf-only"
+        val claim: String get() = if (parallel || conditional || errorBoundary || localRecovery || retry || loop || match) "bounded-structural-occurrence" else "native-leaf-only"
     }
 
     internal data class Prepared(
@@ -97,7 +100,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
-        val artifacts = if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
+        val artifacts = if (scenario.parallel) parallelArtifacts(text, original, scenario) else if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
             require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
@@ -123,9 +126,9 @@ internal object JenkinsCheckoutRuntimeCertification {
                     "No general public support or portable-execution promotion. The runtime host remains trusted.")))
         } else mapper.readTree(File(root, "$FIXTURE/${requireNotNull(scenario.matrix)}"))
         require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
-        val construct = when { scenario.match -> "match"; scenario.loop -> "loop"; scenario.retry -> "retry"; scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
+        val construct = when { scenario.parallel -> "parallel"; scenario.match -> "match"; scenario.loop -> "loop"; scenario.retry -> "retry"; scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
         require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == construct)
-        val scenarioMatrix = if (scenario.conditional || scenario.terminalEvidence || scenario.approval) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
+        val scenarioMatrix = if (scenario.parallel || scenario.conditional || scenario.terminalEvidence || scenario.approval) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
         require(scenarioMatrix["scenario"].asText() == scenario.id)
         val rows = listOf(scenarioMatrix["positive"]) + scenarioMatrix["mutants"].toList()
         require(rows.map { it["id"].asText() } == runIds)
@@ -134,7 +137,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             evidence[id] = bytes.copyOf(); return CertificationEvidenceReference(id, sha256(bytes), bytes.size)
         }
         val expected = rows.associate { row ->
-            val expectedResult = if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
+            val expectedResult = if (scenario == Scenario.PARALLEL_REJECT && row["id"].asText() != "suppressed-rejection") "ABORTED" else if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
                 scenario == Scenario.ERROR_FAILURE && row["id"].asText() != "suppressed-propagation" ||
                 scenario == Scenario.RECOVERY_FAILURE && row["id"].asText() == "rethrown-failure" || scenario == Scenario.RETRY_FAILURE ||
                 scenario == Scenario.LOOP_FAILURE && row["id"].asText() == "baseline" ||
@@ -143,7 +146,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             require(row["result"].asText() == expectedResult)
             row["id"].asText() to ref("expected:${row["id"].asText()}", observationBytes(row, scenario))
         }
-        val runtimePlugins = plugins + (if (scenario.retry || scenario.loop || scenario.match) mapOf("workflow-basic-steps" to "1079.vce64b_a_929c5a_") else emptyMap()) + if (scenario.approval) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
+        val runtimePlugins = plugins + (if (scenario.retry || scenario.loop || scenario.match) mapOf("workflow-basic-steps" to "1079.vce64b_a_929c5a_") else emptyMap()) + if (scenario.approval || scenario.parallel) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
             CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario == Scenario.SHARED_CHECKOUT) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
                 CertificationRuntimePrerequisite("repository", SharedCheckoutFixture.REPOSITORY)) else emptyList()
@@ -152,7 +155,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapterId = when { scenario.match -> "jenkins-literal-match"; scenario.loop -> "jenkins-literal-loop"; scenario.retry -> "jenkins-bounded-retry"; scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
+        val adapterId = when { scenario.parallel -> "jenkins-parallel-approval"; scenario.match -> "jenkins-literal-match"; scenario.loop -> "jenkins-literal-loop"; scenario.retry -> "jenkins-bounded-retry"; scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
         val adapter = CertificationAdapterIdentity("jenkins", adapterId, scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
             (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
@@ -161,7 +164,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.match) "Disjoint literal match cases with native checkout bodies and empty error branches only; see bounded runtime limitations."
+            if (scenario.parallel) "One pair of concurrent manual inputs with failFast false, native join and rejection propagation; automated decisions only."
+            else if (scenario.match) "Disjoint literal match cases with native checkout bodies and empty error branches only; see bounded runtime limitations."
             else if (scenario.loop) "Sequential string-literal-list loop with native checkout and condition children only; see bounded runtime limitations."
             else if (scenario.retry) "Fixed zero-delay retry occurrence with native checkout children only; see bounded runtime limitations."
             else if (scenario.approval) "Manual input occurrence before one protected native checkout; automated decisions, no human authorization claim."
@@ -181,7 +185,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(result["java"]?.asText()?.let { it == "25" || it.startsWith("25.") || it.startsWith("25+") } == true)
         require(plugins.all { (id, version) -> result["plugins"]?.get(id)?.asText() == version }) { "Unexpected runtime plugins." }
         if (prepared.scenario.retry || prepared.scenario.loop || prepared.scenario.match) require(result["plugins"]?.get("workflow-basic-steps")?.asText() == "1079.vce64b_a_929c5a_")
-        if (prepared.scenario.approval) require(result["plugins"]?.get("pipeline-input-step")?.asText() == "534.v352f0a_e98918")
+        if (prepared.scenario.approval || prepared.scenario.parallel) require(result["plugins"]?.get("pipeline-input-step")?.asText() == "534.v352f0a_e98918")
         val runIds = prepared.scenario.runIds
         require(result["runs"]?.isArray == true && result["runs"].size() == runIds.size)
         val rows = result["runs"].toList()
@@ -221,6 +225,11 @@ internal object JenkinsCheckoutRuntimeCertification {
             row["checkoutErrors"].all { it["type"].asText() == "hudson.AbortException" && it["message"].asText() == MISSING_REVISION } &&
             row["terminalError"]?.let { terminal -> terminal["type"]?.asText() == "hudson.AbortException" &&
                 terminal["message"]?.asText() == MISSING_REVISION && terminal["checkoutIndex"]?.asInt() == row["checkoutCount"].asInt() } == true ||
+        scenario == Scenario.PARALLEL_REJECT && row["result"].asText() == "ABORTED" &&
+            row["parallel"]["inputErrors"].size() == 1 &&
+            expectedRejection(row["parallel"]["inputErrors"][0]) &&
+            expectedRejection(row["parallel"]["terminalError"]) &&
+            row["parallel"]["terminalError"]["inputMessage"]?.asText() == "Approve left branch?" ||
         scenario == Scenario.APPROVAL_REJECT && row["result"].asText() == "ABORTED" &&
             row["approval"]["decision"].asText() == "reject" &&
             row["approval"]["inputErrors"].size() == 1 &&
@@ -260,6 +269,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                 branch.asText()
             }
         }
+        if (scenario.parallel) observation["parallel"] = parallelObservation(row["parallel"])
         if (scenario.approval) observation["approval"] = approvalObservation(row["approval"])
         if (scenario.localRecovery || scenario.retry || scenario.loop || scenario.match) {
             val indices = row["checkoutErrorIndices"]
@@ -342,6 +352,84 @@ internal object JenkinsCheckoutRuntimeCertification {
         return linkedMapOf("inputCount" to inputs, "inputErrors" to row["inputErrors"].map { error(it, false) },
             "pending" to pending, "decision" to row["decision"].asText(),
             "terminalError" to if (row["terminalError"].isNull) null else error(row["terminalError"], true))
+    }
+
+    private fun parallelObservation(value: JsonNode?): Map<String, Any?> {
+        require(value?.isObject == true && value.fieldNames().asSequence().toSet() ==
+            setOf("inputMessages", "initialPending", "afterFirst", "decisions", "inputErrors", "terminalError"))
+        val row = requireNotNull(value)
+        fun messages(node: JsonNode): List<String> {
+            require(node.isArray && node.size() <= 2)
+            val values = node.map { require(it.isTextual && it.asText().length in 1..1024); it.asText() }
+            require(values == values.distinct().sorted())
+            return values
+        }
+        val inputs = messages(row["inputMessages"])
+        fun pending(node: JsonNode): Map<String, Any?>? {
+            if (node.isNull) return null
+            require(node.isObject && node.fieldNames().asSequence().toSet() ==
+                setOf("messages", "paused", "checkoutCount", "marker", "building", "complete"))
+            val active = messages(node["messages"])
+            require(active.isNotEmpty() && inputs.containsAll(active))
+            require(node["paused"].isBoolean && node["paused"].booleanValue())
+            require(node["building"].isBoolean && node["building"].booleanValue())
+            require(node["complete"].isBoolean && !node["complete"].booleanValue())
+            val count = node["checkoutCount"]
+            require(count.isIntegralNumber && count.canConvertToInt() && count.asInt() in 0..1)
+            require(node["marker"].isNull || node["marker"].isTextual && node["marker"].asText().length <= 1024)
+            return linkedMapOf("messages" to active, "paused" to true, "checkoutCount" to count.asInt(),
+                "marker" to if (node["marker"].isNull) null else node["marker"].asText(), "building" to true, "complete" to false)
+        }
+        fun error(node: JsonNode): Map<String, Any?> {
+            require(node.isObject && node.fieldNames().asSequence().toSet() == setOf("type", "result", "causes", "inputMessage"))
+            require(node["type"].isTextual && node["type"].asText().length in 1..256)
+            require(node["result"].isNull || node["result"].isTextual && node["result"].asText().length in 1..32)
+            require(node["causes"].isArray && node["causes"].size() <= 4)
+            val causes = node["causes"].map { require(it.isTextual && it.asText().length in 1..256); it.asText() }
+            require(node["inputMessage"].isNull || node["inputMessage"].isTextual && node["inputMessage"].asText() in inputs)
+            return linkedMapOf("type" to node["type"].asText(), "result" to if (node["result"].isNull) null else node["result"].asText(),
+                "causes" to causes, "inputMessage" to if (node["inputMessage"].isNull) null else node["inputMessage"].asText())
+        }
+        require(row["decisions"].isArray && row["decisions"].size() <= inputs.size)
+        val decisions = row["decisions"].map { node ->
+            require(node.isObject && node.fieldNames().asSequence().toSet() == setOf("message", "action"))
+            require(node["message"].isTextual && node["message"].asText() in inputs)
+            require(node["action"].isTextual && node["action"].asText() in setOf("approve", "reject"))
+            linkedMapOf("message" to node["message"].asText(), "action" to node["action"].asText())
+        }
+        require(decisions.map { it["message"] }.distinct().size == decisions.size)
+        require(row["inputErrors"].isArray && row["inputErrors"].size() <= inputs.size)
+        val errors = row["inputErrors"].map(::error)
+        require(errors.map { it["inputMessage"] }.distinct().size == errors.size)
+        return linkedMapOf("inputMessages" to inputs, "initialPending" to pending(row["initialPending"]),
+            "afterFirst" to pending(row["afterFirst"]), "decisions" to decisions, "inputErrors" to errors,
+            "terminalError" to if (row["terminalError"].isNull) null else error(row["terminalError"]))
+    }
+
+    internal fun parallelArtifacts(text: String, original: ByteArray, scenario: Scenario): Map<String, ByteArray> {
+        require(scenario.parallel && text.toByteArray().contentEquals(original))
+        val start = text.lineSequence().single { it.trim() == "parallel([" }
+        val indent = start.takeWhile(Char::isWhitespace)
+        val end = "$indent])"
+        require(text.lineSequence().count { it == end } == 1)
+        val block = text.substring(text.indexOf(start), text.indexOf(end) + end.length)
+        val gates = block.lineSequence().filter { it.trimStart().startsWith("input message:") }.toList()
+        require(gates.map { it.trim() } == listOf("input message: 'Approve left branch?'", "input message: 'Approve right branch?'"))
+        require(block.lineSequence().single { it.trimStart().startsWith("failFast:") }.trim() == "failFast: false")
+        val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch:") }
+        require(checkout == "${indent}git branch: 'selected', url: 'git://127.0.0.1:9418/repository.git'")
+        require(text.indexOf(checkout) > text.indexOf(end))
+        val early = replaceOnce(replaceOnce(text, checkout + "\n", ""), block, "$checkout\n$block")
+        return linkedMapOf("baseline" to original).apply {
+            if (scenario == Scenario.PARALLEL_APPROVE) {
+                put("serialized-branches", replaceOnce(text, block, gates.joinToString("\n") { indent + it.trim() }).toByteArray())
+                put("omitted-parallel", replaceOnce(text, block, "${indent}echo 'Parallel intentionally omitted'").toByteArray())
+            } else {
+                put("suppressed-rejection", replaceOnce(text, block,
+                    "${indent}try {\n$block\n$indent} catch (flowError) {\n${indent}  echo 'Rejection intentionally suppressed'\n$indent}").toByteArray())
+            }
+            put("early-successor", early.toByteArray())
+        }
     }
 
     private fun approvalArtifacts(text: String, original: ByteArray, scenario: Scenario): Map<String, ByteArray> {

@@ -605,3 +605,24 @@ This preservation gate grants no native parallel execution, cancellation, worksp
 isolation or portable behavior. Existing provider admission and all current runtime
 certification scenarios remain required. Shape checks complement, but do not replace,
 compiler authorization and exact source/artifact receipts.
+# Bounded parallel approval certification (AR-06U)
+
+The composed Jenkins provider admits one top-level pair of manual approval gates
+with distinct messages, no result/output bindings or explicit gate dependencies,
+and `failFast false`. It emits native `parallel` closures keyed by preserved wrapper
+identity, retaining duplicate authored labels without collapsing branches. Other
+parallel shapes remain blocked. The generic target registry remains unchanged.
+
+`verifyJenkinsParallelRuntime` adds approve/reject assessments. The independent
+observer records simultaneous native pending inputs, the remaining paused sibling
+after the first decision, native rejection origin and the successor checkout. Its
+generated-artifact mutants serialize or omit the group, move continuation before
+the join or suppress rejection. A ten-second observation window allows serialization
+to yield a completed, distinguishable observation. Authentication and portfolio replay
+include these exact snapshots and decisions.
+
+The evidence is bounded to overlapping suspension, join and rejection propagation
+with `failFast false`. It establishes no cancellation, arbitrary branch execution,
+workspace isolation, human authorization, general support or portability. Native
+Jenkins behavior uses the documented [parallel step](https://www.jenkins.io/doc/pipeline/steps/workflow-cps/);
+documentation alone is not certification evidence.

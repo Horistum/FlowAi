@@ -118,6 +118,7 @@ src/main/kotlin/org/flowlang/targets/builtin/JenkinsLoopProjectionScope.kt
 src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
 src/main/kotlin/org/flowlang/targets/builtin/JenkinsMatchProjectionScope.kt
 src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+src/main/kotlin/org/flowlang/targets/builtin/JenkinsParallelProjectionScope.kt
 src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
 src/main/kotlin/org/flowlang/targets/builtin/TektonManifestGenerator.kt
 src/main/kotlin/org/flowlang/targets/builtin/TektonManifestRenderer.kt
@@ -131,6 +132,7 @@ src/test/kotlin/CrossTargetCheckoutProjectionTests.kt
 src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt
 src/test/kotlin/JenkinsLoopRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsMatchRuntimeCertificationTests.kt
+src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt
 src/test/kotlin/ProjectionStabilitySmokeTests.kt
 src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt
