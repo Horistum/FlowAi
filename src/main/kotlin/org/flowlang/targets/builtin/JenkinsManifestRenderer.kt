@@ -139,7 +139,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             require(branch.type == "parallel-branch")
             requireNotNull(branch.children.singleOrNull()).also { gate ->
                 require(gate.type == "approval" && gate.params["mode"] == "manual" &&
-                    gate.metadata["resultName"] == null && gate.dependsOn.isEmpty()) {
+                    gate.metadata["resultName"] == null && gate.dependsOn.isEmpty() && gate.children.isEmpty()) {
                     "Jenkins parallel supports only unbound manual approval gates."
                 }
             }

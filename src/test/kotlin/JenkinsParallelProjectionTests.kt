@@ -85,9 +85,11 @@ class JenkinsParallelProjectionTests {
         val group = original.jobs.flatMap { it.steps }.single { it.type == "parallel" }
         val branch = group.children.first()
         val gate = branch.children.single()
+        val injected = original.jobs.flatMap { it.steps }.single { it.type == "action" }.copy(id = "injected_checkout")
         val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "true")),
             group.copy(rendererPayload = group.rendererPayload!!.copy(reference = "if")),
             group.copy(children = listOf(branch.copy(children = emptyList())) + group.children.drop(1)),
+            group.copy(children = listOf(branch.copy(children = listOf(gate.copy(children = listOf(injected))))) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = listOf(gate.copy(metadata = gate.metadata + ("resultName" to "decision"))))) + group.children.drop(1)))
         for (replacement in mutations) assertFails {
             provider.render(original.copy(jobs = original.jobs.map { job -> job.copy(steps = job.steps.map { if (it.id == group.id) replacement else it }) }))
