@@ -146,7 +146,10 @@ internal object JenkinsCheckoutRuntimeCertification {
             require(row["result"].asText() == expectedResult)
             row["id"].asText() to ref("expected:${row["id"].asText()}", observationBytes(row, scenario))
         }
-        val runtimePlugins = plugins + (if (scenario.retry || scenario.loop || scenario.match) mapOf("workflow-basic-steps" to "1079.vce64b_a_929c5a_") else emptyMap()) + if (scenario.approval || scenario.parallel) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()
+        val runtimePlugins = plugins +
+            (if (scenario.retry || scenario.loop || scenario.match) mapOf("workflow-basic-steps" to "1079.vce64b_a_929c5a_") else emptyMap()) +
+            (if (scenario.approval || scenario.parallel) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()) +
+            (if (scenario.parallel) mapOf("workflow-cps" to "4183.v94b_6fd39da_c1") else emptyMap())
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
             CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario == Scenario.SHARED_CHECKOUT) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
                 CertificationRuntimePrerequisite("repository", SharedCheckoutFixture.REPOSITORY)) else emptyList()
@@ -186,6 +189,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(plugins.all { (id, version) -> result["plugins"]?.get(id)?.asText() == version }) { "Unexpected runtime plugins." }
         if (prepared.scenario.retry || prepared.scenario.loop || prepared.scenario.match) require(result["plugins"]?.get("workflow-basic-steps")?.asText() == "1079.vce64b_a_929c5a_")
         if (prepared.scenario.approval || prepared.scenario.parallel) require(result["plugins"]?.get("pipeline-input-step")?.asText() == "534.v352f0a_e98918")
+        if (prepared.scenario.parallel) require(result["plugins"]?.get("workflow-cps")?.asText() == "4183.v94b_6fd39da_c1")
         val runIds = prepared.scenario.runIds
         require(result["runs"]?.isArray == true && result["runs"].size() == runIds.size)
         val rows = result["runs"].toList()

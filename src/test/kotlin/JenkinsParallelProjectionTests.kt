@@ -11,6 +11,8 @@ import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.targets.builtin.JenkinsParallelProjectionScope
+import org.flowlang.topology.ExecutionTopologyKind
+import org.flowlang.topology.ExecutionTopologySupportStatus
 
 class JenkinsParallelProjectionTests {
     companion object {
@@ -37,7 +39,13 @@ class JenkinsParallelProjectionTests {
         val scoped = JenkinsParallelProjectionScope(catalog).resolve(unit.authorization, "jenkins", declared)
         assertEquals(SupportLevel.SUPPORTED, scoped.features["parallel.dag"])
         assertEquals(SupportLevel.UNSUPPORTED, declared.parallel)
-        assertEquals(declared.copy(features = scoped.features, notes = scoped.notes), scoped)
+        assertEquals(declared.copy(features = scoped.features, notes = scoped.notes, topologyProfile = scoped.topologyProfile), scoped)
+        val topology = assertNotNull(scoped.topologyProfile)
+        assertEquals(ExecutionTopologySupportStatus.SUPPORTED, topology.declarations.single { it.kind == ExecutionTopologyKind.BRANCH_ISOLATION }.status)
+        assertEquals(declared.topologyProfile!!.declarations.filter { it.kind != ExecutionTopologyKind.BRANCH_ISOLATION },
+            topology.declarations.filter { it.kind != ExecutionTopologyKind.BRANCH_ISOLATION })
+        val missing = declared.copy(topologyProfile = null)
+        assertEquals(missing, JenkinsParallelProjectionScope(catalog).resolve(unit.authorization, "jenkins", missing))
         val definitions = catalog.structuralDefinitions.filter { it.structure == TargetStructuralProjectionKind.PARALLEL }
         val wrong = TargetNativeProjectionCatalog.of("jenkins", emptyList(), structuralDefinitions = definitions.map { it.copy(reference = "parallel") })
         val broad = TargetNativeProjectionCatalog.of("jenkins", emptyList(), structuralDefinitions = definitions.map {

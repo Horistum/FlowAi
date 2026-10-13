@@ -3,6 +3,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFails
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.CompatibilityReport
@@ -123,11 +124,12 @@ class TargetStructuralProjectionHonestyTests {
                 TargetStructuralProjectionKind.ERROR_BOUNDARY,
                 TargetStructuralProjectionKind.RETRY,
                 TargetStructuralProjectionKind.LOOP,
-                TargetStructuralProjectionKind.MATCH
+                TargetStructuralProjectionKind.MATCH,
+                TargetStructuralProjectionKind.PARALLEL
             ),
             structures
         )
-        assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
+        assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.LOOP))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.RETRY))
@@ -153,11 +155,12 @@ class TargetStructuralProjectionHonestyTests {
                 manifest(step, compatibility = supportedJenkinsCompatibility(), executableMetadata = false)
             )
 
-            assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, resolution.materialization.status)
+            assertEquals(TargetMaterializationStatus.NATIVE, resolution.materialization.status)
             assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
-            assertTrue(readiness.findings.any {
-                it.nodeId == step.id && it.status == TargetMaterializationStatus.ADAPTER_REQUIRED.name
-            })
+            // A provider-owned parallel payload cannot authorize a checkout body outside its gate scope.
+            assertFails {
+                JenkinsManifestRenderer().render(manifest(step, supportedJenkinsCompatibility(), executableMetadata = true))
+            }
         }
     }
 

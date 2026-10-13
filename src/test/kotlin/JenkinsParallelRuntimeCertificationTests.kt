@@ -117,6 +117,8 @@ class JenkinsParallelRuntimeCertificationTests {
         }
         val raw = record(p); (raw["runs"][0] as ObjectNode).put("artifactSha256", "0".repeat(64))
         assertFails { runs(p, raw) }
+        val plugins = record(p); (plugins["plugins"] as ObjectNode).put("workflow-cps", "unknown")
+        assertFails { runs(p, plugins) }
         val original = p.artifacts.getValue("baseline").toString(Charsets.UTF_8)
         for (changed in listOf(original + original, original.replace("failFast: false", "failFast: true"), original.replace(left, "Changed?")))
             assertFails { JenkinsCheckoutRuntimeCertification.parallelArtifacts(changed, changed.toByteArray(), p.scenario) }

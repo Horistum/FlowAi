@@ -11,6 +11,8 @@ import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.planner.ApprovalNode
 import org.flowlang.planner.ParallelGroupNode
 import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.topology.ExecutionTopologyKind
+import org.flowlang.topology.ExecutionTopologySupportStatus
 
 /** A single top-level fork/join of two gates; branch work has no workspace or output effects. */
 class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjectionCatalog?) : TargetProjectionCapabilityResolver {
@@ -29,7 +31,17 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         if (approvals.any { it.mode != "manual" || it.message.isNullOrBlank() || it.resultName != null ||
                 it.outputs.isNotEmpty() || it.dependsOn.isNotEmpty() || it.dependencies.isNotEmpty() } ||
             approvals.map { it.message }.distinct().size != 2) return declared
+        val topology = declared.topologyProfile ?: return declared
+        if (topology.target != target || topology.declarations.count { it.kind == ExecutionTopologyKind.BRANCH_ISOLATION } != 1)
+            return declared
+        val scopedTopology = topology.copy(declarations = topology.declarations.map { declaration ->
+            if (declaration.kind != ExecutionTopologyKind.BRANCH_ISOLATION) declaration else declaration.copy(
+                status = ExecutionTopologySupportStatus.SUPPORTED,
+                evidenceReference = "src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt#parallelGatesPreserveConcurrentPendingJoinAndRejection",
+                detail = "Two distinct native input executions remain independently pending in parallel branches; no branch workspace mutation, result bindings or state-isolation claim.")
+        })
         return declared.copy(features = declared.features + ("parallel.dag" to SupportLevel.SUPPORTED),
+            topologyProfile = scopedTopology,
             notes = declared.notes + "Parallel supports one top-level pair of manual approval gates with distinct messages and failFast false; no cancellation, branch workspace or output-continuity claim.")
     }
 }

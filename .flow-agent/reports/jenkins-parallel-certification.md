@@ -8,6 +8,8 @@ gates, distinct messages, no result/output bindings or explicit gate dependencie
 and failFast false. The adapter uses preserved wrapper IDs as closure keys, so
 duplicate authored branch labels cannot overwrite a branch. Canonical semantics,
 public syntax, artifact versions and generic registry support are unchanged.
+Plan-scoped branch-isolation evidence identifies the two independent native input
+executions; it does not assert fresh workspaces or mutable-state isolation.
 
 ## Behavioral evidence
 
@@ -39,6 +41,10 @@ compilation because the pinned Kotlin 2.4.10 plugin is absent from the offline c
 Fresh exact-head and synthetic-merge compilation/tests/conformance, four isolation
 proofs, all runtime producers and the complete portfolio remain required. CI receipts
 will be attached to the PR after verification; this candidate does not preclaim them.
+The first CI revision exposed missing bounded branch-topology evidence and two
+catalog inventory assertions that still expected no parallel implementation. The
+scope now supplies input-execution isolation evidence under the same gate-only
+restriction, and the retained negative test explicitly rejects an out-of-scope body.
 
 PR #217 merged as 1a78680e38ad73f3191a10b97e1e632228650090 with the same tree as its
 validated revisions: 2106 tests and 274 ordered checks each, 21 assessments, 65 verified
