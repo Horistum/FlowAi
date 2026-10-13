@@ -143,7 +143,7 @@ class TargetStructuralProjectionHonestyTests {
         )
 
         unsupported.forEach { structure ->
-            val resolution = BuiltInNativeProjectionCatalogs.jenkins.resolveStructure(structure, structure.stepType)
+            val resolution = TargetNativeProjectionCatalog.empty("jenkins").resolveStructure(structure, structure.stepType)
             val step = TargetStep(
                 id = "${structure.stepType}-structure",
                 type = structure.stepType,
@@ -155,11 +155,17 @@ class TargetStructuralProjectionHonestyTests {
                 manifest(step, compatibility = supportedJenkinsCompatibility(), executableMetadata = false)
             )
 
-            assertEquals(TargetMaterializationStatus.NATIVE, resolution.materialization.status)
+            assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, resolution.materialization.status)
             assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
+            assertTrue(readiness.findings.any {
+                it.nodeId == step.id && it.status == TargetMaterializationStatus.ADAPTER_REQUIRED.name
+            })
             // A provider-owned parallel payload cannot authorize a checkout body outside its gate scope.
+            val owned = BuiltInNativeProjectionCatalogs.jenkins.resolveStructure(structure, structure.stepType)
+            assertEquals(TargetMaterializationStatus.NATIVE, owned.materialization.status)
             assertFails {
-                JenkinsManifestRenderer().render(manifest(step, supportedJenkinsCompatibility(), executableMetadata = true))
+                JenkinsManifestRenderer().render(manifest(step.copy(materialization = owned.materialization,
+                    rendererPayload = owned.rendererPayload), supportedJenkinsCompatibility(), executableMetadata = true))
             }
         }
     }
