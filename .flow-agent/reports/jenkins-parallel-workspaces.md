@@ -30,8 +30,14 @@ it waits for the native parallel branch's BlockEndNode, then observes the still
 pending right gate and completed branch work. Directory contents are read from
 fixed fixture locations, independently of rendered directory arguments. Native
 checkout nodes retain their branch identity and enclosing directory arguments.
-After the second decision the observer verifies both directories, join,
-continuation and the original rejection origin.
+After the second decision the observer verifies checkout ownership, join,
+continuation, remaining directory contents and the original rejection origin.
+The fixture's first root checkout clones into the parent workspace and removes
+earlier branch directories. The approval baseline therefore retains the observed
+left contents at the pending sibling, native directory arguments for both completed
+checkouts, and empty final branch locations. The rejection baseline skips that root
+checkout and retains the approved right branch's contents. This explicitly does
+not establish workspace survival or export after the join.
 
 The approval scenario falsifies aliased directories, swapped directory ownership,
 omitted left checkout, checkout before approval and premature continuation. The

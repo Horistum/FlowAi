@@ -107,7 +107,7 @@ Thread.start('checkout-certification') {
             def rows = nativeSteps(build, 'git').collect { node ->
                 def owner = branchStart(node)?.getAction(ThreadNameAction)?.getThreadName()
                 def directory = node.getEnclosingBlocks().find {
-                    it instanceof StepStartNode && it.getDescriptor()?.getFunctionName() == 'dir'
+                    it instanceof StepStartNode && !it.isBody() && it.getDescriptor()?.getFunctionName() == 'dir'
                 }
                 [branch: ArgumentsAction.getArguments(node).get('branch'), parallelBranch: owner,
                  directory: directory == null ? null : ArgumentsAction.getArguments(directory).get('path')]

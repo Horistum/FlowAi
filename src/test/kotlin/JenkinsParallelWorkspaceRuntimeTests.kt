@@ -32,7 +32,9 @@ class JenkinsParallelWorkspaceRuntimeTests {
             "directory" to directory?.let { ".flow-parallel/parallel_1_branch_$it" })
         val first = checkout("selected", 1); val second = checkout("alternate", 2); val root = checkout("selected")
         fun workspace(events: List<Map<String, Any?>>): Map<String, Any?> {
-            fun marker(index: Int) = events.lastOrNull { it["directory"] == ".flow-parallel/parallel_1_branch_$index" }?.get("branch")?.let { "$it\n" }
+            // The first root clone deletes pre-existing children; this fixture exports no branch workspace.
+            val remaining = events.drop(events.indexOf(root) + 1)
+            fun marker(index: Int) = remaining.lastOrNull { it["directory"] == ".flow-parallel/parallel_1_branch_$index" }?.get("branch")?.let { "$it\n" }
             return linkedMapOf("leftMarker" to marker(1), "rightMarker" to marker(2), "checkouts" to events)
         }
         fun pending(messages: List<String>, events: List<Map<String, Any?>>) = linkedMapOf("messages" to messages,

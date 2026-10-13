@@ -659,3 +659,8 @@ scenario evidence; it does not grant artifact transfer, workspace export,
 security/freshness guarantees, generic support or portability. Checkout bodies
 with `failFast true` remain outside this slice; the existing gate-only
 cancellation proof is retained.
+
+The parallel workspace fixture's root successor performs its first Git clone in
+the parent directory, which removes earlier branch directories. Certification
+records that cleanup, the branch contents observed before continuation, and native
+directory ownership; it does not promise workspace survival after the join.

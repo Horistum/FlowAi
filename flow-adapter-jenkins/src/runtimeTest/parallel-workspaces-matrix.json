@@ -68,8 +68,8 @@
           "terminalError": null
         },
         "workspaces": {
-          "leftMarker": "selected\n",
-          "rightMarker": "alternate\n",
+          "leftMarker": null,
+          "rightMarker": null,
           "checkouts": [
             {
               "branch": "selected",
@@ -152,7 +152,7 @@
             "terminalError": null
           },
           "workspaces": {
-            "leftMarker": "alternate\n",
+            "leftMarker": null,
             "rightMarker": null,
             "checkouts": [
               {
@@ -235,8 +235,8 @@
             "terminalError": null
           },
           "workspaces": {
-            "leftMarker": "alternate\n",
-            "rightMarker": "selected\n",
+            "leftMarker": null,
+            "rightMarker": null,
             "checkouts": [
               {
                 "branch": "selected",
@@ -313,7 +313,7 @@
           },
           "workspaces": {
             "leftMarker": null,
-            "rightMarker": "alternate\n",
+            "rightMarker": null,
             "checkouts": [
               {
                 "branch": "alternate",
@@ -396,8 +396,8 @@
             "terminalError": null
           },
           "workspaces": {
-            "leftMarker": "selected\n",
-            "rightMarker": "alternate\n",
+            "leftMarker": null,
+            "rightMarker": null,
             "checkouts": [
               {
                 "branch": "selected",
@@ -665,7 +665,7 @@
           },
           "workspaces": {
             "leftMarker": null,
-            "rightMarker": "alternate\n",
+            "rightMarker": null,
             "checkouts": [
               {
                 "branch": "alternate",
