@@ -4,7 +4,7 @@ import java.io.File
 import kotlin.test.*
 
 class JenkinsParallelCancellationLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = AdapterObservationAuthenticationLifecycle.workspacesPredecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     private fun rejected(s: WorkflowSemanticsRecoveryLifecycleSnapshot) =
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 

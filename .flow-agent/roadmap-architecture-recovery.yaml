@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 36
+revision: 37
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #218 is merged into main 3a7e2b33dd70b29ce7d7ce6316d68b53a126467c with the same tree as its validated PR revisions. Flow CI 38353171119 passed 2117 tests and 274 ordered checks per revision; runtime CI 38353171137 passed 23 assessments with 72 independently verified signatures. Both actual-main workflows passed. AR-06V extends the bounded two-gate parallel proof to native failFast-true cancellation and successful join. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  decisionBasis: "PR #219 is merged into main 0bb90fefb8319ffdbafc99aad1cfd4ff3009c70e with the same tree as its validated PR revisions. Flow CI 38384331776 passed 2125 tests and 274 ordered checks per revision; runtime CI 38384331837 passed 25 assessments with 78 independently verified signatures. AR-06W extends the bounded parallel proof to branch-local checkout directories after approval with failFast false. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

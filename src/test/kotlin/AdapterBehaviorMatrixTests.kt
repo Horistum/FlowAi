@@ -57,6 +57,7 @@ class AdapterBehaviorMatrixTests {
             assertEquals(CertificationConstruct.entries.map { it.name }, rows(value).map { it["construct"].asText() })
             val b = behavior(value)
             val expectedCategory = when {
+                s.parallelWorkspaces -> "ARTIFACTS_WORKSPACES"
                 s.parallel -> "PARALLELISM"
                 s.match -> "MATCH"
                 s.loop -> "LOOPS"

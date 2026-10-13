@@ -134,6 +134,7 @@ src/test/kotlin/JenkinsLoopRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsMatchRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt
 src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt
+src/test/kotlin/JenkinsParallelWorkspaceRuntimeTests.kt
 src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt
 src/test/kotlin/ProjectionStabilitySmokeTests.kt
 src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt

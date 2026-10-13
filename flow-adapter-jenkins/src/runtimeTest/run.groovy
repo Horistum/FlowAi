@@ -6,6 +6,9 @@ import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
 import org.jenkinsci.plugins.workflow.graph.FlowNode
+import org.jenkinsci.plugins.workflow.graph.BlockEndNode
+import org.jenkinsci.plugins.workflow.cps.nodes.StepStartNode
+import org.jenkinsci.plugins.workflow.actions.ThreadNameAction
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction
 import org.jenkinsci.plugins.workflow.actions.ErrorAction
 import org.jenkinsci.plugins.workflow.support.steps.input.InputAction
@@ -22,7 +25,10 @@ Thread.start('checkout-certification') {
     def sha256 = { byte[] bytes -> MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString() }
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
+        def workspaceScenario = scenario in ['jenkins-parallel-workspaces-approve-runtime', 'jenkins-parallel-workspaces-reject-runtime']
         def inventories = [
+            'jenkins-parallel-workspaces-approve-runtime': ['baseline', 'aliased-workspaces', 'swapped-workspaces', 'omitted-left-checkout', 'early-branch-work', 'early-successor'],
+            'jenkins-parallel-workspaces-reject-runtime': ['baseline', 'suppressed-rejection', 'early-branch-work', 'early-successor'],
             'jenkins-parallel-approve-runtime': ['baseline', 'serialized-branches', 'omitted-parallel', 'early-successor'],
             'jenkins-parallel-reject-runtime': ['baseline', 'suppressed-rejection', 'early-successor'],
             'jenkins-parallel-fail-fast-approve-runtime': ['baseline', 'early-successor'],
@@ -89,6 +95,26 @@ Thread.start('checkout-certification') {
             if (file.exists() && file.length() > 1024) throw new IllegalStateException('Oversized workspace observation')
             file.exists() ? file.readToString() : null
         }
+        def branchStart = { node -> node.getEnclosingBlocks().find { it.getAction(ThreadNameAction) != null } }
+        def branchComplete = { build, node ->
+            def start = branchStart(node)
+            start != null && new FlowGraphWalker(build.getExecution()).any {
+                it instanceof BlockEndNode && it.getStartNode().getId() == start.getId()
+            }
+        }
+        def workspaceSnapshot = { build, workspace ->
+            // Fixed fixture observation locations, independent of generated dir arguments and mutant IDs.
+            def rows = nativeSteps(build, 'git').collect { node ->
+                def owner = branchStart(node)?.getAction(ThreadNameAction)?.getThreadName()
+                def directory = node.getEnclosingBlocks().find {
+                    it instanceof StepStartNode && !it.isBody() && it.getDescriptor()?.getFunctionName() == 'dir'
+                }
+                [branch: ArgumentsAction.getArguments(node).get('branch'), parallelBranch: owner,
+                 directory: directory == null ? null : ArgumentsAction.getArguments(directory).get('path')]
+            }
+            [leftMarker: readMarker(workspace.child('.flow-parallel/parallel_1_branch_1')),
+             rightMarker: readMarker(workspace.child('.flow-parallel/parallel_1_branch_2')), checkouts: rows]
+        }
         def inputFailure = { error ->
             [type: error.getClass().getName(),
              result: error instanceof FlowInterruptedException ? error.getResult().toString() : null,
@@ -113,9 +139,11 @@ Thread.start('checkout-certification') {
                 def snapshot = { inputs ->
                     if (inputs.isEmpty()) return null
                     if (inputs.size() > 2 || !pausedInputs(inputs)) throw new IllegalStateException('Invalid parallel input inventory')
-                    [messages: inputs.collect { it.getInput().getMessage() }, paused: true,
+                    def value = [messages: inputs.collect { it.getInput().getMessage() }, paused: true,
                      checkoutCount: nativeSteps(started, 'git').size(), marker: readMarker(jenkins.getWorkspaceFor(job)),
                      building: started.isBuilding(), complete: started.getExecution().isComplete()]
+                    if (workspaceScenario) value.workspaces = workspaceSnapshot(started, jenkins.getWorkspaceFor(job))
+                    value
                 }
                 // A bounded observation window lets serialization complete as a distinguishable mutant.
                 // Neither run identity nor generated pipeline instrumentation selects these observations.
@@ -133,7 +161,7 @@ Thread.start('checkout-certification') {
                     def first = inputs[0]
                     def message = first.getInput().getMessage()
                     def cancellation = scenario == 'jenkins-parallel-cancel-runtime'
-                    def reject = scenario == 'jenkins-parallel-reject-runtime' || cancellation
+                    def reject = scenario in ['jenkins-parallel-reject-runtime', 'jenkins-parallel-workspaces-reject-runtime'] || cancellation
                     parallelEvidence.decisions.add([message: message, action: reject ? 'reject' : 'approve'])
                     if (reject) first.doAbort() else first.doProceedEmpty()
                     long joinDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
@@ -142,7 +170,8 @@ Thread.start('checkout-certification') {
                         inputs = activeInputs()
                         def firstNode = nativeSteps(started, 'input').find { ArgumentsAction.getArguments(it).get('message') == message }
                         def settled = first.isSettled() && firstNode != null && !PauseAction.isPaused(firstNode) &&
-                            (!reject || firstNode.getError() != null)
+                            (!reject || firstNode.getError() != null) &&
+                            (!workspaceScenario || branchComplete(started, firstNode))
                         // Give native cancellation the entire bounded window. A still-pending sibling
                         // is recorded and released only afterwards, so disabling failFast is falsifiable.
                         if (settled && !inputs.isEmpty() && pausedInputs(inputs) &&
@@ -205,6 +234,7 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
+            if (workspaceScenario) record.workspaces = workspaceSnapshot(build, workspace)
             if (scenario.startsWith('jenkins-loop-') || scenario.startsWith('jenkins-match-')) {
                 record.checkoutBranches = checkouts.collect { node ->
                     def branch = ArgumentsAction.getArguments(node).get('branch')
