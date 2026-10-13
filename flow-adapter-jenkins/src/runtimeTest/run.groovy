@@ -5,6 +5,7 @@ import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
 import org.jenkinsci.plugins.workflow.job.WorkflowJob
 import org.jenkinsci.plugins.workflow.cps.nodes.StepAtomNode
 import org.jenkinsci.plugins.workflow.graph.FlowGraphWalker
+import org.jenkinsci.plugins.workflow.graph.FlowNode
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction
 import org.jenkinsci.plugins.workflow.actions.ErrorAction
 import org.jenkinsci.plugins.workflow.support.steps.input.InputAction
@@ -22,6 +23,8 @@ Thread.start('checkout-certification') {
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def inventories = [
+            'jenkins-parallel-approve-runtime': ['baseline', 'serialized-branches', 'omitted-parallel', 'early-successor'],
+            'jenkins-parallel-reject-runtime': ['baseline', 'suppressed-rejection', 'early-successor'],
             'jenkins-match-selected-runtime': ['baseline', 'flattened-cases', 'omitted-selected'],
             'jenkins-match-default-runtime': ['baseline', 'substituted-default', 'omitted-default'],
             'jenkins-match-empty-runtime': ['baseline', 'empty-fallthrough', 'omitted-successor'],
@@ -96,6 +99,59 @@ Thread.start('checkout-certification') {
             def future = job.scheduleBuild2(0)
             def pending = null
             def decision = 'none'
+            def parallelEvidence = null
+            if (scenario.startsWith('jenkins-parallel-')) {
+                def started = future.getStartCondition().get(60, TimeUnit.SECONDS)
+                def activeInputs = {
+                    def action = started.getAction(InputAction)
+                    (action == null ? [] : action.getExecutions().findAll { !it.isSettled() })
+                        .sort { it.getInput().getMessage() }
+                }
+                def pausedInputs = { inputs -> inputs.every { PauseAction.isPaused(it.getContext().get(FlowNode)) } }
+                def snapshot = { inputs ->
+                    if (inputs.isEmpty()) return null
+                    if (inputs.size() > 2 || !pausedInputs(inputs)) throw new IllegalStateException('Invalid parallel input inventory')
+                    [messages: inputs.collect { it.getInput().getMessage() }, paused: true,
+                     checkoutCount: nativeSteps(started, 'git').size(), marker: readMarker(jenkins.getWorkspaceFor(job)),
+                     building: started.isBuilding(), complete: started.getExecution().isComplete()]
+                }
+                // A bounded observation window lets serialization complete as a distinguishable mutant.
+                // Neither run identity nor generated pipeline instrumentation selects these observations.
+                long overlapDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10)
+                def inputs = []
+                while (!future.isDone()) {
+                    inputs = activeInputs()
+                    if (pausedInputs(inputs) && (inputs.size() == 2 || !inputs.isEmpty() && System.nanoTime() > overlapDeadline)) break
+                    if (System.nanoTime() > overlapDeadline && inputs.isEmpty()) throw new IllegalStateException('Parallel input observation timed out')
+                    Thread.sleep(100)
+                }
+                if (future.isDone()) inputs = []
+                parallelEvidence = [initialPending: snapshot(inputs), afterFirst: null, decisions: []]
+                if (!inputs.isEmpty()) {
+                    def first = inputs[0]
+                    def message = first.getInput().getMessage()
+                    def reject = scenario == 'jenkins-parallel-reject-runtime'
+                    parallelEvidence.decisions.add([message: message, action: reject ? 'reject' : 'approve'])
+                    if (reject) first.doAbort() else first.doProceedEmpty()
+                    long joinDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
+                    // Allow the rejected branch to reach its native error before observing its sibling.
+                    while (!future.isDone()) {
+                        inputs = activeInputs()
+                        def firstNode = nativeSteps(started, 'input').find { ArgumentsAction.getArguments(it).get('message') == message }
+                        def settled = first.isSettled() && firstNode != null && !PauseAction.isPaused(firstNode) &&
+                            (!reject || firstNode.getError() != null)
+                        if (settled && !inputs.isEmpty() && pausedInputs(inputs)) break
+                        if (System.nanoTime() > joinDeadline) throw new IllegalStateException('Parallel join observation timed out')
+                        Thread.sleep(100)
+                    }
+                    if (future.isDone()) inputs = []
+                    parallelEvidence.afterFirst = snapshot(inputs)
+                    inputs.each { input ->
+                        parallelEvidence.decisions.add([message: input.getInput().getMessage(), action: 'approve'])
+                        input.doProceedEmpty()
+                    }
+                }
+            }
             if (scenario.startsWith('jenkins-approval-')) {
                 def started = future.getStartCondition().get(60, TimeUnit.SECONDS)
                 long inputDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(60)
@@ -175,6 +231,19 @@ Thread.start('checkout-certification') {
                     record.revision = revision
                     record.markerSha256 = observed.read().withCloseable { input -> sha256(input.readAllBytes()) }
                 }
+            }
+            if (scenario.startsWith('jenkins-parallel-')) {
+                def inputs = nativeSteps(build, 'input').sort { ArgumentsAction.getArguments(it).get('message') }
+                def message = { node -> ArgumentsAction.getArguments(node).get('message') }
+                def terminal = build.getExecution().getCauseOfFailure()
+                def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
+                def originInput = inputs.find { it.getId() == origin?.getId() }
+                record.parallel = [inputMessages: inputs.collect { message(it) },
+                    initialPending: parallelEvidence.initialPending, afterFirst: parallelEvidence.afterFirst,
+                    decisions: parallelEvidence.decisions,
+                    inputErrors: inputs.findAll { it.getError() != null }.collect {
+                        inputFailure(it.getError().getError()) + [inputMessage: message(it)] },
+                    terminalError: terminal == null ? null : inputFailure(terminal) + [inputMessage: originInput == null ? null : message(originInput)]]
             }
             if (scenario.startsWith('jenkins-approval-')) {
                 def inputs = nativeSteps(build, 'input')

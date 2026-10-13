@@ -187,8 +187,8 @@ class ParallelBranchProjectionTests {
     @Test fun groupingNeverPromotesParallelOrTurnsEmptyWrappersIntoLeafOperations() {
         for ((target, manifest) in manifests) {
             val parallel = root(manifest)
-            assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, parallel.materialization.status)
-            assertFalse(ReferenceTargetProjections.nativeCatalogs.getValue(target).hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
+            assertEquals(if (target == "jenkins") TargetMaterializationStatus.NATIVE else TargetMaterializationStatus.ADAPTER_REQUIRED, parallel.materialization.status)
+            assertEquals(target == "jenkins", ReferenceTargetProjections.nativeCatalogs.getValue(target).hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
             val readiness = TargetRenderPolicy.evaluate(manifest)
             assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
             val review = TargetReviewArtifactRenderer.render(manifest, readiness)

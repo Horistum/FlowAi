@@ -1,0 +1,355 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "parallel",
+  "scenarios": [
+    {
+      "scenario": "jenkins-parallel-approve-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 1,
+        "checkoutErrors": [],
+        "parallel": {
+          "inputMessages": [
+            "Approve left branch?",
+            "Approve right branch?"
+          ],
+          "initialPending": {
+            "messages": [
+              "Approve left branch?",
+              "Approve right branch?"
+            ],
+            "paused": true,
+            "checkoutCount": 0,
+            "marker": null,
+            "building": true,
+            "complete": false
+          },
+          "afterFirst": {
+            "messages": [
+              "Approve right branch?"
+            ],
+            "paused": true,
+            "checkoutCount": 0,
+            "marker": null,
+            "building": true,
+            "complete": false
+          },
+          "decisions": [
+            {
+              "message": "Approve left branch?",
+              "action": "approve"
+            },
+            {
+              "message": "Approve right branch?",
+              "action": "approve"
+            }
+          ],
+          "inputErrors": [],
+          "terminalError": null
+        }
+      },
+      "mutants": [
+        {
+          "id": "serialized-branches",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "parallel": {
+            "inputMessages": [
+              "Approve left branch?",
+              "Approve right branch?"
+            ],
+            "initialPending": {
+              "messages": [
+                "Approve left branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "afterFirst": {
+              "messages": [
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "decisions": [
+              {
+                "message": "Approve left branch?",
+                "action": "approve"
+              },
+              {
+                "message": "Approve right branch?",
+                "action": "approve"
+              }
+            ],
+            "inputErrors": [],
+            "terminalError": null
+          }
+        },
+        {
+          "id": "omitted-parallel",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "parallel": {
+            "inputMessages": [],
+            "initialPending": null,
+            "afterFirst": null,
+            "decisions": [],
+            "inputErrors": [],
+            "terminalError": null
+          }
+        },
+        {
+          "id": "early-successor",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "parallel": {
+            "inputMessages": [
+              "Approve left branch?",
+              "Approve right branch?"
+            ],
+            "initialPending": {
+              "messages": [
+                "Approve left branch?",
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false
+            },
+            "afterFirst": {
+              "messages": [
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false
+            },
+            "decisions": [
+              {
+                "message": "Approve left branch?",
+                "action": "approve"
+              },
+              {
+                "message": "Approve right branch?",
+                "action": "approve"
+              }
+            ],
+            "inputErrors": [],
+            "terminalError": null
+          }
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-parallel-reject-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "ABORTED",
+        "marker": null,
+        "checkoutCount": 0,
+        "checkoutErrors": [],
+        "parallel": {
+          "inputMessages": [
+            "Approve left branch?",
+            "Approve right branch?"
+          ],
+          "initialPending": {
+            "messages": [
+              "Approve left branch?",
+              "Approve right branch?"
+            ],
+            "paused": true,
+            "checkoutCount": 0,
+            "marker": null,
+            "building": true,
+            "complete": false
+          },
+          "afterFirst": {
+            "messages": [
+              "Approve right branch?"
+            ],
+            "paused": true,
+            "checkoutCount": 0,
+            "marker": null,
+            "building": true,
+            "complete": false
+          },
+          "decisions": [
+            {
+              "message": "Approve left branch?",
+              "action": "reject"
+            },
+            {
+              "message": "Approve right branch?",
+              "action": "approve"
+            }
+          ],
+          "inputErrors": [
+            {
+              "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+              "result": "ABORTED",
+              "causes": [
+                "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+              ],
+              "inputMessage": "Approve left branch?"
+            }
+          ],
+          "terminalError": {
+            "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+            "result": "ABORTED",
+            "causes": [
+              "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+            ],
+            "inputMessage": "Approve left branch?"
+          }
+        }
+      },
+      "mutants": [
+        {
+          "id": "suppressed-rejection",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "parallel": {
+            "inputMessages": [
+              "Approve left branch?",
+              "Approve right branch?"
+            ],
+            "initialPending": {
+              "messages": [
+                "Approve left branch?",
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "afterFirst": {
+              "messages": [
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 0,
+              "marker": null,
+              "building": true,
+              "complete": false
+            },
+            "decisions": [
+              {
+                "message": "Approve left branch?",
+                "action": "reject"
+              },
+              {
+                "message": "Approve right branch?",
+                "action": "approve"
+              }
+            ],
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ],
+                "inputMessage": "Approve left branch?"
+              }
+            ],
+            "terminalError": null
+          }
+        },
+        {
+          "id": "early-successor",
+          "result": "ABORTED",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "parallel": {
+            "inputMessages": [
+              "Approve left branch?",
+              "Approve right branch?"
+            ],
+            "initialPending": {
+              "messages": [
+                "Approve left branch?",
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false
+            },
+            "afterFirst": {
+              "messages": [
+                "Approve right branch?"
+              ],
+              "paused": true,
+              "checkoutCount": 1,
+              "marker": "selected\n",
+              "building": true,
+              "complete": false
+            },
+            "decisions": [
+              {
+                "message": "Approve left branch?",
+                "action": "reject"
+              },
+              {
+                "message": "Approve right branch?",
+                "action": "approve"
+              }
+            ],
+            "inputErrors": [
+              {
+                "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+                "result": "ABORTED",
+                "causes": [
+                  "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+                ],
+                "inputMessage": "Approve left branch?"
+              }
+            ],
+            "terminalError": {
+              "type": "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException",
+              "result": "ABORTED",
+              "causes": [
+                "org.jenkinsci.plugins.workflow.support.steps.input.Rejection"
+              ],
+              "inputMessage": "Approve left branch?"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "One top-level pair of manual approval branches with distinct literal messages and failFast false; no branch workspace or result bindings.",
+    "Native pending inputs prove overlapping suspension and join before continuation. Automated test decisions do not establish human authorization.",
+    "Rejection is observed on the originating input while the sibling remains paused, then propagated after the sibling decision; no cancellation certification.",
+    "No nested parallelism, arbitrary branch work, public support promotion or portable execution. The disposable runtime host and observer remain trusted."
+  ]
+}

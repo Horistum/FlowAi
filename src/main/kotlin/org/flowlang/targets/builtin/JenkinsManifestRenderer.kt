@@ -114,8 +114,9 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         TargetProjectionDiagnostics.append(JenkinsProjectionSyntax, step, manifest.inputs, sb, indent, "//")
         when (step.type) {
             "try" -> renderJenkinsTry(step, manifest, sb, indent)
-            "try-body", "error-handler", "parallel", "parallel-branch" ->
+            "try-body", "error-handler", "parallel-branch" ->
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
+            "parallel" -> renderJenkinsParallel(step, manifest, sb, indent)
             "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
             "retry" -> renderJenkinsRetry(step, manifest, sb, indent)
             "loop" -> renderJenkinsLoop(step, manifest, sb, indent)
@@ -123,6 +124,37 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "approval" -> renderJenkinsApproval(step, sb, indent)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
+    }
+
+    private fun renderJenkinsParallel(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String) {
+        requireJenkinsStructure(step, "approval-parallel")
+        require(manifest.jobs.flatMap { it.steps }.contains(step) &&
+            manifest.jobs.flatMap { it.steps }.flatMap { it.flatten() }.count { it.type == "parallel" } == 1) {
+            "Jenkins parallel requires one top-level group."
+        }
+        require(step.metadata["failFast"] == "false" && step.children.size == 2) {
+            "Jenkins parallel requires exactly two approval branches with failFast false."
+        }
+        val gates = step.children.map { branch ->
+            require(branch.type == "parallel-branch")
+            requireNotNull(branch.children.singleOrNull()).also { gate ->
+                require(gate.type == "approval" && gate.params["mode"] == "manual" &&
+                    gate.metadata["resultName"] == null && gate.dependsOn.isEmpty() && gate.children.isEmpty()) {
+                    "Jenkins parallel supports only unbound manual approval gates."
+                }
+            }
+        }
+        val messages = gates.map { it.rendererPayload?.bindings?.get("message")?.value }
+        require(messages.all { !it.isNullOrBlank() } && messages.distinct().size == 2)
+        sb.appendLine("${indent}parallel([")
+        step.children.forEach { branch ->
+            // Authored labels may repeat; preserved wrapper IDs are the native branch keys.
+            sb.appendLine("${indent}  ${groovyString(branch.id)}: {")
+            renderJenkinsStep(branch.children.single(), manifest, sb, "$indent    ")
+            sb.appendLine("${indent}  },")
+        }
+        sb.appendLine("${indent}  failFast: false")
+        sb.appendLine("${indent}])")
     }
 
     private fun renderJenkinsApproval(step: TargetStep, sb: StringBuilder, indent: String) {

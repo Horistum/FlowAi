@@ -126,6 +126,24 @@ tasks.register("verifyJenkinsLocalRecoveryRuntime") {
     dependsOn(localRecoveryRuntimeTasks)
 }
 
+val parallelRuntimeTasks = listOf("approve", "reject").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsParallel${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify bounded parallel for a $outcome body on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-parallel-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-parallel-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsParallelRuntime") {
+    group = "verification"
+    description = "Execute bounded parallel and its branch mutants on real Jenkins."
+    dependsOn(parallelRuntimeTasks)
+}
+
 val matchRuntimeTasks = listOf("selected", "default", "empty", "failure").map { outcome ->
     tasks.register<JavaExec>("verifyJenkinsMatch${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
         group = "verification"

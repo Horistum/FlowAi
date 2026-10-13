@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "purpose": "Two native manual approval branches are simultaneously pending, join before continuation, and preserve rejection while waiting for the other branch when failFast is false.",
+  "predecessor": {
+    "pullRequest": 217,
+    "mergedMain": "1a78680e38ad73f3191a10b97e1e632228650090",
+    "tree": "b2448ae0802b189270a58bdfd7863007e14c47f5",
+    "exactHead": "e54dd7b6362c273faee7031e9944a99d37b55d07",
+    "syntheticMergeCandidate": "2540cb70edcf0a16215ee16b4ed2124eb88c96c2",
+    "flowCiRunId": 38238549697,
+    "runtimeCiRunId": 38238549710,
+    "conclusion": "success",
+    "testsPerRevision": 2106,
+    "suitesPerRevision": 363,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 21,
+    "signedObservations": 65,
+    "portfolioRows": 36,
+    "observedConstructTargetPairs": 9,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "3aa094d7ae07f9e900fc7f9068d666a6b9bc548d82155da67e5b2b1e38cbae23",
+    "mainFlowCiRunId": 38349778132,
+    "mainFlowCiConclusion": "in-progress-at-observation",
+    "mainRuntimeCiRunId": 38349778118,
+    "mainRuntimeConclusion": "success",
+    "scope": "PR 217 exact-head and synthetic-merge test identities, 274 ordered checks, 775 source isolation hashes, 65 signatures and 17 archive digests were independently verified. Actual main has the same tree. Counts refer to those PR revisions; main workflow observations are separate."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06T",
+        "selectedWorkPackage": ".flow-agent/work-packages/parallel-branch-preservation.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened, omitted, reordered and detached parallel wrappers; malformed failFast/count/ordinal, injected bindings and identity collisions; changed historical receipts and invented validation."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06U",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-parallel-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Serialized or missing branches, premature continuation, suppressed rejection, altered observation identities and invented validation fail certification."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06T",
+        "workPackage": ".flow-agent/work-packages/parallel-branch-preservation.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06U",
+        "workPackage": ".flow-agent/work-packages/jenkins-parallel-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 217.",
+    "predecessorPullRequest": 217,
+    "mergedMain": "1a78680e38ad73f3191a10b97e1e632228650090"
+  },
+  "limitations": [
+    "AR-06U requires fresh exact-head, synthetic-merge and complete native runtime/portfolio checks.",
+    "Only two manual input branches with failFast false; no cancellation, branch workspace, general parallel support or portability."
+  ]
+}

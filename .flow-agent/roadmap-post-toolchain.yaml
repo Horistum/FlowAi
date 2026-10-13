@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 34
+revision: 35
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #216 is merged into main 8e9a1f217138db3f364bc9210eca341aa0892486 with the same tree as its validated PR revisions. Flow CI 38211715468 passed 2095 tests and 274 ordered checks per revision; runtime CI 38211715488 passed 21 assessments with 65 independently verified signatures. AR-06T preserves and validates parallel branch count, order, optional labels, empty bodies and explicit failFast before native execution certification. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  decisionBasis: "PR #217 is merged into main 1a78680e38ad73f3191a10b97e1e632228650090 with the same tree as its validated PR revisions. Flow CI 38238549697 passed 2106 tests and 274 ordered checks per revision; runtime CI 38238549710 passed 21 assessments with 65 independently verified signatures. AR-06U certifies two native parallel approval branches with failFast false, concurrent suspension, join and rejection propagation. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"

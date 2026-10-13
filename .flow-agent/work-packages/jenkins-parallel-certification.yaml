@@ -1,0 +1,68 @@
+version: AR-06U
+name: Bounded Jenkins Parallel Approval Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 217.
+  predecessorPullRequest: 217
+  mergedMain: 1a78680e38ad73f3191a10b97e1e632228650090
+invariant: Two native manual approval branches are simultaneously pending, join before continuation,
+  and preserve rejection while waiting for the other branch when failFast is false.
+scope:
+- Admit exactly two single-manual-approval branches with distinct literal messages, no result bindings
+  and explicit failFast false through an authorized plan-scoped Jenkins provider.
+- Render branch closures keyed by preserved wrapper identity and a native parallel join.
+- Independently observe pending native inputs, decisions, branch rejection, join and successor execution.
+- Falsify serialization, omitted branches, premature continuation and swallowed rejection using exact artifact mutants.
+- Retain all predecessor tests, ordered checks, authenticated scenarios and historical acceptance.
+nonGoals:
+- No failFast true, cancellation, nested parallelism, branch workspace mutation, output continuity,
+  general parallel support, human authorization or cross-target portability claim.
+- No Core semantics, public syntax, artifact version, generic registry support or package version change.
+- No AR-06 closure, AR-07 activation, finding closure or EF-09 resumption.
+ownershipBoundary:
+  adapter: Bounded Jenkins admission and rendering consume unchanged canonical parallel contracts.
+  conformance: Disposable external runtime observer and authenticated portfolio; no Core executor.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsParallelProjectionScope.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+- flow-adapter-jenkins/src/runtimeTest/
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- Bounded native rendering and admission; reject true failFast, empty/nested/mutating branches,
+  result bindings, duplicate messages and missing provider evidence.
+- Signed runtime observations bind exact concurrent pending inventories, decisions and terminal rejection.
+- Missing, forged, reordered or malformed evidence and altered lifecycle receipts fail closed.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Serialized or missing branches, premature continuation, suppressed rejection,
+    altered observation identities and invented validation fail certification.
+followUp:
+- Certify cancellation and broader branch bodies separately before expanding parallel support.
+- Certify remaining constructs and shared canonical scenarios before broader support or portability claims.

@@ -3,6 +3,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertFails
 import kotlin.test.assertTrue
 import org.flowlang.capabilities.CompatibilityAnalyzer
 import org.flowlang.capabilities.CompatibilityReport
@@ -123,11 +124,12 @@ class TargetStructuralProjectionHonestyTests {
                 TargetStructuralProjectionKind.ERROR_BOUNDARY,
                 TargetStructuralProjectionKind.RETRY,
                 TargetStructuralProjectionKind.LOOP,
-                TargetStructuralProjectionKind.MATCH
+                TargetStructuralProjectionKind.MATCH,
+                TargetStructuralProjectionKind.PARALLEL
             ),
             structures
         )
-        assertFalse(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
+        assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.LOOP))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.MATCH))
         assertTrue(BuiltInNativeProjectionCatalogs.jenkins.hasStructuralProjection(TargetStructuralProjectionKind.RETRY))
@@ -141,7 +143,7 @@ class TargetStructuralProjectionHonestyTests {
         )
 
         unsupported.forEach { structure ->
-            val resolution = BuiltInNativeProjectionCatalogs.jenkins.resolveStructure(structure, structure.stepType)
+            val resolution = TargetNativeProjectionCatalog.empty("jenkins").resolveStructure(structure, structure.stepType)
             val step = TargetStep(
                 id = "${structure.stepType}-structure",
                 type = structure.stepType,
@@ -158,6 +160,13 @@ class TargetStructuralProjectionHonestyTests {
             assertTrue(readiness.findings.any {
                 it.nodeId == step.id && it.status == TargetMaterializationStatus.ADAPTER_REQUIRED.name
             })
+            // A provider-owned parallel payload cannot authorize a checkout body outside its gate scope.
+            val owned = BuiltInNativeProjectionCatalogs.jenkins.resolveStructure(structure, structure.stepType)
+            assertEquals(TargetMaterializationStatus.NATIVE, owned.materialization.status)
+            assertFails {
+                JenkinsManifestRenderer().render(manifest(step.copy(materialization = owned.materialization,
+                    rendererPayload = owned.rendererPayload), supportedJenkinsCompatibility(), executableMetadata = true))
+            }
         }
     }
 

@@ -165,14 +165,14 @@ class AdapterCertificationPortfolioTests {
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->
         val result = f.derive(); val doc = mapper.readTree(result.json())
-        assertEquals(21, doc["assessmentCount"].asInt())
+        assertEquals(23, doc["assessmentCount"].asInt())
         assertEquals(36, doc["rows"].size())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
-        assertEquals(9, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
+        assertEquals(10, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertTrue(doc["rows"].filter { it["target"].asText() !in setOf("jenkins", "github-actions") }.all {
             it["scenarioIds"].isEmpty && it["status"].asText() == "NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO" })
         val matrices = doc["assessments"].map { it["matrix"] }
-        assertEquals(65, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        assertEquals(72, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
         val github = doc["assessments"].single { it["scenarioId"].asText() == GitHubActionsCheckoutRuntimeCertification.SCENARIO }
         assertEquals("native-leaf-only", github["claim"].asText())
         assertEquals("native-leaf-in-checked-envelope", github["executionMode"].asText())

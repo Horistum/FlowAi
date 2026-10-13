@@ -15,6 +15,7 @@ import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.generators.manifest.providerFor
 import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
 import org.flowlang.targets.builtin.JenkinsMatchProjectionScope
+import org.flowlang.targets.builtin.JenkinsParallelProjectionScope
 import org.flowlang.targets.builtin.JenkinsLoopProjectionScope
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 import org.flowlang.safety.EnvironmentSafetyPolicy
@@ -51,8 +52,10 @@ object ReferenceTargetProjections {
             .resolve(authorization, target, continuity)
         val loop = JenkinsLoopProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
             .resolve(authorization, target, retry)
-        JenkinsMatchProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
+        val match = JenkinsMatchProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
             .resolve(authorization, target, loop)
+        JenkinsParallelProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
+            .resolve(authorization, target, match)
     }
 
     internal fun control(

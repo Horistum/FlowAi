@@ -7,13 +7,13 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: AR-06T
-selectedWorkPackage: .flow-agent/work-packages/parallel-branch-preservation.yaml
+selectedSlice: AR-06U
+selectedWorkPackage: .flow-agent/work-packages/jenkins-parallel-certification.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
-invariant: Target projection preserves parallel branch identity, authored order, optional labels, empty
-  and nested bodies and explicit failFast; malformed structure fails closed and parallel remains non-executable.
+invariant: Two native manual approval branches are simultaneously pending, join before continuation, and
+  preserve rejection while waiting for the other branch when failFast is false.
 scope:
 - Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority
   boundary.
@@ -48,13 +48,14 @@ scope:
   on real Jenkins.
 - Preserve and validate complete ordered parallel branch wrappers, optional labels, empty bodies and explicit
   failFast before native parallel certification.
+- Certify two simultaneously pending native approval branches, successful join and rejection propagation
+  with failFast false on real Jenkins.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
 ownershipBoundary:
-  adapterContract: Target-neutral manifest lowering and validation; canonical semantics unchanged.
-  conformance: Negative projection regressions and lifecycle validation; the existing runtime portfolio
-    remains live.
+  adapter: Bounded Jenkins admission and rendering consume unchanged canonical parallel contracts.
+  conformance: Disposable external runtime observer and authenticated portfolio; no Core executor.
 validation:
   status: current-revision-ci-required
   requiredChecks:
@@ -71,9 +72,10 @@ validation:
   - jenkins-retry-runtime
   - jenkins-loop-runtime
   - jenkins-match-runtime
+  - jenkins-parallel-runtime
   - adapter-certification-portfolio
-  negativeEvidence: Flattened, omitted, reordered and detached parallel wrappers; malformed failFast/count/ordinal,
-    injected bindings and identity collisions; changed historical receipts and invented validation.
+  negativeEvidence: Serialized or missing branches, premature continuation, suppressed rejection, altered
+    observation identities and invented validation fail certification.
 followUp:
 - Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
 - Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.
