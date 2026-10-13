@@ -136,9 +136,6 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "Jenkins parallel requires exactly two approval branches with a boolean failFast policy."
         }
         val workspaceBodies = step.children.all { it.children.size == 2 }
-        require(!workspaceBodies || step.metadata["failFast"] == "false") {
-            "Jenkins parallel checkout bodies require failFast false."
-        }
         val gates = step.children.map { branch ->
             require(branch.type == "parallel-branch" && branch.children.size == (if (workspaceBodies) 2 else 1))
             requireNotNull(branch.children.firstOrNull()).also { gate ->

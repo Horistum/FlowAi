@@ -126,7 +126,7 @@ tasks.register("verifyJenkinsLocalRecoveryRuntime") {
     dependsOn(localRecoveryRuntimeTasks)
 }
 
-val parallelRuntimeTasks = listOf("approve", "reject", "fail-fast-approve", "cancel", "workspaces-approve", "workspaces-reject").map { outcome ->
+val parallelRuntimeTasks = listOf("approve", "reject", "fail-fast-approve", "cancel", "workspaces-approve", "workspaces-reject", "workspaces-fail-fast-approve", "workspaces-cancel", "workspaces-failure").map { outcome ->
     tasks.register<JavaExec>("verifyJenkinsParallel${outcome.split('-').joinToString("") { it.replaceFirstChar(Char::uppercase) }}Runtime") {
         group = "verification"
         description = "Verify bounded parallel for a $outcome body on real Jenkins."

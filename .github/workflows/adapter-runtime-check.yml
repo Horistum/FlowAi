@@ -382,7 +382,7 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
       - name: Verify Parallel Projection And Observation Boundaries
-        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsParallel*' --tests '*TargetMaturityPublicationTests' --tests '*ControlEvidenceReferenceMigrationTests' --tests '*TopologyEvidenceReferenceMigrationTests' --tests '*TargetStructuralProjectionHonestyTests' --tests '*AdapterControlMaterializationAuthorityTests' --stacktrace
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsParallel*' --tests '*JenkinsWorkspaceCancellation*' --tests '*TargetMaturityPublicationTests' --tests '*ControlEvidenceReferenceMigrationTests' --tests '*TopologyEvidenceReferenceMigrationTests' --tests '*TargetStructuralProjectionHonestyTests' --tests '*AdapterControlMaterializationAuthorityTests' --stacktrace
       - name: Execute Real Jenkins Bounded Parallel And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsParallelRuntime --stacktrace
       - name: Publish Bounded Observation Summaries
@@ -392,6 +392,9 @@ jobs:
           cat flow-conformance-kit/build/jenkins-parallel-certification/cancel/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-parallel-certification/workspaces-approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-parallel-certification/workspaces-reject/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-parallel-certification/workspaces-fail-fast-approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-parallel-certification/workspaces-cancel/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-parallel-certification/workspaces-failure/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
           cat flow-conformance-kit/build/jenkins-parallel-certification/fail-fast-approve/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
       - name: Pin Assessment Proof And Trust
         id: receipt

@@ -133,11 +133,10 @@ class JenkinsParallelProjectionTests {
     @Test fun workspaceBodiesRejectUnprovenFailurePoliciesBindingsAndNativeModes() {
         val text = File("flow-adapter-jenkins/src/runtimeTest/parallel-workspaces.flow").readText()
         val checkout = "git.checkout source { url: \"git://127.0.0.1:9418/repository.git\" branch: \"selected\" }"
-        for (changed in listOf(text.replace("failFast false", "failFast true"),
-            text.replace(checkout, "$checkout -> branchResult"),
+        for (changed in listOf(text.replace(checkout, "$checkout -> branchResult"),
             text.replace(checkout, checkout.replace(" }", " depth: 1 }")),
             text.replace(checkout, checkout.replace("selected", "a".repeat(40))),
-            text.replace(checkout, ""))) {
+            text.replace(checkout, "")).flatMap { listOf(it, it.replace("failFast false", "failFast true")) }) {
             val candidate = compile(changed)
             assertEquals(targets.getValue("jenkins"), JenkinsParallelProjectionScope(catalog)
                 .resolve(candidate.authorization, "jenkins", targets.getValue("jenkins")))
@@ -152,7 +151,7 @@ class JenkinsParallelProjectionTests {
             testTargetSelection("jenkins", targets), strict = true))
         val group = original.jobs.flatMap { it.steps }.single { it.type == "parallel" }
         val branch = group.children.first(); val task = branch.children[1]
-        val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "true")),
+        val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "yes")),
             group.copy(children = listOf(branch.copy(id = "../shared")) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = branch.children.reversed())) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = listOf(branch.children.first(), task.copy(
@@ -162,6 +161,23 @@ class JenkinsParallelProjectionTests {
         for (replacement in mutations) assertFails {
             provider.render(original.copy(jobs = original.jobs.map { job -> job.copy(steps = job.steps.map {
                 if (it.id == group.id) replacement else it }) }))
+        }
+    }
+
+    @Test fun workspaceBodiesPreserveExplicitAndDefaultCancellationPolicy() {
+        val text = File("flow-adapter-jenkins/src/runtimeTest/parallel-workspace-cancellation.flow").readText()
+        for (source in listOf(text, text.replace(" failFast true", ""))) {
+            val candidate = compile(source)
+            val rendered = provider.render(pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate,
+                testTargetSelection("jenkins", targets), strict = true)))
+            assertContains(rendered, "failFast: true")
+            assertEquals(2, rendered.lineSequence().count { it.trimStart().startsWith("dir(") })
+            assertEquals(3, rendered.lineSequence().count { it.trimStart().startsWith("git branch:") })
+            assertTrue(rendered.indexOf("])") < rendered.lastIndexOf("git branch:"))
+            val scoped = JenkinsParallelProjectionScope(catalog).resolve(candidate.authorization, "jenkins", targets.getValue("jenkins"))
+            assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").parallel)
+            assertContains(scoped.topologyProfile!!.declarations.single { it.kind == ExecutionTopologyKind.BRANCH_ISOLATION }
+                .evidenceReference!!, "JenkinsWorkspaceCancellationRuntimeTests")
         }
     }
 

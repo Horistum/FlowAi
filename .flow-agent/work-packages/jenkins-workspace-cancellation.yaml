@@ -1,0 +1,67 @@
+version: AR-06X
+name: Bounded Jenkins Workspace Cancellation
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 220.
+  predecessorPullRequest: 220
+  mergedMain: c9ca51a2640b216962b097dbdaa08a99af51b818
+invariant: With failFast true, two approval-then-checkout branches preserve directory ownership and join;
+  rejection or native checkout failure cancels the undecided sibling before its work and retains the original failure.
+scope:
+- Extend the existing bounded workspace projection to the authored failFast true policy.
+- Certify successful join, rejection before checkout and a missing-revision checkout failure while the sibling input remains pending.
+- Observe native directory ownership, fixed filesystem locations, input cancellation cause and original checkout error origin.
+- Retain false-policy workspace, gate-only parallel and every historical certification boundary.
+nonGoals:
+- No interruption of an already-running checkout, arbitrary or nested branch work, output export, workspace survival,
+  security or freshness guarantee, real human authorization, generic support promotion or portable execution.
+- No Core semantics, public syntax, artifact or package version change, finding closure, AR-06 closure or EF-09 resumption.
+ownershipBoundary:
+  adapter: Bounded Jenkins admission and rendering consume unchanged canonical parallel contracts.
+  conformance: External runtime observations and authenticated portfolio; no product executor.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsParallelProjectionScope.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsParallelWorkspaceCertification.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+- flow-adapter-jenkins/src/runtimeTest/
+- flow-conformance-kit/build.gradle.kts
+- .github/workflows/adapter-runtime-check.yml
+- gradle/reference-contract-resources.txt
+testsToAddOrUpdate:
+- Bounded explicit/default true policy, unchanged directory identity and rejected malformed bodies.
+- Signed successful join, gate rejection and checkout-failure cancellation with native original-error binding.
+- Mutants disabling cancellation, omitting or suppressing failure, moving work before approval or continuation before join.
+- Forged cancellation causes, terminal origin, checkout error indices, artifact bytes and lifecycle receipts fail closed.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/jenkins-workspace-cancellation.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Disabled cancellation, omitted or swallowed failure, wrong directory ownership, premature work or
+    continuation, forged original error and invented validation fail certification.
+followUp:
+- Running-operation interruption, broader branch work, exported state and shared multi-adapter scenarios require separate evidence.

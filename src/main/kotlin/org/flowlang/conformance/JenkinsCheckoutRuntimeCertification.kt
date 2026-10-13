@@ -61,10 +61,15 @@ internal object JenkinsCheckoutRuntimeCertification {
         PARALLEL_CANCEL("jenkins-parallel-cancel-runtime", "parallel-cancellation.flow", "parallel-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "suppressed-rejection", "early-successor"), "AR-06V"),
         PARALLEL_WORKSPACES_APPROVE("jenkins-parallel-workspaces-approve-runtime", "parallel-workspaces.flow", "parallel-workspaces-matrix.json", listOf("baseline", "aliased-workspaces", "swapped-workspaces", "omitted-left-checkout", "early-branch-work", "early-successor"), "AR-06W"),
         PARALLEL_WORKSPACES_REJECT("jenkins-parallel-workspaces-reject-runtime", "parallel-workspaces.flow", "parallel-workspaces-matrix.json", listOf("baseline", "suppressed-rejection", "early-branch-work", "early-successor"), "AR-06W"),
+        PARALLEL_WORKSPACES_FAIL_FAST_APPROVE("jenkins-parallel-workspaces-fail-fast-approve-runtime", "parallel-workspace-cancellation.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "aliased-workspaces", "swapped-workspaces", "omitted-left-checkout", "early-branch-work", "early-successor"), "AR-06X"),
+        PARALLEL_WORKSPACES_CANCEL("jenkins-parallel-workspaces-cancel-runtime", "parallel-workspace-cancellation.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "suppressed-rejection", "early-branch-work", "early-successor"), "AR-06X"),
+        PARALLEL_WORKSPACES_FAILURE("jenkins-parallel-workspaces-failure-runtime", "parallel-workspace-failure.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "omitted-failure", "suppressed-failure", "early-successor"), "AR-06X"),
         SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O");
 
         val parallel: Boolean get() = this == PARALLEL_APPROVE || this == PARALLEL_REJECT || parallelFailFast || parallelWorkspaces
-        val parallelWorkspaces: Boolean get() = this == PARALLEL_WORKSPACES_APPROVE || this == PARALLEL_WORKSPACES_REJECT
+        val parallelWorkspaces: Boolean get() = this == PARALLEL_WORKSPACES_APPROVE || this == PARALLEL_WORKSPACES_REJECT || workspaceFailFast
+        val workspaceFailFast: Boolean get() = this == PARALLEL_WORKSPACES_FAIL_FAST_APPROVE || this == PARALLEL_WORKSPACES_CANCEL || workspaceFailure
+        val workspaceFailure: Boolean get() = this == PARALLEL_WORKSPACES_FAILURE
         val parallelFailFast: Boolean get() = this == PARALLEL_FAIL_FAST_APPROVE || this == PARALLEL_CANCEL
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
         val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
@@ -73,7 +78,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val retry: Boolean get() = this == RETRY_FAILURE || this == RETRY_SUCCESS
         val loop: Boolean get() = this == LOOP_ORDER || this == LOOP_EMPTY || this == LOOP_FAILURE
         val match: Boolean get() = this in setOf(MATCH_SELECTED, MATCH_DEFAULT, MATCH_EMPTY, MATCH_FAILURE)
-        val terminalEvidence: Boolean get() = errorBoundary || localRecovery || retry || loop || match
+        val terminalEvidence: Boolean get() = errorBoundary || localRecovery || retry || loop || match || workspaceFailure
         val flowSource: Boolean get() = source.endsWith(".flow")
         val recordsNativeSteps: Boolean get() = this != CHECKOUT
         val claim: String get() = if (parallel || conditional || errorBoundary || localRecovery || retry || loop || match) "bounded-structural-occurrence" else "native-leaf-only"
@@ -106,7 +111,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
-        val artifacts = if (scenario.parallelWorkspaces) JenkinsParallelWorkspaceCertification.artifacts(text, original, scenario == Scenario.PARALLEL_WORKSPACES_REJECT) else if (scenario.parallel) parallelArtifacts(text, original, scenario) else if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
+        val artifacts = if (scenario.parallelWorkspaces) JenkinsParallelWorkspaceCertification.artifacts(text, original,
+            scenario == Scenario.PARALLEL_WORKSPACES_REJECT || scenario == Scenario.PARALLEL_WORKSPACES_CANCEL, scenario.workspaceFailFast, scenario.workspaceFailure) else if (scenario.parallel) parallelArtifacts(text, original, scenario) else if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
             require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
@@ -143,7 +149,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             evidence[id] = bytes.copyOf(); return CertificationEvidenceReference(id, sha256(bytes), bytes.size)
         }
         val expected = rows.associate { row ->
-            val expectedResult = if ((scenario == Scenario.PARALLEL_REJECT || scenario == Scenario.PARALLEL_CANCEL || scenario == Scenario.PARALLEL_WORKSPACES_REJECT) && row["id"].asText() != "suppressed-rejection") "ABORTED" else if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
+            val expectedResult = if ((scenario == Scenario.PARALLEL_REJECT || scenario == Scenario.PARALLEL_CANCEL || scenario == Scenario.PARALLEL_WORKSPACES_REJECT || scenario == Scenario.PARALLEL_WORKSPACES_CANCEL) && row["id"].asText() != "suppressed-rejection") "ABORTED" else if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario.workspaceFailure && row["id"].asText() !in listOf("omitted-failure", "suppressed-failure") || scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
                 scenario == Scenario.ERROR_FAILURE && row["id"].asText() != "suppressed-propagation" ||
                 scenario == Scenario.RECOVERY_FAILURE && row["id"].asText() == "rethrown-failure" || scenario == Scenario.RETRY_FAILURE ||
                 scenario == Scenario.LOOP_FAILURE && row["id"].asText() == "baseline" ||
@@ -174,7 +180,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.parallelWorkspaces) "Two approval-then-checkout branches with distinct directories and failFast false; no output export, security isolation or fresh-workspace claim."
+            if (scenario.parallelWorkspaces) "Two approval-then-checkout branches with distinct directories and the authored failFast policy; no running-checkout interruption, output export, security isolation or fresh-workspace claim."
             else if (scenario.parallel) "One pair of concurrent manual inputs, native join and the authored failure policy; automated decisions only, no branch workspace or output isolation."
             else if (scenario.match) "Disjoint literal match cases with native checkout bodies and empty error branches only; see bounded runtime limitations."
             else if (scenario.loop) "Sequential string-literal-list loop with native checkout and condition children only; see bounded runtime limitations."
@@ -233,12 +239,13 @@ internal object JenkinsCheckoutRuntimeCertification {
                     row["terminalError"]?.let { terminal -> terminal["type"]?.asText() == "hudson.AbortException" &&
                         terminal["message"]?.asText() == MISSING_REVISION && terminal["checkoutIndex"]?.asInt() == index } == true
             } ||
+        scenario.workspaceFailure && JenkinsParallelWorkspaceCertification.completedFailure(row, MISSING_REVISION) ||
         scenario == Scenario.RETRY_FAILURE && row["result"].asText() == "FAILURE" &&
             row["checkoutErrors"].size() == row["checkoutCount"].asInt() && row["checkoutCount"].asInt() > 0 &&
             row["checkoutErrors"].all { it["type"].asText() == "hudson.AbortException" && it["message"].asText() == MISSING_REVISION } &&
             row["terminalError"]?.let { terminal -> terminal["type"]?.asText() == "hudson.AbortException" &&
                 terminal["message"]?.asText() == MISSING_REVISION && terminal["checkoutIndex"]?.asInt() == row["checkoutCount"].asInt() } == true ||
-        scenario == Scenario.PARALLEL_CANCEL && row["result"].asText() == "ABORTED" &&
+        (scenario == Scenario.PARALLEL_CANCEL || scenario == Scenario.PARALLEL_WORKSPACES_CANCEL) && row["result"].asText() == "ABORTED" &&
             row["parallel"]["inputErrors"].size() in 1..2 &&
             row["parallel"]["inputErrors"].all { error ->
                 error["inputMessage"].asText() == "Approve left branch?" && expectedRejection(error) ||
@@ -295,7 +302,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         if (scenario.parallel) observation["parallel"] = parallelObservation(row["parallel"], scenario.parallelWorkspaces)
         if (scenario.parallelWorkspaces) observation["workspaces"] = JenkinsParallelWorkspaceCertification.observation(row["workspaces"], row["checkoutCount"].asInt())
         if (scenario.approval) observation["approval"] = approvalObservation(row["approval"])
-        if (scenario.localRecovery || scenario.retry || scenario.loop || scenario.match) {
+        if (scenario.localRecovery || scenario.retry || scenario.loop || scenario.match || scenario.workspaceFailure) {
             val indices = row["checkoutErrorIndices"]
             require(indices?.isArray == true && indices.size() == row["checkoutErrors"].size())
             val values = indices.map { index ->

@@ -7,53 +7,49 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: AR-06W
-selectedWorkPackage: .flow-agent/work-packages/jenkins-parallel-workspaces.yaml
+selectedSlice: AR-06X
+selectedWorkPackage: .flow-agent/work-packages/jenkins-workspace-cancellation.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
-invariant: Each of two approved native parallel branches writes only its own checkout directory; rejection
-  skips that branch work, the sibling remains independent, and continuation waits for the join.
+invariant: With failFast true, two approval-then-checkout branches preserve directory ownership and join; rejection
+  or native checkout failure cancels the undecided sibling before its work and retains the original failure.
 scope:
-- Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority
-  boundary.
-- Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence
-  coverage.
-- Authenticate every observation against caller-owned runner keys, assessment challenge and exact run
-  inventory.
-- Accept AR-06B against independently verified PR and actual-main receipts while preserving every historical
-  acceptance gate.
-- Retain compiler-owned workflow failure-boundary occurrences and independently observe handler routing
-  and terminal error origin.
-- Observe bounded local recovery, skipped failed-body successors and continuation independently on real
-  Jenkins.
-- Observe a pending manual input, approval and rejection before one protected checkout, including omitted,
-  late and suppressed-rejection mutants.
-- Expose baseline and mutant observations together, with explicit missing construct evidence and no support
-  inference.
+- Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary.
+- Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage.
+- Authenticate every observation against caller-owned runner keys, assessment challenge and exact run inventory.
+- Accept AR-06B against independently verified PR and actual-main receipts while preserving every historical acceptance
+  gate.
+- Retain compiler-owned workflow failure-boundary occurrences and independently observe handler routing and terminal
+  error origin.
+- Observe bounded local recovery, skipped failed-body successors and continuation independently on real Jenkins.
+- Observe a pending manual input, approval and rejection before one protected checkout, including omitted, late
+  and suppressed-rejection mutants.
+- Expose baseline and mutant observations together, with explicit missing construct evidence and no support inference.
 - Aggregate reauthenticated current-revision scenarios into one honest reference adapter portfolio.
-- Execute the compiler-rendered GitHub Actions native checkout leaf with omitted and substituted revision
-  mutants on a hosted runner.
-- Include the second adapter in the complete source-bound portfolio while preserving native-leaf scope
-  and distinct canonical fixtures.
-- Execute one shared canonical native checkout scenario on both providers and compare authenticated baseline
-  and mutant observations.
-- Certify native fixed zero-delay Jenkins retry with exact exhaustion and early-success observations and
-  falsifying attempt mutants.
-- Certify sequential native Jenkins loops with ordered duplicate items, empty input and fail-fast native
-  body errors.
-- Preserve match case conditions, authored order and distinct error/default bodies in diagnostic target
-  manifests before native certification.
+- Execute the compiler-rendered GitHub Actions native checkout leaf with omitted and substituted revision mutants
+  on a hosted runner.
+- Include the second adapter in the complete source-bound portfolio while preserving native-leaf scope and distinct
+  canonical fixtures.
+- Execute one shared canonical native checkout scenario on both providers and compare authenticated baseline and
+  mutant observations.
+- Certify native fixed zero-delay Jenkins retry with exact exhaustion and early-success observations and falsifying
+  attempt mutants.
+- Certify sequential native Jenkins loops with ordered duplicate items, empty input and fail-fast native body errors.
+- Preserve match case conditions, authored order and distinct error/default bodies in diagnostic target manifests
+  before native certification.
 - Certify bounded disjoint literal match cases, default selection, empty selected bodies and failure propagation
   on real Jenkins.
-- Preserve and validate complete ordered parallel branch wrappers, optional labels, empty bodies and explicit
-  failFast before native parallel certification.
-- Certify two simultaneously pending native approval branches, successful join and rejection propagation
-  with failFast false on real Jenkins.
-- Certify native cancellation of an undecided sibling and original rejection propagation with failFast
-  true, while retaining both successful join and false-policy evidence.
+- Preserve and validate complete ordered parallel branch wrappers, optional labels, empty bodies and explicit failFast
+  before native parallel certification.
+- Certify two simultaneously pending native approval branches, successful join and rejection propagation with failFast
+  false on real Jenkins.
+- Certify native cancellation of an undecided sibling and original rejection propagation with failFast true, while
+  retaining both successful join and false-policy evidence.
 - Certify branch-local native checkout directories after approval, independent sibling work, joined continuation
   and skipped rejected-branch work with failFast false.
+- Certify failFast true for approval-then-checkout branches, with native cancellation of an undecided sibling after
+  rejection or a checkout failure and preservation of the original error.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
@@ -78,8 +74,8 @@ validation:
   - jenkins-match-runtime
   - jenkins-parallel-runtime
   - adapter-certification-portfolio
-  negativeEvidence: Aliased or swapped workspaces, omitted branch work, premature continuation, swallowed
-    rejection, forged native observations and invented validation fail certification.
+  negativeEvidence: Disabled cancellation, omitted or swallowed failure, wrong directory ownership, premature work
+    or continuation, forged original error and invented validation fail certification.
 followUp:
 - Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
 - Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.
