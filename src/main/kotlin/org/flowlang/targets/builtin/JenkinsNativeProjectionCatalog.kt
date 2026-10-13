@@ -48,7 +48,7 @@ object JenkinsNativeProjectionCatalog {
                 kind = JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE,
                 reference = "approval-parallel",
                 implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt#renderJenkinsParallel",
-                behavioralEvidenceReference = "src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt#parallelGatesPreserveConcurrentPendingJoinAndRejection",
+                behavioralEvidenceReference = "src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt#cancellationAndSuccessfulJoinRequireAuthenticatedNativeEvidence",
                 supportScope = TargetStructuralProjectionSupportScope.PLAN_SCOPED
             ),
             TargetNativeStructuralProjectionDefinition(

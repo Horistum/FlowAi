@@ -57,9 +57,12 @@ internal object JenkinsCheckoutRuntimeCertification {
         MATCH_FAILURE("jenkins-match-failure-runtime", "match-failure.flow", "match-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06S"),
         PARALLEL_APPROVE("jenkins-parallel-approve-runtime", "parallel.flow", "parallel-matrix.json", listOf("baseline", "serialized-branches", "omitted-parallel", "early-successor"), "AR-06U"),
         PARALLEL_REJECT("jenkins-parallel-reject-runtime", "parallel.flow", "parallel-matrix.json", listOf("baseline", "suppressed-rejection", "early-successor"), "AR-06U"),
+        PARALLEL_FAIL_FAST_APPROVE("jenkins-parallel-fail-fast-approve-runtime", "parallel-cancellation.flow", "parallel-cancellation-matrix.json", listOf("baseline", "early-successor"), "AR-06V"),
+        PARALLEL_CANCEL("jenkins-parallel-cancel-runtime", "parallel-cancellation.flow", "parallel-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "suppressed-rejection", "early-successor"), "AR-06V"),
         SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O");
 
-        val parallel: Boolean get() = this == PARALLEL_APPROVE || this == PARALLEL_REJECT
+        val parallel: Boolean get() = this == PARALLEL_APPROVE || this == PARALLEL_REJECT || parallelFailFast
+        val parallelFailFast: Boolean get() = this == PARALLEL_FAIL_FAST_APPROVE || this == PARALLEL_CANCEL
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
         val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
@@ -137,7 +140,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             evidence[id] = bytes.copyOf(); return CertificationEvidenceReference(id, sha256(bytes), bytes.size)
         }
         val expected = rows.associate { row ->
-            val expectedResult = if (scenario == Scenario.PARALLEL_REJECT && row["id"].asText() != "suppressed-rejection") "ABORTED" else if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
+            val expectedResult = if ((scenario == Scenario.PARALLEL_REJECT || scenario == Scenario.PARALLEL_CANCEL) && row["id"].asText() != "suppressed-rejection") "ABORTED" else if (scenario == Scenario.APPROVAL_REJECT && row["id"].asText() in listOf("baseline", "late-approval")) "ABORTED" else if (scenario == Scenario.FAILURE && row["id"].asText() == "baseline" ||
                 scenario == Scenario.ERROR_FAILURE && row["id"].asText() != "suppressed-propagation" ||
                 scenario == Scenario.RECOVERY_FAILURE && row["id"].asText() == "rethrown-failure" || scenario == Scenario.RETRY_FAILURE ||
                 scenario == Scenario.LOOP_FAILURE && row["id"].asText() == "baseline" ||
@@ -167,7 +170,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.parallel) "One pair of concurrent manual inputs with failFast false, native join and rejection propagation; automated decisions only."
+            if (scenario.parallel) "One pair of concurrent manual inputs, native join and the authored failure policy; automated decisions only, no branch workspace or output isolation."
             else if (scenario.match) "Disjoint literal match cases with native checkout bodies and empty error branches only; see bounded runtime limitations."
             else if (scenario.loop) "Sequential string-literal-list loop with native checkout and condition children only; see bounded runtime limitations."
             else if (scenario.retry) "Fixed zero-delay retry occurrence with native checkout children only; see bounded runtime limitations."
@@ -229,6 +232,16 @@ internal object JenkinsCheckoutRuntimeCertification {
             row["checkoutErrors"].all { it["type"].asText() == "hudson.AbortException" && it["message"].asText() == MISSING_REVISION } &&
             row["terminalError"]?.let { terminal -> terminal["type"]?.asText() == "hudson.AbortException" &&
                 terminal["message"]?.asText() == MISSING_REVISION && terminal["checkoutIndex"]?.asInt() == row["checkoutCount"].asInt() } == true ||
+        scenario == Scenario.PARALLEL_CANCEL && row["result"].asText() == "ABORTED" &&
+            row["parallel"]["inputErrors"].size() in 1..2 &&
+            row["parallel"]["inputErrors"].all { error ->
+                error["inputMessage"].asText() == "Approve left branch?" && expectedRejection(error) ||
+                error["inputMessage"].asText() == "Approve right branch?" &&
+                    error["type"].asText() == "org.jenkinsci.plugins.workflow.steps.FlowInterruptedException" &&
+                    error["result"].asText() == "ABORTED" && error["causes"].map { it.asText() } ==
+                    listOf("org.jenkinsci.plugins.workflow.cps.steps.ParallelStep\$FailFastCause") } &&
+            expectedRejection(row["parallel"]["terminalError"]) &&
+            row["parallel"]["terminalError"]["inputMessage"]?.asText() == "Approve left branch?" ||
         scenario == Scenario.PARALLEL_REJECT && row["result"].asText() == "ABORTED" &&
             row["parallel"]["inputErrors"].size() == 1 &&
             expectedRejection(row["parallel"]["inputErrors"][0]) &&
@@ -419,7 +432,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val block = text.substring(text.indexOf(start), text.indexOf(end) + end.length)
         val gates = block.lineSequence().filter { it.trimStart().startsWith("input message:") }.toList()
         require(gates.map { it.trim() } == listOf("input message: 'Approve left branch?'", "input message: 'Approve right branch?'"))
-        require(block.lineSequence().single { it.trimStart().startsWith("failFast:") }.trim() == "failFast: false")
+        require(block.lineSequence().single { it.trimStart().startsWith("failFast:") }.trim() == "failFast: ${scenario.parallelFailFast}")
         val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch:") }
         require(checkout == "${indent}git branch: 'selected', url: 'git://127.0.0.1:9418/repository.git'")
         require(text.indexOf(checkout) > text.indexOf(end))
@@ -428,7 +441,9 @@ internal object JenkinsCheckoutRuntimeCertification {
             if (scenario == Scenario.PARALLEL_APPROVE) {
                 put("serialized-branches", replaceOnce(text, block, gates.joinToString("\n") { indent + it.trim() }).toByteArray())
                 put("omitted-parallel", replaceOnce(text, block, "${indent}echo 'Parallel intentionally omitted'").toByteArray())
-            } else {
+            } else if (scenario != Scenario.PARALLEL_FAIL_FAST_APPROVE) {
+                if (scenario == Scenario.PARALLEL_CANCEL)
+                    put("disabled-cancellation", replaceOnce(text, "failFast: true", "failFast: false").toByteArray())
                 put("suppressed-rejection", replaceOnce(text, block,
                     "${indent}try {\n$block\n$indent} catch (flowError) {\n${indent}  echo 'Rejection intentionally suppressed'\n$indent}").toByteArray())
             }

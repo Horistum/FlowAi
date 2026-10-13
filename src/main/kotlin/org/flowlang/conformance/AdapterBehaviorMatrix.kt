@@ -36,7 +36,9 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
                 JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT,
                 JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT -> CertificationConstruct.NATIVE_CHECKOUT
                 JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_APPROVE,
-                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_REJECT -> CertificationConstruct.PARALLELISM
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_REJECT,
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_FAIL_FAST_APPROVE,
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_CANCEL -> CertificationConstruct.PARALLELISM
                 JenkinsCheckoutRuntimeCertification.Scenario.MATCH_SELECTED,
                 JenkinsCheckoutRuntimeCertification.Scenario.MATCH_DEFAULT,
                 JenkinsCheckoutRuntimeCertification.Scenario.MATCH_EMPTY,

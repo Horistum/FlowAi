@@ -25,6 +25,8 @@ Thread.start('checkout-certification') {
         def inventories = [
             'jenkins-parallel-approve-runtime': ['baseline', 'serialized-branches', 'omitted-parallel', 'early-successor'],
             'jenkins-parallel-reject-runtime': ['baseline', 'suppressed-rejection', 'early-successor'],
+            'jenkins-parallel-fail-fast-approve-runtime': ['baseline', 'early-successor'],
+            'jenkins-parallel-cancel-runtime': ['baseline', 'disabled-cancellation', 'suppressed-rejection', 'early-successor'],
             'jenkins-match-selected-runtime': ['baseline', 'flattened-cases', 'omitted-selected'],
             'jenkins-match-default-runtime': ['baseline', 'substituted-default', 'omitted-default'],
             'jenkins-match-empty-runtime': ['baseline', 'empty-fallthrough', 'omitted-successor'],
@@ -130,7 +132,8 @@ Thread.start('checkout-certification') {
                 if (!inputs.isEmpty()) {
                     def first = inputs[0]
                     def message = first.getInput().getMessage()
-                    def reject = scenario == 'jenkins-parallel-reject-runtime'
+                    def cancellation = scenario == 'jenkins-parallel-cancel-runtime'
+                    def reject = scenario == 'jenkins-parallel-reject-runtime' || cancellation
                     parallelEvidence.decisions.add([message: message, action: reject ? 'reject' : 'approve'])
                     if (reject) first.doAbort() else first.doProceedEmpty()
                     long joinDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
@@ -140,7 +143,10 @@ Thread.start('checkout-certification') {
                         def firstNode = nativeSteps(started, 'input').find { ArgumentsAction.getArguments(it).get('message') == message }
                         def settled = first.isSettled() && firstNode != null && !PauseAction.isPaused(firstNode) &&
                             (!reject || firstNode.getError() != null)
-                        if (settled && !inputs.isEmpty() && pausedInputs(inputs)) break
+                        // Give native cancellation the entire bounded window. A still-pending sibling
+                        // is recorded and released only afterwards, so disabling failFast is falsifiable.
+                        if (settled && !inputs.isEmpty() && pausedInputs(inputs) &&
+                            (!cancellation || System.nanoTime() > joinDeadline)) break
                         if (System.nanoTime() > joinDeadline) throw new IllegalStateException('Parallel join observation timed out')
                         Thread.sleep(100)
                     }
