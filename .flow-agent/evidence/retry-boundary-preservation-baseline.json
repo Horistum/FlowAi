@@ -1,0 +1,114 @@
+{
+  "version": 1,
+  "purpose": "Job-per-task projection retains each canonical retry boundary, complete policy and ordered body instead of projecting its leaves as independent one-shot jobs; unsupported retry remains non-executable.",
+  "predecessor": {
+    "pullRequest": 221,
+    "mergedMain": "e77f8728d10c59d8a0b62fb8f19292529b1b7f3c",
+    "tree": "94fab84097705866f85c2028fa4ffbb00c6b729e",
+    "exactHead": "a8af1546c7ee42dafadcede31fc36dd85ffc7969",
+    "syntheticMergeCandidate": "601a1314985bb9b79d5efd2fa1e615c97b1052e6",
+    "flowCiRunId": 38423519448,
+    "runtimeCiRunId": 38423519449,
+    "conclusion": "success",
+    "testsPerRevision": 2144,
+    "suitesPerRevision": 372,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 30,
+    "signedObservations": 104,
+    "portfolioRows": 36,
+    "observedConstructTargetPairs": 11,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "e2eb5ba1d6ef9127d7550d9f474bc80315a568b6177011b0a2e0960d879b2817",
+    "mainFlowCiRunId": 38497043820,
+    "mainFlowCiConclusion": "in-progress-at-observation",
+    "mainRuntimeCiRunId": 38497043880,
+    "mainRuntimeConclusion": "in-progress-at-observation",
+    "scope": "PR 221 exact-head and synthetic-merge test identities, 274 ordered checks, 780 recorded source digests, 104 signatures and 18 archive digests were independently verified. Actual main has the same tree; both main workflows were still running at baseline observation. PR inventory counts are not separate main receipts."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06X",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-workspace-cancellation.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Disabled cancellation, omitted or swallowed failure, wrong directory ownership, premature work or continuation, forged original error and invented validation fail certification."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06Y",
+        "selectedWorkPackage": ".flow-agent/work-packages/retry-boundary-preservation.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio"
+          ],
+          "negativeEvidence": "Flattened retry bodies, omitted policy or group identities, changed body order, false executable readiness, and tampered historical or invented validation receipts fail regression checks."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06X",
+        "workPackage": ".flow-agent/work-packages/jenkins-workspace-cancellation.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06Y",
+        "workPackage": ".flow-agent/work-packages/retry-boundary-preservation.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 221.",
+    "predecessorPullRequest": 221,
+    "mergedMain": "e77f8728d10c59d8a0b62fb8f19292529b1b7f3c"
+  },
+  "limitations": [
+    "AR-06Y requires fresh exact-head, synthetic-merge and complete native runtime/portfolio checks.",
+    "This correction preserves diagnostic retry meaning; it does not implement retry execution for GitHub Actions or Tekton, infer job scheduling or continuity, or promote support or portability."
+  ]
+}

@@ -1,0 +1,66 @@
+version: AR-06Y
+name: Job-per-task Retry Boundary Preservation
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 221.
+  predecessorPullRequest: 221
+  mergedMain: e77f8728d10c59d8a0b62fb8f19292529b1b7f3c
+invariant: Job-per-task projection retains each canonical retry boundary, complete policy and ordered body instead
+  of projecting its leaves as independent one-shot jobs; unsupported retry remains non-executable.
+scope:
+- Preserve retry groups in the shared job-per-task lowering used by GitHub Actions and Tekton.
+- Reuse existing structural retry lowering, including nested and empty bodies, enclosing conditions and leaf dependency
+  identities.
+- Include retained retry identities in projection collision checks.
+- Retain Jenkins native retry output and the complete authenticated runtime portfolio.
+nonGoals:
+- No native retry execution or new runtime certification for GitHub Actions or Tekton.
+- No scheduling or continuity inference from diagnostic job grouping; no Core semantics, public syntax, contract
+  or package version change.
+- No generic support promotion, portable execution claim, finding closure, AR-06 closure, AR-07 activation or EF-09
+  resumption.
+ownershipBoundary:
+  adapterContract: Shared diagnostic lowering and projection identity checks consume unchanged canonical retry meaning.
+  conformance: Source-to-manifest regression tests and historical evidence preservation; no product runtime.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/generators/manifest/AdapterWorkflowProjectionLowering.kt
+- src/main/kotlin/org/flowlang/generators/manifest/TargetProjectionIdentityChecks.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+- src/test/kotlin/RetryBoundaryProjectionTests.kt
+testsToAddOrUpdate:
+- Compile real Flow Source through all reference providers and compare retry policy, body order and independent
+  successor boundaries.
+- Nested and empty retries, enclosing conditions, preserved leaf dependencies and derived identity collisions.
+- Native checkout leaves cannot hide missing retry implementation; Jenkins native retry remains unchanged.
+- Mutated lifecycle receipts and invented validation or acceptance fail closed.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/retry-boundary-preservation.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  negativeEvidence: Flattened retry bodies, omitted policy or group identities, changed body order, false executable
+    readiness, and tampered historical or invented validation receipts fail regression checks.
+followUp:
+- Execute shared canonical structured scenarios on Jenkins and GitHub Actions only after their projection and native
+  behavior are independently evidenced.
+- Retry execution on additional adapters requires its own adapter implementation, attempt and failure observations,
+  and falsifying mutants.

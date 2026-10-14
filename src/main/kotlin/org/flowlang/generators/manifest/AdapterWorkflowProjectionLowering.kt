@@ -135,7 +135,6 @@ object AdapterWorkflowProjectionLowering {
                 then.forEach { it.toTargetJobs(authorization, out, combineConditions(condition, this.condition), targetName, projectionRules, nativeProjections) }
                 otherwise.forEach { it.toTargetJobs(authorization, out, combineConditions(condition, "not (${this.condition})"), targetName, projectionRules, nativeProjections) }
             }
-            is RetryGroupNode -> body.forEach { it.toTargetJobs(authorization, out, condition, targetName, projectionRules, nativeProjections) }
             is TryPlanNode -> {
                 val previousJobIds = out.map { it.id }
                 val bodyJobs = mutableListOf<TargetJob>()
@@ -148,12 +147,14 @@ object AdapterWorkflowProjectionLowering {
                     job.copy(dependsOn = (job.dependsOn + guardDependencies).distinct(), metadata = job.metadata + ("errorHandler" to "true"))
                 }
             }
-            is LoopNode, is MatchPlanNode, is ParallelGroupNode, is DataOpNode, is ControlNode -> out += TargetJob(
+            // An unsupported structure must survive diagnostic projection. Native child
+            // leaves cannot replace the retry policy with independent one-shot jobs.
+            is RetryGroupNode, is LoopNode, is MatchPlanNode, is ParallelGroupNode, is DataOpNode, is ControlNode -> out += TargetJob(
                 id = sanitizeId(id),
                 name = id,
                 steps = toTargetSteps(authorization, targetName, projectionRules, nativeProjections),
                 metadata = when (this) {
-                    is LoopNode, is MatchPlanNode, is ParallelGroupNode -> mapOfNotNull("condition" to condition, "supportLevel" to "partial")
+                    is RetryGroupNode, is LoopNode, is MatchPlanNode, is ParallelGroupNode -> mapOfNotNull("condition" to condition, "supportLevel" to "partial")
                     else -> mapOfNotNull("condition" to condition)
                 }
             )

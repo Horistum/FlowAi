@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 38
+revision: 39
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -15,7 +15,7 @@ currentDecision:
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #220 is merged into main c9ca51a2640b216962b097dbdaa08a99af51b818 with the same tree as its validated PR revisions. Flow CI 38393670186 passed 2135 tests and 274 ordered checks per revision; runtime CI 38393669919 passed 27 assessments with 88 independently verified signatures. AR-06X certifies failFast true for the bounded approval-then-checkout branches, including cancellation after native checkout failure. Historical acceptance and generic registry support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  decisionBasis: "PR #221 is merged into main e77f8728d10c59d8a0b62fb8f19292529b1b7f3c with the same tree as its validated PR revisions. Flow CI 38423519448 passed 2144 tests and 274 ordered checks per revision; runtime CI 38423519449 passed 30 assessments with 104 independently verified signatures. AR-06Y repairs retry boundary loss in job-per-task diagnostic projection before further multi-adapter certification. Historical acceptance, native runtime scope and generic support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"

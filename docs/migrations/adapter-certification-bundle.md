@@ -679,3 +679,17 @@ This extends bounded directory evidence without claiming interruption of a
 running checkout, rollback, cancellation latency, workspace export or survival,
 arbitrary branch work, human authorization, generic support or portability.
 Earlier false-policy workspace and gate-only cancellation evidence remains live.
+## AR-06Y: retry boundaries in job-per-task diagnostic manifests
+
+GitHub Actions and Tekton diagnostic manifests now retain each canonical retry as
+a structural step in a single job. Earlier job-per-task lowering emitted only the
+body leaves and lost the attempt limit, delay, backoff and retry identity. Nested
+and empty retry groups now remain visible, with body order and original leaf
+dependencies preserved; an enclosing condition remains on the diagnostic job.
+
+This uses the existing Target Manifest 3.0 representation. Regenerate historical
+flattened manifests from their source. Do not infer policy from the old leaves or
+treat diagnostic grouping as executable scheduling or continuity. Native leaves
+cannot satisfy the missing retry implementation: GitHub Actions and Tekton retry
+remain non-executable. Existing bounded Jenkins retry and all runtime portfolio
+claims are unchanged; additional native adapter evidence is a separate step.
