@@ -25,8 +25,12 @@ Thread.start('checkout-certification') {
     def sha256 = { byte[] bytes -> MessageDigest.getInstance('SHA-256').digest(bytes).encodeHex().toString() }
     try {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
-        def workspaceScenario = scenario in ['jenkins-parallel-workspaces-approve-runtime', 'jenkins-parallel-workspaces-reject-runtime']
+        def workspaceScenario = scenario in ['jenkins-parallel-workspaces-approve-runtime', 'jenkins-parallel-workspaces-reject-runtime',
+            'jenkins-parallel-workspaces-fail-fast-approve-runtime', 'jenkins-parallel-workspaces-cancel-runtime', 'jenkins-parallel-workspaces-failure-runtime']
         def inventories = [
+            'jenkins-parallel-workspaces-fail-fast-approve-runtime': ['baseline', 'aliased-workspaces', 'swapped-workspaces', 'omitted-left-checkout', 'early-branch-work', 'early-successor'],
+            'jenkins-parallel-workspaces-cancel-runtime': ['baseline', 'disabled-cancellation', 'suppressed-rejection', 'early-branch-work', 'early-successor'],
+            'jenkins-parallel-workspaces-failure-runtime': ['baseline', 'disabled-cancellation', 'omitted-failure', 'suppressed-failure', 'early-successor'],
             'jenkins-parallel-workspaces-approve-runtime': ['baseline', 'aliased-workspaces', 'swapped-workspaces', 'omitted-left-checkout', 'early-branch-work', 'early-successor'],
             'jenkins-parallel-workspaces-reject-runtime': ['baseline', 'suppressed-rejection', 'early-branch-work', 'early-successor'],
             'jenkins-parallel-approve-runtime': ['baseline', 'serialized-branches', 'omitted-parallel', 'early-successor'],
@@ -160,8 +164,9 @@ Thread.start('checkout-certification') {
                 if (!inputs.isEmpty()) {
                     def first = inputs[0]
                     def message = first.getInput().getMessage()
-                    def cancellation = scenario == 'jenkins-parallel-cancel-runtime'
-                    def reject = scenario in ['jenkins-parallel-reject-runtime', 'jenkins-parallel-workspaces-reject-runtime'] || cancellation
+                    def cancellation = scenario in ['jenkins-parallel-cancel-runtime', 'jenkins-parallel-workspaces-cancel-runtime', 'jenkins-parallel-workspaces-failure-runtime']
+                    def reject = scenario in ['jenkins-parallel-reject-runtime', 'jenkins-parallel-workspaces-reject-runtime',
+                        'jenkins-parallel-cancel-runtime', 'jenkins-parallel-workspaces-cancel-runtime']
                     parallelEvidence.decisions.add([message: message, action: reject ? 'reject' : 'approve'])
                     if (reject) first.doAbort() else first.doProceedEmpty()
                     long joinDeadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30)
@@ -291,14 +296,14 @@ Thread.start('checkout-certification') {
                     pending: pending, decision: decision,
                     terminalError: terminal == null ? null : inputFailure(terminal) + [inputIndex: inputIndex < 0 ? null : inputIndex + 1]]
             }
-            if (scenario in ['jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
+            if (scenario in ['jenkins-parallel-workspaces-failure-runtime', 'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
                              'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
                              'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime',
                              'jenkins-match-selected-runtime', 'jenkins-match-default-runtime', 'jenkins-match-empty-runtime', 'jenkins-match-failure-runtime']) {
                 record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
                     .collect { node, index -> index + 1 }
             }
-            if (scenario in ['jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
+            if (scenario in ['jenkins-parallel-workspaces-failure-runtime', 'jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
                              'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
                              'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
                              'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime',

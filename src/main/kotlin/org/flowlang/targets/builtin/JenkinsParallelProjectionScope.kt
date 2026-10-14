@@ -32,7 +32,7 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         val group = bound.single()
         if (group !in authorization.executionPlan.nodes || group.branches.size != 2) return declared
         val workspaceBodies = group.branches.all { it.steps.size == 2 }
-        if (workspaceBodies && group.failFast || !workspaceBodies && group.branches.any { it.steps.size != 1 }) return declared
+        if (!workspaceBodies && group.branches.any { it.steps.size != 1 }) return declared
         val approvals = group.branches.map { it.steps.firstOrNull() as? ApprovalNode ?: return declared }
         if (workspaceBodies) {
             val tasks = group.branches.mapIndexed { index, branch ->
@@ -53,7 +53,9 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         val scopedTopology = topology.copy(declarations = topology.declarations.map { declaration ->
             if (declaration.kind != ExecutionTopologyKind.BRANCH_ISOLATION) declaration else declaration.copy(
                 status = ExecutionTopologySupportStatus.SUPPORTED,
-                evidenceReference = if (workspaceBodies)
+                evidenceReference = if (workspaceBodies && group.failFast)
+                    "src/test/kotlin/JenkinsWorkspaceCancellationRuntimeTests.kt#workspacePoliciesPreserveJoinCancellationAndOriginalFailure"
+                else if (workspaceBodies)
                     "src/test/kotlin/JenkinsParallelWorkspaceRuntimeTests.kt#branchDirectoriesPreserveApprovalWorkJoinAndRejection"
                 else if (group.failFast)
                     "src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt#cancellationAndSuccessfulJoinRequireAuthenticatedNativeEvidence"
@@ -63,7 +65,7 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         })
         return declared.copy(features = declared.features + ("parallel.dag" to SupportLevel.SUPPORTED),
             topologyProfile = scopedTopology,
-            notes = declared.notes + "Parallel supports one top-level pair of manual gates with distinct messages and either failFast policy, or approval then isolated checkout with failFast false; no output continuity, security isolation or fresh-workspace claim.")
+            notes = declared.notes + "Parallel supports one top-level pair of manual gates with distinct messages and either failFast policy, or approval then isolated checkout with either policy; no output continuity, security isolation or fresh-workspace claim.")
     }
 
     private fun supportsCheckout(task: TaskNode, gateId: String): Boolean {

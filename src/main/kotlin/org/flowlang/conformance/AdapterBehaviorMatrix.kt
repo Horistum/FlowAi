@@ -34,7 +34,10 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
         ): AdapterBehaviorMatrix {
             val construct = when (scenario) {
                 JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_APPROVE,
-                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_REJECT -> CertificationConstruct.ARTIFACTS_WORKSPACES
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_REJECT,
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_FAIL_FAST_APPROVE,
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_CANCEL,
+                JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_FAILURE -> CertificationConstruct.ARTIFACTS_WORKSPACES
                 JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT,
                 JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT -> CertificationConstruct.NATIVE_CHECKOUT
                 JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_APPROVE,

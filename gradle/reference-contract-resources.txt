@@ -136,6 +136,7 @@ src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt
 src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsParallelWorkspaceRuntimeTests.kt
 src/test/kotlin/JenkinsRetryRuntimeCertificationTests.kt
+src/test/kotlin/JenkinsWorkspaceCancellationRuntimeTests.kt
 src/test/kotlin/ProjectionStabilitySmokeTests.kt
 src/test/kotlin/ProviderBackedApprovalTopologyIdentityTests.kt
 src/test/kotlin/TargetNeutralProjectionPayloadTests.kt

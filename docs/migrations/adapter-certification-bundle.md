@@ -664,3 +664,18 @@ The parallel workspace fixture's root successor performs its first Git clone in
 the parent directory, which removes earlier branch directories. Certification
 records that cleanup, the branch contents observed before continuation, and native
 directory ownership; it does not promise workspace survival after the join.
+
+### Bounded workspace cancellation (AR-06X)
+
+The same two approval-then-checkout bodies also admit `failFast true`, including
+the canonical default policy. Native evidence covers successful join, rejection
+before branch work, and a missing-revision checkout failure while the other input
+is undecided. The latter retains the original checkout error and its native origin
+separately from the sibling's cancellation cause. Disabling cancellation must
+expose a still-pending sibling and its subsequent work; omitting or swallowing
+failure and premature work/continuation must fail certification.
+
+This extends bounded directory evidence without claiming interruption of a
+running checkout, rollback, cancellation latency, workspace export or survival,
+arbitrary branch work, human authorization, generic support or portability.
+Earlier false-policy workspace and gate-only cancellation evidence remains live.
