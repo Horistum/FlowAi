@@ -1012,6 +1012,9 @@ jobs:
 
   adapter-certification-portfolio:
     needs: [jenkins-shared-condition-runtime, github-actions-condition-runtime, jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    # Explicit status evaluation prevents intentional skipped ancestors from suppressing this collector.
+    # Only successful direct producer dependencies may supply the complete receipt inventory.
+    if: ${{ always() && !cancelled() && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && !contains(needs.*.result, 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
