@@ -40,6 +40,14 @@ conformance, isolation proofs and all runtime producers plus portfolio are
 required on GitHub. Final receipts belong in the PR description; this committed
 report does not preclaim future CI success.
 
+The initial PR CI run (38498136043) rejected the dependency regression fixture
+before projection: `TaskNode.copy` changed `dependsOn` while retaining an empty
+`dependencies` compatibility alias. The fixture now updates both fields. The
+same regression also removes each nested leaf's alias in turn and requires the
+existing `planning.dependency.projection.invalid` diagnostic on both job-based
+providers. Production validation remains unchanged; final checks must run again
+on the corrected head and merge candidate.
+
 Six projection regressions exercise source compilation on all reference providers,
 policy and body preservation, nested and empty retries, enclosing conditions,
 leaf dependencies, group/step identity collisions, missing-implementation

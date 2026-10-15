@@ -106,8 +106,9 @@ class RetryBoundaryProjectionTests {
     @Test fun bodyDependenciesStayOnTheirOriginalLeavesWithoutInventedJobEdges() {
         val prototype = (unit.authorization.executionPlan.nodes.first() as RetryGroupNode).body.first() as TaskNode
         val before = prototype.copy(id = "before")
-        val first = prototype.copy(id = "first", dependsOn = listOf("before"))
-        val second = prototype.copy(id = "second", dependsOn = listOf("first"))
+        // Data-class copy retains the old alias unless both dependency fields are updated.
+        val first = prototype.copy(id = "first", dependsOn = listOf("before"), dependencies = listOf("before"))
+        val second = prototype.copy(id = "second", dependsOn = listOf("first"), dependencies = listOf("first"))
         val group = RetryGroupNode("attempts", max = 3, delay = "0s", backoff = "fixed", body = listOf(first, second))
         val plan = ExecutionPlan(flowName = "dependency-boundary", nodes = listOf(before, group))
         for (target in jobProviders) {
@@ -116,6 +117,19 @@ class RetryBoundaryProjectionTests {
             assertTrue(job.dependsOn.isEmpty())
             assertEquals(listOf(listOf("before"), listOf("first")), job.steps.single().children.map { it.dependsOn })
             assertFalse(TargetRenderPolicy.evaluate(manifest).executable)
+            for (index in group.body.indices) {
+                val staleBody = group.body.mapIndexed { bodyIndex, node ->
+                    if (bodyIndex == index) (node as TaskNode).copy(dependencies = emptyList()) else node
+                }
+                val stalePlan = plan.copy(nodes = listOf(before, group.copy(body = staleBody)))
+                val failure = assertFailsWith<InvalidPlanningEvidenceException> {
+                    pipeline.generateDiagnosticEvidence(testDiagnosticMaterializationRequest(stalePlan, target, targets))
+                }
+                assertTrue(failure.issues.any {
+                    it.code == "planning.dependency.projection.invalid" &&
+                        it.location == "nodes[1].body[$index].dependencies"
+                })
+            }
         }
     }
 
