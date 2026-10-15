@@ -115,7 +115,7 @@ internal object JenkinsConditionValueScope {
         visit(steps, inputs) { step, roots ->
             val reason = reason(step, roots) ?: return@visit step
             step.copy(
-                materialization = TargetMaterialization.adapterRequired("condition", reason,
+                materialization = TargetMaterialization.adapterRequired(step.materialization.capability, reason,
                     requirements = mapOf("nativeValueBinding" to "required")),
                 rendererPayload = null,
                 mappingNotes = step.mappingNotes + TargetMappingNote("warning", "jenkins", step.id, FEATURE, reason))
@@ -125,7 +125,8 @@ internal object JenkinsConditionValueScope {
         val inputs = manifest.inputs.map { it.name }.toSet()
         manifest.jobs.forEach { job ->
             visit(job.steps, inputs) { step, roots ->
-                require(reason(step, roots) == null) { reason(step, roots).orEmpty() }
+                val reason = reason(step, roots)
+                require(reason == null) { reason.orEmpty() }
                 step
             }
         }
