@@ -1,0 +1,77 @@
+version: AR-06Z
+name: Shared Literal Condition Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 222.
+  predecessorPullRequest: 222
+  mergedMain: b54b9eb954437b7e6fd7a17d605f78461a0d5961
+invariant: The same authored true/false condition fixtures compile to identical canonical graphs on Jenkins and
+  GitHub Actions, execute native provider guards, and admit only independently observed baseline and falsifying
+  mutant results.
+scope:
+- Execute one literal Boolean guard around one immutable public checkout on both providers.
+- Check generated GitHub job guards, native steps and the complete observation envelope before native jobs execute;
+  observe real success/skipped job results through same-workflow outputs.
+- Retain Jenkins native step counts and completed workspaces, authenticated source/graph/artifact identities, independent
+  immutable revision/file oracles, and provider-specific raw results.
+- Reauthenticate all 34 assessments and 116 observations in the complete portfolio, including the existing shared
+  checkout comparison and two new condition comparisons.
+nonGoals:
+- No input expressions, else branches, nesting, joins, error handling, downstream scheduling, credentials or whole-workflow
+  portability claim.
+- No Core semantics, public syntax, contract/package version change, generic support promotion, finding closure,
+  AR-06 closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  adapter: GitHub Actions owns a strict plan-scoped capability resolver and native job-condition evidence; the reference
+    distribution composes it and target-wide condition support remains partial.
+  conformance: Owns common fixtures, checked native execution envelopes, independent observers/oracles, ephemeral
+    signing keys and authenticated portfolio replay; no product runtime.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/conformance/SharedConditionFixture.kt
+- src/main/kotlin/org/flowlang/conformance/GitHubActionsConditionRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- .github/workflows/adapter-runtime-check.yml
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubLiteralConditionProjectionScope.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+- standard/architecture/authority-responsibilities.yaml
+testsToAddOrUpdate:
+- Identical authored source and canonical graph across both providers, differing provider artifacts, and exact expected
+  observations.
+- Removed/reversed guards, changed native steps or observer code, missing/failed/cancelled/skipped jobs, forged
+  output inventories, wrong revisions and surviving mutants fail closed.
+- Complete authenticated portfolio, condition comparisons and historical lifecycle transitions reject tampering
+  or invented acceptance.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/shared-condition-certification.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  - jenkins-shared-condition-runtime
+  - github-actions-condition-prepare
+  - github-actions-condition-runtime
+  negativeEvidence: Both declared skipped GitHub native jobs must be skipped with empty outputs; the other four
+    must succeed with measured observations. Changed envelopes, unexpected results, wrong oracles and tampered receipts
+    fail closed.
+followUp:
+- Expand shared structured scenarios only with adapter-owned projection, native execution, independent observations
+  and falsifying mutants.
+- Keep AR-06 active until all roadmap matrix obligations and closure evidence are satisfied.

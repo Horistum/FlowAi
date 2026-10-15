@@ -693,3 +693,13 @@ treat diagnostic grouping as executable scheduling or continuity. Native leaves
 cannot satisfy the missing retry implementation: GitHub Actions and Tekton retry
 remain non-executable. Existing bounded Jenkins retry and all runtime portfolio
 claims are unchanged; additional native adapter evidence is a separate step.
+
+## AR-06Z: shared literal conditional checkout candidate
+
+The shared true/false Flow Source fixtures now have provider-owned runtime harnesses on Jenkins and GitHub Actions. Jenkins runs the generated Jenkinsfile. GitHub runs the generated job-level guard and native checkout inside a preflight-checked envelope, with separate observed success/skipped job results. Removing the true checkout or reversing its condition prevents checkout; removing or reversing the false guard causes checkout. Each declared mutant must differ from its baseline under the independent immutable revision/file oracle.
+
+The complete portfolio requires 34 authenticated assessments and 116 signed observations, retaining prior evidence and adding two comparisons with identical authored source and canonical graph bytes. The collector's key is established before admitting outputs and is never exposed to native jobs or artifacts; raw same-workflow results, source/workflow revisions, challenge and envelope are signature-bound. Trusted provider runners and job-output transport remain explicit assumptions.
+
+This evidence covers one literal guard with one checkout only. Inputs, else branches, nesting, joins, downstream scheduling and complete generated workflows are outside the GitHub execution claim. The plan-scoped catalog entry does not change partial target-wide condition support. No generic support, portable execution or roadmap closure is inferred. See `.flow-agent/work-packages/shared-condition-certification.yaml` and the matching report for the current-revision validation gate.
+
+The reference distribution now composes `GitHubLiteralConditionProjectionScope`: executable capability evidence is granted only to an authorized plan containing a single literal condition and a single checkout, without inputs, else/nested branches, workflow handlers or successors. The registry itself stays partial; missing provider evidence fails closed.

@@ -28,11 +28,14 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
         private val scenarios = JenkinsCheckoutRuntimeCertification.Scenario.entries
         private val githubScenario = GitHubActionsCheckoutRuntimeCertification.SCENARIO
-        private val scenarioIds = scenarios.map { it.id } + githubScenario
+        private val githubConditions = SharedConditionFixture.values.map { SharedConditionFixture.scenario("github-actions", it) }
+        private val scenarioIds = scenarios.map { it.id } + githubScenario + githubConditions
         private val jobScenarios = scenarios.groupBy { relativeDirectory(it).substringBefore('/') }
-            .mapValues { (_, values) -> values.map { it.id }.toSet() } + (githubScenario to setOf(githubScenario))
+            .mapValues { (_, values) -> values.map { it.id }.toSet() } + (githubScenario to setOf(githubScenario)) + (SharedConditionFixture.PRODUCER_JOB to githubConditions.toSet())
 
         internal fun relativeDirectory(s: JenkinsCheckoutRuntimeCertification.Scenario): String = when (s) {
+            JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CONDITION_TRUE -> "jenkins-shared-condition-runtime/true"
+            JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CONDITION_FALSE -> "jenkins-shared-condition-runtime/false"
             JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> "jenkins-checkout-runtime"
             JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_APPROVE -> "jenkins-parallel-runtime/approve"
             JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_REJECT -> "jenkins-parallel-runtime/reject"
@@ -159,7 +162,10 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                     "trustSha256" to receipt.trustSha256, "claim" to scenario.claim, "executionMode" to "generated-jenkinsfile",
                     "matrix" to mapper.readTree(matrix.json()))
             }
-            val allAssessments = (assessments + githubAssessment)
+            val githubConditionAssessments = SharedConditionFixture.values.map { value ->
+                replayGitHub(root, revision, evidenceRoot, inputs.single { it.scenarioId == SharedConditionFixture.scenario("github-actions", value) }, value)
+            }
+            val allAssessments = (assessments + githubAssessment + githubConditionAssessments)
                 .sortedBy { it.getValue("scenarioId") as String }
             val sharedIds = setOf(githubScenario, JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT.id)
             val shared = sharedCheckoutComparison(allAssessments.filter { it["scenarioId"] in sharedIds }.map { it.getValue("matrix") as JsonNode })
@@ -177,7 +183,11 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             } }
             val output = linkedMapOf<String, Any>("formatVersion" to 1, "scope" to "authenticated-reference-adapter-portfolio",
                 "sourceRevision" to revision, "referenceTargets" to targets, "publicSupportPromoted" to false,
-                "portableExecution" to false, "assessmentCount" to allAssessments.size, "sharedCanonicalCheckout" to shared, "rows" to rows, "assessments" to allAssessments)
+                "portableExecution" to false, "assessmentCount" to allAssessments.size, "sharedCanonicalCheckout" to shared,
+                "sharedCanonicalConditions" to SharedConditionFixture.values.map { value ->
+                    sharedConditionComparison(allAssessments.filter { it["scenarioId"] in setOf(SharedConditionFixture.scenario("jenkins", value),
+                        SharedConditionFixture.scenario("github-actions", value)) }.map { it.getValue("matrix") as JsonNode }, value)
+                }, "rows" to rows, "assessments" to allAssessments)
             val markdown = buildString {
                 append("# Adapter certification portfolio\n\nSource revision: $revision. Reauthenticated assessments: ${allAssessments.size}.\n\n")
                 append("Scope: the current reference adapter catalog and the complete declared runtime scenario inventory. ")
@@ -188,16 +198,20 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 append("\n## Evidence boundaries\n\nEvery scenario retains its adapter identity/version/digest, source and graph digests, exact baseline and mutant observations, runtime prerequisites, runner key and limitations in the JSON portfolio. ")
                 append("Different adapter versions and runtime images are never merged into a general certification. Checkout observations do not establish artifact transfer, secrets or value/state continuity.\n\n")
                 append("Owner-pinned producer receipts bind input proof and trust bytes. CI job outputs and the assessment host remain part of the trust boundary; a signature does not prove runner honesty. ")
-                append("Only targets with admitted scenario IDs have execution evidence. The GitHub Actions assessment executes one native leaf inside a checked envelope, not a complete generated workflow. ")
+                append("Only targets with admitted scenario IDs have execution evidence. GitHub Actions assessments execute native leaves or literal job guards inside checked envelopes, not complete generated workflows. ")
                 append("The shared checkout pair has identical source and canonical graph hashes, and identical authenticated revision/file observations for the baseline and both mutants. ")
-                append("This is bounded native-checkout observable equivalence only. The older local Jenkins fixture remains distinct; a shared construct label alone does not establish cross-target equivalence.\n")
+                append("The shared true/false conditions also compare identical source/graph hashes and authenticated revision/file observations while preserving provider-specific job results. These comparisons are bounded to the declared fixtures. The older local Jenkins fixture remains distinct; a shared construct label alone does not establish cross-target equivalence.\n")
             }
             return AdapterCertificationPortfolio(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(output) + "\n", markdown)
         }
 
         /** Diagnostic comparison only; derive() supplies matrices reconstructed by authenticated replay. */
-        internal fun sharedCheckoutComparison(matrices: List<JsonNode>): Map<String, Any> {
-            val scenarios = mapOf("github-actions" to githubScenario, "jenkins" to JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT.id)
+        internal fun sharedCheckoutComparison(matrices: List<JsonNode>): Map<String, Any> = sharedComparison(matrices, null)
+        internal fun sharedConditionComparison(matrices: List<JsonNode>, value: Boolean): Map<String, Any> = sharedComparison(matrices, value)
+        private fun sharedComparison(matrices: List<JsonNode>, value: Boolean?): Map<String, Any> {
+            val scenarios = if (value == null) mapOf("github-actions" to githubScenario, "jenkins" to JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT.id)
+                else listOf("github-actions", "jenkins").associateWith { SharedConditionFixture.scenario(it, value) }
+            val runIds = if (value == null) SharedCheckoutFixture.runIds else SharedConditionFixture.runIds(value)
             require(matrices.size == 2 && matrices.map { it["adapter"]?.get("target")?.asText() }.toSet() == scenarios.keys) {
                 "The shared checkout comparison requires both distinct providers."
             }
@@ -208,9 +222,9 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 val rows = matrix["rows"]
                 require(rows?.isArray == true && rows.map { it["construct"]?.asText() } == CertificationConstruct.entries.map { it.name })
                 val covered = rows.filter { !it["behavior"].isNull }
-                require(covered.size == 1 && covered.single()["construct"].asText() == "NATIVE_CHECKOUT")
+                require(covered.size == 1 && covered.single()["construct"].asText() == if (value == null) "NATIVE_CHECKOUT" else "CONDITIONS")
                 val b = covered.single()["behavior"]
-                require(b["scenarioId"]?.asText() == scenarios.getValue(target) && b["shape"]?.asText() == "NATIVE_LEAF_ONLY")
+                require(b["scenarioId"]?.asText() == scenarios.getValue(target) && b["shape"]?.asText() == if (value == null) "NATIVE_LEAF_ONLY" else "STRUCTURAL_OCCURRENCES")
                 target to b
             }
             val ordered = scenarios.keys.sorted()
@@ -224,11 +238,11 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             }
             val inventories = behaviors.mapValues { (_, behavior) ->
                 val runs = listOf(behavior["baseline"]) + behavior["negativeMutants"].toList()
-                require(runs.size == SharedCheckoutFixture.runIds.size && runs.map { it["evidence"]["runId"].asText() }.toSet() == SharedCheckoutFixture.runIds.toSet())
+                require(runs.size == runIds.size && runs.map { it["evidence"]["runId"].asText() }.toSet() == runIds.toSet())
                 runs.associateBy { it["evidence"]["runId"].asText() }
             }
-            val runs = SharedCheckoutFixture.runIds.map { id ->
-                val expected = SharedCheckoutFixture.expected(id)
+            val runs = runIds.map { id ->
+                val expected = if (value == null) SharedCheckoutFixture.expected(id) else SharedConditionFixture.expected(value, id)
                 val digest = sha(expected)
                 val artifacts = ordered.associateWith { target ->
                     val run = inventories.getValue(target).getValue(id)
@@ -242,18 +256,21 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 linkedMapOf<String, Any>("runId" to id, "observationSha256" to digest,
                     "observation" to mapper.readTree(expected), "artifacts" to artifacts)
             }
-            return linkedMapOf("scope" to "bounded-native-checkout-observable-equivalence", "observableEquivalence" to true,
+            return linkedMapOf("scope" to (if (value == null) "bounded-native-checkout-observable-equivalence" else "bounded-literal-condition-observable-equivalence"), "observableEquivalence" to true,
                 "publicSupportPromoted" to false, "portableExecution" to false, "scenarioIds" to ordered.map { scenarios.getValue(it) },
                 "sourceSha256" to first["source"]["sha256"].asText(), "canonicalGraphSha256" to first["canonicalGraph"]["sha256"].asText(),
-                "runs" to runs, "limitations" to listOf(
+                "runs" to runs, "limitations" to if (value != null) SharedConditionFixture.limitations else listOf(
                     "Only the shared native checkout's revision and fixture-file bytes are compared; no general portability or structural equivalence.",
                     "Jenkins executes the generated Jenkinsfile; GitHub Actions executes its rendered native leaf inside the checked observation envelope.",
                     "Both runtime hosts remain trusted; provider credentials, triggers, scheduling and workspace transfer are outside this comparison."))
         }
 
         private fun replayGitHub(root: File, revision: String, evidenceRoot: File,
-            receipt: PortfolioAssessmentReceipt): Map<String, Any> {
-            val directory = File(evidenceRoot, githubScenario)
+            receipt: PortfolioAssessmentReceipt, condition: Boolean? = null): Map<String, Any> {
+            val scenarioId = if (condition == null) githubScenario else SharedConditionFixture.scenario("github-actions", condition)
+            val claim = if (condition == null) "native-leaf-only" else GitHubActionsConditionRuntimeCertification.CLAIM
+            val mode = if (condition == null) "native-leaf-in-checked-envelope" else GitHubActionsConditionRuntimeCertification.MODE
+            val directory = File(evidenceRoot, if (condition == null) githubScenario else "${SharedConditionFixture.PRODUCER_JOB}/$condition")
             val proofBytes = read(directory, "proof.json", 1024 * 1024)
             val trustBytes = read(directory, "trust.json", 16384)
             require(sha(proofBytes) == receipt.proofSha256 && sha(trustBytes) == receipt.trustSha256) {
@@ -266,32 +283,39 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                 require(proof[name]?.isTextual == true && proof[name] == owner[name]) { "GitHub Actions owner metadata differs: $name" }
             }
             require(listOf("runId", "attempt").all { Regex("[1-9][0-9]{0,19}").matches(owner[it].asText()) })
-            require(proof["claim"]?.asText() == "native-leaf-only" &&
-                proof["executionMode"]?.asText() == "native-leaf-in-checked-envelope") { "GitHub Actions execution scope changed." }
+            require(proof["claim"]?.asText() == claim &&
+                proof["executionMode"]?.asText() == mode) { "GitHub Actions execution scope changed." }
             for (name in listOf("publicSupportPromoted", "portableExecution"))
                 require(proof[name]?.isBoolean == true && !proof[name].booleanValue()) { "Portfolio cannot promote support or portability." }
-            val prepared = GitHubActionsCheckoutRuntimeCertification.prepare(root, revision, owner["workflowRevision"].asText(),
-                owner["runnerImage"]?.asText().orEmpty(), read(directory, "artifacts/execution-envelope.yml", 1024 * 1024))
+            val nativeResults = if (condition == null) null else read(directory, "native-job-results.json", 65536)
+            val envelope = read(directory, "artifacts/execution-envelope.yml", 1024 * 1024)
+            val prepared = if (condition == null) GitHubActionsCheckoutRuntimeCertification.prepare(root, revision, owner["workflowRevision"].asText(),
+                owner["runnerImage"]?.asText().orEmpty(), envelope) else GitHubActionsConditionRuntimeCertification.prepare(root, revision,
+                owner["workflowRevision"].asText(), owner["runnerImage"]?.asText().orEmpty(), envelope, condition, requireNotNull(nativeResults))
+            val nativeObservations = if (condition == null) null else GitHubActionsConditionRuntimeCertification.observations(prepared, condition, requireNotNull(nativeResults))
+            if (condition != null) require(mapper.readTree(nativeResults)[SharedConditionFixture.PREPARE_JOB]["outputs"]["challenge"] == owner["challenge"])
             require(proof["bundle"] == mapper.valueToTree<JsonNode>(prepared.bundle)) { "GitHub Actions compiler or adapter binding changed." }
             prepared.artifacts.forEach { (id, bytes) ->
                 require(read(directory, "artifacts/$id.yml", 1024 * 1024).contentEquals(bytes)) { "GitHub Actions artifact $id differs." }
             }
-            require(read(directory, "artifacts/source.intent.yaml", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.fixture)))
+            require(read(directory, if (condition == null) "artifacts/source.intent.yaml" else "artifacts/source.flow", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.fixture)))
             require(read(directory, "artifacts/canonical-graph.json", 1024 * 1024).contentEquals(prepared.bound.resolve(prepared.bound.canonicalGraph)))
-            val runner = GitHubActionsCheckoutRuntimeCertification.RUNNER
-            val runIds = SharedCheckoutFixture.runIds
+            val runner = if (condition == null) GitHubActionsCheckoutRuntimeCertification.RUNNER else GitHubActionsConditionRuntimeCertification.RUNNER
+            val runIds = if (condition == null) SharedCheckoutFixture.runIds else SharedConditionFixture.runIds(condition)
             val challenge = owner["challenge"]?.asText().orEmpty()
             val key = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(
                 Base64.getDecoder().decode(owner["publicKey"]?.asText().orEmpty())))
             val trust = CertificationObservationTrust(challenge, mapOf(runner to key), runIds.map {
-                CertificationAuthorizedRun(it, githubScenario, it.takeUnless { id -> id == "baseline" }, runner) })
+                CertificationAuthorizedRun(it, scenarioId, it.takeUnless { id -> id == "baseline" }, runner) })
             val statements = proof["observations"]
             require(statements?.isArray == true && statements.size() == runIds.size &&
                 statements.map { it["observation"]?.get("runId")?.asText() }.toSet() == runIds.toSet())
             val signed = runIds.map { id ->
                 val record = mapper.readTree(read(directory, "$id.json", 8192))
                 require(record["raw"]?.isTextual == true && record["signature"]?.isTextual == true)
-                val observation = GitHubActionsCheckoutRuntimeCertification.observation(prepared, id, record["raw"].asText().toByteArray(Charsets.UTF_8))
+                val observed = record["raw"].asText().toByteArray(Charsets.UTF_8)
+                if (nativeObservations != null) require(observed.contentEquals(nativeObservations.getValue(id)))
+                val observation = GitHubActionsCheckoutRuntimeCertification.observation(prepared, id, observed)
                 val statement = statements.single { it["observation"]["runId"].asText() == id }
                 require(statement["observation"] == mapper.valueToTree<JsonNode>(observation)) { "GitHub Actions native result differs from its signed observation." }
                 require(statement["runnerId"]?.asText() == runner && statement["challenge"]?.asText() == challenge &&
@@ -309,7 +333,8 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             require(assessment.admission.valid) { "GitHub Actions replayed admission failed: ${assessment.admission.findings}" }
             require(proof["admission"] == mapper.valueToTree<JsonNode>(assessment.admission)) { "GitHub Actions archived admission differs from replay." }
             val view = requireNotNull(assessment.view)
-            val matrix = AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, resolver)
+            val matrix = if (condition == null) AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, resolver)
+                else AdapterBehaviorMatrix.deriveGitHubCondition(assessment, condition, resolver)
             mapOf("evidence-view.json" to view.json(), "evidence-view.md" to view.markdown(),
                 "behavior-matrix.json" to matrix.json(), "behavior-matrix.md" to matrix.markdown()).forEach { (name, value) ->
                 val bytes = value.toByteArray(Charsets.UTF_8)
@@ -318,8 +343,8 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
                     "GitHub Actions published $name differs from authenticated replay."
                 }
             }
-            return linkedMapOf("scenarioId" to githubScenario, "proofSha256" to receipt.proofSha256,
-                "trustSha256" to receipt.trustSha256, "claim" to "native-leaf-only", "executionMode" to "native-leaf-in-checked-envelope",
+            return linkedMapOf("scenarioId" to scenarioId, "proofSha256" to receipt.proofSha256,
+                "trustSha256" to receipt.trustSha256, "claim" to claim, "executionMode" to mode,
                 "matrix" to mapper.readTree(matrix.json()))
         }
 

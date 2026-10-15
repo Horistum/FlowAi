@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 96
+stateVersion: 97
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -221,8 +221,8 @@ recoveryCertification:
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
   evidence: .flow-agent/evidence/adapter-certification-binding-acceptance.json
-  selectedSlice: AR-06Y
-  workPackage: .flow-agent/work-packages/retry-boundary-preservation.yaml
+  selectedSlice: AR-06Z
+  workPackage: .flow-agent/work-packages/shared-condition-certification.yaml
   validation: current-revision-ci-required
   supportPromotion: false
 
@@ -466,5 +466,14 @@ recoveryRetryBoundary:
   workPackage: .flow-agent/work-packages/retry-boundary-preservation.yaml
   report: .flow-agent/reports/retry-boundary-preservation.md
   baselineEvidence: .flow-agent/evidence/retry-boundary-preservation-baseline.json
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoverySharedCondition:
+  candidate: AR-06Z
+  status: candidate
+  workPackage: .flow-agent/work-packages/shared-condition-certification.yaml
+  report: .flow-agent/reports/shared-condition-certification.md
+  baselineEvidence: .flow-agent/evidence/shared-condition-certification-baseline.json
   validation: current-revision-ci-required
   supportPromotion: false

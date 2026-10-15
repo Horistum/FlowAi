@@ -64,7 +64,13 @@ internal object JenkinsCheckoutRuntimeCertification {
         PARALLEL_WORKSPACES_FAIL_FAST_APPROVE("jenkins-parallel-workspaces-fail-fast-approve-runtime", "parallel-workspace-cancellation.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "aliased-workspaces", "swapped-workspaces", "omitted-left-checkout", "early-branch-work", "early-successor"), "AR-06X"),
         PARALLEL_WORKSPACES_CANCEL("jenkins-parallel-workspaces-cancel-runtime", "parallel-workspace-cancellation.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "suppressed-rejection", "early-branch-work", "early-successor"), "AR-06X"),
         PARALLEL_WORKSPACES_FAILURE("jenkins-parallel-workspaces-failure-runtime", "parallel-workspace-failure.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "omitted-failure", "suppressed-failure", "early-successor"), "AR-06X"),
-        SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O");
+        SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O"),
+        SHARED_CONDITION_TRUE("jenkins-shared-condition-true-runtime", "shared-condition-true.flow", null, SharedConditionFixture.runIds(true), "AR-06Z"),
+        SHARED_CONDITION_FALSE("jenkins-shared-condition-false-runtime", "shared-condition-false.flow", null, SharedConditionFixture.runIds(false), "AR-06Z");
+
+        val sharedCondition: Boolean get() = this == SHARED_CONDITION_TRUE || this == SHARED_CONDITION_FALSE
+        val conditionValue: Boolean get() { require(sharedCondition); return this == SHARED_CONDITION_TRUE }
+        val publicCheckout: Boolean get() = this == SHARED_CHECKOUT || sharedCondition
 
         val parallel: Boolean get() = this == PARALLEL_APPROVE || this == PARALLEL_REJECT || parallelFailFast || parallelWorkspaces
         val parallelWorkspaces: Boolean get() = this == PARALLEL_WORKSPACES_APPROVE || this == PARALLEL_WORKSPACES_REJECT || workspaceFailFast
@@ -72,7 +78,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val workspaceFailure: Boolean get() = this == PARALLEL_WORKSPACES_FAILURE
         val parallelFailFast: Boolean get() = this == PARALLEL_FAIL_FAST_APPROVE || this == PARALLEL_CANCEL
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
-        val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE
+        val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE || sharedCondition
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
         val localRecovery: Boolean get() = this == RECOVERY_FAILURE || this == RECOVERY_SUCCESS
         val retry: Boolean get() = this == RETRY_FAILURE || this == RETRY_SUCCESS
@@ -95,7 +101,7 @@ internal object JenkinsCheckoutRuntimeCertification {
 
     fun prepare(root: File, imageId: String, scenario: Scenario = Scenario.CHECKOUT): Prepared {
         require(Regex("sha256:[0-9a-f]{64}").matches(imageId))
-        val sourceFile = File(root, if (scenario == Scenario.SHARED_CHECKOUT) SharedCheckoutFixture.SOURCE else "$FIXTURE/${scenario.source}")
+        val sourceFile = File(root, if (scenario.sharedCondition) SharedConditionFixture.source(scenario.conditionValue) else if (scenario == Scenario.SHARED_CHECKOUT) SharedCheckoutFixture.SOURCE else "$FIXTURE/${scenario.source}")
         val source = sourceFile.readBytes()
         val modules = ModuleRegistry.fromDirectory(File(root, "modules"))
         val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
@@ -112,7 +118,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
         val artifacts = if (scenario.parallelWorkspaces) JenkinsParallelWorkspaceCertification.artifacts(text, original,
-            scenario == Scenario.PARALLEL_WORKSPACES_REJECT || scenario == Scenario.PARALLEL_WORKSPACES_CANCEL, scenario.workspaceFailFast, scenario.workspaceFailure) else if (scenario.parallel) parallelArtifacts(text, original, scenario) else if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
+            scenario == Scenario.PARALLEL_WORKSPACES_REJECT || scenario == Scenario.PARALLEL_WORKSPACES_CANCEL, scenario.workspaceFailFast, scenario.workspaceFailure) else if (scenario.parallel) parallelArtifacts(text, original, scenario) else if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario.sharedCondition) sharedConditionArtifacts(text, original, scenario.conditionValue) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
             require(checkout.trim() == "git branch: '$branch', url: 'git://127.0.0.1:9418/repository.git'")
@@ -127,11 +133,11 @@ internal object JenkinsCheckoutRuntimeCertification {
                 runIds[2] to replaceOnce(text, checkout, if (scenario == Scenario.CHECKOUT) checkout.replace("branch: 'selected'", "branch: 'alternate'")
                     else "${indent}catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {\n$indent    ${checkout.trim()}\n$indent}").toByteArray())
         }
-        val matrix = if (scenario == Scenario.SHARED_CHECKOUT) {
-            val rows = runIds.map { id -> (mapper.readTree(SharedCheckoutFixture.expected(id)) as com.fasterxml.jackson.databind.node.ObjectNode)
+        val matrix = if (scenario.publicCheckout) {
+            val rows = runIds.map { id -> (mapper.readTree(if (scenario.sharedCondition) SharedConditionFixture.expected(scenario.conditionValue, id) else SharedCheckoutFixture.expected(id)) as com.fasterxml.jackson.databind.node.ObjectNode)
                 .put("id", id).put("result", "SUCCESS") }
             mapper.valueToTree<JsonNode>(mapOf("version" to 1, "scenario" to scenario.id, "target" to "jenkins", "claim" to scenario.claim,
-                "construct" to "git.checkout", "positive" to rows.first(), "mutants" to rows.drop(1), "limitations" to listOf(
+                "construct" to (if (scenario.sharedCondition) "condition" else "git.checkout"), "positive" to rows.first(), "mutants" to rows.drop(1), "limitations" to if (scenario.sharedCondition) SharedConditionFixture.limitations else listOf(
                     "One immutable public Git checkout and revision/file observations; no control-flow, credentials, shallow history or workspace-transfer claim.",
                     "This disposable Jenkins controller uses public network egress for the exact authored repository; no host ports or credentials are supplied.",
                     "The full generated Jenkinsfile executes, while the GitHub Actions peer executes only a checked native leaf; comparison is bounded to checkout observables.",
@@ -140,7 +146,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
         val construct = when { scenario.parallel -> "parallel"; scenario.match -> "match"; scenario.loop -> "loop"; scenario.retry -> "retry"; scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
         require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == construct)
-        val scenarioMatrix = if (scenario.parallel || scenario.conditional || scenario.terminalEvidence || scenario.approval) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
+        val scenarioMatrix = if (!scenario.sharedCondition && (scenario.parallel || scenario.conditional || scenario.terminalEvidence || scenario.approval)) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
         require(scenarioMatrix["scenario"].asText() == scenario.id)
         val rows = listOf(scenarioMatrix["positive"]) + scenarioMatrix["mutants"].toList()
         require(rows.map { it["id"].asText() } == runIds)
@@ -164,7 +170,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             (if (scenario.parallel) mapOf("workflow-cps" to "4183.v94b_6fd39da_c1") else emptyMap()) +
             (if (scenario.parallelWorkspaces) mapOf("workflow-durable-task-step" to "1458.va_2e10a_a_b_7c4d") else emptyMap())
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
-            CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario == Scenario.SHARED_CHECKOUT) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
+            CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario.publicCheckout) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
                 CertificationRuntimePrerequisite("repository", SharedCheckoutFixture.REPOSITORY)) else emptyList()
         val specification = bound.scenario(expected.getValue("baseline"), runtime, runIds.drop(1).map { id ->
             CertificationNegativeMutant(id, ref("artifact:$id", artifacts.getValue(id)), expected.getValue(id))
@@ -188,6 +194,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             else if (scenario.approval) "Manual input occurrence before one protected native checkout; automated decisions, no human authorization claim."
             else if (scenario.localRecovery) "Local recovery occurrence and continuation with native checkout children only; see bounded runtime limitations."
             else if (scenario.errorBoundary) "Workflow error-handler occurrence with native checkout children only; see bounded runtime limitations."
+            else if (scenario.sharedCondition) "One literal Boolean guard with one native checkout only; see bounded runtime limitations."
             else if (scenario.conditional) "Boolean equality guards with native checkout children only; see bounded runtime limitations."
             else "Native checkout occurrences only; see bounded runtime limitations.") },
             listOf(specification), limitations)
@@ -216,9 +223,9 @@ internal object JenkinsCheckoutRuntimeCertification {
             require(row["artifactSha256"]?.asText() == sha256(bytes)) { "Executed script differs from the bound artifact." }
             require(row["buildNumber"]?.isIntegralNumber == true && row["buildNumber"].canConvertToInt() && row["buildNumber"].asInt() == 1)
             if (prepared.scenario.recordsNativeSteps) require(row["finished"]?.isBoolean == true && row["finished"].booleanValue())
-            if (prepared.scenario == Scenario.SHARED_CHECKOUT) {
+            if (prepared.scenario.publicCheckout) {
                 require(row["result"]?.asText() == "SUCCESS") { "Shared checkout runtime failed." }
-                require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() == (if (id == "omitted-checkout") 0 else 1))
+                require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() == (if (prepared.scenario.sharedCondition) (if (SharedConditionFixture.checksOut(prepared.scenario.conditionValue, id)) 1 else 0) else if (id == "omitted-checkout") 0 else 1))
                 require(row["checkoutErrors"]?.isArray == true && row["checkoutErrors"].isEmpty)
             }
             val observed = observationBytes(row, prepared.scenario)
@@ -274,7 +281,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         } == true)
 
     private fun observationBytes(row: JsonNode, scenario: Scenario): ByteArray {
-        if (scenario == Scenario.SHARED_CHECKOUT) return SharedCheckoutFixture.observationBytes(row)
+        if (scenario.publicCheckout) return SharedCheckoutFixture.observationBytes(row)
         require(row["result"]?.isTextual == true && row.has("marker"))
         val marker = row["marker"]
         require(marker.isNull || marker.isTextual && marker.asText().length <= 1024)
@@ -696,6 +703,26 @@ internal object JenkinsCheckoutRuntimeCertification {
             "substituted-revision" to replaceOnce(text, native, native.replace(SharedCheckoutFixture.SELECTED, SharedCheckoutFixture.ALTERNATE)).toByteArray(Charsets.UTF_8))
     }
 
+    internal fun sharedConditionArtifacts(text: String, original: ByteArray, value: Boolean): Map<String, ByteArray> {
+        val guard = text.lineSequence().single { it.trimStart().startsWith("if (") }
+        require(guard.trim() == "if ($value) {")
+        val checkout = sharedCheckoutArtifacts(text, original)
+        val result = linkedMapOf("baseline" to original)
+        if (value) result["omitted-checkout"] = checkout.getValue("omitted-checkout")
+        else {
+            val indent = guard.takeWhile(Char::isWhitespace)
+            val start = text.indexOf(guard)
+            val end = text.indexOf("\n$indent}\n", start + guard.length)
+            require(end > start)
+            val body = text.substring(start + guard.length + 1, end)
+            val block = text.substring(start, end + indent.length + 2)
+            result["flattened-condition"] = replaceOnce(text, block, body).toByteArray()
+        }
+        result["inverted-condition"] = replaceOnce(text, guard, guard.replace("if ($value)", "if (${!value})")).toByteArray()
+        require(result.keys.toList() == SharedConditionFixture.runIds(value))
+        return result
+    }
+
     fun run(root: File, output: File, scenario: Scenario = Scenario.CHECKOUT) {
         require(!output.exists()) { "Runtime evidence output must be fresh." }
         output.mkdirs()
@@ -728,7 +755,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                 .writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.fixture)))
             File(artifacts, "canonical-graph.json").writeBytes(requireNotNull(prepared.bound.resolve(prepared.bound.canonicalGraph)))
             val fixture = File(output, "fixture").apply { mkdirs() }
-            if (scenario != Scenario.SHARED_CHECKOUT) {
+            if (!scenario.publicCheckout) {
                 val working = File(fixture, "working").apply { mkdirs() }
                 fun git(label: String, vararg args: String) = process(label, listOf("git", "-C", working.absolutePath) + args)
                 git("fixture-init", "init", "--initial-branch=selected")
@@ -745,7 +772,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             val evidence = File(output, "runtime").apply { mkdirs() }
             Files.setPosixFilePermissions(evidence.toPath(), PosixFilePermissions.fromString("rwxrwxrwx"))
             println("Executing the original artifact and declared mutants on isolated Jenkins")
-            process("controller", listOf("docker", "run", "--rm", "--name", container, "--network", if (scenario == Scenario.SHARED_CHECKOUT) "bridge" else "none", "--memory", "3g", "--cpus", "2",
+            process("controller", listOf("docker", "run", "--rm", "--name", container, "--network", if (scenario.publicCheckout) "bridge" else "none", "--memory", "3g", "--cpus", "2",
                 "--env", "FLOW_CERTIFICATION_SCENARIO=${scenario.id}",
                 "--mount", "type=bind,src=${fixture.absolutePath},dst=/fixture,readonly",
                 "--mount", "type=bind,src=${artifacts.absolutePath},dst=/artifacts,readonly",

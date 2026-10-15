@@ -127,7 +127,7 @@ internal object GitHubActionsCheckoutRuntimeCertification {
     }
 
     fun observation(p: Prepared, id: String, raw: ByteArray): CertificationExecutionObservation {
-        require(id in runIds && raw.size in 1..4096)
+        require(id in p.artifacts.keys && raw.size in 1..4096)
         val row = mapper.readTree(raw)
         require(row.isObject && row.fieldNames().asSequence().toSet() == setOf("revision", "markerSha256"))
         val normalized = SharedCheckoutFixture.observationBytes(row)
