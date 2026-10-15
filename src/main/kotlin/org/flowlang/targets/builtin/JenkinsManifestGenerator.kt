@@ -33,7 +33,8 @@ class JenkinsManifestGenerator(
             compatibility = compatibility,
             inputs = plan.inputs.map(AdapterManifestLowering::input),
             triggers = plan.triggers.map(AdapterManifestLowering::trigger),
-            jobs = listOf(TargetJob(id = AdapterManifestLowering.id(plan.flowName), name = plan.flowName, steps = steps)),
+            jobs = listOf(TargetJob(id = AdapterManifestLowering.id(plan.flowName), name = plan.flowName,
+                steps = JenkinsConditionValueScope.reconcile(steps, plan.inputs.map { it.name }.toSet()))),
             mappingNotes = AdapterManifestLowering.mappingNotes(compatibility, target),
             metadata = AdapterManifestLowering.metadata(plan, "JenkinsManifestGenerator") + ("nodePreserving" to "true")
         )

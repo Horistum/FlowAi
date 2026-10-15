@@ -1,0 +1,67 @@
+version: AR-06AC
+name: Jenkins Condition Value Binding Boundary
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 225.
+  predecessorPullRequest: 225
+  mergedMain: cdc449d3c5907adf0aa7713bb021d88479759884
+invariant: Jenkins conditions may read only values with an explicit native binding in their lexical scope; an authored
+  task result without a native output contract must remain non-executable.
+scope:
+- Inspect parsed condition references against declared inputs, enclosing loop items and workflow-handler error bindings.
+- Preserve unsupported condition text and children in review-only manifests with a precise missing-binding diagnostic.
+- Reject direct executable renderer calls that bypass the generator boundary.
+- Retain all existing compiler-rendered native scenarios and authenticated portfolio evidence.
+nonGoals:
+- No output capture, state transfer, generic value/state continuity support, expression-language expansion or new
+  native certification.
+- No Core semantics, public syntax/version, historical acceptance, finding closure, AR-06 closure, AR-07 activation
+  or EF-09 resumption.
+ownershipBoundary:
+  adapters: Own native value bindings and executable projection limits; consume unchanged canonical expressions.
+  conformance: Own source-to-projection regressions and preservation of all existing native evidence.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestGenerator.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+testsToAddOrUpdate:
+- Canonically accepted task-result conditions retain meaning but cannot produce executable Jenkins artifacts.
+- Inputs, secrets, literal patterns and lexically bound loop/handler values remain available.
+- Nested references, sibling and cross-job scope leakage, native ambient names and forged executable manifests fail
+  closed.
+- Historical receipts, validation requirements and finding ownership remain enforced.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/jenkins-condition-value-boundary.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  - jenkins-shared-condition-runtime
+  - github-actions-condition-prepare
+  - jenkins-secret-condition-runtime
+  - github-actions-condition-runtime
+  negativeEvidence: Missing or out-of-scope native value bindings cannot produce executable Jenkins artifacts; declarations
+    and synthetic tests cannot replace the complete native portfolio.
+followUp:
+- Add a native output contract and independently observed positive and falsifying runs before certifying value/state
+  continuity.
+- Keep unsupported value/state obligations visible in the all-target publication.

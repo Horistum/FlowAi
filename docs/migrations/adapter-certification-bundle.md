@@ -721,3 +721,9 @@ The Jenkins adapter uses the credential environment mapping for secret expressio
 `jenkins-secret-condition-runtime` executes one full compiler-rendered Jenkinsfile against disposable string credentials created inside an isolated controller. Equal named credentials permit one local native checkout; omitted and substituted bindings prevent it. The observer reads native binding arguments, checkout count and workspace marker, and checks exact canary absence in the complete bounded build log before archiving it. Secret values never form part of the observation or publication. Ed25519 authentication and complete portfolio replay cover the new scenario, including its exact artifacts and falsifying mutants.
 
 This fills one bounded SECRETS row, not generic secret handling. Pipeline-wide credential lifetime remains the existing contract. Masking/security, authorization, rotation, external stores, cross-job transfers and general value/state continuity require separate evidence. The disposable runtime and credential-plugin versions are functional prerequisites, not security certification. Public support and portable-execution flags remain false; AR-06 remains open.
+
+## AR-06AC: Jenkins condition value binding boundary
+
+Regenerate Jenkins artifacts from source when a condition reads a task result or another value without a native binding. Such conditions now remain review-only with `condition.value-binding`; a result alias and task ordering do not establish output continuity. Preserve the diagnostic expression and implement a separately evidenced adapter output contract before claiming executability. Declared inputs and lexical loop/handler bindings keep their existing projection. Direct executable rendering also checks scope.
+
+No manifest wire version changes. The complete existing native portfolio and all-target publication remain required; value/state continuity is still an explicit evidence gap.

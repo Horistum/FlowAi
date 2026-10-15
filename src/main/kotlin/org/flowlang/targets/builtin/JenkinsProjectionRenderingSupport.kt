@@ -2,6 +2,9 @@ package org.flowlang.targets.builtin
 
 import org.flowlang.ast.*
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetStep
+import org.flowlang.generators.manifest.TargetMaterialization
+import org.flowlang.generators.manifest.TargetMappingNote
 import org.flowlang.parser.ExpressionParser
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
@@ -101,5 +104,73 @@ internal object JenkinsConditionSecrets {
         is BinaryExpressionNode -> names(e.left) + names(e.right)
         is StringLiteralNode, is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode,
         is IdentifierLiteralNode, is ReferenceNode -> emptyList()
+    }
+}
+
+/** A result alias is not a native binding. Track only values the renderer actually introduces. */
+internal object JenkinsConditionValueScope {
+    private const val FEATURE = "condition.value-binding"
+
+    fun reconcile(steps: List<TargetStep>, inputs: Set<String>): List<TargetStep> =
+        visit(steps, inputs) { step, roots ->
+            val reason = reason(step, roots) ?: return@visit step
+            step.copy(
+                materialization = TargetMaterialization.adapterRequired("condition", reason,
+                    requirements = mapOf("nativeValueBinding" to "required")),
+                rendererPayload = null,
+                mappingNotes = step.mappingNotes + TargetMappingNote("warning", "jenkins", step.id, FEATURE, reason))
+        }
+
+    fun requireBound(manifest: TargetManifest) {
+        val inputs = manifest.inputs.map { it.name }.toSet()
+        manifest.jobs.forEach { job ->
+            visit(job.steps, inputs) { step, roots ->
+                require(reason(step, roots) == null) { reason(step, roots).orEmpty() }
+                step
+            }
+        }
+    }
+
+    private fun visit(steps: List<TargetStep>, roots: Set<String>,
+        transform: (TargetStep, Set<String>) -> TargetStep): List<TargetStep> = steps.map { step ->
+        val children = step.children.map { child ->
+            val local = when {
+                step.type == "loop" -> step.params["item"]?.let(::setOf).orEmpty()
+                step.type == "try" && step.metadata["workflowFailurePolicy"] == "true" && child.type == "error-handler" ->
+                    step.metadata["workflowFailureErrorBinding"]?.let(::setOf).orEmpty()
+                else -> emptySet()
+            }
+            visit(listOf(child), roots + local, transform).single()
+        }
+        transform(if (children == step.children) step else step.copy(children = children), roots)
+    }
+
+    private fun reason(step: TargetStep, roots: Set<String>): String? {
+        if (step.type != "condition") return null
+        val source = step.params["condition"] ?: return "Jenkins condition '${step.id}' has no expression."
+        val expression = runCatching { ExpressionParser.parseSource(source) }.getOrElse {
+            return "Jenkins condition '${step.id}' has an invalid expression."
+        }
+        val missing = (references(expression) - roots).sorted()
+        return if (missing.isEmpty()) null else
+            "Jenkins condition '${step.id}' has no native value binding for ${missing.joinToString()}; task outputs and ambient runtime values require an explicit adapter contract."
+    }
+
+    private fun references(e: ExpressionNode): Set<String> = when (e) {
+        is ReferenceNode -> setOf(e.path.firstOrNull().orEmpty())
+        is MemberExpressionNode -> references(e.target)
+        is IndexExpressionNode -> references(e.target) + references(e.index)
+        is TemplateStringNode -> e.parts.flatMap { references(it) }.toSet()
+        is ListLiteralNode -> e.items.flatMap { references(it) }.toSet()
+        is MapLiteralNode -> e.entries.values.flatMap { references(it) }.toSet()
+        is CallExpressionNode -> e.args.flatMap { references(it) }.toSet()
+        is UnaryExpressionNode -> references(e.operand)
+        is UnaryPostfixExpressionNode -> references(e.operand)
+        is LogicalExpressionNode -> e.operands.flatMap { references(it) }.toSet()
+        // Named matches patterns are language symbols, checked by the expression translator.
+        is BinaryExpressionNode -> references(e.left) +
+            (if (e.operator == "matches" && e.right is ReferenceNode) emptySet() else references(e.right))
+        is StringLiteralNode, is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode,
+        is IdentifierLiteralNode, is SecretRefNode -> emptySet()
     }
 }
