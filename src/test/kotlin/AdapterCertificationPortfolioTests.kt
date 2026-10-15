@@ -442,7 +442,7 @@ class AdapterCertificationPortfolioTests {
                 if (field == "result") (job as ObjectNode).put(field, "skipped")
                 else (job["outputs"] as ObjectNode).put(field, "substituted")
                 file.writeBytes(mapper.writeValueAsBytes(raw))
-                assertFailsWith<IllegalArgumentException> { f.derive() }
+                assertFails { f.derive() }
                 file.writeBytes(original)
             }
         }

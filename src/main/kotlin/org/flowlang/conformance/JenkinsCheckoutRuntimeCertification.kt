@@ -194,6 +194,7 @@ internal object JenkinsCheckoutRuntimeCertification {
             else if (scenario.approval) "Manual input occurrence before one protected native checkout; automated decisions, no human authorization claim."
             else if (scenario.localRecovery) "Local recovery occurrence and continuation with native checkout children only; see bounded runtime limitations."
             else if (scenario.errorBoundary) "Workflow error-handler occurrence with native checkout children only; see bounded runtime limitations."
+            else if (scenario.sharedCondition) "One literal Boolean guard with one native checkout only; see bounded runtime limitations."
             else if (scenario.conditional) "Boolean equality guards with native checkout children only; see bounded runtime limitations."
             else "Native checkout occurrences only; see bounded runtime limitations.") },
             listOf(specification), limitations)
