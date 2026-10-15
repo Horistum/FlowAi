@@ -28,7 +28,7 @@ class JenkinsSecretConditionProjectionTests {
         assertEquals(listOf("leftToken", "rightToken"), JenkinsConditionSecrets.names(manifest(
             "secret(\"leftToken\") != null and secret:rightToken == secret:leftToken")))
         assertEquals(emptyList(), JenkinsConditionSecrets.names(manifest("\"secret:fake\" == \"secret:fake\"")))
-        assertEquals(listOf("nested"), JenkinsConditionSecrets.names(manifest("[secret:nested][0] exists")))
+        assertEquals(listOf("nested"), JenkinsConditionSecrets.names(manifest("secret:nested in [secret:nested]")))
         assertFails { JenkinsConditionSecrets.names(manifest("secret:")) }
     }
 
