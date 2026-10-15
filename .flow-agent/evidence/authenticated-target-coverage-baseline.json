@@ -1,0 +1,120 @@
+{
+  "version": 1,
+  "purpose": "Publish every declared target and construct from the reauthenticated portfolio, preserving exact scenario evidence while separating declarations, composition and bounded runtime observations.",
+  "predecessor": {
+    "pullRequest": 223,
+    "mergedMain": "38b2253183df5c40cac3ff39c24be281f981821d",
+    "tree": "48d561693f075d811c3e18f0b39c7acd1ce2ad1b",
+    "exactHead": "199dfb8e7222d90cad9658a36fc6e9cd55985588",
+    "syntheticMergeCandidate": "22c7f174f573a7fd07da37b7349cffba4697df9c",
+    "flowCiRunId": 38680883639,
+    "runtimeCiRunId": 38680883669,
+    "conclusion": "success",
+    "testsPerRevision": 2163,
+    "suitesPerRevision": 376,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 34,
+    "signedObservations": 116,
+    "portfolioRows": 36,
+    "observedConstructTargetPairs": 12,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "4dd2130f1caedf48dfa07606856448d70252f8a531e23b91194125b1cd3ce7b9",
+    "mainFlowCiRunId": 38688374787,
+    "mainFlowCiConclusion": "in-progress-at-observation",
+    "mainRuntimeCiRunId": 38688374786,
+    "mainRuntimeConclusion": "in-progress-at-observation",
+    "scope": "PR 223 exact-head and synthetic-merge inventories, 274 ordered conformance checks, 781 isolation source digests, 116 signatures and all 20 archive digests were independently verified. Actual main preserves the exact validated tree. Its separate push workflows were still running at baseline observation; PR counts are not separate main receipts."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06Z",
+        "selectedWorkPackage": ".flow-agent/work-packages/shared-condition-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio",
+            "jenkins-shared-condition-runtime",
+            "github-actions-condition-prepare",
+            "github-actions-condition-runtime"
+          ],
+          "negativeEvidence": "Both declared skipped GitHub native jobs must be skipped with empty outputs; the other four must succeed with measured observations. Changed envelopes, unexpected results, wrong oracles and tampered receipts fail closed."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06AA",
+        "selectedWorkPackage": ".flow-agent/work-packages/authenticated-target-coverage.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio",
+            "jenkins-shared-condition-runtime",
+            "github-actions-condition-prepare",
+            "github-actions-condition-runtime"
+          ],
+          "negativeEvidence": "Optimistic declarations, profile-only targets, changed provider inventories, forged or stale observations, mutable publication inputs and incomplete publication directories cannot manufacture behavioral support."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06Z",
+        "workPackage": ".flow-agent/work-packages/shared-condition-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06AA",
+        "workPackage": ".flow-agent/work-packages/authenticated-target-coverage.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 223.",
+    "predecessorPullRequest": 223,
+    "mergedMain": "38b2253183df5c40cac3ff39c24be281f981821d"
+  },
+  "limitations": [
+    "AR-06AA requires fresh exact-head, synthetic-merge and complete native runtime/portfolio evidence.",
+    "Publication remains bounded evidence, not target-wide support, portable execution or milestone closure."
+  ]
+}
