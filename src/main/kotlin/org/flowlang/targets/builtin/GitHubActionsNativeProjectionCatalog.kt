@@ -11,7 +11,7 @@ import org.flowlang.projection.ProjectionBindingKind
 object GitHubActionsNativeProjectionCatalog {
     val catalog: TargetNativeProjectionCatalog = TargetNativeProjectionCatalog.of(
         "github-actions",
-        TargetNativeProjectionDefinition(
+        definitions = listOf(TargetNativeProjectionDefinition(
             kind = GitHubActionsProjectionPayloadKinds.GITHUB_ACTION,
             reference = "actions/checkout@v4",
             bindings = mapOf(
@@ -42,7 +42,7 @@ object GitHubActionsNativeProjectionCatalog {
                 "name" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.ARTIFACT)),
                 "path" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.LITERAL))
             )
-        ),
+        )),
         structuralDefinitions = listOf(TargetNativeStructuralProjectionDefinition(
             structure = TargetStructuralProjectionKind.CONDITION,
             kind = "github-job-condition",

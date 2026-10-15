@@ -50,6 +50,14 @@ class SharedConditionRuntimeTests {
             }
             assertContentEquals(g.bound.resolve(g.bound.artifact), g.artifacts.getValue("baseline"))
             assertContentEquals(j.bound.resolve(j.bound.artifact), j.artifacts.getValue("baseline"))
+            val baseline = j.artifacts.getValue("baseline").toString(Charsets.UTF_8)
+            assertTrue(baseline.contains("if ($value) {"))
+            assertTrue(j.artifacts.getValue("inverted-condition").toString(Charsets.UTF_8).contains("if (${!value}) {"))
+            if (value) assertFalse(j.artifacts.getValue("omitted-checkout").toString(Charsets.UTF_8).contains("checkout scmGit("))
+            else {
+                assertFalse(j.artifacts.getValue("flattened-condition").toString(Charsets.UTF_8).contains("if ("))
+                assertFalse(j.artifacts.getValue("flattened-condition").contentEquals(j.artifacts.getValue("inverted-condition")))
+            }
         }
     }
 

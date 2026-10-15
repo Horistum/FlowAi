@@ -410,4 +410,42 @@ class AdapterCertificationPortfolioTests {
         assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedCheckoutComparison(widened) }
     }
 
+    @Test fun sharedConditionsCannotBorrowAnotherSourceGraphOrEquallyWrongObservation() = fixture { f ->
+        val doc = mapper.readTree(f.derive().json())
+        for (value in SharedConditionFixture.values) {
+            val ids = listOf("jenkins", "github-actions").map { SharedConditionFixture.scenario(it, value) }
+            val original = doc["assessments"].filter { it["scenarioId"].asText() in ids }.map { it["matrix"] }
+            assertEquals(2, original.size)
+            assertEquals(AdapterCertificationPortfolio.sharedConditionComparison(original, value),
+                AdapterCertificationPortfolio.sharedConditionComparison(original.reversed(), value))
+            fun behavior(node: JsonNode) = node["rows"].single { !it["behavior"].isNull }["behavior"]
+            assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedConditionComparison(original, !value) }
+            assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedConditionComparison(original.take(1), value) }
+            for (field in listOf("source", "canonicalGraph")) {
+                val pair = original.map { it.deepCopy<JsonNode>() }
+                (behavior(pair.first())[field] as ObjectNode).put("sha256", "f".repeat(64))
+                assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedConditionComparison(pair, value) }
+            }
+            val wrong = original.map { it.deepCopy<JsonNode>() }
+            wrong.forEach { (behavior(it)["baseline"] as ObjectNode).put("observedUtf8", "same forged observation") }
+            assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolio.sharedConditionComparison(wrong, value) }
+        }
+    }
+
+    @Test fun rawConditionJobResultsCannotBeReplacedEvenWithRepinnedReceipt() = fixture { f ->
+        for (value in SharedConditionFixture.values) {
+            val file = File(f.directory, "${SharedConditionFixture.PRODUCER_JOB}/$value/native-job-results.json")
+            val original = file.readBytes()
+            for (field in listOf("result", "runner-image", "observation")) {
+                val raw = mapper.readTree(original)
+                val job = raw[SharedConditionFixture.job(true, "baseline")]
+                if (field == "result") (job as ObjectNode).put(field, "skipped")
+                else (job["outputs"] as ObjectNode).put(field, "substituted")
+                file.writeBytes(mapper.writeValueAsBytes(raw))
+                assertFailsWith<IllegalArgumentException> { f.derive() }
+                file.writeBytes(original)
+            }
+        }
+    }
+
 }
