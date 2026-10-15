@@ -27,7 +27,7 @@ class GroovyExpr(private val inputs: Set<String>) {
         is TemplateStringNode -> renderTemplate(e)
         is ListLiteralNode -> e.items.joinToString(", ", "[", "]") { render(it) }
         is MapLiteralNode -> e.entries.entries.joinToString(", ", "[", "]") { "${groovyString(it.key)}: ${render(it.value)}" }
-        is CallExpressionNode -> "${groovyIdentifier(e.function)}(${e.args.joinToString(", ") { render(it) }})"
+        is CallExpressionNode -> error("Jenkins expression function '${e.function}' requires an explicit adapter mapping; ambient method invocation is unsupported.")
         is UnaryExpressionNode -> when (e.operator) {
             "not" -> "!(${render(e.operand)})"
             else -> error("Unsupported Jenkins unary operator '${e.operator}'.")

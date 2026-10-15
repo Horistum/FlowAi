@@ -727,3 +727,9 @@ This fills one bounded SECRETS row, not generic secret handling. Pipeline-wide c
 Regenerate Jenkins artifacts from source when a condition reads a task result or another value without a native binding. Such conditions now remain review-only with `condition.value-binding`; a result alias and task ordering do not establish output continuity. Preserve the diagnostic expression and implement a separately evidenced adapter output contract before claiming executability. Declared inputs and lexical loop/handler bindings keep their existing projection. Direct executable rendering also checks scope.
 
 No manifest wire version changes. The complete existing native portfolio and all-target publication remain required; value/state continuity is still an explicit evidence gap.
+
+## AR-06AD: Jenkins condition function binding boundary
+
+Regenerate Jenkins artifacts containing generic function calls in conditions. Such calls now remain review-only with `condition.function-binding`; a canonical function name is not a mapping to a Jenkins Pipeline step or Groovy method. The expression and child actions remain available for diagnosis. Direct executable rendering and expression translation also reject unmapped calls, including calls nested inside other expressions.
+
+Typed `secret("name")` references, call-like literal text and supported operators retain their existing projection. No manifest wire version changes. Function mappings need their own semantic preservation and native behavioral evidence before becoming executable. Generic value/state continuity remains uncertified.

@@ -110,23 +110,24 @@ internal object JenkinsConditionSecrets {
 /** A result alias is not a native binding. Track only values the renderer actually introduces. */
 internal object JenkinsConditionValueScope {
     private const val FEATURE = "condition.value-binding"
+    private data class Problem(val feature: String, val message: String, val requirement: String)
 
     fun reconcile(steps: List<TargetStep>, inputs: Set<String>): List<TargetStep> =
         visit(steps, inputs) { step, roots ->
-            val reason = reason(step, roots) ?: return@visit step
+            val problem = problem(step, roots) ?: return@visit step
             step.copy(
-                materialization = TargetMaterialization.adapterRequired(step.materialization.capability, reason,
-                    requirements = mapOf("nativeValueBinding" to "required")),
+                materialization = TargetMaterialization.adapterRequired(step.materialization.capability, problem.message,
+                    requirements = mapOf(problem.requirement to "required")),
                 rendererPayload = null,
-                mappingNotes = step.mappingNotes + TargetMappingNote("warning", "jenkins", step.id, FEATURE, reason))
+                mappingNotes = step.mappingNotes + TargetMappingNote("warning", "jenkins", step.id, problem.feature, problem.message))
         }
 
     fun requireBound(manifest: TargetManifest) {
         val inputs = manifest.inputs.map { it.name }.toSet()
         manifest.jobs.forEach { job ->
             visit(job.steps, inputs) { step, roots ->
-                val reason = reason(step, roots)
-                require(reason == null) { reason.orEmpty() }
+                val problem = problem(step, roots)
+                require(problem == null) { problem?.message.orEmpty() }
                 step
             }
         }
@@ -146,15 +147,20 @@ internal object JenkinsConditionValueScope {
         transform(if (children == step.children) step else step.copy(children = children), roots)
     }
 
-    private fun reason(step: TargetStep, roots: Set<String>): String? {
+    private fun problem(step: TargetStep, roots: Set<String>): Problem? {
         if (step.type != "condition") return null
-        val source = step.params["condition"] ?: return "Jenkins condition '${step.id}' has no expression."
+        fun valueProblem(message: String) = Problem(FEATURE, message, "nativeValueBinding")
+        val source = step.params["condition"] ?: return valueProblem("Jenkins condition '${step.id}' has no expression.")
         val expression = runCatching { ExpressionParser.parseSource(source) }.getOrElse {
-            return "Jenkins condition '${step.id}' has an invalid expression."
+            return valueProblem("Jenkins condition '${step.id}' has an invalid expression.")
         }
+        val calls = JenkinsExpressionCalls.names(expression).sorted()
+        if (calls.isNotEmpty()) return Problem("condition.function-binding",
+            "Jenkins condition '${step.id}' has no native function binding for ${calls.joinToString()}; canonical expression calls cannot invoke ambient Jenkins methods.",
+            "nativeFunctionBinding")
         val missing = (references(expression) - roots).sorted()
         return if (missing.isEmpty()) null else
-            "Jenkins condition '${step.id}' has no native value binding for ${missing.joinToString()}; task outputs and ambient runtime values require an explicit adapter contract."
+            valueProblem("Jenkins condition '${step.id}' has no native value binding for ${missing.joinToString()}; task outputs and ambient runtime values require an explicit adapter contract.")
     }
 
     private fun references(e: ExpressionNode): Set<String> = when (e) {
@@ -173,5 +179,23 @@ internal object JenkinsConditionValueScope {
             (if (e.operator == "matches" && e.right is ReferenceNode) emptySet() else references(e.right))
         is StringLiteralNode, is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode,
         is IdentifierLiteralNode, is SecretRefNode -> emptySet()
+    }
+}
+
+/** No generic expression function currently has a Jenkins mapping. Typed secrets are not calls. */
+internal object JenkinsExpressionCalls {
+    fun names(e: ExpressionNode): Set<String> = when (e) {
+        is CallExpressionNode -> setOf(e.function) + e.args.flatMap(::names)
+        is MemberExpressionNode -> names(e.target)
+        is IndexExpressionNode -> names(e.target) + names(e.index)
+        is TemplateStringNode -> e.parts.flatMap(::names).toSet()
+        is ListLiteralNode -> e.items.flatMap(::names).toSet()
+        is MapLiteralNode -> e.entries.values.flatMap(::names).toSet()
+        is UnaryExpressionNode -> names(e.operand)
+        is UnaryPostfixExpressionNode -> names(e.operand)
+        is LogicalExpressionNode -> e.operands.flatMap(::names).toSet()
+        is BinaryExpressionNode -> names(e.left) + names(e.right)
+        is StringLiteralNode, is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode,
+        is IdentifierLiteralNode, is SecretRefNode, is ReferenceNode -> emptySet()
     }
 }
