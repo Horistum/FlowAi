@@ -703,3 +703,13 @@ The complete portfolio requires 34 authenticated assessments and 116 signed obse
 This evidence covers one literal guard with one checkout only. Inputs, else branches, nesting, joins, downstream scheduling and complete generated workflows are outside the GitHub execution claim. The plan-scoped catalog entry does not change partial target-wide condition support. No generic support, portable execution or roadmap closure is inferred. See `.flow-agent/work-packages/shared-condition-certification.yaml` and the matching report for the current-revision validation gate.
 
 The reference distribution now composes `GitHubLiteralConditionProjectionScope`: executable capability evidence is granted only to an authorized plan containing a single literal condition and a single checkout, without inputs, else/nested branches, workflow handlers or successors. The registry itself stays partial; missing provider evidence fails closed.
+
+## Authenticated target coverage publication (AR-06AA)
+
+The runtime portfolio job now publishes `target-coverage.json` and `target-coverage.md` alongside the existing `portfolio.json` and `portfolio.md`. The new views include every target loaded from the target registry, including declarations without a composed provider. Every target has one row for each certification construct.
+
+Declarations, provider projection definitions and bounded runtime evidence are separate fields. Declaring a feature `SUPPORTED`, composing a renderer or observing a checkout never fills another construct's evidence gap. Evidence maturity is limited to the exact scenarios in this authenticated portfolio; no target-wide capability or portable-execution status is promoted. Existing declaration and maturity contracts remain unchanged.
+
+The publication accepts only the opaque result of complete portfolio replay. It preserves source/graph identities, adapter/proof/trust bindings, execution modes, baseline and falsifying mutant observations, prerequisites and limitations. Missing evidence is explicitly reported and does not itself mean that a target feature is unsupported.
+
+`publication.json` binds all four output files by SHA-256 and byte size after they are re-read from staging. The complete directory is published atomically, and existing destinations are rejected. The new coverage JSON also binds the exact portfolio bytes. This manifest is an integrity receipt, not a signature or independent trust root; consumers must still obtain evidence from the intended CI run and revision. The GitHub job summary shows the coverage view, while the artifact retains all five files.

@@ -14,6 +14,7 @@ import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 import org.flowlang.adapters.certification.*
 import org.flowlang.distribution.reference.ReferenceTargetProjections
+import org.flowlang.targets.TargetRegistryYamlLoader
 
 /** Digests are supplied by the assessment owner, separately from downloaded candidate files. */
 internal data class PortfolioAssessmentReceipt(val scenarioId: String, val proofSha256: String, val trustSha256: String)
@@ -383,15 +384,37 @@ internal object AdapterCertificationPortfolioCli {
         val output = File(args[2]).absoluteFile.toPath()
         require(!Files.exists(output)) { "Portfolio output must be fresh." }
         val portfolio = AdapterCertificationPortfolio.derive(root, revision, File(args[1]), receipts)
+        val coverage = AuthenticatedTargetCoverage.derive(portfolio,
+            TargetRegistryYamlLoader.loadDirectory(File(root, "targets")), ReferenceTargetProjections.nativeCatalogs)
+        publish(output, portfolio, coverage)
+        println("PASS: reauthenticated the complete runtime inventory and published all declared target coverage.")
+    }
+
+    internal fun publish(output: java.nio.file.Path, portfolio: AdapterCertificationPortfolio, coverage: AuthenticatedTargetCoverage) {
+        require(!Files.exists(output)) { "Portfolio output must be fresh." }
+        val mapper = jacksonObjectMapper()
+        val parsed = mapper.readTree(coverage.json())
+        require(parsed["portfolioSha256"].asText() == AuthenticatedTargetCoverage.sha(portfolio.json().toByteArray(Charsets.UTF_8))) {
+            "Coverage publication belongs to a different portfolio."
+        }
+        val documents = linkedMapOf("portfolio.json" to portfolio.json(), "portfolio.md" to portfolio.markdown(),
+            "target-coverage.json" to coverage.json(), "target-coverage.md" to coverage.markdown())
         Files.createDirectories(output.parent)
         val stage = Files.createTempDirectory(output.parent, ".portfolio-")
         try {
-            Files.writeString(stage.resolve("portfolio.json"), portfolio.json())
-            Files.writeString(stage.resolve("portfolio.md"), portfolio.markdown())
+            val receipts = documents.mapValues { (name, text) ->
+                val bytes = text.toByteArray(Charsets.UTF_8)
+                Files.write(stage.resolve(name), bytes)
+                val actual = Files.readAllBytes(stage.resolve(name))
+                require(actual.contentEquals(bytes)) { "Published bytes differ: $name" }
+                mapOf("sha256" to AuthenticatedTargetCoverage.sha(actual), "sizeBytes" to actual.size)
+            }
+            // Write the manifest last, from re-read bytes, before publishing the complete directory.
+            Files.writeString(stage.resolve("publication.json"), mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
+                linkedMapOf("formatVersion" to 1, "sourceRevision" to parsed["sourceRevision"].asText(), "files" to receipts)) + "\n")
             Files.move(stage, output, ATOMIC_MOVE)
         } finally {
             stage.toFile().deleteRecursively()
         }
-        println("PASS: reauthenticated the complete runtime inventory and published the reference adapter portfolio.")
     }
 }

@@ -1,0 +1,67 @@
+version: AR-06AA
+name: Authenticated Target Coverage Publication
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 223.
+  predecessorPullRequest: 223
+  mergedMain: 38b2253183df5c40cac3ff39c24be281f981821d
+invariant: Publish every declared target and construct from the reauthenticated portfolio, preserving exact scenario
+  evidence while separating declarations, composition and bounded runtime observations.
+scope:
+- Publish the Cartesian product of all declared target identities and all certification constructs, including profiles
+  without providers.
+- Derive bounded maturity and scenario coverage only from an opaque reauthenticated portfolio; declarations never
+  manufacture evidence.
+- Preserve exact baseline/mutant observations, source/graph identities, proof/trust bindings, execution modes, prerequisites
+  and limitations.
+- Publish immutable JSON and Markdown snapshots with a manifest derived from re-read bytes in one atomic directory.
+nonGoals:
+- No new runtime scenario, target behavior, generic support promotion, portable-execution claim or public syntax/version
+  change.
+- No replacement of historical declaration/maturity contracts, acceptance promotion, finding closure, AR-06 closure,
+  AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  conformance: Owns evidence-derived publication and runtime replay; product modules do not depend on verification.
+  distribution: Supplies the complete declaration and composed provider inventory without manufacturing behavioral
+    claims.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/conformance/AuthenticatedTargetCoverage.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- Full target/construct coverage and exact observation preservation.
+- Optimistic declarations, absent providers, changed inventories, mutation after publication and unsafe Markdown
+  identities.
+- Actual-byte publication receipts, immutable destination and historical lifecycle tampering.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/authenticated-target-coverage.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  - jenkins-shared-condition-runtime
+  - github-actions-condition-prepare
+  - github-actions-condition-runtime
+  negativeEvidence: Optimistic declarations, profile-only targets, changed provider inventories, forged or stale
+    observations, mutable publication inputs and incomplete publication directories cannot manufacture behavioral
+    support.
+followUp:
+- Close missing behavioral obligations with native execution and falsifying mutants.
+- Reconcile target-wide support only when the entire declared scope has adequate evidence; keep AR-06 active.

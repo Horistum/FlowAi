@@ -43,6 +43,7 @@ org/flowlang/conformance/ArtifactIntegrityCompletion.kt
 org/flowlang/conformance/ArtifactIntegrityLifecycle.kt
 org/flowlang/conformance/AtomicPublicationConformanceChecks.kt
 org/flowlang/conformance/AtomicPublicationLifecycle.kt
+org/flowlang/conformance/AuthenticatedTargetCoverage.kt
 org/flowlang/conformance/BackupRestoreBaseline.kt
 org/flowlang/conformance/BackupRestoreFalsification.kt
 org/flowlang/conformance/BoundedDomainCorpusRoadmapLifecycleAuthority.kt

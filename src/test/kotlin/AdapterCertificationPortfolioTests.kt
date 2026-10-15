@@ -12,6 +12,8 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 import org.flowlang.adapters.certification.*
 import org.flowlang.distribution.reference.ReferenceTargetProjections
+import org.flowlang.targets.TargetRegistryYamlLoader
+import org.flowlang.capabilities.SupportLevel
 
 /** Synthetic signed protocol fixtures; no unit test claims provider execution. */
 class AdapterCertificationPortfolioTests {
@@ -169,6 +171,86 @@ class AdapterCertificationPortfolioTests {
             files.forEach { (path, bytes) -> File(dir, path).apply { parentFile.mkdirs(); writeBytes(bytes) } }
             test(Fixture(dir))
         } finally { dir.deleteRecursively() }
+    }
+
+    @Test fun authenticatedPublicationIncludesProfilesAndPreservesEveryBoundedObservation() = fixture { f ->
+        val portfolio = f.derive()
+        val declarations = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+        val publication = AuthenticatedTargetCoverage.derive(portfolio, declarations, ReferenceTargetProjections.nativeCatalogs)
+        val doc = mapper.readTree(publication.json()); val original = mapper.readTree(portfolio.json())
+        assertEquals(declarations.keys.sorted(), doc["targets"].map { it["target"].asText() })
+        assertEquals(6, doc["targetCount"].asInt()); assertEquals(72, doc["rows"].size())
+        assertEquals(34, doc["scenarios"].size())
+        assertEquals(12, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
+        assertEquals(sha(portfolio.json().toByteArray()), doc["portfolioSha256"].asText())
+        assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
+        for (target in doc["targets"]) {
+            val id = target["target"].asText()
+            assertEquals(id in ReferenceTargetProjections.nativeCatalogs, target["providerAvailable"].asBoolean())
+            if (id !in setOf("jenkins", "github-actions")) {
+                assertEquals("NO_RUNTIME_EVIDENCE_IN_PORTFOLIO", target["evidenceMaturity"].asText())
+                assertEquals(0, target["boundedScenarioCount"].asInt()); assertEquals(12, target["missingConstructs"].size())
+            }
+            assertEquals(declarations.getValue(id).conditions.name, target["declaredCapabilities"]["conditions"].asText())
+        }
+        for (scenario in doc["scenarios"]) {
+            val assessment = original["assessments"].single { it["scenarioId"] == scenario["scenarioId"] }
+            assertEquals(assessment["proofSha256"], scenario["proofSha256"])
+            assertEquals(assessment["trustSha256"], scenario["trustSha256"])
+            assertEquals(assessment["executionMode"], scenario["executionMode"])
+            assertEquals(assessment["matrix"]["rows"].single { !it["behavior"].isNull }["behavior"], scenario["behavior"])
+        }
+        assertEquals(original["sharedCanonicalConditions"], doc["sharedCanonicalConditions"])
+        assertTrue(publication.markdown().contains("missing evidence does not mean unsupported"))
+    }
+
+    @Test fun optimisticDeclarationsAndNewProfileCannotManufactureBehaviorOrMutatePublishedSnapshots() = fixture { f ->
+        val portfolio = f.derive(); val declarations = TargetRegistryYamlLoader.loadDirectory(File("targets")).toMutableMap()
+        val features = mutableMapOf("secret.inject" to SupportLevel.SUPPORTED)
+        val id = "profile|<script>"
+        declarations[id] = declarations.getValue("jenkins").copy(target = id, secrets = SupportLevel.SUPPORTED, features = features)
+        val publication = AuthenticatedTargetCoverage.derive(portfolio, declarations, ReferenceTargetProjections.nativeCatalogs)
+        val json = publication.json(); val markdown = publication.markdown(); val doc = mapper.readTree(json)
+        assertEquals(84, doc["rows"].size())
+        assertTrue(doc["rows"].filter { it["target"].asText() == id }.all { it["scenarioIds"].isEmpty })
+        assertTrue(doc["rows"].filter { it["construct"].asText() in setOf("SECRETS", "VALUE_STATE_CONTINUITY") }.all { it["scenarioIds"].isEmpty })
+        assertEquals(json, AuthenticatedTargetCoverage.derive(portfolio, declarations.entries.reversed().associate { it.toPair() },
+            ReferenceTargetProjections.nativeCatalogs.entries.reversed().associate { it.toPair() }).json())
+        features["secret.inject"] = SupportLevel.UNSUPPORTED; declarations.clear()
+        assertEquals(json, publication.json()); assertEquals(markdown, publication.markdown())
+        assertFalse(markdown.contains("<script>")); assertTrue(markdown.contains("profile&#124;&#60;script&#62;"))
+    }
+
+    @Test fun changedCompositionAndMisidentifiedDeclarationsCannotPublishAuthenticatedCoverage() = fixture { f ->
+        val portfolio = f.derive(); val declarations = TargetRegistryYamlLoader.loadDirectory(File("targets"))
+        val providers = ReferenceTargetProjections.nativeCatalogs
+        assertFailsWith<IllegalArgumentException> { AuthenticatedTargetCoverage.derive(portfolio, declarations, providers - "jenkins") }
+        assertFailsWith<IllegalArgumentException> { AuthenticatedTargetCoverage.derive(portfolio, declarations - "github-actions", providers) }
+        assertFailsWith<IllegalArgumentException> { AuthenticatedTargetCoverage.derive(portfolio, emptyMap(), providers) }
+        assertFailsWith<IllegalArgumentException> { AuthenticatedTargetCoverage.derive(portfolio,
+            declarations + ("jenkins" to declarations.getValue("jenkins").copy(target = "another")), providers) }
+        assertFailsWith<IllegalArgumentException> { AuthenticatedTargetCoverage.derive(portfolio, declarations,
+            providers + ("jenkins" to providers.getValue("github-actions"))) }
+    }
+
+    @Test fun atomicPublicationBindsAllWrittenBytesAndCannotReplaceAnExistingDirectory() = fixture { f ->
+        val portfolio = f.derive()
+        val coverage = AuthenticatedTargetCoverage.derive(portfolio, TargetRegistryYamlLoader.loadDirectory(File("targets")), ReferenceTargetProjections.nativeCatalogs)
+        val output = f.directory.resolve("published").toPath()
+        AdapterCertificationPortfolioCli.publish(output, portfolio, coverage)
+        val names = setOf("portfolio.json", "portfolio.md", "target-coverage.json", "target-coverage.md")
+        assertEquals(names + "publication.json", output.toFile().listFiles()!!.map { it.name }.toSet())
+        val manifest = mapper.readTree(output.resolve("publication.json").toFile())
+        assertEquals(revision, manifest["sourceRevision"].asText())
+        assertEquals(names, manifest["files"].fieldNames().asSequence().toSet())
+        for (name in names) {
+            val bytes = output.resolve(name).toFile().readBytes()
+            assertEquals(sha(bytes), manifest["files"][name]["sha256"].asText())
+            assertEquals(bytes.size, manifest["files"][name]["sizeBytes"].asInt())
+        }
+        assertEquals(coverage.json(), output.resolve("target-coverage.json").toFile().readText())
+        assertFailsWith<IllegalArgumentException> { AdapterCertificationPortfolioCli.publish(output, portfolio, coverage) }
+        assertTrue(f.directory.listFiles()!!.none { it.name.startsWith(".portfolio-") })
     }
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->

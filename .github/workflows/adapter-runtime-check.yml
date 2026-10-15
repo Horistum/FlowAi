@@ -1043,7 +1043,7 @@ jobs:
           FLOW_CERTIFICATION_JOB_RECEIPTS: ${{ toJSON(needs) }}
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyAdapterCertificationPortfolio --stacktrace
       - name: Publish Portfolio Summary
-        run: cat flow-conformance-kit/build/adapter-certification-portfolio/portfolio.md >> "$GITHUB_STEP_SUMMARY"
+        run: cat flow-conformance-kit/build/adapter-certification-portfolio/target-coverage.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Verified Portfolio
         uses: actions/upload-artifact@v4
         with:
