@@ -5,6 +5,7 @@ import org.flowlang.targets.builtin.groovyEscape
 import org.flowlang.targets.builtin.groovyIdentifier
 import org.flowlang.targets.builtin.groovyProperty
 import org.flowlang.targets.builtin.groovyString
+import org.flowlang.targets.builtin.safeEnvName
 
 /**
  * Renders a Flow expression AST into a Groovy expression for Jenkins pipelines.
@@ -19,7 +20,7 @@ class GroovyExpr(private val inputs: Set<String>) {
         is BooleanLiteralNode -> e.value.toString()
         is NullLiteralNode -> "null"
         is IdentifierLiteralNode -> groovyString(e.value)
-        is SecretRefNode -> groovyProperty("env", e.name)
+        is SecretRefNode -> groovyProperty("env", safeEnvName(e.name))
         is ReferenceNode -> renderRef(e.path, e.safe)
         is MemberExpressionNode -> groovyProperty(render(e.target), e.member, e.safe)
         is IndexExpressionNode -> "${render(e.target)}[${render(e.index)}]"

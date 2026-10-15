@@ -66,7 +66,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         PARALLEL_WORKSPACES_FAILURE("jenkins-parallel-workspaces-failure-runtime", "parallel-workspace-failure.flow", "parallel-workspace-cancellation-matrix.json", listOf("baseline", "disabled-cancellation", "omitted-failure", "suppressed-failure", "early-successor"), "AR-06X"),
         SHARED_CHECKOUT("jenkins-shared-checkout-runtime", "shared-checkout.intent.yaml", null, SharedCheckoutFixture.runIds, "AR-06O"),
         SHARED_CONDITION_TRUE("jenkins-shared-condition-true-runtime", "shared-condition-true.flow", null, SharedConditionFixture.runIds(true), "AR-06Z"),
-        SHARED_CONDITION_FALSE("jenkins-shared-condition-false-runtime", "shared-condition-false.flow", null, SharedConditionFixture.runIds(false), "AR-06Z");
+        SHARED_CONDITION_FALSE("jenkins-shared-condition-false-runtime", "shared-condition-false.flow", null, SharedConditionFixture.runIds(false), "AR-06Z"),
+        SECRET_CONDITION("jenkins-secret-condition-runtime", "secret-condition.flow", "secret-condition-matrix.json", listOf("baseline", "omitted-binding", "substituted-binding"), "AR-06AB");
 
         val sharedCondition: Boolean get() = this == SHARED_CONDITION_TRUE || this == SHARED_CONDITION_FALSE
         val conditionValue: Boolean get() { require(sharedCondition); return this == SHARED_CONDITION_TRUE }
@@ -78,7 +79,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         val workspaceFailure: Boolean get() = this == PARALLEL_WORKSPACES_FAILURE
         val parallelFailFast: Boolean get() = this == PARALLEL_FAIL_FAST_APPROVE || this == PARALLEL_CANCEL
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
-        val conditional: Boolean get() = this == CONDITION_TRUE || this == CONDITION_FALSE || sharedCondition
+        val secretCondition: Boolean get() = this == SECRET_CONDITION
+        val conditional: Boolean get() = secretCondition || this == CONDITION_TRUE || this == CONDITION_FALSE || sharedCondition
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
         val localRecovery: Boolean get() = this == RECOVERY_FAILURE || this == RECOVERY_SUCCESS
         val retry: Boolean get() = this == RETRY_FAILURE || this == RETRY_SUCCESS
@@ -117,7 +119,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val original = requireNotNull(bound.resolve(bound.artifact))
         val text = original.toString(Charsets.UTF_8)
         val runIds = scenario.runIds
-        val artifacts = if (scenario.parallelWorkspaces) JenkinsParallelWorkspaceCertification.artifacts(text, original,
+        val artifacts = if (scenario.secretCondition) JenkinsSecretConditionCertification.artifacts(text, original) else if (scenario.parallelWorkspaces) JenkinsParallelWorkspaceCertification.artifacts(text, original,
             scenario == Scenario.PARALLEL_WORKSPACES_REJECT || scenario == Scenario.PARALLEL_WORKSPACES_CANCEL, scenario.workspaceFailFast, scenario.workspaceFailure) else if (scenario.parallel) parallelArtifacts(text, original, scenario) else if (scenario.match) matchArtifacts(text, original, scenario) else if (scenario.loop) loopArtifacts(text, original, scenario) else if (scenario.sharedCondition) sharedConditionArtifacts(text, original, scenario.conditionValue) else if (scenario == Scenario.SHARED_CHECKOUT) sharedCheckoutArtifacts(text, original) else if (scenario.retry) retryArtifacts(text, original, scenario) else if (scenario.approval) approvalArtifacts(text, original, scenario) else if (scenario.localRecovery) localRecoveryArtifacts(text, original, scenario) else {
             val branch = if (scenario == Scenario.FAILURE) "missing-revision" else "selected"
             val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch: '$branch'") }
@@ -144,7 +146,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                     "No general public support or portable-execution promotion. The runtime host remains trusted.")))
         } else mapper.readTree(File(root, "$FIXTURE/${requireNotNull(scenario.matrix)}"))
         require(matrix["version"].asInt() == 1 && matrix["target"].asText() == "jenkins")
-        val construct = when { scenario.parallel -> "parallel"; scenario.match -> "match"; scenario.loop -> "loop"; scenario.retry -> "retry"; scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
+        val construct = when { scenario.secretCondition -> "secrets"; scenario.parallel -> "parallel"; scenario.match -> "match"; scenario.loop -> "loop"; scenario.retry -> "retry"; scenario.approval -> "approval.manual"; scenario.localRecovery -> "local-recovery"; scenario.errorBoundary -> "error-boundary"; scenario.conditional -> "condition"; else -> "git.checkout" }
         require(matrix["claim"].asText() == scenario.claim && matrix["construct"].asText() == construct)
         val scenarioMatrix = if (!scenario.sharedCondition && (scenario.parallel || scenario.conditional || scenario.terminalEvidence || scenario.approval)) matrix["scenarios"].single { it["scenario"].asText() == scenario.id } else matrix
         require(scenarioMatrix["scenario"].asText() == scenario.id)
@@ -169,15 +171,16 @@ internal object JenkinsCheckoutRuntimeCertification {
             (if (scenario.approval || scenario.parallel) mapOf("pipeline-input-step" to "534.v352f0a_e98918") else emptyMap()) +
             (if (scenario.parallel) mapOf("workflow-cps" to "4183.v94b_6fd39da_c1") else emptyMap()) +
             (if (scenario.parallelWorkspaces) mapOf("workflow-durable-task-step" to "1458.va_2e10a_a_b_7c4d") else emptyMap())
+        val credentialPlugins = if (scenario.secretCondition) JenkinsSecretConditionCertification.plugins else emptyMap()
         val runtime = listOf(CertificationRuntimePrerequisite("jenkins", "2.580.1"),
-            CertificationRuntimePrerequisite("container-image", imageId)) + runtimePlugins.map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario.publicCheckout) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
+            CertificationRuntimePrerequisite("container-image", imageId)) + (runtimePlugins + credentialPlugins).map { (id, version) -> CertificationRuntimePrerequisite("plugin:$id", version) } + if (scenario.publicCheckout) listOf(CertificationRuntimePrerequisite("network", "public-git-egress"),
                 CertificationRuntimePrerequisite("repository", SharedCheckoutFixture.REPOSITORY)) else emptyList()
         val specification = bound.scenario(expected.getValue("baseline"), runtime, runIds.drop(1).map { id ->
             CertificationNegativeMutant(id, ref("artifact:$id", artifacts.getValue(id)), expected.getValue(id))
         })
         val implementation = File(root, "gradle/adapter-jenkins-sources.txt").readLines().filter(String::isNotBlank)
             .joinToString("\n") { path -> "$path:${sha256(File(root, "src/main/kotlin/$path").readBytes())}" }.toByteArray()
-        val adapterId = when { scenario.parallelWorkspaces -> "jenkins-parallel-workspaces"; scenario.parallel -> "jenkins-parallel-approval"; scenario.match -> "jenkins-literal-match"; scenario.loop -> "jenkins-literal-loop"; scenario.retry -> "jenkins-bounded-retry"; scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
+        val adapterId = when { scenario.secretCondition -> "jenkins-secret-condition"; scenario.parallelWorkspaces -> "jenkins-parallel-workspaces"; scenario.parallel -> "jenkins-parallel-approval"; scenario.match -> "jenkins-literal-match"; scenario.loop -> "jenkins-literal-loop"; scenario.retry -> "jenkins-bounded-retry"; scenario == Scenario.SHARED_CHECKOUT -> "jenkins-immutable-checkout"; scenario.approval -> "jenkins-manual-approval"; scenario.localRecovery -> "jenkins-local-recovery"; scenario.errorBoundary -> "jenkins-workflow-error-boundary"; scenario.conditional -> "jenkins-conditional-checkout"; else -> "jenkins-native-checkout" }
         val adapter = CertificationAdapterIdentity("jenkins", adapterId, scenario.version, sha256(implementation))
         val subjects = bound.subjects + TargetStructuralProjectionKind.entries.map { CertificationSubject.Structural(it) } +
             (provider.definitions.map { CertificationSubject.Leaf(it.kind, it.reference) } +
@@ -186,7 +189,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.parallelWorkspaces) "Two approval-then-checkout branches with distinct directories and the authored failFast policy; no running-checkout interruption, output export, security isolation or fresh-workspace claim."
+            if (scenario.secretCondition) "Two string credential identities in one condition only; no general secret handling or security claim."
+            else if (scenario.parallelWorkspaces) "Two approval-then-checkout branches with distinct directories and the authored failFast policy; no running-checkout interruption, output export, security isolation or fresh-workspace claim."
             else if (scenario.parallel) "One pair of concurrent manual inputs, native join and the authored failure policy; automated decisions only, no branch workspace or output isolation."
             else if (scenario.match) "Disjoint literal match cases with native checkout bodies and empty error branches only; see bounded runtime limitations."
             else if (scenario.loop) "Sequential string-literal-list loop with native checkout and condition children only; see bounded runtime limitations."
@@ -212,6 +216,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         if (prepared.scenario.approval || prepared.scenario.parallel) require(result["plugins"]?.get("pipeline-input-step")?.asText() == "534.v352f0a_e98918")
         if (prepared.scenario.parallel) require(result["plugins"]?.get("workflow-cps")?.asText() == "4183.v94b_6fd39da_c1")
         if (prepared.scenario.parallelWorkspaces) require(result["plugins"]?.get("workflow-durable-task-step")?.asText() == "1458.va_2e10a_a_b_7c4d")
+        if (prepared.scenario.secretCondition) require(JenkinsSecretConditionCertification.plugins.all { (id, version) -> result["plugins"]?.get(id)?.asText() == version })
         val runIds = prepared.scenario.runIds
         require(result["runs"]?.isArray == true && result["runs"].size() == runIds.size)
         val rows = result["runs"].toList()
@@ -298,6 +303,7 @@ internal object JenkinsCheckoutRuntimeCertification {
                 linkedMapOf("type" to error["type"].asText(), "message" to error["message"].asText())
             }
         }
+        if (scenario.secretCondition) observation["secrets"] = JenkinsSecretConditionCertification.observation(row)
         if (scenario.loop || scenario.match) {
             val branches = row["checkoutBranches"]
             require(branches?.isArray == true && branches.size() == row["checkoutCount"].asInt())

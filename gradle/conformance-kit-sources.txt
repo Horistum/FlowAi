@@ -93,6 +93,7 @@ org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt
 org/flowlang/conformance/IntentSafetyChecks.kt
 org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/JenkinsParallelWorkspaceCertification.kt
+org/flowlang/conformance/JenkinsSecretConditionCertification.kt
 org/flowlang/conformance/JsonSchemaSmokeValidator.kt
 org/flowlang/conformance/LanguageContractIntegrityLifecycle.kt
 org/flowlang/conformance/LanguageIntegrityCompletion.kt

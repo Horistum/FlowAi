@@ -35,6 +35,7 @@ internal class AdapterCertificationPortfolio private constructor(private val enc
             .mapValues { (_, values) -> values.map { it.id }.toSet() } + (githubScenario to setOf(githubScenario)) + (SharedConditionFixture.PRODUCER_JOB to githubConditions.toSet())
 
         internal fun relativeDirectory(s: JenkinsCheckoutRuntimeCertification.Scenario): String = when (s) {
+            JenkinsCheckoutRuntimeCertification.Scenario.SECRET_CONDITION -> "jenkins-secret-condition-runtime"
             JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CONDITION_TRUE -> "jenkins-shared-condition-runtime/true"
             JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CONDITION_FALSE -> "jenkins-shared-condition-runtime/false"
             JenkinsCheckoutRuntimeCertification.Scenario.CHECKOUT -> "jenkins-checkout-runtime"

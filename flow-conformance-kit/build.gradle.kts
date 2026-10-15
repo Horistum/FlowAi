@@ -247,3 +247,15 @@ tasks.register<JavaExec>("verifyAdapterCertificationPortfolio") {
         providers.environmentVariable("FLOW_CERTIFICATION_REVISION").getOrElse(""))
     workingDir(rootProject.projectDir)
 }
+
+
+tasks.register<JavaExec>("verifyJenkinsSecretConditionRuntime") {
+    group = "verification"
+    description = "Verify exact credential bindings in a condition and omission/substitution mutants on real Jenkins."
+    classpath = sourceSets.main.get().runtimeClasspath
+    mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+    javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+    args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-secret-condition-certification").get().asFile.absolutePath,
+        "jenkins-secret-condition-runtime")
+    workingDir(rootProject.projectDir)
+}

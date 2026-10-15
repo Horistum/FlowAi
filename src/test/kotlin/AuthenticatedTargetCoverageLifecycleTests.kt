@@ -4,7 +4,7 @@ import java.io.File
 import kotlin.test.*
 
 class AuthenticatedTargetCoverageLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = AdapterObservationAuthenticationLifecycle.secretConditionPredecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     private fun rejected(s: WorkflowSemanticsRecoveryLifecycleSnapshot) =
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 

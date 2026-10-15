@@ -242,3 +242,5 @@ strings, compiler-bound source/graph references, runtime prerequisites, signed r
 references and limitations. These are individual assessments, not a merged target
 portfolio. Synthetic unit-test signatures validate the protocol only; real Jenkins
 runs provide runtime evidence. No public support or portable execution is claimed.
+
+AR-06AB adds `secret-condition.flow`: two disposable string credential identities gate one checkout. The controller creates random equal canaries and a distinct substitution value internally, observes native `withCredentials` arguments and checks complete bounded build logs before archival. The three runs are baseline, omitted binding and substituted binding. No user credentials or values are archived, and the controller remains offline. This certifies only the bounded functional binding scenario, not general secrets security or masking.
