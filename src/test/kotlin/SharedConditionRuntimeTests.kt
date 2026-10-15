@@ -8,6 +8,15 @@ import java.security.KeyPairGenerator
 import java.security.Signature
 import kotlin.test.*
 import org.flowlang.adapters.certification.*
+import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.capabilities.SupportLevel
+import org.flowlang.compiler.requireAccepted
+import org.flowlang.distribution.reference.ReferenceTargetProjections
+import org.flowlang.frontend.FrontendCompilerComposition
+import org.flowlang.frontend.source.FlowSourceFrontend
+import org.flowlang.modules.ModuleRegistry
+import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
+import org.flowlang.targets.builtin.GitHubLiteralConditionProjectionScope
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 
@@ -59,6 +68,39 @@ class SharedConditionRuntimeTests {
                 assertFalse(j.artifacts.getValue("flattened-condition").contentEquals(j.artifacts.getValue("inverted-condition")))
             }
         }
+    }
+
+    @Test fun executableConditionScopeRejectsInputsElseNestingAndSuccessors() {
+        val declared = TargetRegistryYamlLoader.loadDirectory(File("targets")).getValue("github-actions")
+        assertEquals(SupportLevel.PARTIAL, declared.conditions)
+        val catalog = ReferenceTargetProjections.nativeCatalogs.getValue("github-actions")
+        val scope = GitHubLiteralConditionProjectionScope(catalog)
+        val source = File(SharedConditionFixture.source(true)).readText()
+        val directory = kotlin.io.path.createTempDirectory("condition-scope-").toFile()
+        val file = File(directory, "fixture.flow")
+        val frontend = FlowSourceFrontend(FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File("modules")),
+            StandardEnvironmentSafetyPolicyNotes.policy(File("."))))
+        fun resolve(text: String, selected: GitHubLiteralConditionProjectionScope = scope): org.flowlang.capabilities.TargetCapability {
+            file.writeText(text)
+            return selected.resolve(frontend.compile(file).requireAccepted().authorization, "github-actions", declared)
+        }
+        try {
+            for (value in listOf("true", "false")) {
+                val scoped = resolve(source.replace("if true {", "if $value {"))
+                assertEquals(SupportLevel.SUPPORTED, scoped.features["condition.evaluate"])
+                assertEquals(SupportLevel.PARTIAL, scoped.conditions)
+            }
+            val checkout = source.substringAfter("    if true {\n").substringBefore("\n    }\n")
+            val block = "    if true {\n$checkout\n    }"
+            val alternate = checkout.replace("selectedCheckout", "alternateCheckout")
+            val variants = listOf(
+                source.replace("  systems {", "  input { enabled: boolean default true }\n  systems {").replace("if true {", "if enabled {"),
+                source.replace(block, "$block else {\n$alternate\n    }"),
+                source.replace(block, "    if true {\n$block\n    }"),
+                source.replace(block, "$block\n$alternate"))
+            variants.forEach { assertEquals(declared, resolve(it)) }
+            assertEquals(declared, resolve(source, GitHubLiteralConditionProjectionScope(null)))
+        } finally { directory.deleteRecursively() }
     }
 
     @Test fun envelopeRejectsMovedReversedOrBypassedGuardsAndChangedNativeObservers() {

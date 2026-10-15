@@ -24,8 +24,8 @@ nonGoals:
 - No Core semantics, public syntax, contract/package version change, generic support promotion, finding closure,
   AR-06 closure, AR-07 activation or EF-09 resumption.
 ownershipBoundary:
-  adapter: GitHub Actions registers plan-scoped evidence for its existing native job-condition projection; target-wide
-    condition support remains partial.
+  adapter: GitHub Actions owns a strict plan-scoped capability resolver and native job-condition evidence; the reference
+    distribution composes it and target-wide condition support remains partial.
   conformance: Owns common fixtures, checked native execution envelopes, independent observers/oracles, ephemeral
     signing keys and authenticated portfolio replay; no product runtime.
 expectedFilesToChange:
@@ -34,6 +34,9 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 - src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
 - .github/workflows/adapter-runtime-check.yml
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubLiteralConditionProjectionScope.kt
+- src/main/kotlin/org/flowlang/distribution/reference/ReferenceTargetProjections.kt
+- standard/architecture/authority-responsibilities.yaml
 testsToAddOrUpdate:
 - Identical authored source and canonical graph across both providers, differing provider artifacts, and exact expected
   observations.

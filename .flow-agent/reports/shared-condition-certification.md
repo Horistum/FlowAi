@@ -19,3 +19,5 @@ Fresh exact-head and synthetic-merge Flow CI, every native producer, both condit
 Protocol tests cover source/graph identity, changed guards and observation envelopes, missing/failed/cancelled/unexpectedly skipped jobs, malformed or stale outputs, wrong immutable oracles, signatures and historical lifecycle tampering. Unit fixtures are synthetic and never stand in for provider execution.
 
 AR-06 remains active. AR-07 remains planned, EF-09 paused and F-20 owned by AR-07. No findings, milestone, package version or generic support are promoted by this candidate.
+
+The reference distribution now composes `GitHubLiteralConditionProjectionScope`: executable capability evidence is granted only to an authorized plan containing a single literal condition and a single checkout, without inputs, else/nested branches, workflow handlers or successors. The registry itself stays partial; missing provider evidence fails closed.
