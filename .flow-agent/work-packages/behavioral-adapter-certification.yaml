@@ -7,13 +7,13 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: AR-06AA
-selectedWorkPackage: .flow-agent/work-packages/authenticated-target-coverage.yaml
+selectedSlice: AR-06AB
+selectedWorkPackage: .flow-agent/work-packages/jenkins-secret-condition-certification.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
-invariant: Publish every declared target and construct from the reauthenticated portfolio, preserving exact scenario
-  evidence while separating declarations, composition and bounded runtime observations.
+invariant: Jenkins condition secret references resolve the exact authored credential identities through the same
+  environment mapping as their bindings, with native positive and falsifying observations.
 scope:
 - Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary.
 - Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage.
@@ -56,13 +56,14 @@ scope:
   native guard binding and authenticated comparable observations.
 - Publish all declared targets and constructs from authenticated evidence, with bounded maturity, explicit missing
   coverage and atomic output receipts.
+- Bind exact authored string credentials in Jenkins conditions and observe native checkout, binding identity and
+  bounded canary-log absence with omission/substitution mutants.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
 ownershipBoundary:
-  conformance: Owns evidence-derived publication and runtime replay; product modules do not depend on verification.
-  distribution: Supplies the complete declaration and composed provider inventory without manufacturing behavioral
-    claims.
+  adapters: Own exact credential environment mapping and condition expression projection.
+  conformance: Own disposable runtime fixtures, independent observations, authentication and publication.
 validation:
   status: current-revision-ci-required
   requiredChecks:
@@ -83,10 +84,10 @@ validation:
   - adapter-certification-portfolio
   - jenkins-shared-condition-runtime
   - github-actions-condition-prepare
+  - jenkins-secret-condition-runtime
   - github-actions-condition-runtime
-  negativeEvidence: Optimistic declarations, profile-only targets, changed provider inventories, forged or stale
-    observations, mutable publication inputs and incomplete publication directories cannot manufacture behavioral
-    support.
+  negativeEvidence: Missing or substituted credential bindings cannot reproduce the positive native observation;
+    declarations and synthetic test records cannot replace native execution.
 followUp:
 - Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
 - Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.

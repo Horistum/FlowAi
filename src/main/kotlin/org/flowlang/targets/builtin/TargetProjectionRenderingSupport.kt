@@ -84,11 +84,12 @@ fun TargetStep.flatten(): List<TargetStep> = listOf(this) + children.flatMap { i
 
 /** Shared checks accept the concrete adapter's name projections rather than selecting a target by id. */
 object TargetRenderingIdentityChecks {
-    fun requireValid(manifest: TargetManifest, inputName: (String) -> String, payloadName: (String) -> String) {
+    fun requireValid(manifest: TargetManifest, inputName: (String) -> String, payloadName: (String) -> String,
+        secretNames: List<String> = TargetProjectionDiagnostics.opaqueNames(manifest)) {
         val checks = TargetProjectionIdentityChecks
         checks.requireNames("render.jobs", manifest.jobs.map { it.id }, AdapterManifestLowering::id)
         checks.requireNames("render.inputs", manifest.inputs.map { it.name }, inputName)
-        checks.requireNames("render.secret-environment", TargetProjectionDiagnostics.opaqueNames(manifest), ::safeEnvName)
+        checks.requireNames("render.secret-environment", secretNames, ::safeEnvName)
         manifest.jobs.forEach { job ->
             val steps = job.steps.flatMap { it.flatten() }
             checks.requireNames("render.jobs.${job.id}.steps", steps.map { it.id }, AdapterManifestLowering::id)

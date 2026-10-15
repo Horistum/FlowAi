@@ -1,5 +1,8 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.ast.*
+import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.parser.ExpressionParser
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
 
@@ -72,4 +75,31 @@ internal fun groovyProperty(target: String, name: String, safe: Boolean = false)
 internal fun groovyIdentifier(name: String): String {
     require(GROOVY_IDENTIFIER.matches(name)) { "Unsupported Jenkins Groovy identifier '$name'." }
     return name
+}
+
+/** Condition secrets use typed expression nodes, never substring matching or native variable inference. */
+internal object JenkinsConditionSecrets {
+    fun names(manifest: TargetManifest): List<String> = manifest.jobs.flatMap { it.steps }
+        .flatMap { it.flatten() }.flatMap { step ->
+            if (step.type == "condition") {
+                TargetProjectionDiagnostics.opaqueNames(step.copy(params = step.params - "condition")) +
+                    step.params["condition"]?.let { names(ExpressionParser.parseSource(it)) }.orEmpty()
+            } else TargetProjectionDiagnostics.opaqueNames(step)
+        }.distinct()
+
+    private fun names(e: ExpressionNode): List<String> = when (e) {
+        is SecretRefNode -> listOf(e.name)
+        is MemberExpressionNode -> names(e.target)
+        is IndexExpressionNode -> names(e.target) + names(e.index)
+        is TemplateStringNode -> e.parts.flatMap(::names)
+        is ListLiteralNode -> e.items.flatMap(::names)
+        is MapLiteralNode -> e.entries.values.flatMap(::names)
+        is CallExpressionNode -> e.args.flatMap(::names)
+        is UnaryExpressionNode -> names(e.operand)
+        is UnaryPostfixExpressionNode -> names(e.operand)
+        is LogicalExpressionNode -> e.operands.flatMap(::names)
+        is BinaryExpressionNode -> names(e.left) + names(e.right)
+        is StringLiteralNode, is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode,
+        is IdentifierLiteralNode, is ReferenceNode -> emptyList()
+    }
 }

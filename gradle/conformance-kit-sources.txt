@@ -163,3 +163,4 @@ org/flowlang/roadmap/WorkflowBoundaryEvidence.kt
 org/flowlang/scenarios/ReferenceAdapterProjectionMatrix.kt
 org/flowlang/scenarios/ReferenceScenarioMatrix.kt
 org/flowlang/verification/VerificationCli.kt
+org/flowlang/conformance/JenkinsSecretConditionCertification.kt

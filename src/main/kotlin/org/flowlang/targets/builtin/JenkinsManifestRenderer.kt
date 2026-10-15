@@ -18,7 +18,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
 
     override fun render(manifest: TargetManifest): String {
         TargetRendererContractValidator.requireRenderable(manifest, target)
-        TargetRenderingIdentityChecks.requireValid(manifest, { it }, { it })
+        TargetRenderingIdentityChecks.requireValid(manifest, { it }, { it }, JenkinsConditionSecrets.names(manifest))
         manifest.jobs.forEach { job ->
             val imageIds = job.steps.flatMap { it.flatten() }.filter {
                 val payload = it.rendererPayload
@@ -79,7 +79,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
     }
 
     private fun renderJenkinsOpaqueEnvironment(manifest: TargetManifest, sb: StringBuilder) {
-        val opaqueNames = TargetProjectionDiagnostics.opaqueNames(manifest)
+        val opaqueNames = JenkinsConditionSecrets.names(manifest)
         if (opaqueNames.isEmpty()) return
         sb.appendLine("  environment {")
         opaqueNames.forEach { name ->

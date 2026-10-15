@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 41
+revision: 42
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #223 is merged into main 38b2253183df5c40cac3ff39c24be281f981821d with the independently verified PR tree. Flow CI 38680883639 passed 2163 tests and 274 ordered checks per revision; runtime CI 38680883669 passed 34 assessments with 116 independently verified signatures. AR-06AA publishes every declared target and construct from reauthenticated evidence, separating declarations, composed providers and bounded observations. Historical acceptance and generic support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  decisionBasis: "PR #224 merged into main dbeb803267eec8a5f2dc4d1203534ff48d5b8f5e with the independently verified PR tree. Flow CI 38689474307 passed 2170 tests and 274 ordered checks per revision; runtime CI 38689474256 passed 34 assessments with 116 verified signatures and all-target publication. AR-06AB repairs Jenkins condition credential mapping and adds native omission/substitution evidence for a bounded string-secret condition. Generic support and historical acceptance remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

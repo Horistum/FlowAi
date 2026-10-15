@@ -1,4 +1,11 @@
 import groovy.json.JsonOutput
+import com.cloudbees.plugins.credentials.CredentialsScope
+import com.cloudbees.plugins.credentials.SystemCredentialsProvider
+import com.cloudbees.plugins.credentials.domains.Domain
+import hudson.util.Secret
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
+import org.jenkinsci.plugins.structs.describable.UninstantiatedDescribable
+import org.jenkinsci.plugins.credentialsbinding.impl.StringBinding
 import hudson.init.InitMilestone
 import jenkins.model.Jenkins
 import org.jenkinsci.plugins.workflow.cps.CpsFlowDefinition
@@ -17,7 +24,7 @@ import org.jenkinsci.plugins.workflow.steps.FlowInterruptedException
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
-// Test controller only: no published host ports, credentials or production jobs.
+// Test controller only: no published host ports, user credentials or production jobs.
 // Only the shared immutable checkout scenario gets public Git egress; legacy fixtures stay offline.
 Thread.start('checkout-certification') {
     def output = new File('/evidence/runtime.json')
@@ -27,7 +34,9 @@ Thread.start('checkout-certification') {
         def scenario = System.getenv('FLOW_CERTIFICATION_SCENARIO') ?: 'jenkins-checkout-runtime'
         def workspaceScenario = scenario in ['jenkins-parallel-workspaces-approve-runtime', 'jenkins-parallel-workspaces-reject-runtime',
             'jenkins-parallel-workspaces-fail-fast-approve-runtime', 'jenkins-parallel-workspaces-cancel-runtime', 'jenkins-parallel-workspaces-failure-runtime']
+        def secretCondition = scenario == 'jenkins-secret-condition-runtime'
         def inventories = [
+            'jenkins-secret-condition-runtime': ['baseline', 'omitted-binding', 'substituted-binding'],
             'jenkins-parallel-workspaces-fail-fast-approve-runtime': ['baseline', 'aliased-workspaces', 'swapped-workspaces', 'omitted-left-checkout', 'early-branch-work', 'early-successor'],
             'jenkins-parallel-workspaces-cancel-runtime': ['baseline', 'disabled-cancellation', 'suppressed-rejection', 'early-branch-work', 'early-successor'],
             'jenkins-parallel-workspaces-failure-runtime': ['baseline', 'disabled-cancellation', 'omitted-failure', 'suppressed-failure', 'early-successor'],
@@ -69,6 +78,17 @@ Thread.start('checkout-certification') {
             Thread.sleep(100)
         }
         jenkins.setNumExecutors(1)
+        // Values exist only in this disposable controller, never in source, evidence or caller inputs.
+        def canaries = secretCondition ? ['fixture-' + UUID.randomUUID(), 'other-' + UUID.randomUUID()] : []
+        if (secretCondition) {
+            if (canaries[0] == canaries[1]) throw new IllegalStateException('Distinct fixture values required')
+            def store = SystemCredentialsProvider.getInstance().getStore()
+            [leftToken: canaries[0], rightToken: canaries[0], differentToken: canaries[1]].each { identity, value ->
+                if (!store.addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL,
+                    identity, 'Disposable conformance fixture', Secret.fromString(value))))
+                    throw new IllegalStateException('Cannot provision fixture credentials')
+            }
+        }
         if (!sharedCheckout) {
             daemon = new ProcessBuilder('git', '-c', 'safe.directory=/fixture/repository.git', 'daemon', '--export-all', '--reuseaddr',
                 '--base-path=/fixture', '--listen=127.0.0.1', '--port=9418')
@@ -241,6 +261,29 @@ Thread.start('checkout-certification') {
                 checkoutCount: checkouts.size(), checkoutErrors: errors,
                 artifactSha256: sha256(job.getDefinition().getScript().getBytes('UTF-8')),
                 buildNumber: build.getNumber()]
+            // Observe persisted native binding arguments, not generated text or the mutant identity.
+            if (secretCondition) {
+                def nodes = new FlowGraphWalker(build.getExecution()).findAll {
+                    it instanceof StepStartNode && !it.isBody() && it.getDescriptor()?.getFunctionName() == 'withCredentials'
+                }
+                def bindings = nodes.collectMany { node ->
+                    def values = ArgumentsAction.getResolvedArguments(node).get('bindings')
+                    if (!(values instanceof List)) throw new IllegalStateException('Missing native binding arguments')
+                    values.collect { value ->
+                        if (!(value instanceof UninstantiatedDescribable) || value.getModel()?.getType() != StringBinding)
+                            throw new IllegalStateException('Expected native string credentials binding')
+                        def arguments = value.getArguments()
+                        [credentialsId: arguments.get('credentialsId'), variable: arguments.get('variable')]
+                    }
+                }.sort { it.variable }
+                // Read the entire log within a hard budget; do not archive a log containing a canary.
+                def bytes = build.getLogInputStream().withCloseable { it.readNBytes(1048577) }
+                if (bytes.length > 1048576) throw new IllegalStateException('Secret fixture build log exceeds budget')
+                def logText = new String(bytes, 'UTF-8')
+                def leaked = canaries.any { logText.contains(it) }
+                if (leaked) throw new IllegalStateException('Fixture canary found in build log')
+                record.secrets = [bindings: bindings, canaryInBuildLog: false]
+            }
             if (workspaceScenario) record.workspaces = workspaceSnapshot(build, workspace)
             if (scenario.startsWith('jenkins-loop-') || scenario.startsWith('jenkins-match-')) {
                 record.checkoutBranches = checkouts.collect { node ->

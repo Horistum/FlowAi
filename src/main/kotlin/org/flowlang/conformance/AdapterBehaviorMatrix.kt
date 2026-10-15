@@ -33,6 +33,7 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
             resolver: CertificationEvidenceResolver
         ): AdapterBehaviorMatrix {
             val construct = when (scenario) {
+                JenkinsCheckoutRuntimeCertification.Scenario.SECRET_CONDITION -> CertificationConstruct.SECRETS
                 JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_APPROVE,
                 JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_REJECT,
                 JenkinsCheckoutRuntimeCertification.Scenario.PARALLEL_WORKSPACES_FAIL_FAST_APPROVE,
@@ -70,7 +71,7 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
                 CertificationConstruct.MATCH -> CertificationSubject.Structural(TargetStructuralProjectionKind.MATCH)
                 CertificationConstruct.LOOPS -> CertificationSubject.Structural(TargetStructuralProjectionKind.LOOP)
                 CertificationConstruct.RETRY -> CertificationSubject.Structural(TargetStructuralProjectionKind.RETRY)
-                CertificationConstruct.CONDITIONS -> CertificationSubject.Structural(TargetStructuralProjectionKind.CONDITION)
+                CertificationConstruct.SECRETS, CertificationConstruct.CONDITIONS -> CertificationSubject.Structural(TargetStructuralProjectionKind.CONDITION)
                 CertificationConstruct.ERROR_HANDLING -> CertificationSubject.Structural(TargetStructuralProjectionKind.ERROR_BOUNDARY)
                 CertificationConstruct.APPROVALS -> CertificationSubject.Semantic("approval.manual")
                 CertificationConstruct.NATIVE_CHECKOUT, CertificationConstruct.FAILURE_PROPAGATION -> CertificationSubject.Semantic("git.checkout")
