@@ -7,13 +7,13 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: AR-06AB
-selectedWorkPackage: .flow-agent/work-packages/jenkins-secret-condition-certification.yaml
+selectedSlice: AR-06AC
+selectedWorkPackage: .flow-agent/work-packages/jenkins-condition-value-boundary.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
-invariant: Jenkins condition secret references resolve the exact authored credential identities through the same
-  environment mapping as their bindings, with native positive and falsifying observations.
+invariant: Jenkins conditions may read only values with an explicit native binding in their lexical scope; an authored
+  task result without a native output contract must remain non-executable.
 scope:
 - Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary.
 - Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage.
@@ -58,12 +58,14 @@ scope:
   coverage and atomic output receipts.
 - Bind exact authored string credentials in Jenkins conditions and observe native checkout, binding identity and
   bounded canary-log absence with omission/substitution mutants.
+- Keep Jenkins conditions with unbound value references review-only; preserve declared input and lexical loop/error
+  bindings without inventing task-output continuity.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
 ownershipBoundary:
-  adapters: Own exact credential environment mapping and condition expression projection.
-  conformance: Own disposable runtime fixtures, independent observations, authentication and publication.
+  adapters: Own native value bindings and executable projection limits; consume unchanged canonical expressions.
+  conformance: Own source-to-projection regressions and preservation of all existing native evidence.
 validation:
   status: current-revision-ci-required
   requiredChecks:
@@ -86,8 +88,8 @@ validation:
   - github-actions-condition-prepare
   - jenkins-secret-condition-runtime
   - github-actions-condition-runtime
-  negativeEvidence: Missing or substituted credential bindings cannot reproduce the positive native observation;
-    declarations and synthetic test records cannot replace native execution.
+  negativeEvidence: Missing or out-of-scope native value bindings cannot produce executable Jenkins artifacts; declarations
+    and synthetic tests cannot replace the complete native portfolio.
 followUp:
 - Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
 - Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.

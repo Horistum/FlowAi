@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "purpose": "Jenkins conditions may read only values with an explicit native binding in their lexical scope; an authored task result without a native output contract must remain non-executable.",
+  "predecessor": {
+    "pullRequest": 225,
+    "mergedMain": "cdc449d3c5907adf0aa7713bb021d88479759884",
+    "tree": "f3d14ff3890762b676172d862017e473061ad4fe",
+    "exactHead": "bd9672c82c244746000fdafe6a575c294c7b3968",
+    "syntheticMergeCandidate": "285a9756acee6a2d1639331fa6d4d28b910216b9",
+    "flowCiRunId": 38715922370,
+    "runtimeCiRunId": 38715922404,
+    "conclusion": "success",
+    "testsPerRevision": 2182,
+    "suitesPerRevision": 380,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 35,
+    "signedObservations": 119,
+    "portfolioRows": 36,
+    "publishedRows": 72,
+    "declaredTargets": 6,
+    "observedConstructTargetPairs": 13,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "320e1fae0bc67e4d019a864f21fe93e4dc0bbba2115cc4b1523be852750a81d4",
+    "mainFlowCiRunId": 38724492536,
+    "mainFlowCiConclusion": "in-progress-at-observation",
+    "mainRuntimeCiRunId": 38724492531,
+    "mainRuntimeConclusion": "in-progress-at-observation",
+    "scope": "PR 225 exact-head and synthetic-merge tests, 274 ordered conformance checks, 781 isolation source digests, 119 signatures, complete publication and all 21 archive digests were independently verified. Actual main preserves that tree. Separate main workflows were running at observation; PR test counts are not separate main receipts."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06AB",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-secret-condition-certification.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio",
+            "jenkins-shared-condition-runtime",
+            "github-actions-condition-prepare",
+            "jenkins-secret-condition-runtime",
+            "github-actions-condition-runtime"
+          ],
+          "negativeEvidence": "Missing or substituted credential bindings cannot reproduce the positive native observation; declarations and synthetic test records cannot replace native execution."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06AC",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-condition-value-boundary.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio",
+            "jenkins-shared-condition-runtime",
+            "github-actions-condition-prepare",
+            "jenkins-secret-condition-runtime",
+            "github-actions-condition-runtime"
+          ],
+          "negativeEvidence": "Missing or out-of-scope native value bindings cannot produce executable Jenkins artifacts; declarations and synthetic tests cannot replace the complete native portfolio."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06AB",
+        "workPackage": ".flow-agent/work-packages/jenkins-secret-condition-certification.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06AC",
+        "workPackage": ".flow-agent/work-packages/jenkins-condition-value-boundary.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 225.",
+    "predecessorPullRequest": 225,
+    "mergedMain": "cdc449d3c5907adf0aa7713bb021d88479759884"
+  },
+  "limitations": [
+    "AR-06AC requires fresh exact-head, synthetic-merge and complete native runtime/portfolio evidence.",
+    "Blocking unbound conditions does not implement output capture or certify value/state continuity, portable execution or milestone closure."
+  ]
+}
