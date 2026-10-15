@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 43
+revision: 44
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,7 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #225 merged into main cdc449d3c5907adf0aa7713bb021d88479759884 with the independently verified PR tree. Flow CI 38715922370 passed 2182 tests and 274 ordered checks per revision; runtime CI 38715922404 passed 35 assessments with 119 verified signatures and all-target publication. AR-06AC makes Jenkins conditions with unbound native value references non-executable while preserving input and lexical bindings. Value/state continuity remains uncertified. Generic support and historical acceptance remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  decisionBasis: "PR #226 merged into main be6875e95cdfa3cbb03ca23b46c87c6ce7b92032 with its independently verified PR tree. Flow CI 38726025761 passed 2193 tests and 274 ordered checks per revision; runtime CI 38726025684 passed 35 assessments with 119 verified signatures and all-target publication. AR-06AD closes an adjacent expression projection gap: canonical calls cannot invoke ambient Jenkins methods without an explicit function mapping. Typed secrets and supported expressions retain their projection. Value/state continuity remains uncertified. Generic support and historical acceptance remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

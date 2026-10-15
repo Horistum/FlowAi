@@ -1,0 +1,66 @@
+version: AR-06AD
+name: Jenkins Condition Function Binding Boundary
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 226.
+  predecessorPullRequest: 226
+  mergedMain: be6875e95cdfa3cbb03ca23b46c87c6ce7b92032
+invariant: A canonical expression call must not become an ambient Jenkins method invocation without an explicit
+  adapter function contract.
+scope:
+- Inspect typed condition expressions for unsupported calls, including nested calls and calls without value references.
+- Preserve unsupported expressions and their children in diagnostic manifests with a precise missing-function-binding
+  reason.
+- Reject direct executable renderer and expression translator paths that bypass the generator boundary.
+- Preserve all previously certified native artifacts and observations.
+nonGoals:
+- No function mapping, output capture, generic value/state continuity, Core semantics or public syntax changes.
+- No new native certification, support promotion, historical acceptance, finding closure, AR-06 closure, AR-07 activation
+  or EF-09 resumption.
+ownershipBoundary:
+  adapters: Own concrete function mappings and reject unsupported native projection without redefining canonical
+    calls.
+  conformance: Own source-to-projection regressions and preservation of existing native evidence.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
+- src/main/kotlin/org/flowlang/generators/JenkinsGroovyExpr.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterObservationAuthenticationLifecycle.kt
+- src/main/kotlin/org/flowlang/conformance/WorkflowSemanticsRecoveryLifecycle.kt
+testsToAddOrUpdate:
+- Canonically accepted calls cannot invoke ambient Jenkins steps or methods from a condition.
+- Nested calls, no-argument calls and callee names matching declared inputs remain unsupported.
+- Typed secret references, literal call-like text and supported operators retain native projection.
+- Direct expression translation and forged executable manifests fail closed.
+- Historical receipts and full current-revision validation remain required.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/jenkins-condition-call-boundary.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  - jenkins-shared-condition-runtime
+  - github-actions-condition-prepare
+  - jenkins-secret-condition-runtime
+  - github-actions-condition-runtime
+  negativeEvidence: Unsupported expression calls cannot produce executable Jenkins artifacts; a valid identifier,
+    canonical acceptance or bound argument does not establish a native function contract.
+followUp:
+- Define a typed output contract and observe positive and falsifying native runs before certifying value/state continuity.
+- Add function mappings only with explicit semantic preservation evidence; ambient native names are not mappings.

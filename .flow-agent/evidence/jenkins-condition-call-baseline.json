@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "purpose": "A canonical expression call must not become an ambient Jenkins method invocation without an explicit adapter function contract.",
+  "predecessor": {
+    "pullRequest": 226,
+    "mergedMain": "be6875e95cdfa3cbb03ca23b46c87c6ce7b92032",
+    "tree": "d601c6bc90a0a50cca142283308cb7f63290792a",
+    "exactHead": "fc03c17548ebb007b5b3360a760301d02e59bff2",
+    "syntheticMergeCandidate": "a09bac4e24be0b498fb122aaa2fa15e9eef9f2a1",
+    "flowCiRunId": 38726025761,
+    "runtimeCiRunId": 38726025684,
+    "conclusion": "success",
+    "testsPerRevision": 2193,
+    "suitesPerRevision": 383,
+    "conformanceChecksPerRevision": 274,
+    "assessments": 35,
+    "signedObservations": 119,
+    "portfolioRows": 36,
+    "publishedRows": 72,
+    "declaredTargets": 6,
+    "observedConstructTargetPairs": 13,
+    "publicSupportPromoted": false,
+    "portableExecution": false,
+    "portfolioArchiveSha256": "6ca744ee5f00fc091ad4d8ee976be6faba9eccd94c8ffe7653226cfe3680dde8",
+    "mainFlowCiRunId": 38730527838,
+    "mainFlowCiConclusion": "in-progress-at-observation",
+    "mainRuntimeCiRunId": 38730527802,
+    "mainRuntimeConclusion": "success",
+    "scope": "PR 226 exact-head and synthetic-merge tests, 274 ordered conformance checks, 781 isolation source digests, 119 signatures, complete publication and all 21 archive digests were independently verified. Actual main preserves that tree. Main runtime CI succeeded; main Flow CI was running at observation. PR test counts are not separate main receipts."
+  },
+  "transition": {
+    "work": {
+      "before": {
+        "selectedSlice": "AR-06AC",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-condition-value-boundary.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio",
+            "jenkins-shared-condition-runtime",
+            "github-actions-condition-prepare",
+            "jenkins-secret-condition-runtime",
+            "github-actions-condition-runtime"
+          ],
+          "negativeEvidence": "Missing or out-of-scope native value bindings cannot produce executable Jenkins artifacts; declarations and synthetic tests cannot replace the complete native portfolio."
+        }
+      },
+      "after": {
+        "selectedSlice": "AR-06AD",
+        "selectedWorkPackage": ".flow-agent/work-packages/jenkins-condition-call-boundary.yaml",
+        "validation": {
+          "status": "current-revision-ci-required",
+          "requiredChecks": [
+            "compile-test-conformance",
+            "merge-candidate-compile-test-conformance",
+            "jenkins-checkout-runtime",
+            "jenkins-failure-runtime",
+            "jenkins-condition-runtime",
+            "jenkins-error-boundary-runtime",
+            "jenkins-local-recovery-runtime",
+            "jenkins-approval-runtime",
+            "github-actions-checkout-runtime",
+            "jenkins-shared-checkout-runtime",
+            "jenkins-retry-runtime",
+            "jenkins-loop-runtime",
+            "jenkins-match-runtime",
+            "jenkins-parallel-runtime",
+            "adapter-certification-portfolio",
+            "jenkins-shared-condition-runtime",
+            "github-actions-condition-prepare",
+            "jenkins-secret-condition-runtime",
+            "github-actions-condition-runtime"
+          ],
+          "negativeEvidence": "Unsupported expression calls cannot produce executable Jenkins artifacts; a valid identifier, canonical acceptance or bound argument does not establish a native function contract."
+        }
+      }
+    },
+    "releaseCertification": {
+      "before": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06AC",
+        "workPackage": ".flow-agent/work-packages/jenkins-condition-value-boundary.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      },
+      "after": {
+        "acceptedSlice": "AR-06B",
+        "acceptedMain": "4bea533762e3cff83192c7f9d8ba8244dd3c2598",
+        "workflowRunId": 37636042462,
+        "evidence": ".flow-agent/evidence/adapter-certification-binding-acceptance.json",
+        "selectedSlice": "AR-06AD",
+        "workPackage": ".flow-agent/work-packages/jenkins-condition-call-boundary.yaml",
+        "validation": "current-revision-ci-required",
+        "supportPromotion": false
+      }
+    }
+  },
+  "candidateAuthorization": {
+    "source": "Maintainer requests the next roadmap slice after merging PR 226.",
+    "predecessorPullRequest": 226,
+    "mergedMain": "be6875e95cdfa3cbb03ca23b46c87c6ce7b92032"
+  },
+  "limitations": [
+    "AR-06AD requires fresh exact-head, synthetic-merge and complete native runtime/portfolio evidence.",
+    "Rejecting unsupported function calls does not implement function mappings or certify value/state continuity, portable execution or milestone closure."
+  ]
+}

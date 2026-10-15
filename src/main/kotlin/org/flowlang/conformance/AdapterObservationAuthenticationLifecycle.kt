@@ -35,6 +35,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val LOOP_BASELINE = ".flow-agent/evidence/jenkins-loop-baseline.json"
     const val MATCH_PROJECTION_WORK_PACKAGE = ".flow-agent/work-packages/match-branch-preservation.yaml"
     const val MATCH_PROJECTION_BASELINE = ".flow-agent/evidence/match-branch-preservation-baseline.json"
+    const val CONDITION_CALL_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-condition-call-boundary.yaml"
+    const val CONDITION_CALL_BASELINE = ".flow-agent/evidence/jenkins-condition-call-baseline.json"
+    private const val CONDITION_CALL_BASELINE_SHA256 = "3c070a79790308eab9add338d961d045d9e7f7593cdf46baaaf3299e4367bcfe"
     const val CONDITION_VALUE_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-condition-value-boundary.yaml"
     const val CONDITION_VALUE_BASELINE = ".flow-agent/evidence/jenkins-condition-value-baseline.json"
     private const val CONDITION_VALUE_BASELINE_SHA256 = "9d1459f44966e3ab879fbe8a96e2d95f3ae22d555a5333ebae37b5bebb6f2854"
@@ -88,6 +91,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06AD" || s.release.containsKey("recoveryConditionCallBoundary")) {
+            val raw = s.certificationConditionCallBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != CONDITION_CALL_BASELINE_SHA256) {
+                add("Jenkins condition function boundary requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), CONDITION_CALL_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Jenkins condition function boundary selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Jenkins condition function boundary release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Jenkins condition function boundary work", s.certificationConditionCallWorkPackage, mapOf("version" to "AR-06AD", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Jenkins condition function boundary authorization", section(s.certificationConditionCallWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Jenkins condition function boundary validation", section(s.certificationConditionCallWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Jenkins condition function boundary candidate", section(s.release["recoveryConditionCallBoundary"]), mapOf(
+                "candidate" to "AR-06AD", "status" to "candidate", "workPackage" to CONDITION_CALL_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/jenkins-condition-call-boundary.md", "baselineEvidence" to CONDITION_CALL_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(conditionCallPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06AC" || s.release.containsKey("recoveryConditionValueBoundary")) {
             val raw = s.certificationConditionValueBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -838,7 +866,18 @@ internal object AdapterObservationAuthenticationLifecycle {
             certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
     }
 
+    internal fun conditionCallPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryConditionCallBoundary") && s.certificationWorkPackage["selectedSlice"] != "AR-06AD") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationConditionCallBaseline), CONDITION_CALL_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryConditionCallBoundary") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationConditionCallWorkPackage = emptyMap(), certificationConditionCallBaseline = null)
+    }
+
     internal fun conditionValuePredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryConditionCallBoundary") || s.certificationWorkPackage["selectedSlice"] == "AR-06AD")
+            return conditionValuePredecessor(conditionCallPredecessor(s))
         if (!s.release.containsKey("recoveryConditionValueBoundary") && s.certificationWorkPackage["selectedSlice"] != "AR-06AC") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationConditionValueBaseline), CONDITION_VALUE_BASELINE)["transition"])
         return s.copy(

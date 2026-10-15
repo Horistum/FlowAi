@@ -4,7 +4,7 @@ import java.io.File
 import kotlin.test.*
 
 class JenkinsConditionValueLifecycleTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = AdapterObservationAuthenticationLifecycle.conditionCallPredecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     private fun rejected(s: WorkflowSemanticsRecoveryLifecycleSnapshot) =
         assertTrue(WorkflowSemanticsRecoveryLifecycle.errors(s).isNotEmpty())
 

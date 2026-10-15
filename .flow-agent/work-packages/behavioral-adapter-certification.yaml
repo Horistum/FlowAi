@@ -7,13 +7,13 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-selectedSlice: AR-06AC
-selectedWorkPackage: .flow-agent/work-packages/jenkins-condition-value-boundary.yaml
+selectedSlice: AR-06AD
+selectedWorkPackage: .flow-agent/work-packages/jenkins-condition-call-boundary.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
-invariant: Jenkins conditions may read only values with an explicit native binding in their lexical scope; an authored
-  task result without a native output contract must remain non-executable.
+invariant: A canonical expression call must not become an ambient Jenkins method invocation without an explicit
+  adapter function contract.
 scope:
 - Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary.
 - Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage.
@@ -60,12 +60,15 @@ scope:
   bounded canary-log absence with omission/substitution mutants.
 - Keep Jenkins conditions with unbound value references review-only; preserve declared input and lexical loop/error
   bindings without inventing task-output continuity.
+- Keep unsupported Jenkins expression calls review-only; canonical function names cannot become ambient native method
+  invocations without explicit adapter mappings.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
 ownershipBoundary:
-  adapters: Own native value bindings and executable projection limits; consume unchanged canonical expressions.
-  conformance: Own source-to-projection regressions and preservation of all existing native evidence.
+  adapters: Own concrete function mappings and reject unsupported native projection without redefining canonical
+    calls.
+  conformance: Own source-to-projection regressions and preservation of existing native evidence.
 validation:
   status: current-revision-ci-required
   requiredChecks:
@@ -88,8 +91,8 @@ validation:
   - github-actions-condition-prepare
   - jenkins-secret-condition-runtime
   - github-actions-condition-runtime
-  negativeEvidence: Missing or out-of-scope native value bindings cannot produce executable Jenkins artifacts; declarations
-    and synthetic tests cannot replace the complete native portfolio.
+  negativeEvidence: Unsupported expression calls cannot produce executable Jenkins artifacts; a valid identifier,
+    canonical acceptance or bound argument does not establish a native function contract.
 followUp:
 - Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
 - Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.
