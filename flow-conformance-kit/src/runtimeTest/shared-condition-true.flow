@@ -1,0 +1,19 @@
+version "1.0"
+
+use module "git" version "1.0"
+
+flow "shared-condition-true-runtime" {
+  systems {
+    system "source" {
+      type: git
+    }
+  }
+  steps {
+    if true {
+      git.checkout source {
+        url: "https://github.com/Horistum/FlowAi.git"
+        branch: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+      } -> selectedCheckout
+    }
+  }
+}

@@ -592,8 +592,426 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  jenkins-shared-condition-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Exact Revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Execute Shared Literal Conditions And Mutants
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsSharedConditionRuntime --stacktrace
+      - name: Publish Bounded Observation Summaries
+        run: |
+          cat flow-conformance-kit/build/jenkins-shared-condition-certification/true/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+          cat flow-conformance-kit/build/jenkins-shared-condition-certification/false/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-shared-condition-certification --artifact jenkins-shared-condition-runtime --revision "$EXPECTED_SHA"
+      - name: Upload Runtime Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-shared-condition-runtime
+          path: flow-conformance-kit/build/jenkins-shared-condition-certification/
+          if-no-files-found: error
+          retention-days: 7
+
+  github-actions-condition-prepare:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      challenge: ${{ steps.prepare.outputs.challenge }}
+      source-revision: ${{ steps.prepare.outputs.source-revision }}
+      workflow-revision: ${{ steps.prepare.outputs.workflow-revision }}
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Exact Revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Bind Compiler Output Before Native Jobs
+        id: prepare
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test \
+            --tests 'org.flowlang.conformance.SharedCondition*' \
+            --tests 'org.flowlang.conformance.AdapterCertificationPortfolioTests' \
+            :flow-conformance-kit:installDist --stacktrace
+          git fetch --no-tags origin "$WORKFLOW_REVISION"
+          git show "$WORKFLOW_REVISION:.github/workflows/adapter-runtime-check.yml" > "$RUNNER_TEMP/condition-envelope.yml"
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' \
+            org.flowlang.conformance.GitHubActionsConditionRuntimeCertificationCli prepare \
+            "$GITHUB_WORKSPACE" "$RUNNER_TEMP/condition-envelope.yml" unused
+
+  github-condition-true-baseline:
+    needs: github-actions-condition-prepare
+    if: ${{ (true) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      observation: ${{ steps.observe.outputs.observation }}
+      runner-image: ${{ steps.observe.outputs.runner-image }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe Native Workspace
+        id: observe
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
+          repository = workspace / ".git"
+          marker = workspace / ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+          revision = digest = None
+          if repository.exists():
+              assert repository.is_dir() and not repository.is_symlink()
+              revision = subprocess.check_output(
+                  ["git", "-C", str(workspace), "rev-parse", "HEAD"], text=True, timeout=30
+              ).strip()
+              assert re.fullmatch(r"[0-9a-f]{40}", revision)
+              assert marker.is_file() and marker.resolve(strict=True).is_relative_to(workspace)
+              data = marker.read_bytes()
+              assert 1 <= len(data) <= 65536
+              digest = hashlib.sha256(data).hexdigest()
+          else:
+              assert not list(workspace.iterdir()), "Expected an empty workspace"
+          observation = json.dumps({"revision": revision, "markerSha256": digest}, separators=(",", ":"))
+          image = os.environ["ImageVersion"]
+          assert re.fullmatch(r"[A-Za-z0-9._-]{1,128}", image)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + observation + "\nrunner-image=" + image + "\n")
+
+  github-condition-true-omitted-checkout:
+    needs: github-actions-condition-prepare
+    if: ${{ (true) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      observation: ${{ steps.observe.outputs.observation }}
+      runner-image: ${{ steps.observe.outputs.runner-image }}
+    steps:
+      - name: Observe Native Workspace
+        id: observe
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
+          repository = workspace / ".git"
+          marker = workspace / ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+          revision = digest = None
+          if repository.exists():
+              assert repository.is_dir() and not repository.is_symlink()
+              revision = subprocess.check_output(
+                  ["git", "-C", str(workspace), "rev-parse", "HEAD"], text=True, timeout=30
+              ).strip()
+              assert re.fullmatch(r"[0-9a-f]{40}", revision)
+              assert marker.is_file() and marker.resolve(strict=True).is_relative_to(workspace)
+              data = marker.read_bytes()
+              assert 1 <= len(data) <= 65536
+              digest = hashlib.sha256(data).hexdigest()
+          else:
+              assert not list(workspace.iterdir()), "Expected an empty workspace"
+          observation = json.dumps({"revision": revision, "markerSha256": digest}, separators=(",", ":"))
+          image = os.environ["ImageVersion"]
+          assert re.fullmatch(r"[A-Za-z0-9._-]{1,128}", image)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + observation + "\nrunner-image=" + image + "\n")
+
+  github-condition-true-inverted-condition:
+    needs: github-actions-condition-prepare
+    if: ${{ (false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      observation: ${{ steps.observe.outputs.observation }}
+      runner-image: ${{ steps.observe.outputs.runner-image }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe Native Workspace
+        id: observe
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
+          repository = workspace / ".git"
+          marker = workspace / ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+          revision = digest = None
+          if repository.exists():
+              assert repository.is_dir() and not repository.is_symlink()
+              revision = subprocess.check_output(
+                  ["git", "-C", str(workspace), "rev-parse", "HEAD"], text=True, timeout=30
+              ).strip()
+              assert re.fullmatch(r"[0-9a-f]{40}", revision)
+              assert marker.is_file() and marker.resolve(strict=True).is_relative_to(workspace)
+              data = marker.read_bytes()
+              assert 1 <= len(data) <= 65536
+              digest = hashlib.sha256(data).hexdigest()
+          else:
+              assert not list(workspace.iterdir()), "Expected an empty workspace"
+          observation = json.dumps({"revision": revision, "markerSha256": digest}, separators=(",", ":"))
+          image = os.environ["ImageVersion"]
+          assert re.fullmatch(r"[A-Za-z0-9._-]{1,128}", image)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + observation + "\nrunner-image=" + image + "\n")
+
+  github-condition-false-baseline:
+    needs: github-actions-condition-prepare
+    if: ${{ (false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      observation: ${{ steps.observe.outputs.observation }}
+      runner-image: ${{ steps.observe.outputs.runner-image }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe Native Workspace
+        id: observe
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
+          repository = workspace / ".git"
+          marker = workspace / ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+          revision = digest = None
+          if repository.exists():
+              assert repository.is_dir() and not repository.is_symlink()
+              revision = subprocess.check_output(
+                  ["git", "-C", str(workspace), "rev-parse", "HEAD"], text=True, timeout=30
+              ).strip()
+              assert re.fullmatch(r"[0-9a-f]{40}", revision)
+              assert marker.is_file() and marker.resolve(strict=True).is_relative_to(workspace)
+              data = marker.read_bytes()
+              assert 1 <= len(data) <= 65536
+              digest = hashlib.sha256(data).hexdigest()
+          else:
+              assert not list(workspace.iterdir()), "Expected an empty workspace"
+          observation = json.dumps({"revision": revision, "markerSha256": digest}, separators=(",", ":"))
+          image = os.environ["ImageVersion"]
+          assert re.fullmatch(r"[A-Za-z0-9._-]{1,128}", image)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + observation + "\nrunner-image=" + image + "\n")
+
+  github-condition-false-flattened-condition:
+    needs: github-actions-condition-prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      observation: ${{ steps.observe.outputs.observation }}
+      runner-image: ${{ steps.observe.outputs.runner-image }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe Native Workspace
+        id: observe
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
+          repository = workspace / ".git"
+          marker = workspace / ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+          revision = digest = None
+          if repository.exists():
+              assert repository.is_dir() and not repository.is_symlink()
+              revision = subprocess.check_output(
+                  ["git", "-C", str(workspace), "rev-parse", "HEAD"], text=True, timeout=30
+              ).strip()
+              assert re.fullmatch(r"[0-9a-f]{40}", revision)
+              assert marker.is_file() and marker.resolve(strict=True).is_relative_to(workspace)
+              data = marker.read_bytes()
+              assert 1 <= len(data) <= 65536
+              digest = hashlib.sha256(data).hexdigest()
+          else:
+              assert not list(workspace.iterdir()), "Expected an empty workspace"
+          observation = json.dumps({"revision": revision, "markerSha256": digest}, separators=(",", ":"))
+          image = os.environ["ImageVersion"]
+          assert re.fullmatch(r"[A-Za-z0-9._-]{1,128}", image)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + observation + "\nrunner-image=" + image + "\n")
+
+  github-condition-false-inverted-condition:
+    needs: github-actions-condition-prepare
+    if: ${{ (true) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      observation: ${{ steps.observe.outputs.observation }}
+      runner-image: ${{ steps.observe.outputs.runner-image }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe Native Workspace
+        id: observe
+        shell: python
+        run: |
+          import hashlib
+          import json
+          import os
+          import pathlib
+          import re
+          import subprocess
+
+          workspace = pathlib.Path(os.environ["GITHUB_WORKSPACE"]).resolve(strict=True)
+          repository = workspace / ".git"
+          marker = workspace / ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+          revision = digest = None
+          if repository.exists():
+              assert repository.is_dir() and not repository.is_symlink()
+              revision = subprocess.check_output(
+                  ["git", "-C", str(workspace), "rev-parse", "HEAD"], text=True, timeout=30
+              ).strip()
+              assert re.fullmatch(r"[0-9a-f]{40}", revision)
+              assert marker.is_file() and marker.resolve(strict=True).is_relative_to(workspace)
+              data = marker.read_bytes()
+              assert 1 <= len(data) <= 65536
+              digest = hashlib.sha256(data).hexdigest()
+          else:
+              assert not list(workspace.iterdir()), "Expected an empty workspace"
+          observation = json.dumps({"revision": revision, "markerSha256": digest}, separators=(",", ":"))
+          image = os.environ["ImageVersion"]
+          assert re.fullmatch(r"[A-Za-z0-9._-]{1,128}", image)
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("observation=" + observation + "\nrunner-image=" + image + "\n")
+
+  github-actions-condition-runtime:
+    needs: [github-actions-condition-prepare, github-condition-true-baseline, github-condition-true-omitted-checkout, github-condition-true-inverted-condition, github-condition-false-baseline, github-condition-false-flattened-condition, github-condition-false-inverted-condition]
+    if: ${{ always() && !cancelled() && needs.github-actions-condition-prepare.result == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Exact Revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Authenticate Actual Native Job Results
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+          FLOW_CONDITION_JOB_RESULTS: ${{ toJSON(needs) }}
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:installDist --stacktrace
+          git fetch --no-tags origin "$WORKFLOW_REVISION"
+          git show "$WORKFLOW_REVISION:.github/workflows/adapter-runtime-check.yml" > "$RUNNER_TEMP/condition-envelope.yml"
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' \
+            org.flowlang.conformance.GitHubActionsConditionRuntimeCertificationCli verify \
+            "$GITHUB_WORKSPACE" "$RUNNER_TEMP/condition-envelope.yml" \
+            "$RUNNER_TEMP/github-condition-evidence"
+          cat "$RUNNER_TEMP/github-condition-evidence/true/behavior-matrix.md" >> "$GITHUB_STEP_SUMMARY"
+          cat "$RUNNER_TEMP/github-condition-evidence/false/behavior-matrix.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Condition Proofs And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory "$RUNNER_TEMP/github-condition-evidence" --artifact github-actions-condition-runtime --revision "$EXPECTED_SHA"
+      - name: Upload Condition Runtime Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-actions-condition-runtime
+          path: ${{ runner.temp }}/github-condition-evidence/
+          if-no-files-found: error
+          retention-days: 7
+
   adapter-certification-portfolio:
-    needs: [jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    needs: [jenkins-shared-condition-runtime, github-actions-condition-runtime, jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:

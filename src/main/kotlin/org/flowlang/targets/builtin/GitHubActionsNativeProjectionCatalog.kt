@@ -3,6 +3,9 @@ package org.flowlang.targets.builtin
 import org.flowlang.generators.manifest.TargetNativeProjectionBindingContract
 import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetNativeProjectionDefinition
+import org.flowlang.generators.manifest.TargetNativeStructuralProjectionDefinition
+import org.flowlang.generators.manifest.TargetStructuralProjectionKind
+import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.projection.ProjectionBindingKind
 
 object GitHubActionsNativeProjectionCatalog {
@@ -39,7 +42,15 @@ object GitHubActionsNativeProjectionCatalog {
                 "name" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.ARTIFACT)),
                 "path" to TargetNativeProjectionBindingContract(setOf(ProjectionBindingKind.LITERAL))
             )
-        )
+        ),
+        structuralDefinitions = listOf(TargetNativeStructuralProjectionDefinition(
+            structure = TargetStructuralProjectionKind.CONDITION,
+            kind = "github-job-condition",
+            reference = "if",
+            implementationEvidenceReference = "src/main/kotlin/org/flowlang/targets/builtin/GitHubJobConditionAuthority.kt#expression",
+            behavioralEvidenceReference = "src/test/kotlin/SharedConditionRuntimeTests.kt#bothProvidersPreserveTheSharedLiteralGuard",
+            supportScope = TargetStructuralProjectionSupportScope.PLAN_SCOPED
+        ))
     )
 
     private fun imageBuildBindings(): Map<String, TargetNativeProjectionBindingContract> = mapOf(

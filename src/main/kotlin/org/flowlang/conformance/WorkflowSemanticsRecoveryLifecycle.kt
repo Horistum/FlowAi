@@ -79,7 +79,9 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val certificationWorkspaceCancellationWorkPackage: Map<String, Any?> = emptyMap(),
     val certificationWorkspaceCancellationBaseline: String? = null,
     val certificationRetryBoundaryWorkPackage: Map<String, Any?> = emptyMap(),
-    val certificationRetryBoundaryBaseline: String? = null
+    val certificationRetryBoundaryBaseline: String? = null,
+    val certificationSharedConditionWorkPackage: Map<String, Any?> = emptyMap(),
+    val certificationSharedConditionBaseline: String? = null
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -205,7 +207,9 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             optionalMap(root, AdapterObservationAuthenticationLifecycle.WORKSPACE_CANCELLATION_WORK_PACKAGE),
             File(root, AdapterObservationAuthenticationLifecycle.WORKSPACE_CANCELLATION_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             optionalMap(root, AdapterObservationAuthenticationLifecycle.RETRY_BOUNDARY_WORK_PACKAGE),
-            File(root, AdapterObservationAuthenticationLifecycle.RETRY_BOUNDARY_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            File(root, AdapterObservationAuthenticationLifecycle.RETRY_BOUNDARY_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            optionalMap(root, AdapterObservationAuthenticationLifecycle.SHARED_CONDITION_WORK_PACKAGE),
+            File(root, AdapterObservationAuthenticationLifecycle.SHARED_CONDITION_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
         )
     }
 

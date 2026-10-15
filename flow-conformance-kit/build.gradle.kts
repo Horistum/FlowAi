@@ -90,6 +90,24 @@ tasks.register("verifyJenkinsConditionRuntime") {
     dependsOn(conditionalRuntimeTasks)
 }
 
+val sharedConditionRuntimeTasks = listOf("true", "false").map { value ->
+    tasks.register<JavaExec>("verifyJenkinsSharedCondition${value.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Execute the shared literal condition and native checkout on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-shared-condition-certification/$value").get().asFile.absolutePath,
+            "jenkins-shared-condition-$value-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsSharedConditionRuntime") {
+    group = "verification"
+    description = "Execute both shared Boolean guards and their falsifying mutants on real Jenkins."
+    dependsOn(sharedConditionRuntimeTasks)
+}
+
 val errorBoundaryRuntimeTasks = listOf("failure", "success").map { outcome ->
     tasks.register<JavaExec>("verifyJenkinsError${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
         group = "verification"

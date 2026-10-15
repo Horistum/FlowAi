@@ -36,8 +36,8 @@ class AdapterCertificationPortfolioTests {
                     val expected = spec.negativeMutants.singleOrNull { it.id == id }?.expectedObservation ?: spec.expectedObservation
                     (mapper.readTree(p.evidence.getValue(expected.id)) as ObjectNode).apply {
                         put("id", id); put("artifactSha256", sha(p.artifacts.getValue(id))); put("buildNumber", 1); put("finished", true)
-                        if (scenario == JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CHECKOUT) {
-                            put("result", "SUCCESS"); put("checkoutCount", if (id == "omitted-checkout") 0 else 1); putArray("checkoutErrors")
+                        if (scenario.publicCheckout) {
+                            put("result", "SUCCESS"); put("checkoutCount", if (scenario.sharedCondition) (if (SharedConditionFixture.checksOut(scenario.conditionValue, id)) 1 else 0) else if (id == "omitted-checkout") 0 else 1); putArray("checkoutErrors")
                         }
                     }
                 }
@@ -70,18 +70,23 @@ class AdapterCertificationPortfolioTests {
                         "observation" to it.observation, "signature" to Base64.getEncoder().encodeToString(it.signature())) }))
             }
             files.putAll(githubFiles())
+            SharedConditionFixture.values.forEach { files.putAll(githubFiles(it)) }
             files
         }
-        private fun githubFiles(): Map<String, ByteArray> {
+        private fun githubFiles(condition: Boolean? = null): Map<String, ByteArray> {
             val files = linkedMapOf<String, ByteArray>()
-            val id = GitHubActionsCheckoutRuntimeCertification.SCENARIO
-            fun write(name: String, bytes: ByteArray) { files["$id/$name"] = bytes }
+            val id = if (condition == null) GitHubActionsCheckoutRuntimeCertification.SCENARIO else SharedConditionFixture.scenario("github-actions", condition)
+            val path = if (condition == null) id else "${SharedConditionFixture.PRODUCER_JOB}/$condition"
+            fun write(name: String, bytes: ByteArray) { files["$path/$name"] = bytes }
             fun json(name: String, value: Any) = write(name, mapper.writeValueAsBytes(value))
             val envelope = File(GitHubActionsCheckoutRuntimeCertification.WORKFLOW).readBytes()
-            val p = GitHubActionsCheckoutRuntimeCertification.prepare(File("."), revision, "d".repeat(40), "20261010.1", envelope)
+            val rawJobs = mapper.writeValueAsBytes(SharedConditionRuntimeTests.nativeResults(revision, "d".repeat(40)))
+            val p = if (condition == null) GitHubActionsCheckoutRuntimeCertification.prepare(File("."), revision, "d".repeat(40), "20261010.1", envelope)
+                else GitHubActionsConditionRuntimeCertification.prepare(File("."), revision, "d".repeat(40), "20261010.1", envelope, condition, rawJobs)
+            if (condition != null) write("native-job-results.json", rawJobs)
             val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
-            val runner = GitHubActionsCheckoutRuntimeCertification.RUNNER
-            val runIds = SharedCheckoutFixture.runIds
+            val runner = if (condition == null) GitHubActionsCheckoutRuntimeCertification.RUNNER else GitHubActionsConditionRuntimeCertification.RUNNER
+            val runIds = if (condition == null) SharedCheckoutFixture.runIds else SharedConditionFixture.runIds(condition)
             val challenge = "c".repeat(32)
             val trust = CertificationObservationTrust(challenge, mapOf(runner to key.public), runIds.map {
                 CertificationAuthorizedRun(it, id, it.takeUnless { value -> value == "baseline" }, runner) })
@@ -103,16 +108,17 @@ class AdapterCertificationPortfolioTests {
             val assessment = CertificationEvidenceViews.assess(p.bundle, p.bundle.adapter, listOf(p.bound), p.provider, signed, trust, resolver)
             check(assessment.admission.valid)
             val view = requireNotNull(assessment.view)
-            val matrix = AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, resolver)
+            val matrix = if (condition == null) AdapterBehaviorMatrix.deriveGitHubCheckout(assessment, resolver)
+                else AdapterBehaviorMatrix.deriveGitHubCondition(assessment, condition, resolver)
             val outputs = mapOf("evidence-view.json" to view.json(), "evidence-view.md" to view.markdown(),
                 "behavior-matrix.json" to matrix.json(), "behavior-matrix.md" to matrix.markdown())
             outputs.forEach { (name, text) -> write(name, text.toByteArray()) }
             p.artifacts.forEach { (runId, bytes) -> write("artifacts/$runId.yml", bytes) }
             p.evidence.forEach { (name, bytes) -> write("artifacts/" + name.replace(':', '-') + ".evidence", bytes) }
-            write("artifacts/source.intent.yaml", requireNotNull(p.bound.resolve(p.bound.fixture)))
+            write(if (condition == null) "artifacts/source.intent.yaml" else "artifacts/source.flow", requireNotNull(p.bound.resolve(p.bound.fixture)))
             write("artifacts/canonical-graph.json", requireNotNull(p.bound.resolve(p.bound.canonicalGraph)))
             write("artifacts/execution-envelope.yml", envelope)
-            json("proof.json", mapOf("status" to "passed", "claim" to "native-leaf-only", "executionMode" to "native-leaf-in-checked-envelope",
+            json("proof.json", mapOf("status" to "passed", "claim" to (if (condition == null) "native-leaf-only" else GitHubActionsConditionRuntimeCertification.CLAIM), "executionMode" to (if (condition == null) "native-leaf-in-checked-envelope" else GitHubActionsConditionRuntimeCertification.MODE),
                 "sourceRevision" to revision, "workflowRevision" to owner.getValue("workflowRevision"), "runId" to "123", "attempt" to "1",
                 "bundle" to p.bundle, "admission" to assessment.admission, "publicSupportPromoted" to false, "portableExecution" to false,
                 "evidenceViews" to outputs.filterKeys { it.startsWith("evidence-") }.mapValues { sha(it.value.toByteArray()) },
@@ -129,7 +135,8 @@ class AdapterCertificationPortfolioTests {
         fun file(name: String) = File(directory, AdapterCertificationPortfolio.relativeDirectory(first) + "/" + name)
         fun githubFile(name: String) = File(directory, GitHubActionsCheckoutRuntimeCertification.SCENARIO + "/" + name)
         fun receipts() = (scenarios.map { it.id to AdapterCertificationPortfolio.relativeDirectory(it) } +
-            (GitHubActionsCheckoutRuntimeCertification.SCENARIO to GitHubActionsCheckoutRuntimeCertification.SCENARIO)).map { (id, path) ->
+            (GitHubActionsCheckoutRuntimeCertification.SCENARIO to GitHubActionsCheckoutRuntimeCertification.SCENARIO) +
+            SharedConditionFixture.values.map { SharedConditionFixture.scenario("github-actions", it) to "${SharedConditionFixture.PRODUCER_JOB}/$it" }).map { (id, path) ->
             val dir = File(directory, path)
             PortfolioAssessmentReceipt(id, sha(File(dir, "proof.json").readBytes()), sha(File(dir, "trust.json").readBytes()))
         }
@@ -146,7 +153,8 @@ class AdapterCertificationPortfolioTests {
             return mapper.createObjectNode().apply {
                 val groups = scenarios.groupBy { AdapterCertificationPortfolio.relativeDirectory(it).substringBefore('/') }
                     .mapValues { (_, entries) -> entries.map { it.id } } +
-                    (GitHubActionsCheckoutRuntimeCertification.SCENARIO to listOf(GitHubActionsCheckoutRuntimeCertification.SCENARIO))
+                    (GitHubActionsCheckoutRuntimeCertification.SCENARIO to listOf(GitHubActionsCheckoutRuntimeCertification.SCENARIO)) +
+                    (SharedConditionFixture.PRODUCER_JOB to SharedConditionFixture.values.map { SharedConditionFixture.scenario("github-actions", it) })
                 groups.forEach { (job, entries) ->
                     val receipt = mapOf("artifact" to job, "sourceRevision" to revision, "assessments" to rows.filter { row -> row.scenarioId in entries })
                     set<JsonNode>(job, mapper.valueToTree(mapOf("result" to "success", "outputs" to mapOf("receipt" to mapper.writeValueAsString(receipt)))))
@@ -165,14 +173,14 @@ class AdapterCertificationPortfolioTests {
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->
         val result = f.derive(); val doc = mapper.readTree(result.json())
-        assertEquals(30, doc["assessmentCount"].asInt())
+        assertEquals(34, doc["assessmentCount"].asInt())
         assertEquals(36, doc["rows"].size())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
-        assertEquals(11, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
+        assertEquals(12, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertTrue(doc["rows"].filter { it["target"].asText() !in setOf("jenkins", "github-actions") }.all {
             it["scenarioIds"].isEmpty && it["status"].asText() == "NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO" })
         val matrices = doc["assessments"].map { it["matrix"] }
-        assertEquals(104, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        assertEquals(116, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
         val github = doc["assessments"].single { it["scenarioId"].asText() == GitHubActionsCheckoutRuntimeCertification.SCENARIO }
         assertEquals("native-leaf-only", github["claim"].asText())
         assertEquals("native-leaf-in-checked-envelope", github["executionMode"].asText())
@@ -185,6 +193,12 @@ class AdapterCertificationPortfolioTests {
         assertEquals("bounded-native-checkout-observable-equivalence", shared["scope"].asText())
         assertEquals(SharedCheckoutFixture.runIds, shared["runs"].map { it["runId"].asText() })
         assertEquals(2, shared["scenarioIds"].size())
+        assertEquals(2, doc["sharedCanonicalConditions"].size())
+        doc["sharedCanonicalConditions"].forEach {
+            assertEquals("bounded-literal-condition-observable-equivalence", it["scope"].asText())
+            assertTrue(it["observableEquivalence"].asBoolean())
+            assertEquals(2, it["scenarioIds"].size())
+        }
         assertTrue(result.markdown().contains("not general construct support"))
         assertTrue(result.markdown().contains("does not establish cross-target equivalence"))
     }

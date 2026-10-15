@@ -54,6 +54,8 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
                 JenkinsCheckoutRuntimeCertification.Scenario.RETRY_FAILURE,
                 JenkinsCheckoutRuntimeCertification.Scenario.RETRY_SUCCESS -> CertificationConstruct.RETRY
                 JenkinsCheckoutRuntimeCertification.Scenario.FAILURE -> CertificationConstruct.FAILURE_PROPAGATION
+                JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CONDITION_TRUE,
+                JenkinsCheckoutRuntimeCertification.Scenario.SHARED_CONDITION_FALSE,
                 JenkinsCheckoutRuntimeCertification.Scenario.CONDITION_TRUE,
                 JenkinsCheckoutRuntimeCertification.Scenario.CONDITION_FALSE -> CertificationConstruct.CONDITIONS
                 JenkinsCheckoutRuntimeCertification.Scenario.ERROR_FAILURE,
@@ -81,6 +83,11 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
             derive(assessment, GitHubActionsCheckoutRuntimeCertification.SCENARIO, "github-actions",
                 SharedCheckoutFixture.runIds, CertificationConstruct.NATIVE_CHECKOUT,
                 CertificationSubject.Semantic("git.checkout"), resolver)
+
+        fun deriveGitHubCondition(assessment: CertificationEvidenceViewResult, value: Boolean, resolver: CertificationEvidenceResolver): AdapterBehaviorMatrix =
+            derive(assessment, SharedConditionFixture.scenario("github-actions", value), "github-actions",
+                SharedConditionFixture.runIds(value), CertificationConstruct.CONDITIONS,
+                CertificationSubject.Structural(TargetStructuralProjectionKind.CONDITION), resolver)
 
         private fun derive(assessment: CertificationEvidenceViewResult, scenarioId: String, target: String,
             runIds: List<String>, construct: CertificationConstruct, requiredSubject: CertificationSubject,

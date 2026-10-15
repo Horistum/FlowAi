@@ -46,7 +46,9 @@ Thread.start('checkout-certification') {
             'jenkins-loop-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-retry-failure-runtime': ['baseline', 'flattened-retry', 'excess-attempts'],
             'jenkins-retry-success-runtime': ['baseline', 'omitted-body', 'repeated-success'],
-            'jenkins-shared-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-revision'],
+            'jenkins-shared-condition-true-runtime': ['baseline', 'omitted-checkout', 'inverted-condition'],
+        'jenkins-shared-condition-false-runtime': ['baseline', 'flattened-condition', 'inverted-condition'],
+        'jenkins-shared-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-revision'],
             'jenkins-checkout-runtime': ['baseline', 'omitted-checkout', 'substituted-branch'],
             'jenkins-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-condition-true-runtime': ['baseline', 'flattened-conditions', 'inverted-conditions'],
@@ -59,7 +61,7 @@ Thread.start('checkout-certification') {
             'jenkins-approval-reject-runtime': ['baseline', 'omitted-approval', 'late-approval', 'suppressed-rejection']
         ]
         if (!inventories.containsKey(scenario)) throw new IllegalArgumentException('Unknown certification scenario')
-        def sharedCheckout = scenario == 'jenkins-shared-checkout-runtime'
+        def sharedCheckout = (scenario == 'jenkins-shared-checkout-runtime' || scenario.startsWith('jenkins-shared-condition-'))
         def jenkins = Jenkins.get()
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(120)
         while (jenkins.getInitLevel() != InitMilestone.COMPLETED) {

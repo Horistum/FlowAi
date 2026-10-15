@@ -80,6 +80,7 @@ org/flowlang/conformance/ExternalCorpusContracts.kt
 org/flowlang/conformance/ExternalCorpusLoader.kt
 org/flowlang/conformance/FlowSensitiveConformanceChecks.kt
 org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
+org/flowlang/conformance/GitHubActionsConditionRuntimeCertification.kt
 org/flowlang/conformance/HumanApprovalChangeControlBaseline.kt
 org/flowlang/conformance/HumanApprovalChangeControlFalsification.kt
 org/flowlang/conformance/IncidentRemediationBaseline.kt
@@ -127,6 +128,7 @@ org/flowlang/conformance/SemanticIdentityConformanceChecks.kt
 org/flowlang/conformance/SemanticImplementationObservationAuthority.kt
 org/flowlang/conformance/SemanticObservationAuthority.kt
 org/flowlang/conformance/SharedCheckoutFixture.kt
+org/flowlang/conformance/SharedConditionFixture.kt
 org/flowlang/conformance/SourceDeclarationConformanceChecks.kt
 org/flowlang/conformance/StandardArchitectureNormalizationChecks.kt
 org/flowlang/conformance/StandardEvidenceChecks.kt
