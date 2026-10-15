@@ -49,7 +49,6 @@ object TargetProjectionIdentityChecks {
     private fun jobNodes(nodes: List<PlanNode>): List<PlanNode> = nodes.flatMap { node -> when (node) {
         is ConditionNode -> jobNodes(node.then) + jobNodes(node.otherwise)
         is TryPlanNode -> jobNodes(node.body) + jobNodes(node.errorHandler)
-        is RetryGroupNode -> jobNodes(node.body)
-        is TaskNode, is ApprovalNode, is LoopNode, is MatchPlanNode, is ParallelGroupNode, is DataOpNode, is ControlNode -> listOf(node)
+        is RetryGroupNode, is TaskNode, is ApprovalNode, is LoopNode, is MatchPlanNode, is ParallelGroupNode, is DataOpNode, is ControlNode -> listOf(node)
     } }
 }

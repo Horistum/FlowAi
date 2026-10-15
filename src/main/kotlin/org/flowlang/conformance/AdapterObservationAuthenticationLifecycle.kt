@@ -35,6 +35,9 @@ internal object AdapterObservationAuthenticationLifecycle {
     const val LOOP_BASELINE = ".flow-agent/evidence/jenkins-loop-baseline.json"
     const val MATCH_PROJECTION_WORK_PACKAGE = ".flow-agent/work-packages/match-branch-preservation.yaml"
     const val MATCH_PROJECTION_BASELINE = ".flow-agent/evidence/match-branch-preservation-baseline.json"
+    const val RETRY_BOUNDARY_WORK_PACKAGE = ".flow-agent/work-packages/retry-boundary-preservation.yaml"
+    const val RETRY_BOUNDARY_BASELINE = ".flow-agent/evidence/retry-boundary-preservation-baseline.json"
+    private const val RETRY_BOUNDARY_BASELINE_SHA256 = "e8e630a3b126b655eb40e034700bc69c856348691a6bc7bd8d196493725aa0c6"
     const val WORKSPACE_CANCELLATION_WORK_PACKAGE = ".flow-agent/work-packages/jenkins-workspace-cancellation.yaml"
     const val WORKSPACE_CANCELLATION_BASELINE = ".flow-agent/evidence/jenkins-workspace-cancellation-baseline.json"
     private const val WORKSPACE_CANCELLATION_BASELINE_SHA256 = "56ce891c501fa8a8042025600c959bd070b2b645e8e93f13b0865b4fd315868d"
@@ -73,6 +76,31 @@ internal object AdapterObservationAuthenticationLifecycle {
         "negativeEvidence" to "Every signed field, untrusted and substituted keys, stale challenge, omitted/duplicate/unexpected runs, oversized statements, failed runtime, forged evidence bytes and mutated lifecycle receipts.")
 
     fun errors(s: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (s.certificationWorkPackage["selectedSlice"] == "AR-06Y" || s.release.containsKey("recoveryRetryBoundary")) {
+            val raw = s.certificationRetryBoundaryBaseline
+            val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
+                .joinToString("") { b -> "%02x".format(b.toInt() and 255) } }
+            if (sha != RETRY_BOUNDARY_BASELINE_SHA256) {
+                add("Retry boundary preservation requires the independently inspected merged-main baseline bytes.")
+                return@buildList
+            }
+            val evidence = FlowYaml.readMap(requireNotNull(raw), RETRY_BOUNDARY_BASELINE)
+            val transition = section(evidence["transition"])
+            addAll(matchingFields("Retry boundary preservation selection", s.certificationWorkPackage, stringMap(section(transition["work"])["after"])))
+            addAll(exact("Retry boundary preservation release selection", section(s.release["recoveryCertification"]),
+                stringMap(section(transition["releaseCertification"])["after"])))
+            addAll(matchingFields("Retry boundary preservation work", s.certificationRetryBoundaryWorkPackage, mapOf("version" to "AR-06Y", "status" to "candidate",
+                "stream" to "architecture-recovery", "roadmapReference" to ".flow-agent/roadmap-architecture-recovery.yaml#AR-06")))
+            addAll(exact("Retry boundary preservation authorization", section(s.certificationRetryBoundaryWorkPackage["authorization"]), stringMap(evidence["candidateAuthorization"])))
+            addAll(exact("Retry boundary preservation validation", section(s.certificationRetryBoundaryWorkPackage["validation"]),
+                stringMap(section(section(transition["work"])["after"])["validation"])))
+            addAll(exact("Retry boundary preservation candidate", section(s.release["recoveryRetryBoundary"]), mapOf(
+                "candidate" to "AR-06Y", "status" to "candidate", "workPackage" to RETRY_BOUNDARY_WORK_PACKAGE,
+                "report" to ".flow-agent/reports/retry-boundary-preservation.md", "baselineEvidence" to RETRY_BOUNDARY_BASELINE,
+                "validation" to "current-revision-ci-required", "supportPromotion" to false)))
+            addAll(errors(retryBoundaryPredecessor(s)))
+            return@buildList
+        }
         if (s.certificationWorkPackage["selectedSlice"] == "AR-06X" || s.release.containsKey("recoveryWorkspaceCancellation")) {
             val raw = s.certificationWorkspaceCancellationBaseline
             val sha = raw?.let { MessageDigest.getInstance("SHA-256").digest(it.toByteArray(Charsets.UTF_8))
@@ -698,7 +726,18 @@ internal object AdapterObservationAuthenticationLifecycle {
             certificationSharedCheckoutWorkPackage = emptyMap(), certificationSharedCheckoutBaseline = null)
     }
 
+    internal fun retryBoundaryPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (!s.release.containsKey("recoveryRetryBoundary") && s.certificationWorkPackage["selectedSlice"] != "AR-06Y") return s
+        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationRetryBoundaryBaseline), RETRY_BOUNDARY_BASELINE)["transition"])
+        return s.copy(
+            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
+            release = (s.release - "recoveryRetryBoundary") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
+            certificationRetryBoundaryWorkPackage = emptyMap(), certificationRetryBoundaryBaseline = null)
+    }
+
     internal fun workspaceCancellationPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
+        if (s.release.containsKey("recoveryRetryBoundary") || s.certificationWorkPackage["selectedSlice"] == "AR-06Y")
+            return workspaceCancellationPredecessor(retryBoundaryPredecessor(s))
         if (!s.release.containsKey("recoveryWorkspaceCancellation") && s.certificationWorkPackage["selectedSlice"] != "AR-06X") return s
         val transition = section(FlowYaml.readMap(requireNotNull(s.certificationWorkspaceCancellationBaseline), WORKSPACE_CANCELLATION_BASELINE)["transition"])
         return s.copy(
