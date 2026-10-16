@@ -286,6 +286,7 @@ class CompilerAxisConformanceTests {
             FLOW_COMPILATION_SERVICE,
             "src/main/kotlin/org/flowlang/compiler/WorkflowFailureAuthorization.kt",
             "src/main/kotlin/org/flowlang/conformance/ExplicitMergeConformanceChecks.kt",
+            "src/main/kotlin/org/flowlang/conformance/GitHubConditionCompositionFixture.kt",
             "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraph.kt",
             "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBindings.kt",
             "src/main/kotlin/org/flowlang/compiler/CanonicalExecutionGraphBuilder.kt",
