@@ -10,5 +10,5 @@ org/flowlang/targets/builtin/GitHubActionsProjectionRenderingSupport.kt
 org/flowlang/targets/builtin/GitHubActionsTargetExpressionTranslator.kt
 org/flowlang/targets/builtin/GitHubActionsTriggerProjectionPlanner.kt
 org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt
-org/flowlang/targets/builtin/GitHubJobConditionAuthority.kt
 org/flowlang/targets/builtin/GitHubConditionProjectionScope.kt
+org/flowlang/targets/builtin/GitHubJobConditionAuthority.kt
