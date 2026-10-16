@@ -24,6 +24,8 @@ ownershipBoundary:
   adapters: Resolve and render explicit native output fields within existing target scopes.
   conformance: Exercise composition and negative cases independently of production eligibility rules.
 expectedFilesToChange:
+- flow-adapter-jenkins/src/test/kotlin/org/flowlang/targets/builtin/JenkinsConditionValueScopeTests.kt
+- .github/workflows/adapter-runtime-check.yml
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
 - src/main/kotlin/org/flowlang/targets/builtin/JenkinsTargetExpressionTranslator.kt

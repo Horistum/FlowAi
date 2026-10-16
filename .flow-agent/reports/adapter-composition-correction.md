@@ -35,6 +35,8 @@ Projection regressions exercise added inputs and independent prefix/suffix steps
 
 The original 38 assessments and 128 signed observations remain required. The new composition fixture adds one assessment and four native runs: baseline, omitted first binding, substituted second binding and omitted inner binding. Independent native checkout order and workspace markers distinguish every mutant from the baseline. The expected portfolio contains 39 assessments and 132 signatures, with the same 14 bounded rows and 58 evidence gaps across six targets and twelve constructs. Counts describe an inventory, not architectural completion.
 
+The first CI pass exposed stale manifest-shaped calls in the isolated adapter scope tests. Those tests now call the job-scoped analysis, and the result runtime job runs both isolated adapter tests and focused composition/protocol tests before native execution.
+
 All 162 Python tooling tests and Flow Agent structure/context checks passed locally. Kotlin compilation, exact-head and synthetic-merge tests, ordered conformance, module isolation and the full native portfolio require the pinned JDK 25 / Kotlin 2.4.10 / Gradle 9.5 CI environment; local Java is 17. Final observed CI receipts belong in the PR and are not preclaimed here.
 
 No generic support or portable execution is promoted. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 owned by AR-07.

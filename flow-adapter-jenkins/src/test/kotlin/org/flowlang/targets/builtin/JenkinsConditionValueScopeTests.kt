@@ -11,6 +11,11 @@ class JenkinsConditionValueScopeTests {
     private fun manifest(steps: List<TargetStep>, inputs: List<TargetInput> = emptyList()) = TargetManifest(
         target = "jenkins", flowName = "value-scope", compatibility = CompatibilityReport("jenkins", SupportLevel.SUPPORTED),
         jobs = listOf(TargetJob(id = "job", steps = steps)), inputs = inputs)
+    private fun requireJobBindings(manifest: TargetManifest) {
+        manifest.jobs.forEach { job ->
+            JenkinsConditionValueScope.requireBound(job.steps, manifest.inputs.map { it.name }.toSet())
+        }
+    }
     private fun missing(source: String, roots: Set<String> = emptySet()) =
         JenkinsConditionValueScope.reconcile(listOf(condition(source)), roots).single()
 
@@ -25,7 +30,7 @@ class JenkinsConditionValueScopeTests {
             assertEquals("condition.value-binding", step.mappingNotes.single().feature)
         }
         for (name in listOf("env", "params", "currentBuild", "flowError"))
-            assertFails { JenkinsConditionValueScope.requireBound(manifest(listOf(condition("$name != null")))) }
+            assertFails { requireJobBindings(manifest(listOf(condition("$name != null")))) }
     }
 
     @Test fun literalSecretInputAndNamedPatternValuesNeedNoInventedBinding() {
@@ -41,10 +46,10 @@ class JenkinsConditionValueScopeTests {
         val loop = TargetStep(id = "loop", type = "loop", params = mapOf("item" to "item"),
             children = listOf(TargetStep(id = "wrapper", type = "try-body", children = listOf(guard))))
         assertEquals(listOf(loop), JenkinsConditionValueScope.reconcile(listOf(loop), emptySet()))
-        JenkinsConditionValueScope.requireBound(manifest(listOf(loop)))
+        requireJobBindings(manifest(listOf(loop)))
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED,
             JenkinsConditionValueScope.reconcile(listOf(loop, guard), emptySet()).last().materialization.status)
-        assertFails { JenkinsConditionValueScope.requireBound(manifest(listOf(loop)).copy(jobs = listOf(
+        assertFails { requireJobBindings(manifest(listOf(loop)).copy(jobs = listOf(
             TargetJob(id = "first", steps = listOf(loop)), TargetJob(id = "second", steps = listOf(guard))))) }
     }
 
@@ -58,7 +63,7 @@ class JenkinsConditionValueScopeTests {
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, result[0].children[0].children.single().materialization.status)
         assertEquals(handler, result[0].children[1])
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, result[1].materialization.status)
-        assertFails { JenkinsConditionValueScope.requireBound(manifest(listOf(boundary.copy(
+        assertFails { requireJobBindings(manifest(listOf(boundary.copy(
             metadata = emptyMap(), children = listOf(handler))))) }
     }
 
@@ -66,7 +71,7 @@ class JenkinsConditionValueScopeTests {
         for (step in listOf(condition("("), condition("true").copy(params = emptyMap()))) {
             assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED,
                 JenkinsConditionValueScope.reconcile(listOf(step), emptySet()).single().materialization.status)
-            assertFails { JenkinsConditionValueScope.requireBound(manifest(listOf(step))) }
+            assertFails { requireJobBindings(manifest(listOf(step))) }
         }
     }
 }
