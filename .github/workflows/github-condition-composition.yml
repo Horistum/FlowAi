@@ -1,0 +1,279 @@
+name: GitHub condition composition
+on:
+  workflow_call:
+    inputs:
+      enabled:
+        type: boolean
+        required: true
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Check production graph against executed envelope
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          ./gradlew --no-daemon --build-cache :flow-adapter-github-actions:test :flow-conformance-kit:test --tests '*GitHubCondition*' --tests '*SharedConditionRuntimeTests*' :flow-conformance-kit:installDist --stacktrace
+          git fetch --no-tags origin "$WORKFLOW_REVISION"
+          git show "$WORKFLOW_REVISION:.github/workflows/github-condition-composition.yml" > "$RUNNER_TEMP/composition-envelope.yml"
+          cmp .github/workflows/github-condition-composition.yml "$RUNNER_TEMP/composition-envelope.yml"
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.GitHubConditionCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/composition-envelope.yml" "$RUNNER_TEMP/composition"
+          printf '%s\n' "$EXPECTED_SHA" > "$RUNNER_TEMP/composition/source-revision.txt"
+          printf '%s\n' "$WORKFLOW_REVISION" > "$RUNNER_TEMP/composition/workflow-revision.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: github-composition-prepared-${{ inputs.enabled }}
+          path: ${{ runner.temp }}/composition/
+          if-no-files-found: error
+          retention-days: 7
+
+  git_checkout_1:
+    name: "git_checkout_1"
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (success()) }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  git_checkout_2:
+    name: "git_checkout_2"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (success() && ((inputs.enabled && true))) }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_2"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  git_checkout_3:
+    name: "git_checkout_3"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_2, git_checkout_1]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (!cancelled() && (((inputs.enabled && true) && !(false))) && (needs.git_checkout_2.result == 'success' || (needs.git_checkout_2.result == 'skipped' && !((inputs.enabled && true)))) && needs.git_checkout_1.result == 'success') }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_3"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  git_checkout_4:
+    name: "git_checkout_4"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (success() && (!((inputs.enabled && true)))) }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_4"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  git_checkout_5:
+    name: "git_checkout_5"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_3, git_checkout_4, git_checkout_2, git_checkout_1]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (!cancelled() && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(((inputs.enabled && true) && !(false))))) && (needs.git_checkout_4.result == 'success' || (needs.git_checkout_4.result == 'skipped' && !(!((inputs.enabled && true))))) && (needs.git_checkout_2.result == 'success' || (needs.git_checkout_2.result == 'skipped' && !((inputs.enabled && true)))) && needs.git_checkout_1.result == 'success') }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_5"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  git_checkout_6:
+    name: "git_checkout_6"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_5, git_checkout_3, git_checkout_2, git_checkout_1, git_checkout_4]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (!cancelled() && needs.git_checkout_5.result == 'success' && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(((inputs.enabled && true) && !(false))))) && (needs.git_checkout_2.result == 'success' || (needs.git_checkout_2.result == 'skipped' && !((inputs.enabled && true)))) && needs.git_checkout_1.result == 'success' && (needs.git_checkout_4.result == 'success' || (needs.git_checkout_4.result == 'skipped' && !(!((inputs.enabled && true)))))) }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_6"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  git_checkout_7:
+    name: "git_checkout_7"
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && (success()) }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_7"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  old-default-mutant:
+    name: "old-default-mutant"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_3, git_checkout_4, git_checkout_2, git_checkout_1]
+    if: ${{ success() }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_5"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  inverted-guard-mutant:
+    name: "inverted-guard-mutant"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    if: ${{ !cancelled() && needs.prepare.result == 'success' && success() && !(inputs.enabled && true) }}
+    timeout-minutes: 10
+    outputs:
+      revision: ${{ steps.observe.outputs.revision }}
+    steps:
+      - name: "git_checkout_2"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          fetch-depth: "0"
+      - name: Observe native checkout
+        id: observe
+        shell: bash
+        run: |
+          revision=$(git rev-parse HEAD)
+          test "$revision" = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
+          printf 'revision=%s\n' "$revision" >> "$GITHUB_OUTPUT"
+
+  collect:
+    needs: [prepare, git_checkout_1, git_checkout_2, git_checkout_3, git_checkout_4, git_checkout_5, git_checkout_6, git_checkout_7, old-default-mutant, inverted-guard-mutant]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-composition-prepared-${{ inputs.enabled }}
+          path: ${{ runner.temp }}/composition
+      - name: Verify actual native scheduling and mutations
+        env:
+          FLOW_JOB_RESULTS: ${{ toJSON(needs) }}
+          FLOW_ENABLED: ${{ inputs.enabled }}
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 tools/verify_github_condition_composition.py "$RUNNER_TEMP/composition"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: github-condition-composition-${{ inputs.enabled }}
+          path: ${{ runner.temp }}/composition
+          if-no-files-found: error
+          retention-days: 7

@@ -64,8 +64,8 @@ object GitHubActionsTargetExpressionTranslator {
             e.operands.joinToString(" $op ", "(", ")") { renderGitHub(it, inputs) }
         }
         is BinaryExpressionNode -> {
-            val left = renderGitHub(e.left, inputs)
-            val right = renderGitHub(e.right, inputs)
+            val left = renderGitHub(e.left, inputs).let { if (e.left is BinaryExpressionNode) "($it)" else it }
+            val right = renderGitHub(e.right, inputs).let { if (e.right is BinaryExpressionNode) "($it)" else it }
             when (e.operator) {
                 "==", "!=", ">", ">=", "<", "<=" -> "$left ${e.operator} $right"
                 "contains" -> "contains($left, $right)"
