@@ -903,17 +903,6 @@ internal object AdapterObservationAuthenticationLifecycle {
             certificationCheckoutResultWorkPackage = emptyMap(), certificationCheckoutResultBaseline = null)
     }
 
-    internal fun conditionValuePredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
-        if (s.release.containsKey("recoveryCheckoutResultBoundary") || s.certificationWorkPackage["selectedSlice"] == "AR-06AE")
-            return conditionValuePredecessor(checkoutResultPredecessor(s))
-        if (!s.release.containsKey("recoveryConditionValueBoundary") && s.certificationWorkPackage["selectedSlice"] != "AR-06AC") return s
-        val transition = section(FlowYaml.readMap(requireNotNull(s.certificationConditionValueBaseline), CONDITION_VALUE_BASELINE)["transition"])
-        return s.copy(
-            certificationWorkPackage = s.certificationWorkPackage + stringMap(section(transition["work"])["before"]),
-            release = (s.release - "recoveryConditionValueBoundary") + ("recoveryCertification" to section(section(transition["releaseCertification"])["before"])),
-            certificationConditionValueWorkPackage = emptyMap(), certificationConditionValueBaseline = null)
-    }
-
     internal fun conditionCallPredecessor(s: WorkflowSemanticsRecoveryLifecycleSnapshot): WorkflowSemanticsRecoveryLifecycleSnapshot {
         if (s.release.containsKey("recoveryCheckoutResultBoundary") || s.certificationWorkPackage["selectedSlice"] == "AR-06AE")
             return conditionCallPredecessor(checkoutResultPredecessor(s))
