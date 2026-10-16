@@ -37,6 +37,7 @@ Thread.start('checkout-certification') {
         def secretCondition = scenario == 'jenkins-secret-condition-runtime'
         def checkoutResult = scenario.startsWith('jenkins-checkout-result-')
         def inventories = [
+            'jenkins-checkout-result-composition-runtime': ['baseline', 'omitted-first-binding', 'substituted-second-binding', 'omitted-inner-binding'],
             'jenkins-checkout-result-true-runtime': ['baseline', 'omitted-binding', 'substituted-binding'],
             'jenkins-checkout-result-false-runtime': ['baseline', 'substituted-binding', 'bypassed-guard'],
             'jenkins-checkout-result-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],

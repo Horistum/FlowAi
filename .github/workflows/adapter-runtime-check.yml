@@ -252,6 +252,8 @@ jobs:
           java-version: '25'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
+      - name: Verify Result Composition And Scope Boundaries
+        run: ./gradlew --no-daemon --build-cache :flow-adapter-jenkins:test :flow-conformance-kit:test --tests '*JenkinsCheckoutResult*' --tests '*JenkinsConditionValue*' --stacktrace
       - name: Execute Real Jenkins Checkout Result And Mutants
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsCheckoutResultRuntime --stacktrace
       - name: Publish Bounded Observation Summaries

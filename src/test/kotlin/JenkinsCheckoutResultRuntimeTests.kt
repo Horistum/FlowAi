@@ -55,7 +55,7 @@ class JenkinsCheckoutResultRuntimeTests {
             val p = prepare(scenario)
             assertContentEquals(File(JenkinsCheckoutRuntimeCertification.FIXTURE, scenario.source).readBytes(), p.bound.resolve(p.bound.fixture))
             assertContentEquals(p.bound.resolve(p.bound.artifact), p.artifacts.getValue("baseline"))
-            assertEquals(3, p.artifacts.values.map(::sha).distinct().size)
+            assertEquals(scenario.runIds.size, p.artifacts.values.map(::sha).distinct().size)
             assertContains(p.artifacts.getValue("baseline").toString(Charsets.UTF_8), "def flowCheckoutSucceeded = true")
             val text = p.artifacts.getValue("baseline").toString(Charsets.UTF_8)
             for (changed in listOf(text.replace("= true", "= false"), text + "          def flowCheckoutSucceeded = true\n"))
@@ -74,7 +74,7 @@ class JenkinsCheckoutResultRuntimeTests {
     }
 
     @Test fun alteredNativeBranchesCountsAndMarkersCannotSatisfySignedEvidence() {
-        for (scenario in scenarios) for (index in 0..2) {
+        for (scenario in scenarios) for (index in scenario.runIds.indices) {
             val p = prepare(scenario); val raw = record(p)
             (raw["runs"][index]["checkoutBranches"] as ArrayNode).set(0, mapper.valueToTree<JsonNode>("unrelated"))
             assertFalse(assess(p, raw).admission.valid)

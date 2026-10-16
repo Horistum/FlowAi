@@ -1,4 +1,6 @@
 version: AR-06AE
+activeCorrection: .flow-agent/work-packages/adapter-composition-correction.yaml
+historicalScope: The original bounded certification below is retained as evidence; current implementation composition is governed by AR-06AE-C1.
 name: Bounded Jenkins Checkout Result Certification
 status: candidate
 stream: architecture-recovery

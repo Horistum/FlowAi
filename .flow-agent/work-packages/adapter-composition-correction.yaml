@@ -1,0 +1,59 @@
+version: AR-06AE-C1
+name: Adapter Composition Correction
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR after identifying scenario-specific architectural drift.
+  predecessorPullRequest: 228
+  mergedMain: 0a7ecaa52204c0a73431577af1bce5553d58454f
+invariant: Adapter bindings depend on declared producer contracts, execution order and lexical scope, not the size or fixture shape of a workflow.
+architecturePurpose: Restore compositional adapter implementation without changing canonical meaning or treating native examples as universal capability evidence.
+scope:
+- Replace the whole-workflow checkout-result exception with scoped producer-to-expression bindings.
+- Permit unrelated inputs and steps, multiple producers and consumers, and nested consumers where their existing structural projections are executable.
+- Retain precise field contracts, use-before-definition rejection, branch isolation, native failure propagation and independently checked rendering.
+- Audit remaining fixture-shaped restrictions and prioritize reusable mappings and cross-target composition in AR-06.
+- Preserve the existing native portfolio and add an independently observed composition regression with falsifying mutations.
+nonGoals:
+- No new Core semantics, target-specific syntax, runtime executor or generic output/state transfer claim.
+- No automatic widening of parallel, loop, match, producer-output or cross-job contracts.
+- No public support promotion, historical acceptance, milestone closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  core: Existing canonical expressions, ordering and lexical control structures remain authoritative and unchanged.
+  adapters: Resolve and render explicit native output fields within existing target scopes.
+  conformance: Exercise composition and negative cases independently of production eligibility rules.
+expectedFilesToChange:
+- flow-adapter-jenkins/src/test/kotlin/org/flowlang/targets/builtin/JenkinsConditionValueScopeTests.kt
+- .github/workflows/adapter-runtime-check.yml
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsTargetExpressionTranslator.kt
+- src/main/kotlin/org/flowlang/generators/JenkinsGroovyExpr.kt
+- src/test/kotlin/JenkinsCheckoutResultProjectionTests.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutResultCertification.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- flow-adapter-jenkins/src/runtimeTest/run.groovy
+- flow-conformance-kit/build.gradle.kts
+testsToAddOrUpdate:
+- Adding independent steps or declared inputs preserves an existing valid binding.
+- Multiple producers have distinct private names and repeated or nested consumers resolve the correct producer.
+- Consumer bodies can contain other supported action kinds without changing the producer binding.
+- Missing fields, forward references, branch escape, sibling scope, cross-job values and forged manifests fail closed.
+- Native composition baselines and omitted/substituted producer bindings have distinct ordered observations.
+documentationToUpdate:
+- .flow-agent/reports/adapter-composition-correction.md
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-result-runtime
+  - adapter-certification-portfolio
+  preservedChecks: All native checks required by AR-06AE remain required.
+followUp:
+- Replace remaining fixture-shaped control gates with contract-based mappings and composition evidence.
+- Prove equivalent canonical compositions on a materially different adapter before portable-execution claims.
+- Keep bounded native receipts distinct from claims about general adapter capability.

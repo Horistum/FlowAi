@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 45
+revision: 46
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,7 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #227 merged into main 7220e32a6798f62fd8aee0ca365433f960084c43 with its independently verified PR tree. Flow CI 38732252710 passed 2204 tests and 274 ordered checks per revision; runtime CI 38732252722 passed 35 assessments with 119 verified signatures and all-target publication. AR-06AE adds a bounded checkout.ok completion binding and direct same-job boolean consumer, requiring three native assessments and nine signed observations. Other fields, generic value/state transfer and public portability remain uncertified. Generic support and historical acceptance remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/adapter-composition-correction.yaml"
+  decisionBasis: "PR #228 merged at 0a7ecaa52204c0a73431577af1bce5553d58454f. The maintainer identified drift from universal automation intent toward fixture-shaped adapter implementations. AR-06AE-C1 corrects the existing value binding implementation using producer contracts, execution order and lexical scope, while preserving historical evidence and all current-revision gates. Subsequent AR-06 work prioritizes composable mappings and equivalent canonical compositions across materially different adapters. Native fixture counts cannot substitute for generality. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -234,13 +235,22 @@ milestones:
       - "Re-promote Jenkins capabilities only after its adapter emits the real target structure and independent evidence proves observable equivalence."
       - "Require at least two materially different adapters to execute the same canonical scenarios before claiming portable execution."
       - "Keep profile-only, native-leaf-only and bounded executable-reference claims visibly distinct."
+      - "Derive adapter applicability from producer, expression, control and topology contracts rather than fixture-specific whole-workflow shapes. Keep real implementation and evidence limitations explicit."
+      - "Prove composition under independent inputs/steps, repeated consumers, different supported leaves and lexical nesting; retain negative cases for unavailable values, scope escape and unsupported native contracts."
     nonGoals:
       - "Do not promote a target from syntactic validity, vendor documentation or a single happy-path snapshot."
       - "Do not add a third adapter merely to increase a count; it must exercise a materially different execution model."
+      - "Do not advance by adding another fixture-shaped executable exception when the missing capability is a reusable binding or control contract."
     completionEvidence:
       - "Every SUPPORTED target feature has a positive behavior fixture and a mutant that fails when the feature is flattened, omitted or substituted."
       - "The Jenkins adapter is outside Core and either preserves each claimed structure or reports it honestly as non-executable."
       - "The certified target portfolio can be regenerated from provider-owned evidence with no target-name-specific folklore."
+      - "Existing native examples remain passing regression evidence, while composition tests distinguish reusable mappings from scenario allowlists. Cross-target comparisons use the same canonical intent and explicit execution boundaries."
+    correctiveSequence:
+      - "AR-06AE-C1: replace the two-step checkout-result exception with scoped field bindings; inventory remaining composition restrictions."
+      - "Next: address condition and successor composition in the materially different job-based adapter model, using the same canonical compositions and preserving native scheduling semantics."
+      - "Then: replace leaf-count/type gates in retry, loop, match and parallel mappings with justified control/topology contracts and independent composition evidence."
+      - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 
   - id: "AR-07"
     name: "AI Boundary, Migration Cleanup and Recovery Closure"

@@ -33,6 +33,7 @@ internal class AdapterBehaviorMatrix private constructor(private val encoded: St
             resolver: CertificationEvidenceResolver
         ): AdapterBehaviorMatrix {
             val construct = when (scenario) {
+                JenkinsCheckoutRuntimeCertification.Scenario.RESULT_COMPOSITION,
                 JenkinsCheckoutRuntimeCertification.Scenario.RESULT_TRUE,
                 JenkinsCheckoutRuntimeCertification.Scenario.RESULT_FALSE,
                 JenkinsCheckoutRuntimeCertification.Scenario.RESULT_FAILURE -> CertificationConstruct.VALUE_STATE_CONTINUITY

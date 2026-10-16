@@ -261,7 +261,7 @@ tasks.register<JavaExec>("verifyJenkinsSecretConditionRuntime") {
 }
 
 
-val checkoutResultRuntimeTasks = listOf("true", "false", "failure").map { outcome ->
+val checkoutResultRuntimeTasks = listOf("true", "false", "failure", "composition").map { outcome ->
     tasks.register<JavaExec>("verifyJenkinsCheckoutResult${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
         group = "verification"
         description = "Verify the bounded checkout result $outcome consumer and mutants on real Jenkins."

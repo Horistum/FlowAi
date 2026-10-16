@@ -11,13 +11,14 @@ object JenkinsTargetExpressionTranslator {
     fun groovy(
         condition: String,
         inputs: List<TargetInput>,
-        expressionSupport: TargetExpressionSupportDeclaration?
+        expressionSupport: TargetExpressionSupportDeclaration?,
+        boundValues: Map<List<String>, String> = emptyMap()
     ): String = try {
         val parsed = ExpressionParser.parseSource(condition)
         TargetExpressionSupport.unsupportedReason("jenkins", expressionSupport, parsed)?.let {
             throw TargetExpressionTranslationException(it)
         }
-        GroovyExpr(inputs.map { it.name }.toSet()).render(parsed)
+        GroovyExpr(inputs.map { it.name }.toSet(), boundValues).render(parsed)
     } catch (e: TargetExpressionTranslationException) {
         throw e
     } catch (e: Exception) {

@@ -180,7 +180,7 @@ class AdapterCertificationPortfolioTests {
         val doc = mapper.readTree(publication.json()); val original = mapper.readTree(portfolio.json())
         assertEquals(declarations.keys.sorted(), doc["targets"].map { it["target"].asText() })
         assertEquals(6, doc["targetCount"].asInt()); assertEquals(72, doc["rows"].size())
-        assertEquals(38, doc["scenarios"].size())
+        assertEquals(39, doc["scenarios"].size())
         assertEquals(14, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertEquals(sha(portfolio.json().toByteArray()), doc["portfolioSha256"].asText())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
@@ -255,14 +255,14 @@ class AdapterCertificationPortfolioTests {
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->
         val result = f.derive(); val doc = mapper.readTree(result.json())
-        assertEquals(38, doc["assessmentCount"].asInt())
+        assertEquals(39, doc["assessmentCount"].asInt())
         assertEquals(36, doc["rows"].size())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
         assertEquals(14, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertTrue(doc["rows"].filter { it["target"].asText() !in setOf("jenkins", "github-actions") }.all {
             it["scenarioIds"].isEmpty && it["status"].asText() == "NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO" })
         val matrices = doc["assessments"].map { it["matrix"] }
-        assertEquals(128, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        assertEquals(132, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
         val github = doc["assessments"].single { it["scenarioId"].asText() == GitHubActionsCheckoutRuntimeCertification.SCENARIO }
         assertEquals("native-leaf-only", github["claim"].asText())
         assertEquals("native-leaf-in-checked-envelope", github["executionMode"].asText())

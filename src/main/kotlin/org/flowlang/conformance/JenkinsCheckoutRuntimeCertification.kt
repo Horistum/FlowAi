@@ -70,7 +70,9 @@ internal object JenkinsCheckoutRuntimeCertification {
         SECRET_CONDITION("jenkins-secret-condition-runtime", "secret-condition.flow", "secret-condition-matrix.json", listOf("baseline", "omitted-binding", "substituted-binding"), "AR-06AB"),
         RESULT_TRUE("jenkins-checkout-result-true-runtime", "checkout-result-true.flow", "checkout-result-matrix.json", listOf("baseline", "omitted-binding", "substituted-binding"), "AR-06AE"),
         RESULT_FALSE("jenkins-checkout-result-false-runtime", "checkout-result-false.flow", "checkout-result-matrix.json", listOf("baseline", "substituted-binding", "bypassed-guard"), "AR-06AE"),
-        RESULT_FAILURE("jenkins-checkout-result-failure-runtime", "checkout-result-failure.flow", "checkout-result-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06AE");
+        RESULT_FAILURE("jenkins-checkout-result-failure-runtime", "checkout-result-failure.flow", "checkout-result-matrix.json", listOf("baseline", "omitted-failure", "suppressed-failure"), "AR-06AE"),
+        RESULT_COMPOSITION("jenkins-checkout-result-composition-runtime", "checkout-result-composition.flow", "checkout-result-composition-matrix.json",
+            listOf("baseline", "omitted-first-binding", "substituted-second-binding", "omitted-inner-binding"), "AR-06AE-C1");
 
         val sharedCondition: Boolean get() = this == SHARED_CONDITION_TRUE || this == SHARED_CONDITION_FALSE
         val conditionValue: Boolean get() { require(sharedCondition); return this == SHARED_CONDITION_TRUE }
@@ -82,7 +84,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         val workspaceFailure: Boolean get() = this == PARALLEL_WORKSPACES_FAILURE
         val parallelFailFast: Boolean get() = this == PARALLEL_FAIL_FAST_APPROVE || this == PARALLEL_CANCEL
         val approval: Boolean get() = this == APPROVAL_APPROVE || this == APPROVAL_REJECT
-        val checkoutResult: Boolean get() = this == RESULT_TRUE || this == RESULT_FALSE || this == RESULT_FAILURE
+        val checkoutResult: Boolean get() = this == RESULT_TRUE || this == RESULT_FALSE || this == RESULT_FAILURE || this == RESULT_COMPOSITION
         val secretCondition: Boolean get() = this == SECRET_CONDITION
         val conditional: Boolean get() = checkoutResult || secretCondition || this == CONDITION_TRUE || this == CONDITION_FALSE || sharedCondition
         val errorBoundary: Boolean get() = this == ERROR_FAILURE || this == ERROR_SUCCESS
@@ -194,7 +196,8 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(limitations.isNotEmpty() && limitations.none(String::isBlank))
         val bundle = AdapterCertificationBundle(adapter, subjects.map { subject -> CertificationCoverage(subject,
             if (subject in bound.subjects) listOf(bound.id) else emptyList(),
-            if (scenario.checkoutResult) "One successful checkout.ok boolean consumed by a same-job equality condition only; no generic value/state continuity claim."
+            if (scenario == Scenario.RESULT_COMPOSITION) "Scoped checkout.ok bindings with input, sequential and nested producers, repeated consumers and boolean composition; no generic value/state continuity claim."
+            else if (scenario.checkoutResult) "One successful checkout.ok boolean consumed by a same-job equality condition only; no generic value/state continuity claim."
             else if (scenario.secretCondition) "Two string credential identities in one condition only; no general secret handling or security claim."
             else if (scenario.parallelWorkspaces) "Two approval-then-checkout branches with distinct directories and the authored failFast policy; no running-checkout interruption, output export, security isolation or fresh-workspace claim."
             else if (scenario.parallel) "One pair of concurrent manual inputs, native join and the authored failure policy; automated decisions only, no branch workspace or output isolation."
@@ -299,7 +302,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(marker.isNull || marker.isTextual && marker.asText().length <= 1024)
         val observation = linkedMapOf<String, Any?>("result" to row["result"].asText(), "marker" to if (marker.isNull) null else marker.asText())
         if (scenario.recordsNativeSteps) {
-            require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() in 0..(if (scenario.parallelWorkspaces) 3 else if (scenario.localRecovery || scenario.retry || scenario.loop || scenario.match) 4 else 2))
+            require(row["checkoutCount"]?.isIntegralNumber == true && row["checkoutCount"].canConvertToInt() && row["checkoutCount"].asInt() in 0..(if (scenario == Scenario.RESULT_COMPOSITION) 5 else if (scenario.parallelWorkspaces) 3 else if (scenario.localRecovery || scenario.retry || scenario.loop || scenario.match) 4 else 2))
             val errors = row["checkoutErrors"]
             require(errors?.isArray == true && errors.size() <= row["checkoutCount"].asInt())
             observation["checkoutCount"] = row["checkoutCount"].asInt()

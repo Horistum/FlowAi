@@ -7,13 +7,14 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
+activeCorrection: .flow-agent/work-packages/adapter-composition-correction.yaml
 selectedSlice: AR-06AE
 selectedWorkPackage: .flow-agent/work-packages/jenkins-checkout-result-certification.yaml
 acceptedSlices:
 - AR-06A
 - AR-06B
 invariant: A condition consuming a checkout success result must read an explicit adapter-owned binding established
-  only after the native producer succeeds.
+  only after the native producer succeeds; applicability follows execution order and lexical scope rather than whole-workflow fixture shape.
 scope:
 - Freeze source, canonical graph and actual rendered artifact at the existing compiler and adapter authority boundary.
 - Require exact scenario bindings and derive per-scenario semantic, structural and native-leaf occurrence coverage.
@@ -62,13 +63,13 @@ scope:
   bindings without inventing task-output continuity.
 - Keep unsupported Jenkins expression calls review-only; canonical function names cannot become ambient native method
   invocations without explicit adapter mappings.
-- Bind one checkout.ok result to a direct same-job boolean condition only after native success; require positive,
-  false-consumer, failure and falsifying-mutant runtime evidence.
+- Preserve the original checkout.ok success, false-consumer and failure receipts while correcting binding composition through declared producer contracts, execution order and lexical scope.
+- Require composition regressions with independent inputs/steps, multiple producers/consumers, different supported leaves and nesting; reject missing bindings and scope escape.
 nonGoals:
 - No product runtime execution, general semantic adequacy or portable-execution claim.
 - No support promotion, finding closure, public version change or EF-09 resumption.
 ownershipBoundary:
-  adapters: Own the concrete checkout completion binding, exact supported composition and executable rendering.
+  adapters: Own native field bindings, lexical availability, expression translation and executable rendering without fixture-shape eligibility.
   conformance: Own independent native checkout, branch and failure observations and authenticated publication.
 validation:
   status: current-revision-ci-required
@@ -96,8 +97,9 @@ validation:
   negativeEvidence: Unsupported output use stays non-executable; native omitted/substituted bindings, bypassed guards
     and failed-producer mutants must differ from their positive fixtures.
 followUp:
-- Adapter-owned behavioral scenarios and external runner integration for Jenkins and GitHub Actions.
-- Construct/target/behavior/mutant matrix and equivalent execution on two materially different adapters.
+- Reuse canonical contracts to resolve composition gaps, beginning with conditions and successor scheduling on a materially different job-based adapter.
+- Replace remaining fixture-shaped retry, loop, match and parallel gates only with explicit control/topology mappings and negative evidence.
+- Prove equivalent canonical compositions on two materially different adapters before portable-execution claims.
 - Evidence-derived public views with separate profile, leaf and scenario claims.
 activationEvidence:
   path: .flow-agent/evidence/adapter-certification-activation-baseline.json
