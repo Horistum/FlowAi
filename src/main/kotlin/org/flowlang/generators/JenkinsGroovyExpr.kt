@@ -12,7 +12,10 @@ import org.flowlang.targets.builtin.safeEnvName
  * Input roots become exact params properties; other roots are validated identifiers.
  * Literal text, including regex patterns, never becomes interpolated Groovy source.
  */
-class GroovyExpr(private val inputs: Set<String>) {
+class GroovyExpr(
+    private val inputs: Set<String>,
+    private val boundValues: Map<List<String>, String> = emptyMap()
+) {
 
     fun render(e: ExpressionNode): String = when (e) {
         is StringLiteralNode -> groovyString(e.value)
@@ -49,6 +52,7 @@ class GroovyExpr(private val inputs: Set<String>) {
     }
 
     private fun renderRef(path: List<String>, safe: Boolean): String {
+        if (!safe) boundValues[path]?.let { return groovyIdentifier(it) }
         val root = path.firstOrNull() ?: error("Jenkins reference path must not be empty.")
         val head = if (root in inputs) groovyProperty("params", root) else groovyIdentifier(root)
         return path.drop(1).fold(head) { target, member -> groovyProperty(target, member, safe) }

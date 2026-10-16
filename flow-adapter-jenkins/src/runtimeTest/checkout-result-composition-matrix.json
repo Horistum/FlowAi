@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "checkout-result",
+  "scenarios": [
+    {
+      "scenario": "jenkins-checkout-result-composition-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 5,
+        "checkoutErrors": [],
+        "checkoutBranches": [
+          "selected",
+          "alternate",
+          "selected",
+          "alternate",
+          "selected"
+        ],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "omitted-first-binding",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "alternate"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "substituted-second-binding",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 4,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "alternate",
+            "selected",
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "omitted-inner-binding",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 4,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "alternate",
+            "selected",
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "This native regression composes declared input, sequential producers, a nested producer, boolean expressions and repeated consumers. Production binding availability is derived from producer contracts and lexical scope, not this fixture shape.",
+    "Only explicit checkout.ok normal-completion bindings are exercised; no whole result, path output, generic DATA transport, cross-job transfer, mutable state or alternate leaf output contract is certified.",
+    "Native checkout order and workspace markers distinguish the baseline from omitted first/inner bindings and a substituted second binding. Groovy local variables are not read by the observer.",
+    "Existing control projection limits remain in force. This does not certify every nesting or combination, promote generic support or establish portable execution.",
+    "The compiler-generated Jenkinsfile executes unchanged in an isolated controller. Runtime hosts and authenticated observation transport remain trusted."
+  ]
+}

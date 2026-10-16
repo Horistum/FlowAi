@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode
 internal object JenkinsCheckoutResultCertification {
     fun artifacts(text: String, original: ByteArray, scenario: JenkinsCheckoutRuntimeCertification.Scenario): Map<String, ByteArray> {
         require(original.contentEquals(text.toByteArray(Charsets.UTF_8)))
+        if (scenario == JenkinsCheckoutRuntimeCertification.Scenario.RESULT_COMPOSITION)
+            return compositionArtifacts(text, original)
         val binding = "          def flowCheckoutSucceeded = true"
         val expected = scenario != JenkinsCheckoutRuntimeCertification.Scenario.RESULT_FALSE
         val guard = "          if (flowCheckoutSucceeded == $expected) {"
@@ -31,6 +33,21 @@ internal object JenkinsCheckoutResultCertification {
                 "suppressed-failure" to replace(producer, "          catchError(buildResult: 'SUCCESS', stageResult: 'SUCCESS') {\n  $producer\n          }"))
             else -> error("Not a checkout result scenario.")
         }
+    }
+
+    private fun compositionArtifacts(text: String, original: ByteArray): Map<String, ByteArray> {
+        val bindings = listOf("          def flowCheckoutSucceeded = true",
+            "          def flowCheckoutSucceeded2 = true", "            def flowCheckoutSucceeded3 = true")
+        bindings.forEach { line -> require(text.lineSequence().count { it == line } == 1) }
+        require(text.lineSequence().count { it.trimStart().startsWith("git branch:") } == 5)
+        require(text.contains("params.enabled") && text.contains("flowCheckoutSucceeded2 != false") &&
+            text.contains("flowCheckoutSucceeded3 == true"))
+        fun changed(index: Int, value: String): ByteArray = text.replace(bindings[index] + "\n",
+            bindings[index].replace("= true", "= $value") + "\n").toByteArray(Charsets.UTF_8)
+        return linkedMapOf("baseline" to original,
+            "omitted-first-binding" to changed(0, "null"),
+            "substituted-second-binding" to changed(1, "false"),
+            "omitted-inner-binding" to changed(2, "null"))
     }
 
     fun completedFailure(row: JsonNode, message: String): Boolean =
