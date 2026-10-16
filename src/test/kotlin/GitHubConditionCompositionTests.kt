@@ -21,7 +21,10 @@ class GitHubConditionCompositionTests {
         val digest = compilation.graphDigest
         val jenkins = fixture.manifest(root, compilation, "jenkins")
         val githubTasks = github.jobs.flatMap { it.steps }.map { it.id }.toSet()
-        val jenkinsTasks = jenkins.jobs.flatMap { it.steps }.flatMap { it.flatten() }.filter { it.type == "action" }.map { it.id }.toSet()
+        fun leaves(steps: List<TargetStep>): List<TargetStep> = steps.flatMap { step ->
+            if (step.type == "action") listOf(step) else leaves(step.children)
+        }
+        val jenkinsTasks = leaves(jenkins.jobs.flatMap { it.steps }).map { it.id }.toSet()
         assertEquals((1..7).map { "git_checkout_$it" }.toSet(), githubTasks)
         assertEquals(githubTasks, jenkinsTasks)
         assertEquals(6, compilation.executionPlan.tasks.sumOf { it.dependsOn.size })
