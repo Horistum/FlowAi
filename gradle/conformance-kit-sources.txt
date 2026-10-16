@@ -91,6 +91,7 @@ org/flowlang/conformance/InfrastructureLifecycleFalsification.kt
 org/flowlang/conformance/IntegratedProductIntegrityChecks.kt
 org/flowlang/conformance/IntegratedProductIntegrityLifecycle.kt
 org/flowlang/conformance/IntentSafetyChecks.kt
+org/flowlang/conformance/JenkinsCheckoutResultCertification.kt
 org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/JenkinsParallelWorkspaceCertification.kt
 org/flowlang/conformance/JenkinsSecretConditionCertification.kt

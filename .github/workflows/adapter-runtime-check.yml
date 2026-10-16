@@ -229,6 +229,48 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  jenkins-checkout-result-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Verify Exact Revision
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+      - name: Set up JDK 25
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Execute Real Jenkins Checkout Result And Mutants
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyJenkinsCheckoutResultRuntime --stacktrace
+      - name: Publish Bounded Observation Summaries
+        run: |
+          cat flow-conformance-kit/build/jenkins-checkout-result-certification/*/behavior-matrix.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Pin Assessment Proof And Trust
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: python3 tools/certification_portfolio_receipt.py --directory flow-conformance-kit/build/jenkins-checkout-result-certification --artifact jenkins-checkout-result-runtime --revision "$EXPECTED_SHA"
+      - name: Upload Runtime Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jenkins-checkout-result-runtime
+          path: flow-conformance-kit/build/jenkins-checkout-result-certification/
+          if-no-files-found: error
+          retention-days: 7
+
   jenkins-secret-condition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -1053,7 +1095,7 @@ jobs:
           retention-days: 7
 
   adapter-certification-portfolio:
-    needs: [jenkins-secret-condition-runtime, jenkins-shared-condition-runtime, github-actions-condition-runtime, jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
+    needs: [jenkins-checkout-result-runtime, jenkins-secret-condition-runtime, jenkins-shared-condition-runtime, github-actions-condition-runtime, jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
     # Run despite intentionally skipped native condition jobs. The portfolio verifier rejects
     # any missing, failed or skipped producer, so incomplete evidence fails instead of skipping.
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}

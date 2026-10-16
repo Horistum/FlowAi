@@ -259,3 +259,22 @@ tasks.register<JavaExec>("verifyJenkinsSecretConditionRuntime") {
         "jenkins-secret-condition-runtime")
     workingDir(rootProject.projectDir)
 }
+
+
+val checkoutResultRuntimeTasks = listOf("true", "false", "failure").map { outcome ->
+    tasks.register<JavaExec>("verifyJenkinsCheckoutResult${outcome.replaceFirstChar(Char::uppercase)}Runtime") {
+        group = "verification"
+        description = "Verify the bounded checkout result $outcome consumer and mutants on real Jenkins."
+        classpath = sourceSets.main.get().runtimeClasspath
+        mainClass.set("org.flowlang.conformance.JenkinsCheckoutRuntimeCertificationKt")
+        javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(JavaLanguageVersion.of(25)) })
+        args(rootProject.projectDir.absolutePath, layout.buildDirectory.dir("jenkins-checkout-result-certification/$outcome").get().asFile.absolutePath,
+            "jenkins-checkout-result-$outcome-runtime")
+        workingDir(rootProject.projectDir)
+    }
+}
+tasks.register("verifyJenkinsCheckoutResultRuntime") {
+    group = "verification"
+    description = "Execute checkout success bindings, true/false consumers and failed-producer mutants on real Jenkins."
+    dependsOn(checkoutResultRuntimeTasks)
+}

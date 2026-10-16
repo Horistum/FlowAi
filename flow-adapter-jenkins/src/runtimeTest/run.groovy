@@ -35,7 +35,11 @@ Thread.start('checkout-certification') {
         def workspaceScenario = scenario in ['jenkins-parallel-workspaces-approve-runtime', 'jenkins-parallel-workspaces-reject-runtime',
             'jenkins-parallel-workspaces-fail-fast-approve-runtime', 'jenkins-parallel-workspaces-cancel-runtime', 'jenkins-parallel-workspaces-failure-runtime']
         def secretCondition = scenario == 'jenkins-secret-condition-runtime'
+        def checkoutResult = scenario.startsWith('jenkins-checkout-result-')
         def inventories = [
+            'jenkins-checkout-result-true-runtime': ['baseline', 'omitted-binding', 'substituted-binding'],
+            'jenkins-checkout-result-false-runtime': ['baseline', 'substituted-binding', 'bypassed-guard'],
+            'jenkins-checkout-result-failure-runtime': ['baseline', 'omitted-failure', 'suppressed-failure'],
             'jenkins-secret-condition-runtime': ['baseline', 'omitted-binding', 'substituted-binding'],
             'jenkins-parallel-workspaces-fail-fast-approve-runtime': ['baseline', 'aliased-workspaces', 'swapped-workspaces', 'omitted-left-checkout', 'early-branch-work', 'early-successor'],
             'jenkins-parallel-workspaces-cancel-runtime': ['baseline', 'disabled-cancellation', 'suppressed-rejection', 'early-branch-work', 'early-successor'],
@@ -285,7 +289,7 @@ Thread.start('checkout-certification') {
                 record.secrets = [bindings: bindings, canaryInBuildLog: false]
             }
             if (workspaceScenario) record.workspaces = workspaceSnapshot(build, workspace)
-            if (scenario.startsWith('jenkins-loop-') || scenario.startsWith('jenkins-match-')) {
+            if (checkoutResult || scenario.startsWith('jenkins-loop-') || scenario.startsWith('jenkins-match-')) {
                 record.checkoutBranches = checkouts.collect { node ->
                     def branch = ArgumentsAction.getArguments(node).get('branch')
                     if (!(branch instanceof String) || branch.length() < 1 || branch.length() > 256)
@@ -341,14 +345,14 @@ Thread.start('checkout-certification') {
                     pending: pending, decision: decision,
                     terminalError: terminal == null ? null : inputFailure(terminal) + [inputIndex: inputIndex < 0 ? null : inputIndex + 1]]
             }
-            if (scenario in ['jenkins-parallel-workspaces-failure-runtime', 'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
+            if (checkoutResult || scenario in ['jenkins-parallel-workspaces-failure-runtime', 'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
                              'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
                              'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime',
                              'jenkins-match-selected-runtime', 'jenkins-match-default-runtime', 'jenkins-match-empty-runtime', 'jenkins-match-failure-runtime']) {
                 record.checkoutErrorIndices = checkouts.withIndex().findAll { node, index -> node.getError() != null }
                     .collect { node, index -> index + 1 }
             }
-            if (scenario in ['jenkins-parallel-workspaces-failure-runtime', 'jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
+            if (checkoutResult || scenario in ['jenkins-parallel-workspaces-failure-runtime', 'jenkins-error-failure-runtime', 'jenkins-error-success-runtime',
                              'jenkins-recovery-failure-runtime', 'jenkins-recovery-success-runtime',
                              'jenkins-retry-failure-runtime', 'jenkins-retry-success-runtime',
                              'jenkins-loop-order-runtime', 'jenkins-loop-empty-runtime', 'jenkins-loop-failure-runtime',
