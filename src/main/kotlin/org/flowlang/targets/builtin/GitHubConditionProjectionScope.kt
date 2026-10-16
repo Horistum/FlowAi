@@ -26,7 +26,7 @@ class GitHubConditionProjectionScope(private val catalog: TargetNativeProjection
         if (authorization.graph.workflows.size != 1 || authorization.graph.workflows.single().failurePolicy.handler != null) return declared
         // Event/schedule contexts do not supply workflow_dispatch inputs. Do not silently
         // turn a missing input into GitHub's empty string or an invented Boolean default.
-        val booleanInputs = if (plan.triggers.any { it.type != "manual" }) emptySet() else
+        val booleanInputs = if (plan.triggers.any { it.type != "MANUAL" }) emptySet() else
             plan.inputs.filter { it.type == "boolean" && (it.required || it.defaultValue in setOf("true", "false")) }
                 .map { it.name }.toSet()
         var hasCondition = false

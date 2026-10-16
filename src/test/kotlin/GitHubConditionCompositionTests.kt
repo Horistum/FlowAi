@@ -75,7 +75,7 @@ class GitHubConditionCompositionTests {
         val scope = GitHubConditionProjectionScope(ReferenceTargetProjections.nativeCatalogs.getValue("github-actions"))
         val variants = listOf(
             document.copy(flow = document.flow.copy(input = document.flow.input.map { it.copy(default = null) })),
-            document.copy(flow = document.flow.copy(triggers = listOf(TriggerNode(id = "push", triggerType = "event", event = "push")))))
+            document.copy(flow = document.flow.copy(triggers = listOf(TriggerNode(id = "push", triggerType = "EVENT", event = "push")))))
         variants.forEach { variant ->
             assertEquals(declared, scope.resolve(fixture.compile(root, variant).authorization, "github-actions", declared))
         }

@@ -27,13 +27,23 @@ jobs:
           WORKFLOW_REVISION: ${{ github.sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          ./gradlew --no-daemon --build-cache :flow-adapter-github-actions:test :flow-conformance-kit:test --tests '*GitHubCondition*' --tests '*SharedConditionRuntimeTests*' :flow-conformance-kit:installDist --stacktrace
+          ./gradlew --no-daemon --build-cache :flow-adapter-github-actions:test :flow-conformance-kit:test --tests '*GitHubCondition*' --tests '*SharedConditionRuntimeTests*' --tests '*TargetMaturityPublicationTests*' --tests '*AuthorityResponsibilityCatalogTests*' :flow-conformance-kit:installDist --stacktrace
           git fetch --no-tags origin "$WORKFLOW_REVISION"
           git show "$WORKFLOW_REVISION:.github/workflows/github-condition-composition.yml" > "$RUNNER_TEMP/composition-envelope.yml"
           cmp .github/workflows/github-condition-composition.yml "$RUNNER_TEMP/composition-envelope.yml"
           java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.GitHubConditionCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/composition-envelope.yml" "$RUNNER_TEMP/composition"
           printf '%s\n' "$EXPECTED_SHA" > "$RUNNER_TEMP/composition/source-revision.txt"
           printf '%s\n' "$WORKFLOW_REVISION" > "$RUNNER_TEMP/composition/workflow-revision.txt"
+      - name: Retain focused test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: github-composition-tests-${{ inputs.enabled }}
+          path: |
+            flow-adapter-github-actions/build/test-results/test/*.xml
+            flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
       - uses: actions/upload-artifact@v4
         with:
           name: github-composition-prepared-${{ inputs.enabled }}
