@@ -1,0 +1,162 @@
+{
+  "version": 1,
+  "target": "jenkins",
+  "claim": "bounded-structural-occurrence",
+  "construct": "checkout-result",
+  "scenarios": [
+    {
+      "scenario": "jenkins-checkout-result-true-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "alternate\n",
+        "checkoutCount": 2,
+        "checkoutErrors": [],
+        "checkoutBranches": [
+          "selected",
+          "alternate"
+        ],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "omitted-binding",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "substituted-binding",
+          "result": "SUCCESS",
+          "marker": "selected\n",
+          "checkoutCount": 1,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-checkout-result-false-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "SUCCESS",
+        "marker": "selected\n",
+        "checkoutCount": 1,
+        "checkoutErrors": [],
+        "checkoutBranches": [
+          "selected"
+        ],
+        "checkoutErrorIndices": [],
+        "terminalError": null
+      },
+      "mutants": [
+        {
+          "id": "substituted-binding",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "alternate"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "bypassed-guard",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "alternate"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        }
+      ]
+    },
+    {
+      "scenario": "jenkins-checkout-result-failure-runtime",
+      "positive": {
+        "id": "baseline",
+        "result": "FAILURE",
+        "marker": null,
+        "checkoutCount": 1,
+        "checkoutErrors": [
+          {
+            "type": "hudson.AbortException",
+            "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+          }
+        ],
+        "checkoutBranches": [
+          "missing-revision"
+        ],
+        "checkoutErrorIndices": [
+          1
+        ],
+        "terminalError": {
+          "type": "hudson.AbortException",
+          "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job.",
+          "checkoutIndex": 1
+        }
+      },
+      "mutants": [
+        {
+          "id": "omitted-failure",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [],
+          "checkoutBranches": [
+            "selected",
+            "alternate"
+          ],
+          "checkoutErrorIndices": [],
+          "terminalError": null
+        },
+        {
+          "id": "suppressed-failure",
+          "result": "SUCCESS",
+          "marker": "alternate\n",
+          "checkoutCount": 2,
+          "checkoutErrors": [
+            {
+              "type": "hudson.AbortException",
+              "message": "Couldn't find any revision to build. Verify the repository and branch configuration for this job."
+            }
+          ],
+          "checkoutBranches": [
+            "missing-revision",
+            "alternate"
+          ],
+          "checkoutErrorIndices": [
+            1
+          ],
+          "terminalError": null
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "One direct same-job checkout.ok boolean equality consumer followed by one checkout child; no generic DATA continuity, task parameter transfer or whole-result record.",
+    "Normal native git completion establishes boolean true. Failure propagates before the binding and consumer; no false result record or recovery is invented.",
+    "Only literal branch checkouts with full history are admitted; no revision-SHA, shallow, nested, cross-job, path output or persistent/mutable state claim.",
+    "The observer reads native checkout arguments, error origins and workspace markers independently of generated source and mutant identity. Groovy local values are not directly inspected; the bound artifact and consumer behavior establish the limited evidence.",
+    "The unchanged compiler-generated Jenkinsfile executes on an isolated controller without external egress or published ports. Runtime hosts and observation transport remain trusted.",
+    "This fills one bounded value/state observation row. It does not promote generic support, portable execution or milestone closure."
+  ]
+}

@@ -733,3 +733,11 @@ No manifest wire version changes. The complete existing native portfolio and all
 Regenerate Jenkins artifacts containing generic function calls in conditions. Such calls now remain review-only with `condition.function-binding`; a canonical function name is not a mapping to a Jenkins Pipeline step or Groovy method. The expression and child actions remain available for diagnosis. Direct executable rendering and expression translation also reject unmapped calls, including calls nested inside other expressions.
 
 Typed `secret("name")` references, call-like literal text and supported operators retain their existing projection. No manifest wire version changes. Function mappings need their own semantic preservation and native behavioral evidence before becoming executable. Generic value/state continuity remains uncertified.
+
+## AR-06AE: bounded Jenkins checkout success binding
+
+Regenerating an exact same-job composition of `git.checkout -> alias` followed by `if alias.ok == true` (or `false`) with one native checkout child now produces an explicit adapter-owned success binding. The binding is introduced only after the producer returns normally. Native failure propagates before it exists. Both checkouts must use literal branches with full history; the composition has no other steps, declared inputs or alternate branches.
+
+The native runtime job adds true-consumer, false-consumer and failed-producer assessments with six falsifying mutants. Authenticated publication adds only bounded evidence to Jenkins VALUE_STATE_CONTINUITY. Native checkout arguments, error origins and workspace markers provide independent observations; local Groovy values are not directly inspected. All prior assessments and all target/construct rows remain mandatory.
+
+Other outputs, whole records, shallow/SHA checkout variants, nested or cross-job use, arbitrary data transfer and mutable/persistent state still need separate contracts and evidence. Generic continuity support, public support and portable execution are unchanged. No manifest wire version changes.

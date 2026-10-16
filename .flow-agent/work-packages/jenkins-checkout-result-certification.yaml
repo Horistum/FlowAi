@@ -1,0 +1,73 @@
+version: AR-06AE
+name: Bounded Jenkins Checkout Result Certification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap slice after merging PR 227.
+  predecessorPullRequest: 227
+  mergedMain: 7220e32a6798f62fd8aee0ca365433f960084c43
+invariant: A condition consuming a checkout success result must read an explicit adapter-owned binding established
+  only after the native producer succeeds.
+scope:
+- Support one top-level native checkout result followed by one equality condition on its boolean ok field and one
+  native checkout child in the same Jenkins job.
+- Bind successful completion explicitly without exposing authored aliases as ambient Groovy identifiers or inventing
+  a path output.
+- Observe true and false consumers, producer failure and falsifying binding/guard/failure mutants in disposable
+  Jenkins.
+- Publish only this bounded value-observation evidence and preserve all prior native scenarios.
+nonGoals:
+- No generic task-output transfer, arbitrary output fields, cross-job bindings, state persistence, branching producers
+  or function mappings.
+- No Core semantics, public syntax/version, generic continuity support, portability promotion, historical acceptance,
+  milestone closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  adapters: Own the concrete checkout completion binding, exact supported composition and executable rendering.
+  conformance: Own independent native checkout, branch and failure observations and authenticated publication.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
+- src/main/kotlin/org/flowlang/targets/builtin/JenkinsManifestRenderer.kt
+- src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterBehaviorMatrix.kt
+- src/main/kotlin/org/flowlang/conformance/AdapterCertificationPortfolio.kt
+- flow-adapter-jenkins/src/runtimeTest/run.groovy
+- flow-conformance-kit/build.gradle.kts
+- .github/workflows/adapter-runtime-check.yml
+testsToAddOrUpdate:
+- Canonical result conditions bind only the explicit boolean ok field in the admitted composition.
+- Unsupported fields, expressions, producer shapes, scope leakage and forged manifests fail closed.
+- True/false consumers, failed producers, omitted/substituted bindings and bypassed guards are behaviorally distinguishable.
+- Missing, tampered and incomplete runtime records or portfolio producer receipts cannot certify the new path.
+- Historical receipts, validation requirements and finding ownership remain enforced.
+documentationToUpdate:
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/reports/jenkins-checkout-result-certification.md
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - jenkins-checkout-runtime
+  - jenkins-failure-runtime
+  - jenkins-condition-runtime
+  - jenkins-error-boundary-runtime
+  - jenkins-local-recovery-runtime
+  - jenkins-approval-runtime
+  - github-actions-checkout-runtime
+  - jenkins-shared-checkout-runtime
+  - jenkins-retry-runtime
+  - jenkins-loop-runtime
+  - jenkins-match-runtime
+  - jenkins-parallel-runtime
+  - adapter-certification-portfolio
+  - jenkins-shared-condition-runtime
+  - github-actions-condition-prepare
+  - jenkins-secret-condition-runtime
+  - github-actions-condition-runtime
+  - jenkins-checkout-result-runtime
+  negativeEvidence: Unsupported output use stays non-executable; native omitted/substituted bindings, bypassed guards
+    and failed-producer mutants must differ from their positive fixtures.
+followUp:
+- Extend output and state contracts only with separately bounded native evidence.
+- Add materially different target evidence before claiming portable value continuity.

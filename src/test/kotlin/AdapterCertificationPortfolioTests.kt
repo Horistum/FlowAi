@@ -180,8 +180,8 @@ class AdapterCertificationPortfolioTests {
         val doc = mapper.readTree(publication.json()); val original = mapper.readTree(portfolio.json())
         assertEquals(declarations.keys.sorted(), doc["targets"].map { it["target"].asText() })
         assertEquals(6, doc["targetCount"].asInt()); assertEquals(72, doc["rows"].size())
-        assertEquals(35, doc["scenarios"].size())
-        assertEquals(13, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
+        assertEquals(38, doc["scenarios"].size())
+        assertEquals(14, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertEquals(sha(portfolio.json().toByteArray()), doc["portfolioSha256"].asText())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
         for (target in doc["targets"]) {
@@ -213,7 +213,7 @@ class AdapterCertificationPortfolioTests {
         val json = publication.json(); val markdown = publication.markdown(); val doc = mapper.readTree(json)
         assertEquals(84, doc["rows"].size())
         assertTrue(doc["rows"].filter { it["target"].asText() == id }.all { it["scenarioIds"].isEmpty })
-        assertTrue(doc["rows"].filter { it["construct"].asText() == "VALUE_STATE_CONTINUITY" }.all { it["scenarioIds"].isEmpty })
+        assertTrue(doc["rows"].filter { it["construct"].asText() == "VALUE_STATE_CONTINUITY" && it["target"].asText() != "jenkins" }.all { it["scenarioIds"].isEmpty })
         assertEquals(json, AuthenticatedTargetCoverage.derive(portfolio, declarations.entries.reversed().associate { it.toPair() },
             ReferenceTargetProjections.nativeCatalogs.entries.reversed().associate { it.toPair() }).json())
         features["secret.inject"] = SupportLevel.UNSUPPORTED; declarations.clear()
@@ -255,14 +255,14 @@ class AdapterCertificationPortfolioTests {
 
     @Test fun completePortfolioRetainsEveryScenarioAndMakesMissingTargetEvidenceExplicit() = fixture { f ->
         val result = f.derive(); val doc = mapper.readTree(result.json())
-        assertEquals(35, doc["assessmentCount"].asInt())
+        assertEquals(38, doc["assessmentCount"].asInt())
         assertEquals(36, doc["rows"].size())
         assertFalse(doc["publicSupportPromoted"].asBoolean()); assertFalse(doc["portableExecution"].asBoolean())
-        assertEquals(13, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
+        assertEquals(14, doc["rows"].count { it["status"].asText() == "BOUNDED_SCENARIO_EVIDENCE" })
         assertTrue(doc["rows"].filter { it["target"].asText() !in setOf("jenkins", "github-actions") }.all {
             it["scenarioIds"].isEmpty && it["status"].asText() == "NO_BEHAVIORAL_EVIDENCE_IN_PORTFOLIO" })
         val matrices = doc["assessments"].map { it["matrix"] }
-        assertEquals(119, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
+        assertEquals(128, matrices.sumOf { matrix -> val row = matrix["rows"].single { !it["behavior"].isNull }; 1 + row["behavior"]["negativeMutants"].size() })
         val github = doc["assessments"].single { it["scenarioId"].asText() == GitHubActionsCheckoutRuntimeCertification.SCENARIO }
         assertEquals("native-leaf-only", github["claim"].asText())
         assertEquals("native-leaf-in-checked-envelope", github["executionMode"].asText())

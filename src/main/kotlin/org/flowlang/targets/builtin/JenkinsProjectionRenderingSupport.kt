@@ -5,6 +5,7 @@ import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetMappingNote
+import org.flowlang.generators.manifest.TargetMaterializationStatus
 import org.flowlang.parser.ExpressionParser
 import org.flowlang.projection.ProjectionBinding
 import org.flowlang.projection.ProjectionBindingKind
@@ -112,8 +113,10 @@ internal object JenkinsConditionValueScope {
     private const val FEATURE = "condition.value-binding"
     private data class Problem(val feature: String, val message: String, val requirement: String)
 
-    fun reconcile(steps: List<TargetStep>, inputs: Set<String>): List<TargetStep> =
-        visit(steps, inputs) { step, roots ->
+    fun reconcile(steps: List<TargetStep>, inputs: Set<String>): List<TargetStep> {
+        val checkout = JenkinsCheckoutResultBinding.resolve(steps, inputs)
+        return visit(steps, inputs) { step, roots ->
+            if (step.id == checkout?.conditionId) return@visit step
             val problem = problem(step, roots) ?: return@visit step
             step.copy(
                 materialization = TargetMaterialization.adapterRequired(step.materialization.capability, problem.message,
@@ -121,11 +124,14 @@ internal object JenkinsConditionValueScope {
                 rendererPayload = null,
                 mappingNotes = step.mappingNotes + TargetMappingNote("warning", "jenkins", step.id, problem.feature, problem.message))
         }
+    }
 
     fun requireBound(manifest: TargetManifest) {
         val inputs = manifest.inputs.map { it.name }.toSet()
         manifest.jobs.forEach { job ->
+            val checkout = if (manifest.jobs.size == 1) JenkinsCheckoutResultBinding.resolve(job.steps, inputs) else null
             visit(job.steps, inputs) { step, roots ->
+                if (step.id == checkout?.conditionId) return@visit step
                 val problem = problem(step, roots)
                 require(problem == null) { problem?.message.orEmpty() }
                 step
@@ -179,6 +185,54 @@ internal object JenkinsConditionValueScope {
             (if (e.operator == "matches" && e.right is ReferenceNode) emptySet() else references(e.right))
         is StringLiteralNode, is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode,
         is IdentifierLiteralNode, is SecretRefNode -> emptySet()
+    }
+}
+
+/**
+ * Partial output contract for modules/git.yaml checkout.ok: normal native completion
+ * establishes true; a failed checkout throws before the binding is introduced.
+ * Only one direct consumer is admitted. No result record, path or generic transfer is implied.
+ */
+internal data class JenkinsCheckoutResultBinding(val producerId: String, val conditionId: String, val expected: Boolean) {
+    companion object {
+        const val VARIABLE = "flowCheckoutSucceeded"
+
+        fun resolve(steps: List<TargetStep>, inputs: Set<String>): JenkinsCheckoutResultBinding? {
+            if (inputs.isNotEmpty() || steps.size != 2) return null
+            val producer = steps[0]
+            val condition = steps[1]
+            val guardPayload = condition.rendererPayload ?: return null
+            val alias = producer.metadata["resultName"]?.takeIf { it.isNotBlank() } ?: return null
+            if (!checkout(producer) || producer.dependsOn.isNotEmpty() || condition.type != "condition" ||
+                condition.materialization.status != TargetMaterializationStatus.NATIVE ||
+                guardPayload.kind != JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE ||
+                guardPayload.reference != "if" || condition.params.keys != setOf("condition") ||
+                condition.children.size != 1 || condition.dependsOn.isNotEmpty()) return null
+            val consumer = condition.children.single()
+            if (!checkout(consumer) || consumer.metadata.containsKey("resultName") ||
+                consumer.dependsOn.any { it != producer.id } ||
+                setOf(producer.id, condition.id, consumer.id).size != 3) return null
+            val expression = runCatching { ExpressionParser.parseSource(condition.params.getValue("condition")) }.getOrNull()
+                as? BinaryExpressionNode ?: return null
+            val reference = expression.left as? ReferenceNode ?: return null
+            val expected = expression.right as? BooleanLiteralNode ?: return null
+            if (expression.operator != "==" || reference.safe || reference.path != listOf(alias, "ok")) return null
+            return JenkinsCheckoutResultBinding(producer.id, condition.id, expected.value)
+        }
+
+        private fun checkout(step: TargetStep): Boolean {
+            val payload = step.rendererPayload ?: return false
+            if (step.type != "action" || step.module != "git" || step.action != "checkout" || step.children.isNotEmpty() ||
+                step.materialization.status != TargetMaterializationStatus.NATIVE ||
+                payload.kind != JenkinsProjectionPayloadKinds.JENKINS_STEP || payload.reference != "git") return false
+            return runCatching {
+                val context = "Jenkins checkout result '${step.id}'"
+                CheckoutProjectionValues.gitUrl(payload, "url", context)
+                val branch = CheckoutProjectionValues.branch(payload, "branch", context)
+                val depth = payload.bindings["depth"]?.let { CheckoutProjectionValues.depth(payload, "depth", context) } ?: 0
+                depth == 0 && !Regex("[0-9a-fA-F]{40}").matches(branch)
+            }.getOrDefault(false)
+        }
     }
 }
 

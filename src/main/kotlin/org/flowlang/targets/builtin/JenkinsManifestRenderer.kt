@@ -96,7 +96,12 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         if (job.steps.isEmpty()) {
             sb.appendLine("          error(${groovyString("Flow job '${job.id}' has no materialized target steps.")})")
         } else {
-            job.steps.forEach { renderJenkinsStep(it, manifest, sb, "          ") }
+            val checkout = JenkinsCheckoutResultBinding.resolve(job.steps, manifest.inputs.map { it.name }.toSet())
+            job.steps.forEach { step ->
+                renderJenkinsStep(step, manifest, sb, "          ", checkout?.takeIf { it.conditionId == step.id })
+                if (step.id == checkout?.producerId)
+                    sb.appendLine("          def ${JenkinsCheckoutResultBinding.VARIABLE} = true")
+            }
         }
         sb.appendLine("        }")
         sb.appendLine("      }")
@@ -107,7 +112,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         step: TargetStep,
         manifest: TargetManifest,
         sb: StringBuilder,
-        indent: String
+        indent: String,
+        checkoutResult: JenkinsCheckoutResultBinding? = null
     ) {
         step.mappingNotes.forEach { note ->
             sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}")
@@ -118,7 +124,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "try-body", "error-handler", "parallel-branch" ->
                 step.children.forEach { renderJenkinsStep(it, manifest, sb, indent) }
             "parallel" -> renderJenkinsParallel(step, manifest, sb, indent)
-            "condition" -> renderJenkinsCondition(step, manifest, sb, indent)
+            "condition" -> renderJenkinsCondition(step, manifest, sb, indent, checkoutResult)
             "retry" -> renderJenkinsRetry(step, manifest, sb, indent)
             "loop" -> renderJenkinsLoop(step, manifest, sb, indent)
             "match" -> renderJenkinsMatch(step, manifest, sb, indent)
@@ -231,11 +237,15 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         step: TargetStep,
         manifest: TargetManifest,
         sb: StringBuilder,
-        indent: String
+        indent: String,
+        checkoutResult: JenkinsCheckoutResultBinding? = null
     ) {
         requireJenkinsStructure(step, "if")
         val condition = step.params["condition"] ?: "false"
-        val rendered = JenkinsTargetExpressionTranslator.groovy(
+        val rendered = if (checkoutResult != null) {
+            require(checkoutResult.conditionId == step.id)
+            "${JenkinsCheckoutResultBinding.VARIABLE} == ${checkoutResult.expected}"
+        } else JenkinsTargetExpressionTranslator.groovy(
             condition,
             manifest.inputs,
             manifest.compatibility.expressionSupport

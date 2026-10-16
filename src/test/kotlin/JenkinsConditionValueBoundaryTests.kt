@@ -34,13 +34,14 @@ class JenkinsConditionValueBoundaryTests {
     }
 
     @Test fun canonicalResultConditionRetainsMeaningButCannotClaimExecutableProjection() {
-        val unit = compile("${checkout("first")} -> result if result.ok == true { ${checkout("second")} }")
+        // AR-06AE binds only checkout.ok; the path field still has no native output contract.
+        val unit = compile("${checkout("first")} -> result if result.path == \"repo\" { ${checkout("second")} }")
         val manifest = pipeline.generateDiagnosticEvidence(TargetDiagnosticMaterializationRequest.fromCompilation(unit,
             testTargetSelection("jenkins", targets)))
         val steps = manifest.jobs.single().steps
         assertEquals("result", steps.first().metadata["resultName"])
         val condition = steps.single { it.type == "condition" }
-        assertContains(condition.params.getValue("condition"), "result.ok")
+        assertContains(condition.params.getValue("condition"), "result.path")
         assertEquals("second", condition.children.single().params["branch"])
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, condition.materialization.status)
         assertNull(condition.rendererPayload)
