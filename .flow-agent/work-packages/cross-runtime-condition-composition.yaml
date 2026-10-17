@@ -1,0 +1,40 @@
+version: AR-06AE-C3
+name: Cross-Runtime Condition Composition Evidence
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR under the corrected composition roadmap.
+  predecessorPullRequest: 230
+  mergedMain: 991393ecb14f4e8f1329989ff163010bc09e43bb
+invariant: Independent observations of the same canonical composition must preserve branch selection and authored dependency order on materially different runtimes.
+architecturePurpose: Establish reusable observation checks against authored intent instead of deriving expected behavior from either adapter or counting executable fixtures.
+scope:
+- Derive Boolean branch selections and ordering obligations from the shared parsed AST, cross-checking the authorized canonical graph.
+- Execute the existing composition on real Jenkins for both declared Boolean input values and compare native observations with the existing GitHub runs.
+- Bind each observed checkout to a task identity, immutable revision and checked execution envelope; reject missing, duplicated, substituted and reordered observations.
+- Require native guard and omission mutants to falsify the observation contract.
+nonGoals:
+- No Core semantics, public syntax, production runtime executor or adapter applicability change.
+- No generic support promotion, portability claim, historical acceptance transition or milestone closure.
+- No cross-job value transport, workspace equivalence, injected runtime failure/cancellation equivalence or scheduling concurrency claim.
+ownershipBoundary:
+  core: Existing canonical conditions and ordering remain authoritative and unchanged.
+  adapters: Existing generators supply both target artifacts without scenario-specific production changes.
+  conformance: Native observation envelopes and independent comparison remain verification-only.
+testsToAddOrUpdate:
+- The observation oracle handles renamed identities, independent siblings, additional Boolean inputs, nested branches and partial orders.
+- Unsupported expressions, absent inputs, missing/duplicate actions, changed revisions, reversed dependencies and mismatched source/graph provenance fail closed.
+- Both native runtimes agree on the selected task set for both inputs and distinguish declared negative mutants.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - cross-runtime-condition-composition
+  - adapter-certification-portfolio
+  preservedChecks: All existing module isolation, native composition and authenticated portfolio checks remain required.
+documentationToUpdate:
+- .flow-agent/reports/cross-runtime-condition-composition.md
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/roadmap-architecture-recovery.yaml

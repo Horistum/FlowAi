@@ -25,6 +25,38 @@ jobs:
     with:
       enabled: ${{ matrix.enabled }}
 
+  cross-runtime-condition-composition:
+    needs: [github-condition-composition]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: github-condition-composition-*
+          path: ${{ runner.temp }}/shared-composition
+      - name: Verify shared native branches and authored dependency order
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_condition_composition_oracle.py' -v
+          python3 tools/cross_runtime_condition_composition.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/shared-composition" "$RUNNER_TEMP/cross-runtime-composition"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cross-runtime-condition-composition
+          path: ${{ runner.temp }}/cross-runtime-composition
+          if-no-files-found: error
+          retention-days: 7
+
   github-actions-checkout-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
