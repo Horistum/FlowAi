@@ -16,7 +16,7 @@ import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.source.FlowSourceFrontend
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
-import org.flowlang.targets.builtin.GitHubLiteralConditionProjectionScope
+import org.flowlang.targets.builtin.GitHubConditionProjectionScope
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 
@@ -70,17 +70,17 @@ class SharedConditionRuntimeTests {
         }
     }
 
-    @Test fun executableConditionScopeRejectsInputsElseNestingAndSuccessors() {
+    @Test fun executableConditionScopeComposesInputsElseNestingAndSuccessors() {
         val declared = TargetRegistryYamlLoader.loadDirectory(File("targets")).getValue("github-actions")
         assertEquals(SupportLevel.PARTIAL, declared.conditions)
         val catalog = ReferenceTargetProjections.nativeCatalogs.getValue("github-actions")
-        val scope = GitHubLiteralConditionProjectionScope(catalog)
+        val scope = GitHubConditionProjectionScope(catalog)
         val source = File(SharedConditionFixture.source(true)).readText()
         val directory = kotlin.io.path.createTempDirectory("condition-scope-").toFile()
         val file = File(directory, "fixture.flow")
         val frontend = FlowSourceFrontend(FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File("modules")),
             StandardEnvironmentSafetyPolicyNotes.policy(File("."))))
-        fun resolve(text: String, selected: GitHubLiteralConditionProjectionScope = scope): org.flowlang.capabilities.TargetCapability {
+        fun resolve(text: String, selected: GitHubConditionProjectionScope = scope): org.flowlang.capabilities.TargetCapability {
             file.writeText(text)
             return selected.resolve(frontend.compile(file).requireAccepted().authorization, "github-actions", declared)
         }
@@ -98,8 +98,8 @@ class SharedConditionRuntimeTests {
                 source.replace(block, "$block else {\n$alternate\n    }"),
                 source.replace(block, "    if true {\n$block\n    }"),
                 source.replace(block, "$block\n$alternate"))
-            variants.forEach { assertEquals(declared, resolve(it)) }
-            assertEquals(declared, resolve(source, GitHubLiteralConditionProjectionScope(null)))
+            variants.forEach { assertEquals(SupportLevel.SUPPORTED, resolve(it).features["condition.evaluate"]) }
+            assertEquals(declared, resolve(source, GitHubConditionProjectionScope(null)))
         } finally { directory.deleteRecursively() }
     }
 

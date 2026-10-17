@@ -749,3 +749,39 @@ Regenerate Jenkins artifacts from canonical source to use scoped checkout succes
 Bindings stay within their lexical block and job. A conditional, loop, retry or handler body does not export its local bindings; a use before its producer, sibling-branch use, whole record, unsupported field or unmapped function remains non-executable. The existing checkout producer contract still covers the full-history literal-branch native `git` path. Other native output implementations and generic DATA/state transfer are not inferred. Consumer actions keep their own projection contracts; their unrelated checkout mode does not redefine the producer's output contract.
 
 The original three native result fixtures remain unchanged. An additional composition regression executes three producers, a declared input, nested and repeated consumers with omitted/substituted bindings under the same authenticated runtime job and complete portfolio replay. This is bounded evidence, not universal composition certification or portability. There is no manifest wire version change. See the composition correction report for the remaining cross-adapter gaps and roadmap order.
+
+
+## AR-06AE-C2: condition and successor composition on GitHub Actions
+
+`GitHubConditionProjectionScope` replaces the single-checkout workflow matcher.
+Boolean literals, declared Boolean inputs, negation, conjunction/disjunction and
+Boolean equality compose independently of leaf count, action kind, else branches
+and nesting. Input predicates require a manual input context and a required input
+or an explicit Boolean default. Unrelated inputs do not affect eligibility.
+Native leaf support, expression declarations, continuity and control evidence
+remain separate gates. Result predicates, implicit coercions, ambient contexts,
+other control structures and workflow recovery are outside this contract.
+
+An authored ordering successor may name a conditional producer without reading
+its result. GitHub skips downstream jobs by default after a skipped prerequisite.
+The adapter now distinguishes this normal branch outcome from a failure:
+a conditional dependency can be skipped only when its own guard is false. Every
+ancestor must independently satisfy its success/expected-skip requirement, and
+cancellation blocks execution. Additional ancestor waits are identified by
+`githubConditionAncestorWaits` in target-job metadata. They expose native statuses
+through GitHub's direct `needs` context; they do not change the canonical graph or
+serialize independent siblings. Ordinary dependencies retain success semantics.
+
+The new regression compiles one parsed AST through the standard compiler boundary
+and projects the identical canonical graph to Jenkins and GitHub. Source grammar
+is unchanged; the AST carries existing explicit ordering fields. A reusable CI
+envelope executes all generated GitHub jobs for both Boolean input assignments.
+Preparation compares every job, guard, dependency and action before execution;
+collection checks native job outcomes and immutable checkout revisions. Reverting
+the join to implicit success and inverting the optional guard falsify the expected
+behavior. Failure/cancellation rejection has exhaustive unit evidence; this PR
+does not claim injected native failure/cancellation or new Jenkins runtime proof.
+
+The existing authenticated 39-scenario portfolio remains required and unchanged
+in scope. This additional composition regression is CI evidence, not another
+certification acceptance transition or a generic support/portability promotion.

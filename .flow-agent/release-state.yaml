@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 103
+stateVersion: 104
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -529,5 +529,14 @@ recoveryAdapterCompositionCorrection:
   workPackage: .flow-agent/work-packages/adapter-composition-correction.yaml
   report: .flow-agent/reports/adapter-composition-correction.md
   mergedMain: 0a7ecaa52204c0a73431577af1bce5553d58454f
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryGitHubConditionComposition:
+  candidate: AR-06AE-C2
+  status: candidate
+  workPackage: .flow-agent/work-packages/github-condition-composition.yaml
+  report: .flow-agent/reports/github-condition-composition.md
+  mergedMain: abb015000e4372004223a2596a07eecdbf913ba8
   validation: current-revision-ci-required
   supportPromotion: false

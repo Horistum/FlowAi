@@ -13,7 +13,7 @@ import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.generators.manifest.providerFor
-import org.flowlang.targets.builtin.GitHubLiteralConditionProjectionScope
+import org.flowlang.targets.builtin.GitHubConditionProjectionScope
 import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
 import org.flowlang.targets.builtin.JenkinsMatchProjectionScope
 import org.flowlang.targets.builtin.JenkinsParallelProjectionScope
@@ -57,7 +57,7 @@ object ReferenceTargetProjections {
             .resolve(authorization, target, loop)
         val parallel = JenkinsParallelProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
             .resolve(authorization, target, match)
-        GitHubLiteralConditionProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
+        GitHubConditionProjectionScope(projections.providerFor(target)?.nativeProjectionCatalog)
             .resolve(authorization, target, parallel)
     }
 

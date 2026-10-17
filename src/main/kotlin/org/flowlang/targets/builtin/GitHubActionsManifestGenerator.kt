@@ -34,7 +34,8 @@ class GitHubActionsManifestGenerator(
                 steps = listOf(AdapterManifestLowering.emptyStep(plan.flowName))
             ))
         }
-        val materializedJobs = GitHubActionsWorkspaceContinuityPlanner.materialize(plan, baseJobs)
+        val materializedJobs = GitHubActionsWorkspaceContinuityPlanner.materialize(plan,
+            GitHubJobConditionAuthority.materialize(baseJobs))
         return TargetManifest(
             target = target,
             flowName = plan.flowName,

@@ -1,0 +1,42 @@
+version: AR-06AE-C2
+name: GitHub Condition and Successor Composition
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR under the corrected composition roadmap.
+  predecessorPullRequest: 229
+  mergedMain: abb015000e4372004223a2596a07eecdbf913ba8
+invariant: Conditions compose by expression and dependency contracts; ordering successors distinguish an unselected branch from failed or cancelled prerequisites.
+architecturePurpose: Replace the GitHub single-fixture exception with reusable adapter mappings while preserving the authoritative canonical dependency graph.
+scope:
+- Admit Boolean literals, declared Boolean inputs and Boolean operators independently of task count, action kind and nesting.
+- Preserve authored dependencies; expose conditional ancestors as separately identified adapter scheduling waits, without inventing canonical ordering edges.
+- Accept a skipped conditional predecessor only when its guard is false and its prerequisites satisfy their own contracts.
+- Exercise the same canonical compositions on both projections and the generated GitHub job graph in a checked native CI envelope.
+nonGoals:
+- No Core semantics, public syntax, runtime executor, cross-job output transport or mutable state.
+- No generic support promotion, portability claim, historical acceptance transition or milestone closure.
+- No expansion of retry, loop, match, parallel or workflow recovery semantics.
+ownershipBoundary:
+  core: Existing conditions, availability and authored ordering remain unchanged.
+  adapters: Boolean translation and native scheduling evidence belong to GitHub Actions.
+  conformance: Independent graph expectations, negative mutations and actual CI job observations.
+testsToAddOrUpdate:
+- Independent tasks and inputs, multiple leaves, else branches and nested conditions compose.
+- Ordinary dependencies keep success requirements; false branch skips do not suppress valid successors.
+- Failure, cancellation, unexpected skips, missing prerequisites and cycles fail closed.
+- Unknown values, unsupported operators and output-dependent predicates remain unavailable.
+- Native baseline and falsifying scheduling mutations have distinct job outcomes.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - github-condition-composition
+  - adapter-certification-portfolio
+  preservedChecks: All existing module isolation and native portfolio checks remain required.
+documentationToUpdate:
+- .flow-agent/reports/github-condition-composition.md
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/roadmap-architecture-recovery.yaml
