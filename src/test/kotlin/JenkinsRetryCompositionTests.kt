@@ -3,6 +3,10 @@ import kotlin.test.*
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.conformance.RetryCompositionFixture
+import org.flowlang.conformance.GitHubConditionCompositionFixture
+import org.flowlang.ast.ActionNode
+import org.flowlang.ast.IfNode
+import org.flowlang.ast.RetryNode
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.generators.manifest.*
 import org.flowlang.materialization.TargetMaterializationRequest
@@ -31,11 +35,22 @@ class JenkinsRetryCompositionTests {
 
     @Test fun sequentialCompositionUsesIndependentLeafAndControlContracts() {
         val checkout = RetryCompositionFixture.checkout("producer")
-        val artifact = provider.render(manifest(source("""
+        val text = source("""
             $checkout
             if enabled { docker.build builder { image: "example/app:test" path: "." push: false } }
             retry { max: 4 delay: "0s" backoff: fixed } { ${RetryCompositionFixture.checkout("tail")} }
-        """)))
+        """)
+        // Ordering alone cannot supply workspace continuity. The existing parsed-AST boundary
+        // carries the explicit dependency that Flow Source does not yet spell in its grammar.
+        assertFailsWith<UnresolvedPlanningContinuityException> { manifest(text) }
+        val document = compile(text).ast
+        val retry = document.flow.steps.single() as RetryNode
+        val bound = retry.copy(steps = retry.steps.map { step ->
+            if (step is IfNode) step.copy(then = step.then.map { (it as ActionNode).copy(dependsOn = listOf("producer")) }) else step
+        })
+        val unit = GitHubConditionCompositionFixture.compile(root, document.copy(flow = document.flow.copy(steps = listOf(bound))))
+        val artifact = provider.render(pipeline.generate(TargetMaterializationRequest.fromCompilation(unit,
+            testTargetSelection("jenkins", targets), strict = true)))
         assertContains(artifact, "retry(2) {"); assertContains(artifact, "retry(4) {")
         assertContains(artifact, "docker.build("); assertContains(artifact, "if (params.enabled)")
         assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").features["retry.task"])
@@ -69,8 +84,11 @@ class JenkinsRetryCompositionTests {
     }
 
     @Test fun unsupportedLeafBindingsAndControlMappingsCannotBorrowRetrySupport() {
-        for (body in listOf("docker.push builder { image: \"example/app:test\" }",
-            "approve manual { message: \"Replay decision\" }",
+        val missingLeaf = manifest(source("docker.push builder { image: \"example/app:test\" }"))
+        assertEquals(TargetRenderMode.REVIEW_ONLY, TargetRenderPolicy.evaluate(missingLeaf).mode)
+        assertFalse(missingLeaf.compatibility.executable)
+        assertFalse(provider.render(missingLeaf).contains("retry(2)"))
+        for (body in listOf("approve manual { message: \"Replay decision\" }",
             "for item in [\"one\"] { ${RetryCompositionFixture.checkout("child")} }"))
             assertFails { manifest(source(body)) }
         val m = manifest(); val job = m.jobs.single(); val retry = job.steps.first()

@@ -101,6 +101,10 @@ def assess(contracts, mappings, variants, inventory, runtime):
         require(run["finished"] is True and run["inputs"] == expected["inputs"] and
                 run["artifactSha256"] == sha(variant["text"].encode()), "Executed source or inputs differ")
         require(all(row["task"] in mapping for row in run["observations"]), "Unbound native observation")
+        require(len({row["node"] for row in run["observations"]}) == len(run["observations"]),
+                "Duplicate native invocation identity")
+        require(all(row["result"] != "failure" or "Couldn't find any revision to build" in (row.get("error") or "")
+                    for row in run["observations"]), "Unexpected native failure origin")
         observations = [dict(row, task=mapping[row["task"]]) for row in run["observations"]]
         rejection = None
         try:

@@ -28,7 +28,9 @@ Integration tests compile normal Flow Source through the existing frontend and
 materialization pipeline. They cover multiple counts and renamed identities,
 checkout plus image-build projection, nested policies, empty bodies, unsupported
 leaves/providers and forged manifests. Image-build coverage is projection evidence;
-the native invocation proof uses checkout operations only.
+its explicit workspace dependency uses the existing parsed-AST compilation boundary.
+The corresponding source without that dependency stays blocked. The native
+invocation proof uses normal Flow Source and checkout operations only.
 
 An independent Python conformance model reads the original AST and declared fault
 budgets. It predicts ordered invocation outcomes without reading adapter guards or
