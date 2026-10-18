@@ -728,6 +728,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
       - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt"
       - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
+      - "src/main/kotlin/org/flowlang/conformance/RetryCompositionFixture.kt"
       - "src/main/kotlin/org/flowlang/conformance/SemanticImplementationObservationAuthority.kt"
       - "src/main/kotlin/org/flowlang/conformance/TargetSelectionProvenanceIntegrityChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/WorkflowOwnershipConformanceChecks.kt"

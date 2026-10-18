@@ -8,13 +8,14 @@ import sys
 import uuid
 
 from condition_composition_oracle import bind_graph, jenkins_envelope, receipts, require, sha
-from retry_composition_oracle import expectation, verify_observations
+from retry_composition_oracle import bind_control_structure, expectation, verify_observations
 
 ABSENT = "0" * 40
 
 
 def bind(expected, manifest, graph):
     bind_graph(expected, graph)
+    bind_control_structure(expected, graph)
     leaves, policies = [], []
     def visit(steps):
         for step in steps:
@@ -38,8 +39,6 @@ def bind(expected, manifest, graph):
                 all(v["type"] == "StringLiteral" for v in action["params"].values()) and
                 step["params"] == {k: v["value"] for k, v in action["params"].items()}, "Native leaf parameters differ")
     require(policies == expected["policies"], "Native retry policies differ")
-    require([{k: n[k] for k in ("max", "delay", "backoff")} for n in graph["nodes"] if n["kind"] == "RETRY"] ==
-            expected["policies"], "Canonical retry policies differ")
     return mapping
 
 

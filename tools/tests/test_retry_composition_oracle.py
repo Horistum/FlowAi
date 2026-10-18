@@ -4,7 +4,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from retry_composition_oracle import expectation, verify_observations
+from retry_composition_oracle import bind_control_structure, expectation, verify_observations
 
 
 def action(name):
@@ -27,6 +27,22 @@ def rows(trace):
 
 
 class RetryCompositionOracleTests(unittest.TestCase):
+    def test_canonical_child_edges_own_order_independently_of_node_storage_order(self):
+        e = expectation(document([retry([action("first"), retry([action("second")], 2)], 3)]), {})
+        nodes = [{"id": "outer", "kind": "RETRY", "max": 3, "delay": "0s", "backoff": "fixed", "bodyNodeIds": ["a", "inner"]},
+                 {"id": "inner", "kind": "RETRY", "max": 2, "delay": "0s", "backoff": "fixed", "bodyNodeIds": ["b"]},
+                 {"id": "a", "kind": "TASK", "resultName": "first"}, {"id": "b", "kind": "TASK", "resultName": "second"}]
+        graph = {"workflows": [{"rootNodeIds": ["outer"]}], "nodes": nodes}
+        bind_control_structure(e, graph)
+        bind_control_structure(e, dict(graph, nodes=list(reversed(nodes))))
+        mutants = []
+        for changes in ({"max": 4}, {"bodyNodeIds": ["inner", "a"]}, {"bodyNodeIds": ["a", "a"]},
+                        {"bodyNodeIds": ["outer"]}, {"bodyNodeIds": ["missing"]}, {"bodyNodeIds": []}):
+            m = copy.deepcopy(graph); m["nodes"][0].update(changes); mutants.append(m)
+        mutants.append(dict(graph, nodes=nodes + [{"id": "orphan", "kind": "TASK", "resultName": "unused"}]))
+        for mutant in mutants:
+            with self.assertRaises(ValueError): bind_control_structure(e, mutant)
+
     def test_success_stops_after_one_complete_body(self):
         e = expectation(document([retry([action("alpha"), action("omega")]), action("tail")]), {})
         self.assertEqual([{"task": n, "result": "success"} for n in ("alpha", "omega", "tail")], e["trace"])
