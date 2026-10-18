@@ -785,3 +785,28 @@ does not claim injected native failure/cancellation or new Jenkins runtime proof
 The existing authenticated 39-scenario portfolio remains required and unchanged
 in scope. This additional composition regression is CI evidence, not another
 certification acceptance transition or a generic support/portability promotion.
+
+## AR-06AE-C3: shared native composition observations
+
+The `cross-runtime-condition-composition` CI job consumes C2's exact source,
+canonical graph, projections and native GitHub observations for both Boolean
+assignments. It executes the same generated Jenkins artifact in a checked
+observation envelope and compares both runtimes against source-derived branch
+selection and authored ordering. The verifier permits different valid orders of
+independent tasks. No product regeneration or public contract migration is needed.
+
+Jenkins observation stages surround unchanged native checkout calls; removing
+them restores the generated artifact byte-for-byte. Native SCM callbacks read
+each completed checkout's actual revision, and native stage boundaries establish
+its ordering. The observer receives declared Boolean inputs and artifact files,
+not expected selections. Guard inversion, checkout omission and reversed successor
+order must each falsify the comparison for both input assignments.
+
+The evidence directory records the original GitHub proofs, actual API job metadata,
+all executed Jenkins variants, native results/logs and a content-bound `proof.json`.
+It proves bounded branch-selection and authored-order agreement in these envelopes.
+It does not certify workspace equivalence, independent sibling concurrency,
+cross-job value transport, injected failure/cancellation equivalence or generic
+portability. CI runners, compiler preparation and native observation channels are
+trusted. Existing signed certification, support declarations and acceptance
+lifecycles remain unchanged.

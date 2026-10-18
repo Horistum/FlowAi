@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 104
+stateVersion: 105
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -538,5 +538,14 @@ recoveryGitHubConditionComposition:
   workPackage: .flow-agent/work-packages/github-condition-composition.yaml
   report: .flow-agent/reports/github-condition-composition.md
   mergedMain: abb015000e4372004223a2596a07eecdbf913ba8
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryCrossRuntimeConditionComposition:
+  candidate: AR-06AE-C3
+  status: candidate
+  workPackage: .flow-agent/work-packages/cross-runtime-condition-composition.yaml
+  report: .flow-agent/reports/cross-runtime-condition-composition.md
+  mergedMain: 991393ecb14f4e8f1329989ff163010bc09e43bb
   validation: current-revision-ci-required
   supportPromotion: false

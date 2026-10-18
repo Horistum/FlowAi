@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 47
+revision: 48
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/github-condition-composition.yaml"
-  decisionBasis: "PR #229 merged at abb015000e4372004223a2596a07eecdbf913ba8. The maintainer identified drift from universal automation intent toward fixture-shaped adapter implementations. AR-06AE-C1 removed fixture-shaped value bindings. AR-06AE-C2 now addresses Boolean condition and successor composition in the job-based adapter, while preserving historical evidence and all current-revision gates. Subsequent AR-06 work prioritizes composable mappings and equivalent canonical compositions across materially different adapters. Native fixture counts cannot substitute for generality. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/cross-runtime-condition-composition.yaml"
+  decisionBasis: "PR #230 merged at 991393ecb14f4e8f1329989ff163010bc09e43bb. AR-06AE-C1 replaced fixture-shaped value bindings and C2 generalized Boolean condition and successor composition. AR-06AE-C3 now independently compares the same authored composition on native Jenkins and GitHub using source-derived selection and ordering obligations. No production applicability exception or public support promotion is added. Subsequent work replaces remaining retry/loop/match/parallel shape gates with control and topology contracts. Native fixture counts cannot substitute for generality. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -249,7 +249,8 @@ milestones:
     correctiveSequence:
       - "AR-06AE-C1: replace the two-step checkout-result exception with scoped field bindings; inventory remaining composition restrictions."
       - "AR-06AE-C2: replace the single-condition fixture exception with Boolean expression and dependency contracts; compare identical canonical compositions and verify the generated GitHub job graph natively."
-      - "Next: extend independent cross-runtime composition evidence, then replace leaf-count/type gates in retry, loop, match and parallel mappings with justified control/topology contracts."
+      - "AR-06AE-C3: compare the same Boolean composition on materially different native runtimes with source-derived branch and ordering expectations, identity-bound observations and falsifying mutants."
+      - "Next: replace leaf-count/type gates in retry, loop, match and parallel mappings with justified control/topology contracts and independent composition evidence."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 
   - id: "AR-07"
