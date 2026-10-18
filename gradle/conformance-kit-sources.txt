@@ -116,6 +116,7 @@ org/flowlang/conformance/RealWorldPolarityAuthority.kt
 org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt
 org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt
 org/flowlang/conformance/ReferenceSnapshotHonesty.kt
+org/flowlang/conformance/RetryCompositionFixture.kt
 org/flowlang/conformance/ScenarioAndPlanChecks.kt
 org/flowlang/conformance/ScenarioPackQualityAnalyzer.kt
 org/flowlang/conformance/SchemaScenarioCatalogChecks.kt

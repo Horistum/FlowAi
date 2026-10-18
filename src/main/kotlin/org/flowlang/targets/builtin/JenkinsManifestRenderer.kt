@@ -254,6 +254,9 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
 
     private fun renderJenkinsRetry(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String, bindings: JenkinsConditionValueScope.Bindings) {
         requireJenkinsStructure(step, "retry")
+        require(JenkinsRetryProjectionScope.supportsRenderedBody(step.children)) {
+            "Jenkins retry requires sequential tasks, conditions and nested retries; other control mappings need explicit replay evidence."
+        }
         require(step.params.keys == setOf("max", "delay", "backoff")) { "Jenkins retry requires the complete authored policy." }
         val max = requireNotNull(step.params["max"]?.toIntOrNull()) { "Jenkins retry requires an integer total attempt limit." }
         require(JenkinsRetryProjectionScope.supports(max, step.params.getValue("delay"), step.params.getValue("backoff"))) {

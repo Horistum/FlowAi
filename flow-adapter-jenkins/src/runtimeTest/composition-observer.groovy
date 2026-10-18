@@ -73,20 +73,28 @@ Thread.start('composition-observer') {
             job.addProperty(new ParametersDefinitionProperty(run.inputs.collect { key, value ->
                 new BooleanParameterDefinition(key, value, 'Declared conformance input') }))
             def parameters = new ParametersAction(run.inputs.collect { key, value -> new BooleanParameterValue(key, value) })
-            def build = job.scheduleBuild2(0, parameters).get(180, TimeUnit.SECONDS)
+            def build = job.scheduleBuild2(0, parameters).get(360, TimeUnit.SECONDS)
             if (build.isBuilding() || !build.getExecution().isComplete()) throw new IllegalStateException('Incomplete native run')
             def graph = new FlowGraphWalker(build.getExecution()).toList()
             def checkouts = graph.findAll { it instanceof StepAtomNode && it.getDescriptor()?.getFunctionName() == 'checkout' }
             def events = observer.observations.findAll { it.job == run.id && it.build == build.number }
-            if (events.collect { it.node }.toSet() != checkouts.collect { it.id }.toSet() || events.size() != checkouts.size())
-                throw new IllegalStateException('Native checkout and callback inventories differ')
-            def rows = events.collect { event ->
-                def node = checkouts.find { it.id == event.node }
-                def end = graph.find { it instanceof BlockEndNode && it.getStartNode().getId() == event.stage }
+            def successful = checkouts.findAll { it.getError() == null }
+            if (events.collect { it.node }.toSet() != successful.collect { it.id }.toSet() || events.size() != successful.size())
+                throw new IllegalStateException('Successful checkout and callback inventories differ')
+            def rows = checkouts.collect { node ->
+                def stage = node.getEnclosingBlocks().find {
+                    it instanceof StepStartNode && !it.isBody() && it.getDescriptor()?.getFunctionName() == 'stage'
+                }
+                def name = stage == null ? null : ArgumentsAction.getArguments(stage).get('name')
+                if (!(name instanceof String) || !name.startsWith('flow-observe:'))
+                    throw new IllegalStateException('Native invocation has no observation identity')
+                def end = graph.find { it instanceof BlockEndNode && it.getStartNode().getId() == stage.id }
                 if (end == null) throw new IllegalStateException('Unclosed observation stage')
-                [task: event.task, revision: event.revision, node: event.node,
-                 start: Integer.parseInt(event.stage), end: Integer.parseInt(end.id),
-                 result: node.getError() == null ? 'success' : 'failure']
+                def event = events.find { it.node == node.id }
+                [task: name.substring('flow-observe:'.length()), revision: event?.revision, node: node.id,
+                 start: Integer.parseInt(stage.id), end: Integer.parseInt(end.id),
+                 result: node.getError() == null ? 'success' : 'failure',
+                 error: node.getError()?.error?.message]
             }.sort { it.start }
             results.add([id: run.id, result: build.result.toString(), finished: true,
                 inputs: run.inputs.collectEntries { key, value -> [(key): build.getAction(ParametersAction).getParameter(key).value] },

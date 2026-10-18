@@ -85,11 +85,12 @@ class JenkinsRetryProjectionTests {
         assertEquals(declared, scoped(text))
     }
 
-    @Test fun unprovenBodyAndIncompleteTopologyRemainBlocked() {
+    @Test fun nestedRetryUsesTheSamePolicyAndIncompleteTopologyRemainsBlocked() {
         val nested = source.replace("retry { max: 3 delay: \"0s\" backoff: fixed } {",
             "retry { max: 3 delay: \"0s\" backoff: fixed } { retry { max: 2 delay: \"0s\" backoff: fixed } {")
             .replace("} -> attemptedCheckout", "} -> attemptedCheckout }")
-        assertEquals(declared, scoped(nested))
+        assertEquals(SupportLevel.SUPPORTED, scoped(nested).features["retry.task"])
+        assertEquals(declared, scoped(nested.replace("max: 2 delay: \"0s\"", "max: 2 delay: \"1s\"")))
         val profile = declared.topologyProfile!!
         for (candidate in listOf(declared.copy(topologyProfile = null),
             declared.copy(topologyProfile = profile.copy(declarations = profile.declarations.filter { it.kind != ExecutionTopologyKind.ATTEMPT_ISOLATION })),
