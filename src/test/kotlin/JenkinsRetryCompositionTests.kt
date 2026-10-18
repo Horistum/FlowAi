@@ -87,7 +87,8 @@ class JenkinsRetryCompositionTests {
         val missingLeaf = manifest(source("docker.push builder { image: \"example/app:test\" }"))
         assertEquals(TargetRenderMode.REVIEW_ONLY, TargetRenderPolicy.evaluate(missingLeaf).mode)
         assertFalse(missingLeaf.compatibility.executable)
-        assertFalse(provider.render(missingLeaf).contains("retry(2)"))
+        assertFailsWith<TargetRenderBlockedException> { provider.render(missingLeaf) }
+        assertFalse(provider.renderer.render(missingLeaf).contains("retry(2)"))
         for (body in listOf("approve manual { message: \"Replay decision\" }",
             "for item in [\"one\"] { ${RetryCompositionFixture.checkout("child")} }"))
             assertFails { manifest(source(body)) }
