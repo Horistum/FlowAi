@@ -7,7 +7,7 @@ authorization:
   source: 'Maintainer requests the next roadmap step after merging PR #199.'
   acceptedMain: 4bea533762e3cff83192c7f9d8ba8244dd3c2598
   workflowRunId: 37636042462
-activeCorrection: .flow-agent/work-packages/retry-control-composition.yaml
+activeCorrection: .flow-agent/work-packages/loop-control-composition.yaml
 selectedSlice: AR-06AE
 selectedWorkPackage: .flow-agent/work-packages/jenkins-checkout-result-certification.yaml
 acceptedSlices:

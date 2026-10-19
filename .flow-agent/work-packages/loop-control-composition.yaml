@@ -1,0 +1,42 @@
+version: AR-06AE-C5
+name: Finite Sequential Loop Composition
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR under the corrected composition roadmap.
+  predecessorPullRequest: 232
+  mergedMain: 8bad3e11f2d70d3dd316fc3276f6a80b380e88c0
+invariant: A finite sequential loop visits every authored element in order, including duplicates, with a fresh lexical item binding; each iteration runs its whole body until failure, and an empty collection runs no body.
+architecturePurpose: Derive iteration applicability from collection, lexical scope and control contracts independently of task identity, cardinality and native leaf mappings.
+scope:
+- Replace checkout-only nonempty bodies with independently materialized tasks, conditions and nested finite loops.
+- Preserve literal string collections, provider ownership, lexical item visibility and independent value/continuity checks.
+- Reject overlapping item bindings and recheck control and scope boundaries in caller-supplied manifests.
+- Observe native order, duplicate elements, empty collections, nested iteration and failure short-circuiting against source-derived expectations.
+nonGoals:
+- No Core semantics, public syntax/version, dynamic collections or generic public support promotion.
+- No retry, match, parallel, approval or error-handler composition inside loops in this slice.
+- No loop-output export, rollback, workspace isolation or cancellation equivalence claim.
+- No signed-portfolio expansion, historical acceptance transition or milestone closure.
+ownershipBoundary:
+  core: Canonical collection, authored body order, lexical scope and failure semantics remain authoritative.
+  adapters: Own native iteration mapping, renderer validation and independent leaf materialization.
+  conformance: Own source-derived expectations and native observation envelopes; never execute product actions.
+testsToAddOrUpdate:
+- Multiple and renamed tasks, different native leaves, conditions, nested and empty loop bodies.
+- Unknown collections, item collisions, unsupported leaves/controls/providers and scope escapes fail closed.
+- Independent model and native mutants distinguish deduplication, omission, reordering, flattening, empty-loop execution and swallowed failures.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - loop-composition-runtime
+  - retry-composition-runtime
+  - adapter-certification-portfolio
+  preservedChecks: All existing module isolation, composition, native scenarios and authenticated portfolio checks remain required.
+documentationToUpdate:
+- .flow-agent/reports/loop-control-composition.md
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/roadmap-architecture-recovery.yaml

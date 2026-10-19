@@ -63,11 +63,11 @@ class JenkinsLoopProjectionTests {
             assertEquals(declared, scoped(catalog = catalog))
     }
 
-    @Test fun dynamicCollectionsNestedLoopsAndOtherBodiesStayUnsupported() {
+    @Test fun nestedLoopsComposeWhileDynamicCollectionsAndOtherBodiesStayUnsupported() {
         assertEquals(declared, scoped(source.replace("[\"selected\", \"selected\", \"alternate\"]", "[1, 2]")))
         val nested = source.replace("for item in", "for outer in [\"one\"] { for item in")
             .replace("} -> successorCheckout", "} -> successorCheckout }")
-        assertEquals(declared, scoped(nested))
+        assertEquals(SupportLevel.SUPPORTED, scoped(nested).dynamicLoops)
         val dynamic = source.replace("  systems {", "  vars { items: [\"selected\"] }\n  systems {")
             .replace("[\"selected\", \"selected\", \"alternate\"]", "items")
         assertEquals(declared, scoped(dynamic))

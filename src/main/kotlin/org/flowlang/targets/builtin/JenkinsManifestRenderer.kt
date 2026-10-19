@@ -277,6 +277,9 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         val items = requireNotNull(JenkinsLoopProjectionScope.literalItems(step.params.getValue("source"))) {
             "Jenkins loop supports only an authored string-literal list."
         }
+        require(JenkinsLoopProjectionScope.supportsRenderedBody(step.children, manifest.inputs.map { it.name }.toSet() + item)) {
+            "Jenkins loop requires sequential tasks, conditions and finite nested loops with distinct lexical item bindings."
+        }
         sb.appendLine("${indent}for (def $item in ${items.joinToString(", ", "[", "]") { groovyString(it) }}) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ", bindings) }
         sb.appendLine("${indent}}")
