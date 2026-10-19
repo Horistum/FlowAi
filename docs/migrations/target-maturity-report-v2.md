@@ -26,7 +26,10 @@ validated reference scope can reach `REFERENCE_EXECUTABLE`. The old `EXECUTABLE`
 and `BEHAVIORALLY_CERTIFIED` values are removed. Do not translate either old value
 into native runtime certification. Recompute reference maturity from the current
 inventory: missing or invalid scope evidence now prevents the final reference
-stage, even when the referenced snapshot itself was executable.
+stage, even when the referenced snapshot itself was executable. An invalid input
+document kind/version invalidates every reference scope. Duplicate identities
+invalidate each assessment of that scope, while unrelated valid scopes retain
+their own reference maturity.
 
 The raw registry section is renamed from `FLOW TARGET CAPABILITY MATRIX` to
 `FLOW TARGET CAPABILITY DECLARATIONS`. Registry statuses remain declarations.

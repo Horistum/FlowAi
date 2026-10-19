@@ -230,19 +230,20 @@ class AdapterTargetMaturityPublisher(
             )
         }
         val duplicateScopes = document.scopes
-            .groupingBy { "${it.target}::${it.scopeId}" }
+            .groupingBy { it.target to it.scopeId }
             .eachCount()
             .filterValues { it > 1 }
             .keys
-            .sorted()
-        duplicateScopes.forEach { identity ->
+        duplicateScopes.sortedWith(compareBy({ it.first }, { it.second })).forEach { (target, scopeId) ->
             findings += finding(
                 "TARGET_MATURITY_SCOPE_DUPLICATE",
-                identity.substringBefore("::"),
-                identity.substringAfter("::"),
-                "Target maturity scope '$identity' is declared more than once."
+                target,
+                scopeId,
+                "Target maturity scope '$target::$scopeId' is declared more than once."
             )
         }
+        val documentValid = document.kind == AdapterTargetMaturityEvidenceLoader.KIND &&
+            document.version == AdapterTargetMaturityEvidenceLoader.VERSION
 
         val portfolioResult = runCatching { AdapterPortfolioLoader.load(rootDir) }
         val portfolio = portfolioResult.getOrNull()
@@ -314,6 +315,7 @@ class AdapterTargetMaturityPublisher(
                         portfolio = portfolioRecord,
                         promotion = promotionsByTarget[targetName],
                         targetWideStages = targetWideStages,
+                        referenceContextValid = documentValid && (scope.target to scope.scopeId) !in duplicateScopes,
                         findings = findings
                     )
                 }
@@ -405,6 +407,7 @@ class AdapterTargetMaturityPublisher(
         portfolio: AdapterPortfolioRecord?,
         promotion: AdapterExecutableReferencePromotion?,
         targetWideStages: List<TargetMaturityStage>,
+        referenceContextValid: Boolean,
         findings: MutableList<TargetMaturityFinding>
     ): TargetMaturityScopeAssessment {
         val start = findings.size
@@ -460,6 +463,7 @@ class AdapterTargetMaturityPublisher(
             )
         }
 
+        val scopeValid = referenceContextValid && findings.size == start
         val stages = targetWideStages.toMutableList()
         if (
             TargetMaturityStage.RENDERABLE in stages &&
@@ -468,7 +472,7 @@ class AdapterTargetMaturityPublisher(
             implementationValid &&
             behaviorValid &&
             scope.limitations.isNotEmpty() &&
-            findings.size == start
+            scopeValid
         ) {
             stages += TargetMaturityStage.REFERENCE_EXECUTABLE
         }
@@ -483,7 +487,7 @@ class AdapterTargetMaturityPublisher(
             source = scope.source,
             stages = stages,
             highestStage = stages.lastOrNull(),
-            valid = findings.size == start,
+            valid = scopeValid,
             evidenceReferences = listOf(scope.sourceReference, scope.snapshotReference) +
                 scope.implementationEvidenceReferences + scope.behavioralEvidenceReferences,
             limitations = scope.limitations

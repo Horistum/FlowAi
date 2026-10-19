@@ -19,6 +19,12 @@ are read directly from the composed provider catalog, preserving `PLAN_SCOPED`
 versus `TARGET_WIDE`; missing providers publish no mappings. No duplicate support
 catalog or target-name eligibility matcher is introduced.
 
+Final review also found that document-level findings were recorded before scope
+evaluation and therefore did not invalidate the affected scopes. Unsupported
+input kinds/versions now invalidate all scopes, and duplicate identities
+invalidate both assessments of that identity without demoting unrelated valid
+references. These cases have explicit regression coverage.
+
 The evidence inventory's limitations now describe reference scope and independent
 composition gates. Its input schema stays at v1; the public report moves to v2
 with a documented consumer migration. No Core or adapter execution behavior changes.

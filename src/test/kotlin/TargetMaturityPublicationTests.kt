@@ -137,6 +137,45 @@ class TargetMaturityPublicationTests {
     }
 
     @Test
+    fun invalidDocumentHeadersInvalidateEveryReferenceScope() {
+        val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
+        for ((invalid, code) in listOf(
+            document.copy(kind = "UnrecognizedEvidence") to "TARGET_MATURITY_KIND_INVALID",
+            document.copy(version = "999.0") to "TARGET_MATURITY_VERSION_INVALID"
+        )) {
+            val report = publisher.evaluate(invalid)
+            assertEquals("FAIL", report.status)
+            assertTrue(report.findings.any { it.code == code })
+            val scopes = report.assessments.flatMap { it.scopes }
+            assertEquals(document.scopes.size, scopes.size)
+            scopes.forEach {
+                assertFalse(it.valid)
+                assertEquals(TargetMaturityStage.RENDERABLE, it.highestStage)
+            }
+        }
+    }
+
+    @Test
+    fun duplicateScopeIdentitiesCannotRetainExecutableReferenceMaturity() {
+        val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
+        val duplicate = document.scopes.single { it.target == "jenkins" }
+        val report = publisher.evaluate(document.copy(scopes = document.scopes + duplicate))
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any {
+            it.code == "TARGET_MATURITY_SCOPE_DUPLICATE" && it.target == duplicate.target && it.scopeId == duplicate.scopeId
+        })
+        val jenkins = report.assessments.single { it.target == duplicate.target }.scopes
+        assertEquals(2, jenkins.size)
+        jenkins.forEach {
+            assertFalse(it.valid)
+            assertEquals(TargetMaturityStage.RENDERABLE, it.highestStage)
+        }
+        val unrelated = report.assessments.single { it.target == "github-actions" }.scopes.single()
+        assertTrue(unrelated.valid)
+        assertEquals(TargetMaturityStage.REFERENCE_EXECUTABLE, unrelated.highestStage)
+    }
+
+    @Test
     fun structuralPublicationFollowsProviderScopeRatherThanTargetNames() {
         val registry = BuiltInTargetProjections.registry
         val original = registry.requireProvider("jenkins")

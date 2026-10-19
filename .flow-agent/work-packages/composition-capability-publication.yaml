@@ -25,6 +25,7 @@ ownershipBoundary:
 testsToAddOrUpdate:
 - Complete references, existing unrelated test files and missing evidence cannot manufacture runtime certification.
 - Invalid reference scopes cannot retain executable-reference maturity.
+- Invalid document kinds/versions invalidate every reference scope; duplicate scope identities invalidate their own assessments without demoting unrelated valid references.
 - Projection summaries follow provider removal and support-scope changes without inferring support from target names.
 - Both CLI hosts publish report v2 and explicit reference/runtime boundaries.
 validation:
