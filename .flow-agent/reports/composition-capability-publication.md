@@ -25,6 +25,16 @@ input kinds/versions now invalidate all scopes, and duplicate identities
 invalidate both assessments of that identity without demoting unrelated valid
 references. These cases have explicit regression coverage.
 
+Validation also exposed a race in the existing cross-runtime CI harness: the
+native-status comparison failed while the same-run GitHub API still reported
+non-final jobs after their evidence collectors had completed. The harness now takes up to 13 observations,
+waiting five seconds between them, for the source-bound native job identities
+only. It never waits for its own job, converts a pending state into success or
+retries a failed semantic comparison. Missing observations exhaust the budget; duplicates and
+unknown states fail immediately. Existing revision, attempt, output, outcome and
+ordering checks still run on the final API response. Tests cover eventual
+completion, terminal failures, exhausted budgets and malformed inventories.
+
 The evidence inventory's limitations now describe reference scope and independent
 composition gates. Its input schema stays at v1; the public report moves to v2
 with a documented consumer migration. No Core or adapter execution behavior changes.
@@ -66,7 +76,7 @@ publication and provider-derived structural scopes. Their identities and the
 certification label is corrected, not treated as authenticated evidence.
 Historical acceptance receipts and native certification machinery are unchanged.
 
-Local validation: all 211 Python tooling tests and Flow Agent structure validation
+Local validation: all 215 Python tooling tests and Flow Agent structure validation
 passed. Validation status: current-revision CI required. Exact-head and synthetic merge
 compilation, tests, standalone conformance, module isolation and the complete
 native certification workflow remain required before acceptance. Local JVM

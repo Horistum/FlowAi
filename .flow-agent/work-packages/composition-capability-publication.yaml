@@ -15,6 +15,7 @@ scope:
 - Remove certification promotion based only on implementation/test file existence and require complete valid reference evidence for reference maturity.
 - Publish structural mappings and their scope directly from the composed provider definitions, including plan-scoped compositions.
 - Verify actual CLI output, negative reference evidence, provider composition changes and preserved historical/runtime boundaries.
+- Repair the observed cross-runtime CI observation race with bounded polling for source-bound GitHub job completion; preserve every provenance and outcome check.
 nonGoals:
 - No Core language, canonical semantics, adapter rendering or generic support promotion.
 - No runtime execution, new certification protocol, signed-portfolio expansion or portability claim.
@@ -28,6 +29,7 @@ testsToAddOrUpdate:
 - Invalid document kinds/versions invalidate every reference scope; duplicate scope identities invalidate their own assessments without demoting unrelated valid references.
 - Projection summaries follow provider removal and support-scope changes without inferring support from target names.
 - Both CLI hosts publish report v2 and explicit reference/runtime boundaries.
+- Pending GitHub API observations can become final within a finite retry budget; missing, duplicated, unknown or terminally incorrect observations cannot be accepted.
 validation:
   status: current-revision-ci-required
   requiredChecks:

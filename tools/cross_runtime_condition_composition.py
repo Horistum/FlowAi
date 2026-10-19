@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 import urllib.request
 import uuid
 
@@ -42,7 +43,8 @@ def github_observations(expected, mapping, native, jobs):
         require(len(rows) == 1, "Missing or duplicated GitHub API job")
         job = rows[0]
         require(job["status"] == "completed" and job["conclusion"] == native[identity]["result"] == status,
-                "Native GitHub job status differs")
+                f"Native GitHub job {identity}: expected {status}, API {job['status']}/{job['conclusion']}, "
+                f"native result {native[identity]['result']}")
         outputs = native[identity].get("outputs", {})
         if status == "success":
             require(set(outputs) == {"revision"}, "Unexpected native GitHub outputs")
@@ -85,7 +87,33 @@ def api_jobs(repository, run_id, attempt, token):
     raise ValueError("GitHub job inventory exceeds the observation budget")
 
 
-def compare(root, inputs, output, revision, workflow_revision, run_id, attempt, jobs):
+def completed_jobs(fetch_jobs, required_names, attempts=13, delay_seconds=5):
+    """Wait only for required native jobs to become observable, never retry a final verdict."""
+    require(required_names and attempts > 0 and delay_seconds >= 0, "Invalid GitHub observation budget")
+    for observation in range(attempts):
+        jobs = fetch_jobs()
+        pending = []
+        for name in sorted(required_names):
+            matches = [job for job in jobs if job["name"] == name]
+            require(len(matches) <= 1, f"Duplicated GitHub API job: {name}")
+            if not matches:
+                pending.append(f"{name}: missing")
+                continue
+            job = matches[0]
+            require(job["status"] in ("queued", "in_progress", "completed"),
+                    f"Unknown GitHub API job status for {name}: {job['status']}")
+            if job["status"] != "completed" or job["conclusion"] is None:
+                pending.append(f"{name}: {job['status']}/{job['conclusion']}")
+        if not pending:
+            return jobs
+        if observation + 1 < attempts:
+            print(f"Waiting for final GitHub API observations ({observation + 1}/{attempts}): " +
+                  "; ".join(pending), flush=True)
+            time.sleep(delay_seconds)
+    raise ValueError("GitHub job observations did not become final within the retry budget: " + "; ".join(pending))
+
+
+def compare(root, inputs, output, revision, workflow_revision, run_id, attempt, fetch_jobs):
     """Prepare source-bound contracts; no adapter output supplies an expected selected branch."""
     require(not output.exists(), "Evidence directory must be fresh")
     output.mkdir(parents=True)
@@ -108,6 +136,10 @@ def compare(root, inputs, output, revision, workflow_revision, run_id, attempt, 
     graph = json.loads((documents[0] / "canonical-graph.json").read_text())
     manifests = {target: json.loads((documents[0] / f"{target}.manifest.json").read_text())
                  for target in ("jenkins", "github-actions")}
+    required_mapping = bind_manifest(expectation(document, {"enabled": True}), manifests["github-actions"])
+    required_names = {f"github-condition-composition ({value}) / {identity}"
+                      for value in ("true", "false") for identity in required_mapping}
+    jobs = completed_jobs(fetch_jobs, required_names)
     mapping = bind_manifest(expectation(document, {"enabled": True}), manifests["jenkins"])
     generated = (documents[0] / "Jenkinsfile").read_text()
     variants = artifacts(generated, mapping)
@@ -172,8 +204,8 @@ def main():
             "Runner source revision differs")
     workflow = os.environ["WORKFLOW_REVISION"]
     run_id, attempt = os.environ["GITHUB_RUN_ID"], os.environ["GITHUB_RUN_ATTEMPT"]
-    jobs = api_jobs(os.environ["GITHUB_REPOSITORY"], run_id, attempt, os.environ["GH_TOKEN"])
-    contracts, mapping, variants, inventory, github = compare(root, inputs, output, revision, workflow, run_id, attempt, jobs)
+    fetch_jobs = lambda: api_jobs(os.environ["GITHUB_REPOSITORY"], run_id, attempt, os.environ["GH_TOKEN"])
+    contracts, mapping, variants, inventory, github = compare(root, inputs, output, revision, workflow, run_id, attempt, fetch_jobs)
     container = "flow-composition-" + uuid.uuid4().hex
     tag = container + ":local"
     fixture = root / "flow-adapter-jenkins/src/runtimeTest"

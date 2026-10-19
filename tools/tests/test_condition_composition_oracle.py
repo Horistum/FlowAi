@@ -4,11 +4,12 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from condition_composition_oracle import (bind_graph, bind_manifest, boolean, expectation, jenkins_envelope,
                                           receipts, verify_files, verify_observations)
-from cross_runtime_condition_composition import github_observations, jenkins_observations
+from cross_runtime_condition_composition import completed_jobs, github_observations, jenkins_observations
 
 
 def literal(value):
@@ -160,6 +161,50 @@ class ConditionCompositionOracleTests(unittest.TestCase):
         for bad in ([], jobs * 2, [dict(jobs[0], conclusion="failure")]):
             with self.assertRaises(ValueError):
                 github_observations(expected, {"native": "source"}, native, bad)
+
+    def test_api_completion_waits_for_required_jobs_without_waiting_for_its_own_job(self):
+        pending = {"name": "native", "status": "in_progress", "conclusion": None}
+        final = dict(pending, status="completed", conclusion="success")
+        unrelated = dict(pending, name="cross-runtime-condition-composition")
+        fetch = Mock(side_effect=[[pending, unrelated], [final, unrelated]])
+        with patch("cross_runtime_condition_composition.time.sleep") as sleep:
+            self.assertEqual([final, unrelated], completed_jobs(fetch, {"native"}))
+        self.assertEqual(2, fetch.call_count)
+        sleep.assert_called_once_with(5)
+        self.assertEqual("in_progress", pending["status"])
+
+    def test_final_api_failure_is_not_retried_or_rewritten_as_success(self):
+        expected = expectation({"flow": {"input": [], "steps": [action("source")]}}, {})
+        native = {"native": {"result": "success", "outputs": {"revision": "a" * 40}}}
+        for conclusion in ("failure", "cancelled", "skipped"):
+            jobs = [{"name": "native", "status": "completed", "conclusion": conclusion}]
+            fetch = Mock(return_value=jobs)
+            with patch("cross_runtime_condition_composition.time.sleep") as sleep:
+                observed = completed_jobs(fetch, {"native"})
+            fetch.assert_called_once_with()
+            sleep.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "Native GitHub job native"):
+                github_observations(expected, {"native": "source"}, native, observed)
+
+    def test_incomplete_api_observations_fail_after_the_exact_retry_budget(self):
+        for jobs in ([], [{"name": "native", "status": "queued", "conclusion": None}],
+                     [{"name": "native", "status": "completed", "conclusion": None}]):
+            fetch = Mock(return_value=jobs)
+            with patch("cross_runtime_condition_composition.time.sleep") as sleep:
+                with self.assertRaisesRegex(ValueError, "did not become final"):
+                    completed_jobs(fetch, {"native"}, attempts=3)
+            self.assertEqual(3, fetch.call_count)
+            self.assertEqual(2, sleep.call_count)
+
+    def test_duplicate_or_unknown_api_observations_fail_without_retry(self):
+        job = {"name": "native", "status": "completed", "conclusion": "success"}
+        for jobs in ([job, job], [dict(job, status="invented")]):
+            fetch = Mock(return_value=jobs)
+            with patch("cross_runtime_condition_composition.time.sleep") as sleep:
+                with self.assertRaises(ValueError):
+                    completed_jobs(fetch, {"native"})
+            fetch.assert_called_once_with()
+            sleep.assert_not_called()
 
     def test_jenkins_native_artifact_input_and_invocation_bindings_fail_closed(self):
         from condition_composition_oracle import sha
