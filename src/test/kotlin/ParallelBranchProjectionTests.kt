@@ -99,6 +99,9 @@ class ParallelBranchProjectionTests {
             assertTrue(inner.children.single().children.isEmpty())
             assertTrue(TargetRendererContractValidator.validate(manifest, target).valid)
             assertFalse(TargetRenderPolicy.evaluate(manifest).executable)
+            assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(nested,
+                testTargetSelection(target, targets), strict = true)) }
+            assertFails { ReferenceTargetProjections.registry.requireProvider(target).render(manifest) }
         }
     }
 
@@ -184,20 +187,42 @@ class ParallelBranchProjectionTests {
         }
     }
 
-    @Test fun groupingNeverPromotesParallelOrTurnsEmptyWrappersIntoLeafOperations() {
+    @Test fun groupingKeepsEmptyWrappersStructuralAndSupportPlanScoped() {
         for ((target, manifest) in manifests) {
             val parallel = root(manifest)
             assertEquals(if (target == "jenkins") TargetMaterializationStatus.NATIVE else TargetMaterializationStatus.ADAPTER_REQUIRED, parallel.materialization.status)
             assertEquals(target == "jenkins", ReferenceTargetProjections.nativeCatalogs.getValue(target).hasStructuralProjection(TargetStructuralProjectionKind.PARALLEL))
             val readiness = TargetRenderPolicy.evaluate(manifest)
-            assertEquals(TargetRenderMode.REVIEW_ONLY, readiness.mode)
-            val review = TargetReviewArtifactRenderer.render(manifest, readiness)
+            assertEquals(if (target == "jenkins") TargetRenderMode.EXECUTABLE else TargetRenderMode.REVIEW_ONLY,
+                readiness.mode, target)
             for (wrapper in parallel.children.filter { it.children.isEmpty() }) {
                 assertTrue(readiness.findings.none { it.nodeId == wrapper.id })
-                assertFalse(review.contains("nodeId: \"${wrapper.id}\""))
+                assertNull(wrapper.module)
+                assertNull(wrapper.action)
+                assertNull(wrapper.rendererPayload)
             }
-            assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(unit, testTargetSelection(target, targets), strict = true)) }
-            assertFails { ReferenceTargetProjections.registry.requireProvider(target).render(manifest) }
+            val provider = ReferenceTargetProjections.registry.requireProvider(target)
+            val request = TargetMaterializationRequest.fromCompilation(unit, testTargetSelection(target, targets), strict = true)
+            if (target == "jenkins") {
+                // This bounded workspace-local composition is executable; the registry remains unchanged.
+                val strictManifest = pipeline.generate(request)
+                assertEquals(TargetRenderMode.EXECUTABLE, TargetRenderPolicy.evaluate(strictManifest).mode)
+                for (rendered in listOf(provider.render(manifest), provider.render(strictManifest))) {
+                    parallel.children.forEach { assertContains(rendered, "'${it.id}': {") }
+                    assertEquals(4, rendered.lineSequence().count { it.trimStart().startsWith("git branch:") })
+                    assertEquals(3, rendered.lineSequence().count { it.trimStart().startsWith("dir(") })
+                    for (wrapper in parallel.children.filter { it.children.isEmpty() }) {
+                        assertFalse(rendered.contains(".flow-parallel/${wrapper.id}"))
+                    }
+                }
+            } else {
+                val review = TargetReviewArtifactRenderer.render(manifest, readiness)
+                for (wrapper in parallel.children.filter { it.children.isEmpty() }) {
+                    assertFalse(review.contains("nodeId: \"${wrapper.id}\""))
+                }
+                assertFails { pipeline.generate(request) }
+                assertFails { provider.render(manifest) }
+            }
         }
         assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").parallel)
     }

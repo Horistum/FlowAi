@@ -17,6 +17,42 @@ concurrency:
 # Each upload name has one producer. A rerun replaces that producer's earlier
 # partial archive; portfolio admission still requires its successful pinned receipt.
 jobs:
+  parallel-composition-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Prepare independently checked parallel compositions
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsParallel*' :flow-conformance-kit:installDist --stacktrace
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.ParallelCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/parallel-prepared"
+      - name: Verify fork/join topology and native negative evidence
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_parallel_composition_oracle.py' -v
+          python3 tools/parallel_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/parallel-prepared" "$RUNNER_TEMP/parallel-evidence"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parallel-composition-runtime
+          path: |
+            ${{ runner.temp }}/parallel-evidence/
+            flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
   match-composition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest

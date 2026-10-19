@@ -113,7 +113,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         manifest: TargetManifest,
         sb: StringBuilder,
         indent: String,
-        bindings: JenkinsConditionValueScope.Bindings
+        bindings: JenkinsConditionValueScope.Bindings,
+        branchScopedApproval: Boolean = false
     ) {
         step.mappingNotes.forEach { note ->
             sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}")
@@ -128,7 +129,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "retry" -> renderJenkinsRetry(step, manifest, sb, indent, bindings)
             "loop" -> renderJenkinsLoop(step, manifest, sb, indent, bindings)
             "match" -> renderJenkinsMatch(step, manifest, sb, indent, bindings)
-            "approval" -> renderJenkinsApproval(step, sb, indent)
+            "approval" -> renderJenkinsApproval(step, sb, indent, branchScopedApproval)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
         bindings.producers[step.id]?.let { sb.appendLine("${indent}def $it = true") }
@@ -136,53 +137,34 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
 
     private fun renderJenkinsParallel(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String, bindings: JenkinsConditionValueScope.Bindings) {
         requireJenkinsStructure(step, "approval-parallel")
-        require(manifest.jobs.flatMap { it.steps }.contains(step) &&
-            manifest.jobs.flatMap { it.steps }.flatMap { it.flatten() }.count { it.type == "parallel" } == 1) {
-            "Jenkins parallel requires one top-level group."
+        require(manifest.jobs.flatMap { it.steps }.contains(step)) {
+            "Jenkins parallel nesting requires separate topology evidence."
         }
-        require(step.metadata["failFast"] in setOf("false", "true") && step.children.size == 2) {
-            "Jenkins parallel requires exactly two approval branches with a boolean failFast policy."
+        require(step.metadata["failFast"] in setOf("false", "true") && step.children.isNotEmpty()) {
+            "Jenkins parallel requires nonempty branch membership and a boolean failFast policy."
         }
-        val workspaceBodies = step.children.all { it.children.size == 2 }
-        val gates = step.children.map { branch ->
-            require(branch.type == "parallel-branch" && branch.children.size == (if (workspaceBodies) 2 else 1))
-            requireNotNull(branch.children.firstOrNull()).also { gate ->
-                require(gate.type == "approval" && gate.params["mode"] == "manual" &&
-                    gate.metadata["resultName"] == null && gate.dependsOn.isEmpty() && gate.children.isEmpty()) {
-                    "Jenkins parallel supports only unbound manual approval gates."
-                }
-            }
-        }
-        if (workspaceBodies) step.children.forEachIndexed { index, branch ->
-            require(branch.id.length <= 128 && Regex("[a-z0-9_-]+").matches(branch.id))
-            val task = branch.children[1]
-            val payload = requireNotNull(task.rendererPayload)
-            require(task.type == "action" && task.module == "git" && task.action == "checkout" &&
-                task.metadata["resultName"] == null && task.children.isEmpty() && task.dependsOn.all { it == gates[index].id } &&
-                payload.kind == JenkinsProjectionPayloadKinds.JENKINS_STEP && payload.reference == "git")
-            val context = "Jenkins parallel checkout '${task.id}'"
-            require((payload.bindings["depth"]?.let { CheckoutProjectionValues.depth(payload, "depth", context) } ?: 0) == 0)
-            require(!Regex("[0-9a-fA-F]{40}").matches(CheckoutProjectionValues.branch(payload, "branch", context)))
-        }
-        val messages = gates.map { it.rendererPayload?.bindings?.get("message")?.value }
-        require(messages.all { !it.isNullOrBlank() } && messages.distinct().size == 2)
+        step.children.forEach { JenkinsParallelProjectionScope.requireBranch(it) }
         sb.appendLine("${indent}parallel([")
         step.children.forEach { branch ->
-            // Authored labels may repeat; preserved wrapper IDs are the native branch keys.
+            // Labels and approval messages are data, never branch identities.
             sb.appendLine("${indent}  ${groovyString(branch.id)}: {")
-            renderJenkinsStep(branch.children.first(), manifest, sb, "$indent    ", bindings)
-            if (workspaceBodies) {
-                sb.appendLine("${indent}    dir(${groovyString(".flow-parallel/${branch.id}")}) {")
-                renderJenkinsStep(branch.children[1], manifest, sb, "$indent      ", bindings)
-                sb.appendLine("${indent}    }")
+            var workspaceOpen = false
+            for (child in branch.children) {
+                val workspace = JenkinsParallelProjectionScope.usesWorkspace(child)
+                if (workspaceOpen && !workspace) sb.appendLine("${indent}    }")
+                if (!workspaceOpen && workspace)
+                    sb.appendLine("${indent}    dir(${groovyString(".flow-parallel/${branch.id}")}) {")
+                renderJenkinsStep(child, manifest, sb, if (workspace) "$indent      " else "$indent    ", bindings, branchScopedApproval = true)
+                workspaceOpen = workspace
             }
+            if (workspaceOpen) sb.appendLine("${indent}    }")
             sb.appendLine("${indent}  },")
         }
         sb.appendLine("${indent}  failFast: ${step.metadata.getValue("failFast")}")
         sb.appendLine("${indent}])")
     }
 
-    private fun renderJenkinsApproval(step: TargetStep, sb: StringBuilder, indent: String) {
+    private fun renderJenkinsApproval(step: TargetStep, sb: StringBuilder, indent: String, branchScoped: Boolean = false) {
         val payload = requireNotNull(step.rendererPayload) {
             "Executable Jenkins approval '${step.id}' has no provider renderer payload."
         }
@@ -198,7 +180,10 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         val message = requireNotNull(payload.bindings["message"]?.value) {
             "Jenkins approval '${step.id}' is missing resolved message binding."
         }
-        sb.appendLine("${indent}input message: ${groovyString(message)}")
+        // InputStep otherwise hashes the message into its HTTP routing ID. Parallel messages may repeat.
+        // The fixed prefix also prevents InputStep's first-character capitalization from merging identities.
+        val identity = if (branchScoped) ", id: ${groovyString("Flow_${step.id}")}" else ""
+        sb.appendLine("${indent}input message: ${groovyString(message)}$identity")
     }
 
     private fun renderJenkinsTry(

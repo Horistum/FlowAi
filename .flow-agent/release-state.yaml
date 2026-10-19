@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 108
+stateVersion: 109
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -574,5 +574,14 @@ recoveryMatchControlComposition:
   workPackage: .flow-agent/work-packages/match-control-composition.yaml
   report: .flow-agent/reports/match-control-composition.md
   mergedMain: 0c62d57e5edb382422cf34d59df92ec1634a26d1
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryParallelTopologyComposition:
+  candidate: AR-06AE-C7
+  status: candidate
+  workPackage: .flow-agent/work-packages/parallel-topology-composition.yaml
+  report: .flow-agent/reports/parallel-topology-composition.md
+  mergedMain: b1f54f16a10e5701e6954677d9bed5c91179b25d
   validation: current-revision-ci-required
   supportPromotion: false
