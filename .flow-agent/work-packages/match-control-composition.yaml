@@ -14,6 +14,7 @@ scope:
 - Preserve inert string sources, disjoint literal Boolean cases and empty error branches without inventing predicate precedence or implicit result bindings.
 - Recheck branch structure and control contracts in caller-supplied manifests; retain independent leaf, value and continuity gates.
 - Compare source-derived branch membership and order against native selected, default, empty and failing compositions with negative mutations.
+- Replace each producer-owned CI artifact on rerun so portfolio admission cannot select an earlier incomplete archive under the same name.
 nonGoals:
 - No Core semantics, public syntax/version, dynamic predicates, source evaluation or generic support promotion.
 - No retry, loop, parallel, approval or error-handler composition inside match in this slice.

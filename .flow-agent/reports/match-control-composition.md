@@ -54,3 +54,16 @@ No broad support, portability, rollback, workspace isolation or cancellation cla
 is added. AR-06 remains active; AR-07 is planned, EF-09 paused and F-20 AR-07-owned.
 Next, address the remaining parallel topology gate and separately evidenced control
 interactions. Counts and green CI alone do not close the architecture milestone.
+
+## CI rerun repair found during validation
+
+Runtime run `39206861642` initially failed to download Jenkins plugin metadata
+(403/404). Its targeted rerun passed the producer, but the portfolio download chose
+the earlier 2,395-byte incomplete archive instead of the new 195,873-byte archive
+with the same name. Admission correctly rejected the missing proof.
+
+Every producer-owned upload in the runtime workflow now replaces its earlier
+same-name archive on rerun (`overwrite: true`). Names remain distinct across
+producers; successful job receipts, proof/trust digests and authenticated admission
+remain mandatory. This repairs artifact selection, not semantic acceptance. Job logs
+retain the earlier failed attempt. The updated revision requires fresh CI.
