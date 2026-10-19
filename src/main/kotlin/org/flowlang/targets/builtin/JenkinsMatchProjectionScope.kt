@@ -10,7 +10,9 @@ import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
 import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
+import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.parser.ExpressionParser
+import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.PlanDependencyRelations
 import org.flowlang.planner.PlanNode
@@ -26,17 +28,40 @@ class JenkinsMatchProjectionScope(private val catalog: TargetNativeProjectionCat
                 it.supportScope == TargetStructuralProjectionSupportScope.PLAN_SCOPED }) return declared
         val matches = authorization.graph.nodes.filterIsInstance<CanonicalMatchNode>()
         val bound = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<MatchPlanNode>()
-        if (matches.isEmpty() || matches.size != bound.size || bound.any {
-            !supports(it.source, it.cases.map { case -> case.condition }) || it.errorCase.isNotEmpty() ||
-                !it.cases.all { case -> checkoutBody(case.steps) } || !checkoutBody(it.defaultSteps)
-        }) return declared
+        if (matches.isEmpty() || matches.size != bound.size || bound.any { !supportedMatch(it) }) return declared
         return declared.copy(features = declared.features + ("match.basic" to SupportLevel.SUPPORTED),
-            notes = declared.notes + "Match supports string-literal sources, disjoint literal boolean cases, empty error branches and native checkout bodies only; no implicit-result or output-continuity claim.")
+            notes = declared.notes + "Match preserves exclusive literal selection across independently materialized tasks, conditions and nested matches; string-literal sources and empty error branches only, with no implicit-result or branch-output continuity claim.")
     }
 
-    private fun checkoutBody(nodes: List<PlanNode>): Boolean = nodes.all { it is TaskNode && it.module == "git" && it.action == "checkout" }
+    private fun supportedMatch(node: MatchPlanNode): Boolean =
+        supports(node.source, node.cases.map { it.condition }) && node.errorCase.isEmpty() &&
+            node.cases.all { supportedBody(it.steps) } && supportedBody(node.defaultSteps)
+
+    private fun supportedBody(nodes: List<PlanNode>): Boolean = nodes.all { node -> when (node) {
+        is TaskNode -> true // Leaf payloads, value bindings and continuity have independent owners.
+        is ConditionNode -> supportedBody(node.then) && supportedBody(node.otherwise)
+        is MatchPlanNode -> supportedMatch(node)
+        else -> false
+    } }
 
     companion object {
+        /** Renderer callers must preserve the same sequential control boundary. */
+        internal fun supportsRenderedBody(steps: List<TargetStep>): Boolean = steps.all { step -> when (step.type) {
+            "action" -> step.children.isEmpty()
+            "condition" -> supportsRenderedBody(step.children)
+            "match" -> supportsRenderedMatch(step)
+            else -> false
+        } }
+
+        internal fun supportsRenderedMatch(step: TargetStep): Boolean {
+            val cases = step.children.takeWhile { it.type == "match-case" }
+            return step.params.keys == setOf("source") &&
+                step.children.map { it.type } == List(cases.size) { "match-case" } + listOf("match-error", "match-default") &&
+                cases.all { it.params.keys == setOf("condition") } &&
+                supports(step.params.getValue("source"), cases.map { it.params.getValue("condition") }) &&
+                step.children[cases.size].children.isEmpty() && step.children.all { supportsRenderedBody(it.children) }
+        }
+
         fun supports(source: String, conditions: List<String>): Boolean = runCatching {
             ExpressionParser.parseSource(source) is StringLiteralNode && conditions.isNotEmpty() &&
                 conditions.map { ExpressionParser.parseSource(it) }.let { guards ->

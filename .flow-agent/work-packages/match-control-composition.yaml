@@ -1,0 +1,41 @@
+version: AR-06AE-C6
+name: Exclusive Match Branch Composition
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR under the corrected composition roadmap.
+  predecessorPullRequest: 233
+  mergedMain: 0c62d57e5edb382422cf34d59df92ec1634a26d1
+invariant: An exclusive match executes exactly the selected branch, including an empty branch, or the default when no case matches; sequential branch work preserves order, lexical value scope and failure propagation.
+architecturePurpose: Derive branch applicability from selection and sequential control contracts independently of task identity, cardinality and native leaf mappings.
+scope:
+- Replace checkout-only branch bodies with independently materialized tasks, conditions and nested exclusive matches.
+- Preserve inert string sources, disjoint literal Boolean cases and empty error branches without inventing predicate precedence or implicit result bindings.
+- Recheck branch structure and control contracts in caller-supplied manifests; retain independent leaf, value and continuity gates.
+- Compare source-derived branch membership and order against native selected, default, empty and failing compositions with negative mutations.
+nonGoals:
+- No Core semantics, public syntax/version, dynamic predicates, source evaluation or generic support promotion.
+- No retry, loop, parallel, approval or error-handler composition inside match in this slice.
+- No branch-output export, rollback, workspace isolation or cancellation equivalence claim.
+- No signed-portfolio expansion, historical acceptance transition or milestone closure.
+ownershipBoundary:
+  core: Canonical source, case order, branch membership, lexical scope and failure semantics remain authoritative.
+  adapters: Own native exclusive branch mapping and independent leaf materialization.
+  conformance: Own source-derived expectations and native observations; never execute product actions.
+testsToAddOrUpdate:
+- Renamed and varying task/case counts, different leaf mappings, nested conditions and matches, empty selected/default bodies.
+- Unknown or overlapping guards, source expressions, unsupported leaves/controls/providers and scope escapes fail closed.
+- Independent model and native mutants distinguish branch substitution, omission, reordering, empty-case fallthrough and swallowed failure.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - match-composition-runtime
+  - adapter-certification-portfolio
+  preservedChecks: All existing module isolation, composition, native scenarios and authenticated portfolio checks remain required.
+documentationToUpdate:
+- .flow-agent/reports/match-control-composition.md
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/roadmap-architecture-recovery.yaml

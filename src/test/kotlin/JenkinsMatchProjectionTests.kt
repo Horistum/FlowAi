@@ -56,14 +56,12 @@ class JenkinsMatchProjectionTests {
             assertFalse(JenkinsMatchProjectionScope.supports(value, listOf("true")), value)
     }
 
-    @Test fun outOfScopeSourceCasesHandlersAndNestedBodiesStayNonExecutable() {
+    @Test fun outOfScopeSourceCasesAndHandlersStayNonExecutable() {
         val checkout = "git.checkout source { url: \"git://127.0.0.1:9418/repository.git\" branch: \"selected\" }"
         val dynamic = source.replace("  systems {", "  input { enabled: boolean default true }\n  systems {")
         for (text in listOf(source.replace("when false", "when true"),
             dynamic.replace("match \"literal-source\"", "match enabled"), dynamic.replace("when true", "when enabled"),
-            source.replace("      default {", "      when error { $checkout }\n      default {"),
-            source.replace("      when true {", "      when true { match \"nested\" { when true { } }"),
-            source.replace("      when true {", "      when true { if true { $checkout }"))) {
+            source.replace("      default {", "      when error { $checkout }\n      default {"))) {
             val candidate = compile(text)
             assertEquals(targets.getValue("jenkins"), JenkinsMatchProjectionScope(catalog).resolve(candidate.authorization, "jenkins", targets.getValue("jenkins")))
             assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate, testTargetSelection("jenkins", targets), strict = true)) }

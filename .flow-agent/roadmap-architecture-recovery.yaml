@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 50
+revision: 51
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/loop-control-composition.yaml"
-  decisionBasis: "PR #232 merged at 8bad3e11f2d70d3dd316fc3276f6a80b380e88c0. AR-06AE-C4 removed single-checkout retry eligibility. AR-06AE-C5 replaces checkout-only nonempty loop bodies with independently materialized tasks, conditions and finite nested iteration. Collection order, multiplicity, lexical scope, empty collections and failure routing require source-derived native evidence. Dynamic collections, retry-in-loop, match and parallel composition remain outside this slice; public support and portability claims are unchanged. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/match-control-composition.yaml"
+  decisionBasis: "PR #233 merged at 0c62d57e5edb382422cf34d59df92ec1634a26d1. AR-06AE-C5 removed checkout-only loop bodies. AR-06AE-C6 replaces checkout-only match branches with independently materialized tasks, conditions and nested exclusive matches. Source-derived native evidence checks selection, empty branches, order and failure propagation. Inert string sources and disjoint literal Boolean cases remain explicit boundaries. Parallel topology and broader control interactions require their own evidence. Public support and portability claims are unchanged; AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -252,7 +252,8 @@ milestones:
       - "AR-06AE-C3: compare the same Boolean composition on materially different native runtimes with source-derived branch and ordering expectations, identity-bound observations and falsifying mutants."
       - "AR-06AE-C4: replace single-checkout retry eligibility with whole-body sequential control composition and native failure/replay evidence."
       - "AR-06AE-C5: replace checkout-only loop bodies with finite sequential composition, lexical nesting and native order/multiplicity/failure evidence."
-      - "Next: replace remaining match and parallel fixture gates with justified control/topology contracts and independent composition evidence; broaden control interactions only with their own evidence."
+      - "AR-06AE-C6: replace checkout-only match bodies with exclusive sequential branch composition, lexical value scope and native selection/order/failure evidence."
+      - "Next: replace the remaining parallel fixture gate with justified topology contracts and independent composition evidence; broaden control interactions only with their own evidence."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 
   - id: "AR-07"
