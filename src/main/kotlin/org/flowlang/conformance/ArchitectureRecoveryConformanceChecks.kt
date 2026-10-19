@@ -39,12 +39,17 @@ class AdapterTargetMaturityConformanceChecks(
             if (report != null && report.status != "PASS" && report.findings.isEmpty()) {
                 add("Target maturity report failed without a finding.")
             }
+            if (report != null && (report.reportVersion != "2.0" ||
+                    report.evidenceBasis != "REPOSITORY_REFERENCE_INVENTORY" ||
+                    report.runtimeCertificationAssessed || report.executionAuthorized)) {
+                add("Repository maturity must not claim runtime certification or execution authorization.")
+            }
         }
 
         return listOf(
             ConformanceCheck(
                 name = PUBLICATION_CHECK,
-                passed = report?.status == "PASS",
+                passed = report?.status == "PASS" && publicationErrors.isEmpty(),
                 message = publicationErrors.takeIf(List<String>::isNotEmpty)?.joinToString(" | ")
             ),
             resultCheck(TARGET_WIDE_SCOPE_CHECK, runCatching { targetWideScopeErrors(report) }),
@@ -85,11 +90,13 @@ class AdapterTargetMaturityConformanceChecks(
                         "found ${assessment.highestTargetWideStage}."
                 )
             }
-            if (
-                TargetMaturityStage.EXECUTABLE in assessment.targetWideStages ||
-                TargetMaturityStage.BEHAVIORALLY_CERTIFIED in assessment.targetWideStages
-            ) {
-                add("$target must not publish target-wide executable or certified maturity.")
+            if (TargetMaturityStage.REFERENCE_EXECUTABLE in assessment.targetWideStages) {
+                add("$target must not publish a scenario reference as target-wide maturity.")
+            }
+            val ownedStructures = projections.providerFor(target)?.nativeProjectionCatalog?.structuralDefinitions
+                .orEmpty().sortedBy { it.structure.name }
+            if (assessment.structuralProjections != ownedStructures) {
+                add("$target structural publication differs from its composed provider mappings.")
             }
             val expectedPrefix = TargetMaturityStage.entries.take(assessment.targetWideStages.size)
             if (assessment.targetWideStages != expectedPrefix) {
@@ -150,8 +157,8 @@ class AdapterTargetMaturityConformanceChecks(
             if (scope.stages != TargetMaturityStage.entries.toList()) {
                 add("$target/${scope.scopeId} must publish all cumulative maturity stages.")
             }
-            if (scope.highestStage != TargetMaturityStage.BEHAVIORALLY_CERTIFIED) {
-                add("$target/${scope.scopeId} is not behaviorally certified.")
+            if (scope.highestStage != TargetMaturityStage.REFERENCE_EXECUTABLE) {
+                add("$target/${scope.scopeId} lacks a valid executable reference; this is not runtime certification.")
             }
             if (scope.limitations.isEmpty()) {
                 add("$target/${scope.scopeId} must preserve explicit limitations.")

@@ -1,0 +1,40 @@
+version: AR-06AE-C8
+name: Reference Maturity and Composition Publication
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR after merging the parallel composition correction.
+  predecessorPullRequest: 235
+  mergedMain: 55ab3204cfe7fcada06ab5ccf5f5d8c240e6252c
+invariant: Repository references and provider projection declarations cannot publish runtime certification or authorize execution; plan-scoped mappings remain visibly distinct from target-wide declarations.
+architecturePurpose: Correct the targets command's unsupported certification claim and expose current structural mapping scopes from the composed provider catalog.
+scope:
+- Audit the corrected producer, expression, control and topology boundaries against the remaining AR-06 outcomes.
+- Version the repository maturity report to distinguish an executable reference snapshot from authenticated native runtime evidence.
+- Remove certification promotion based only on implementation/test file existence and require complete valid reference evidence for reference maturity.
+- Publish structural mappings and their scope directly from the composed provider definitions, including plan-scoped compositions.
+- Verify actual CLI output, negative reference evidence, provider composition changes and preserved historical/runtime boundaries.
+nonGoals:
+- No Core language, canonical semantics, adapter rendering or generic support promotion.
+- No runtime execution, new certification protocol, signed-portfolio expansion or portability claim.
+- No rewriting historical acceptance receipts, AR-06 closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  adapters: Own repository reference assessment and provider mapping declarations.
+  conformance: Own authenticated runtime assessments and independent checks preventing publication overclaims.
+testsToAddOrUpdate:
+- Complete references, existing unrelated test files and missing evidence cannot manufacture runtime certification.
+- Invalid reference scopes cannot retain executable-reference maturity.
+- Projection summaries follow provider removal and support-scope changes without inferring support from target names.
+- Both CLI hosts publish report v2 and explicit reference/runtime boundaries.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - adapter-certification-portfolio
+  preservedChecks: All existing module-isolation, composition and native certification jobs remain required.
+documentationToUpdate:
+- .flow-agent/reports/composition-capability-publication.md
+- docs/migrations/target-maturity-report-v2.md
+- .flow-agent/roadmap-architecture-recovery.yaml

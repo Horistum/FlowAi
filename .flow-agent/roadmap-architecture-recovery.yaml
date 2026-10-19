@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/parallel-topology-composition.yaml"
-  decisionBasis: "PR #234 merged at b1f54f16a10e5701e6954677d9bed5c91179b25d. AR-06AE-C6 removed checkout-only match bodies. AR-06AE-C7 replaces parallel branch/group/body cardinality and message-identity gates with independent branch membership, sequential dependency and native isolation contracts. Source-derived native evidence checks overlap, order, directory separation, join, failure and cancellation. Other control interactions, state transfer and shared-service isolation still require their own evidence. Public support and portability claims are unchanged; AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/composition-capability-publication.yaml"
+  decisionBasis: "PR #235 merged at 55ab3204cfe7fcada06ab5ccf5f5d8c240e6252c. AR-06AE-C1 through C7 corrected producer, expression, sequential control and parallel topology composition. The follow-up audit found that targets still promoted reference snapshots and existing test paths to behavioral certification. AR-06AE-C8 versions that report as repository reference maturity, explicitly disclaims runtime assessment and execution authorization, and publishes structural mapping scopes directly from composed providers. Authenticated coverage remains separate; broader control interactions, state/value transfer and portable composition evidence remain open. No support or portability promotion: AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -254,7 +254,8 @@ milestones:
       - "AR-06AE-C5: replace checkout-only loop bodies with finite sequential composition, lexical nesting and native order/multiplicity/failure evidence."
       - "AR-06AE-C6: replace checkout-only match bodies with exclusive sequential branch composition, lexical value scope and native selection/order/failure evidence."
       - "AR-06AE-C7: replace parallel fixture cardinality, branch-body and message-identity gates with branch membership, sequential dependencies and native isolation contracts; independently prove fork/join composition and failure policies."
-      - "Next: audit the corrected producer/expression/control/topology boundaries against the complete AR-06 outcomes; broaden remaining control interactions only with independent evidence, and reconcile capability publication with the actual composition boundaries."
+      - "AR-06AE-C8: audit corrected composition boundaries; distinguish repository reference maturity from authenticated native certification and publish provider-owned structural mapping scopes without execution authorization."
+      - "Next: reconcile independently authenticated composition observations with target coverage and its explicit gaps; broaden remaining control interactions only with independent evidence. Repository declarations and reference snapshots cannot close runtime certification or portability outcomes."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 
   - id: "AR-07"

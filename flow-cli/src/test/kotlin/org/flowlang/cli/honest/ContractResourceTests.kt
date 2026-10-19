@@ -153,6 +153,12 @@ class ContractResourceTests {
             .single { it.title == "FLOW TARGET MATURITY REPORT" }.value
         assertEquals("PASS", Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(maturity)["status"].asText(),
             Json.mapper.writeValueAsString(maturity))
+        val report = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(maturity)
+        assertEquals("2.0", report["reportVersion"].asText())
+        assertEquals("REPOSITORY_REFERENCE_INVENTORY", report["evidenceBasis"].asText())
+        assertFalse(report["runtimeCertificationAssessed"].booleanValue())
+        assertFalse(report["executionAuthorized"].booleanValue())
+        assertFalse(report.toString().contains("BEHAVIORALLY_CERTIFIED"))
         ContractResourceResolver().open().use { resources ->
             for (target in listOf("jenkins", "github-actions")) {
                 val input = File(resources.root, "examples/intent/checkout-build-image.intent.yaml")
