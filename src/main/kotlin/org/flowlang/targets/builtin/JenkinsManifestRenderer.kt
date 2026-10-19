@@ -26,6 +26,11 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             }.map { it.id }
             TargetProjectionIdentityChecks.requireNames(
                 "render.jobs.${job.id}.image-variables", imageIds, JenkinsImageBuildProjectionValues::jenkinsVariable)
+            val loopItems = job.steps.flatMap { it.flatten() }.filter { it.type == "loop" }
+                .mapNotNull { it.params["item"] }.toSet()
+            require(imageIds.none { JenkinsImageBuildProjectionValues.jenkinsVariable(it) in loopItems }) {
+                "Jenkins loop items cannot capture renderer-owned image result variables."
+            }
         }
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
@@ -276,6 +281,9 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         }
         val items = requireNotNull(JenkinsLoopProjectionScope.literalItems(step.params.getValue("source"))) {
             "Jenkins loop supports only an authored string-literal list."
+        }
+        require(JenkinsLoopProjectionScope.supportsRenderedBody(step.children, manifest.inputs.map { it.name }.toSet() + item)) {
+            "Jenkins loop requires sequential tasks, conditions and finite nested loops with distinct lexical item bindings."
         }
         sb.appendLine("${indent}for (def $item in ${items.joinToString(", ", "[", "]") { groovyString(it) }}) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ", bindings) }

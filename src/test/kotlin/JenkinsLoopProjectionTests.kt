@@ -63,11 +63,12 @@ class JenkinsLoopProjectionTests {
             assertEquals(declared, scoped(catalog = catalog))
     }
 
-    @Test fun dynamicCollectionsNestedLoopsAndOtherBodiesStayUnsupported() {
+    @Test fun nestedLoopsComposeWhileDynamicCollectionsAndOtherBodiesStayUnsupported() {
         assertEquals(declared, scoped(source.replace("[\"selected\", \"selected\", \"alternate\"]", "[1, 2]")))
         val nested = source.replace("for item in", "for outer in [\"one\"] { for item in")
             .replace("} -> successorCheckout", "} -> successorCheckout }")
-        assertEquals(declared, scoped(nested))
+        assertEquals(SupportLevel.SUPPORTED, scoped(nested).features["loops.dynamic"])
+        assertEquals(SupportLevel.UNSUPPORTED, scoped(nested).dynamicLoops)
         val dynamic = source.replace("  systems {", "  vars { items: [\"selected\"] }\n  systems {")
             .replace("[\"selected\", \"selected\", \"alternate\"]", "items")
         assertEquals(declared, scoped(dynamic))
@@ -79,7 +80,7 @@ class JenkinsLoopProjectionTests {
         assertEquals(listOf("a", "a", "b"), JenkinsLoopProjectionScope.literalItems("[\"a\", \"a\", \"b\"]"))
         for (value in listOf("items", "[1]", "[true]", "[null]", "[name]", "[[\"a\"]]", "[\"a\"] + [\"b\"]", "["))
             assertEquals(null, JenkinsLoopProjectionScope.literalItems(value))
-        for (name in listOf("params", "env", "git", "for", "flowError", "item.x", "item;error"))
+        for (name in listOf("params", "env", "git", "docker", "for", "flowError", "item.x", "item;error"))
             assertEquals(false, JenkinsLoopProjectionScope.safeItem(name))
         assertTrue(JenkinsLoopProjectionScope.safeItem("entry_1"))
         assertEquals(declared, scoped(source.replace("item", "params")))

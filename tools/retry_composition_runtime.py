@@ -116,7 +116,7 @@ def assess(contracts, mappings, variants, inventory, runtime):
     return cases
 
 
-def main():
+def run_composition(prepare_inputs, label, claim, limits):
     require(len(sys.argv) == 4, "Expected repository root, prepared inputs and fresh output directory")
     root, inputs, output = [Path(p).resolve() for p in sys.argv[1:]]
     revision = os.environ["EXPECTED_SHA"]
@@ -124,11 +124,11 @@ def main():
     require(not output.exists(), "Output must be fresh")
     output.mkdir()
     shutil.copytree(inputs, output / "inputs")
-    contracts, mappings, variants, inventory = prepare(inputs, output)
+    contracts, mappings, variants, inventory = prepare_inputs(inputs, output)
     fixture = root / "flow-adapter-jenkins/src/runtimeTest"
     runtime = output / "runtime"
     runtime.mkdir(); runtime.chmod(0o777)
-    container = "flow-retry-composition-" + uuid.uuid4().hex
+    container = "flow-" + label + "-composition-" + uuid.uuid4().hex
     tag = container + ":local"
     def process(label, command, timeout):
         path = output / (label + ".log")
@@ -151,17 +151,21 @@ def main():
         proof = {"status": "passed", "sourceRevision": revision, "workflowRevision": os.environ["WORKFLOW_REVISION"],
                  "runId": os.environ["GITHUB_RUN_ID"], "attempt": os.environ["GITHUB_RUN_ATTEMPT"], "imageId": image,
                  "cases": cases, "files": receipts(output), "publicSupportPromoted": False, "portableExecution": False,
-                 "claim": "native whole-body retry replay, early success, nested exhaustion and failure routing",
-                 "limits": ["Fixed zero-delay sequential tasks, conditions and nested retry only",
-                            "Native invocation evidence covers checkout; other leaf mappings remain independently gated",
-                            "No rollback, fresh workspace, cancellation or general state isolation claim",
-                            "Observation stages wrap unchanged native calls; CI, compiler and SCM callbacks are trusted",
-                            "Separate regression evidence, not an addition to the signed certification portfolio"]}
+                 "claim": claim, "limits": limits + [
+                     "Native invocation evidence covers checkout; other leaf mappings remain independently gated",
+                     "Observation stages wrap unchanged native calls; CI, compiler and SCM callbacks are trusted",
+                     "Separate regression evidence, not an addition to the signed certification portfolio"]}
         (output / "proof.json").write_text(json.dumps(proof, indent=2) + "\n")
-        print("PASS: three native retry baselines and six falsifying mutations")
+        print(f"PASS: {label} composition: {len(cases)} native runs; all baselines pass and all mutants rejected")
     finally:
         for command in (["docker", "rm", "--force", container], ["docker", "image", "rm", tag]):
             subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=30, check=False)
+
+
+def main():
+    run_composition(prepare, "retry", "native whole-body retry replay, early success, nested exhaustion and failure routing",
+                    ["Fixed zero-delay sequential tasks, conditions and nested retry only",
+                     "No rollback, fresh workspace, cancellation or general state isolation claim"])
 
 
 if __name__ == "__main__":

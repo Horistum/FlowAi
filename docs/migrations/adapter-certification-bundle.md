@@ -835,3 +835,21 @@ callbacks, failed native FlowNodes and completed stage boundaries to the CI run.
 The native leaf proof covers checkout; image-build composition has projection
 coverage only. All 39 signed portfolio scenarios remain required, with no public
 support promotion, portability claim, acceptance transition or AR-06 closure.
+
+### AR-06AE-C5: finite sequential loop composition
+
+Loop applicability now follows a finite collection and lexical control contract,
+independently of task module, alias or body length. Literal string lists retain order
+and duplicate elements. Tasks, conditions and nested loops compose; empty bodies and
+empty collections are valid. Active loop-item and input bindings cannot be captured,
+and iteration-local values do not become available after the loop. Leaf mappings,
+expressions and continuity requirements remain independently checked.
+
+The native regression proof compares source-derived expectations with actual
+invocations for both Boolean inputs, nested iteration, empty collections and failure
+short-circuiting. Six falsifying mutations test deduplication, reordering, flattened
+nesting, omitted work, invented iterations and swallowed failures. This uses the
+existing observation channel and leaves the signed 39-scenario portfolio required.
+Native evidence covers checkout; image-build composition is projection-only evidence.
+Dynamic collections and retry/match/parallel/approval/error-handler loop bodies remain
+unsupported. No public target-support or portability promotion follows from this slice.

@@ -15,6 +15,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  loop-composition-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Prepare independently checked loop compositions
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsLoop*' :flow-conformance-kit:installDist --stacktrace
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.LoopCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/loop-prepared"
+      - name: Verify finite iteration and native negative evidence
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_loop_composition_oracle.py' -v
+          python3 tools/loop_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/loop-prepared" "$RUNNER_TEMP/loop-evidence"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: loop-composition-runtime
+          path: |
+            ${{ runner.temp }}/loop-evidence/
+            flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+
   retry-composition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
