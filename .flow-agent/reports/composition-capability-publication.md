@@ -35,6 +35,15 @@ unknown states fail immediately. Existing revision, attempt, output, outcome and
 ordering checks still run on the final API response. Tests cover eventual
 completion, terminal failures, exhausted budgets and malformed inventories.
 
+Repeated CI runs also exposed intermittent HTTP 403 responses from the public
+Jenkins metadata endpoints while identical pinned installations succeeded in
+other jobs. The shared fixture image now retries only that exact metadata error
+up to three installation attempts, with five- and ten-second delays. Plugin
+versions and installer arguments are unchanged. Other failures stop immediately,
+and persistent failures retain their nonzero exit status. Subprocess tests cover
+success, recovery, exhaustion and non-retryable errors. Runtime tests and their
+verdicts are never retried by this setup helper.
+
 The evidence inventory's limitations now describe reference scope and independent
 composition gates. Its input schema stays at v1; the public report moves to v2
 with a documented consumer migration. No Core or adapter execution behavior changes.
@@ -76,7 +85,7 @@ publication and provider-derived structural scopes. Their identities and the
 certification label is corrected, not treated as authenticated evidence.
 Historical acceptance receipts and native certification machinery are unchanged.
 
-Local validation: all 215 Python tooling tests and Flow Agent structure validation
+Local validation: all 219 Python tooling tests and Flow Agent structure validation
 passed. Validation status: current-revision CI required. Exact-head and synthetic merge
 compilation, tests, standalone conformance, module isolation and the complete
 native certification workflow remain required before acceptance. Local JVM
