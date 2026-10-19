@@ -103,7 +103,8 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
                 require(step.children.isEmpty() && step.dependsOn.all { it in prior } &&
                     step.materialization.status == TargetMaterializationStatus.NATIVE &&
                     (usesWorkspace(step) || step.type == "approval" && step.params["mode"] == "manual" &&
-                        step.metadata["resultName"] == null && step.rendererPayload?.let(::controlLocal) == true)) {
+                        step.metadata["resultName"] == null && Regex("[A-Za-z0-9_-]+").matches(step.id) &&
+                        step.rendererPayload?.let(::controlLocal) == true)) {
                     "Jenkins branch '${branch.id}' requires independent sequential leaves with owned native isolation mappings."
                 }
                 prior += step.id

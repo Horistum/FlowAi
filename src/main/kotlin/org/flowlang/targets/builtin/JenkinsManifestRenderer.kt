@@ -113,7 +113,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         manifest: TargetManifest,
         sb: StringBuilder,
         indent: String,
-        bindings: JenkinsConditionValueScope.Bindings
+        bindings: JenkinsConditionValueScope.Bindings,
+        branchScopedApproval: Boolean = false
     ) {
         step.mappingNotes.forEach { note ->
             sb.appendLine("${indent}// Flow mapping note [${note.level}] ${note.feature} ${note.nodeId}: ${note.message.replace("\n", " ")}")
@@ -128,7 +129,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "retry" -> renderJenkinsRetry(step, manifest, sb, indent, bindings)
             "loop" -> renderJenkinsLoop(step, manifest, sb, indent, bindings)
             "match" -> renderJenkinsMatch(step, manifest, sb, indent, bindings)
-            "approval" -> renderJenkinsApproval(step, sb, indent)
+            "approval" -> renderJenkinsApproval(step, sb, indent, branchScopedApproval)
             else -> renderJenkinsLeaf(step, manifest, sb, indent)
         }
         bindings.producers[step.id]?.let { sb.appendLine("${indent}def $it = true") }
@@ -153,7 +154,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
                 if (workspaceOpen && !workspace) sb.appendLine("${indent}    }")
                 if (!workspaceOpen && workspace)
                     sb.appendLine("${indent}    dir(${groovyString(".flow-parallel/${branch.id}")}) {")
-                renderJenkinsStep(child, manifest, sb, if (workspace) "$indent      " else "$indent    ", bindings)
+                renderJenkinsStep(child, manifest, sb, if (workspace) "$indent      " else "$indent    ", bindings, branchScopedApproval = true)
                 workspaceOpen = workspace
             }
             if (workspaceOpen) sb.appendLine("${indent}    }")
@@ -163,7 +164,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         sb.appendLine("${indent}])")
     }
 
-    private fun renderJenkinsApproval(step: TargetStep, sb: StringBuilder, indent: String) {
+    private fun renderJenkinsApproval(step: TargetStep, sb: StringBuilder, indent: String, branchScoped: Boolean = false) {
         val payload = requireNotNull(step.rendererPayload) {
             "Executable Jenkins approval '${step.id}' has no provider renderer payload."
         }
@@ -179,7 +180,10 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
         val message = requireNotNull(payload.bindings["message"]?.value) {
             "Jenkins approval '${step.id}' is missing resolved message binding."
         }
-        sb.appendLine("${indent}input message: ${groovyString(message)}")
+        // InputStep otherwise hashes the message into its HTTP routing ID. Parallel messages may repeat.
+        // The fixed prefix also prevents InputStep's first-character capitalization from merging identities.
+        val identity = if (branchScoped) ", id: ${groovyString("Flow_${step.id}")}" else ""
+        sb.appendLine("${indent}input message: ${groovyString(message)}$identity")
     }
 
     private fun renderJenkinsTry(

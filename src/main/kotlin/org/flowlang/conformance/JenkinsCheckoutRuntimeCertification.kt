@@ -470,7 +470,7 @@ internal object JenkinsCheckoutRuntimeCertification {
         require(text.lineSequence().count { it == end } == 1)
         val block = text.substring(text.indexOf(start), text.indexOf(end) + end.length)
         val gates = block.lineSequence().filter { it.trimStart().startsWith("input message:") }.toList()
-        require(gates.map { it.trim() } == listOf("input message: 'Approve left branch?'", "input message: 'Approve right branch?'"))
+        require(gates.map { it.trim() } == listOf("input message: 'Approve left branch?', id: 'Flow_approve_1'", "input message: 'Approve right branch?', id: 'Flow_approve_2'"))
         require(block.lineSequence().single { it.trimStart().startsWith("failFast:") }.trim() == "failFast: ${scenario.parallelFailFast}")
         val checkout = text.lineSequence().single { it.trimStart().startsWith("git branch:") }
         require(checkout == "${indent}git branch: 'selected', url: 'git://127.0.0.1:9418/repository.git'")

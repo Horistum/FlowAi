@@ -19,8 +19,9 @@ def sample():
         return {'id': id, 'node': str(start+1), 'kind': leaf['kind'], 'start': start, 'end': end,
                 'branch': leaf['owner'], 'directory': '.flow-parallel/left' if id == 'b' else None,
                 'gitBranch': 'selected' if leaf['kind'] == 'task' else None, 'message': 'same' if leaf['kind'] == 'approval' else None,
-                'result': 'success', 'errorType': None, 'causes': []}
-    observed = {'result': 'SUCCESS', 'initialPending': ['a', 'c'], 'leaves': [row('a', 3, 10), row('c', 5, 15), row('b', 11, 13), row('d', 20, 22)],
+                'result': 'success', 'errorType': None, 'causes': [], 'inputId': 'Flow_' + id if leaf['kind'] == 'approval' else None}
+    observed = {'result': 'SUCCESS', 'initialPending': ['a', 'c'], 'initialInputIds': {'a': 'Flow_a', 'c': 'Flow_c'},
+                'decisions': [{'requested': i, 'id': i, 'nativeId': 'Flow_' + i, 'action': 'approve'} for i in ('a','c')], 'leaves': [row('a', 3, 10), row('c', 5, 15), row('b', 11, 13), row('d', 20, 22)],
                 'groups': [{'start': 1, 'end': 19, 'branches': [{'id': 'left', 'start': 2, 'end': 14},
                     {'id': 'right', 'start': 4, 'end': 16}, {'id': 'empty', 'start': 6, 'end': 7}]}],
                 'checkoutEffects': [{'directory': '.flow-parallel/left', 'marker': 'selected\n'}, {'directory': None, 'marker': 'selected\n'}],
@@ -50,6 +51,8 @@ class ParallelCompositionOracleTests(unittest.TestCase):
         bad = copy.deepcopy(observed); bad['groups'][0]['branches'].pop(); changes.append(bad)
         bad = copy.deepcopy(observed); bad['checkoutEffects'][0]['marker'] = 'alternate\n'; changes.append(bad)
         bad = copy.deepcopy(observed); bad['leaves'].append(bad['leaves'][0]); changes.append(bad)
+        bad = copy.deepcopy(observed); bad['initialInputIds']['c'] = 'Flow_a'; changes.append(bad)
+        bad = copy.deepcopy(observed); bad['decisions'][0]['requested'] = 'c'; changes.append(bad)
         for bad in changes:
             with self.assertRaises(ValueError): verify(contract, bad)
 
@@ -71,9 +74,11 @@ class ParallelCompositionOracleTests(unittest.TestCase):
         observed['leaves'][0].update(result='failure', errorType='org.jenkinsci.plugins.workflow.steps.FlowInterruptedException')
         observed['markers'] = {key: None for key in observed['markers']}
         observed['checkoutEffects'] = []
+        observed['decisions'][0]['action'] = 'reject'
         verify(contract, observed, reject=True)
         contract['groups'][0]['failFast'] = True
         with self.assertRaises(ValueError): verify(contract, observed, reject=True)
+        observed['decisions'] = observed['decisions'][:1]
         observed['leaves'][1].update(result='failure', causes=['org.jenkinsci.plugins.workflow.cps.steps.ParallelStep$FailFastCause'])
         verify(contract, observed, reject=True)
 

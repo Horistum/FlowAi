@@ -879,7 +879,9 @@ outside this slice. All prior certification and composition checks stay required
 Top-level fork/join groups now compose independent sequential branch leaves without
 requiring two branches, one approval, one checkout or distinct approval messages.
 Empty branches retain their identity and participate in the join. Labels and messages
-are data; preserved branch IDs own native closures and workspace directories.
+are data; preserved branch IDs own native closures and workspace directories. Parallel
+approval routing uses explicit `Flow_<step-id>` IDs, so repeated messages cannot alias
+the native UI/API lookup.
 
 Applicability checks each native mapping separately: manual input owns a control-local
 execution; the full-history literal-branch git mapping mutates its branch directory.

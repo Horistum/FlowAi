@@ -53,6 +53,10 @@ def prepare(inputs, output):
                 serialized = block.replace(start, '          ([\n', 1).replace(end,
                     "          ]).findAll { key, value -> key != 'failFast' }.each { key, body -> body() }\n")
                 candidates['serialized'] = replace_once(baseline, block, serialized)
+                shared = baseline
+                for identity in release:
+                    shared = replace_once(shared, ", id: 'Flow_" + identity + "'", '')
+                candidates['message-derived-input-ids'] = shared
                 a, b = [calls[i][1] for i in primary[1:3]]
                 candidates['omitted-work'] = replace_once(baseline, a, '')
                 candidates['reordered-work'] = replace_once(replace_once(baseline, a, 'FLOW_SWAP'), b, a).replace('FLOW_SWAP', b)

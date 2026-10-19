@@ -77,6 +77,7 @@ def verify(contract, observed, reject=False):
     require(observed["result"] == ("ABORTED" if reject else "FAILURE" if failed else "SUCCESS"), "Changed terminal result")
     initial = {b["leaves"][0] for b in first["branches"] if b["leaves"]}
     require(set(observed["initialPending"]) == initial, "Branches did not become independently pending")
+    require(observed["initialInputIds"] == {i: "Flow_" + i for i in initial}, "Pending approvals do not have independent native routing IDs")
     expected = {}
     for identity, leaf in leaves.items():
         expected[identity] = "success"
@@ -97,13 +98,19 @@ def verify(contract, observed, reject=False):
             require(row["directory"] == (".flow-parallel/" + leaf["owner"] if leaf["owner"] else None) and
                     row["gitBranch"] == leaf["params"]["branch"], "Changed native workspace or checkout")
         else:
-            require(row["message"] == leaf["message"], "Changed approval message")
+            require(row["message"] == leaf["message"] and row["inputId"] == "Flow_" + identity, "Changed approval message or routing identity")
         if identity == fault:
             require(row["errorType"] == ("org.jenkinsci.plugins.workflow.steps.FlowInterruptedException" if reject else "hudson.AbortException"), "Changed failure origin")
             if not reject:
                 require("Couldn't find any revision to build" in row.get("errorMessage", ""), "Changed checkout failure cause")
         elif row["result"] == "failure":
             require(row["causes"] == ["org.jenkinsci.plugins.workflow.cps.steps.ParallelStep$FailFastCause"], "Sibling was not natively cancelled")
+    decisions = observed["decisions"]
+    decided = {i for i, row in rows.items() if row["kind"] == "approval" and (row["result"] == "success" or i == fault)}
+    require(len(decisions) == len(decided) and {d["id"] for d in decisions} == decided and all(
+        d["requested"] == d["id"] and d["nativeId"] == "Flow_" + d["id"] and
+        d["action"] == ("reject" if reject and d["id"] == fault else "approve") for d in decisions),
+        "Native UI/API routing selected a different approval execution")
     if failed:
         require(observed["terminalOrigin"] == fault, "Failure was swallowed or substituted")
     native_groups = observed["groups"]

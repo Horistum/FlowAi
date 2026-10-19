@@ -97,7 +97,18 @@ Thread.start('parallel-composition-observer') {
             // A bounded window exposes serialized mutants; timeout is an observation, not a verdict.
             long overlap = System.nanoTime() + TimeUnit.SECONDS.toNanos(6)
             while (!future.isDone() && pending().size() < run.initialCount && System.nanoTime() < overlap) Thread.sleep(100)
-            def initial = pending().collect { identity(it.getContext().get(FlowNode)) }.sort()
+            def initialInputs = pending()
+            def initial = initialInputs.collect { identity(it.getContext().get(FlowNode)) }.sort()
+            def initialIds = initialInputs.collectEntries { [(identity(it.getContext().get(FlowNode))): it.getId()] }
+            def releaseInput = { input, requested, action ->
+                // The same lookup backs InputAction.getDynamic(token), used by native UI/API URLs.
+                def nativeId = input.getId()
+                def routed = build.getAction(InputAction).getExecution(nativeId)
+                if (routed == null) throw new IllegalStateException('Input routing lost a pending execution')
+                def resolved = identity(routed.getContext().get(FlowNode))
+                if (action == 'reject') routed.doAbort() else routed.doProceedEmpty()
+                [requested: requested, id: resolved, nativeId: nativeId, action: action]
+            }
             def decisions = []
             run.release.each { id ->
                 long waiting = System.nanoTime() + TimeUnit.SECONDS.toNanos(8)
@@ -107,16 +118,14 @@ Thread.start('parallel-composition-observer') {
                     if (input == null) Thread.sleep(100)
                 }
                 if (input != null) {
-                    decisions.add([id: id, action: id == run.reject ? 'reject' : 'approve'])
-                    if (id == run.reject) input.doAbort() else input.doProceedEmpty()
+                    decisions.add(releaseInput(input, id, id == run.reject ? 'reject' : 'approve'))
                 }
             }
             // Drain unexpected gates so a semantic mutant produces reviewable evidence rather than a hung job.
             long drain = System.nanoTime() + TimeUnit.SECONDS.toNanos(60)
             while (!future.isDone() && System.nanoTime() < drain) {
                 pending().each { input ->
-                    decisions.add([id: identity(input.getContext().get(FlowNode)), action: 'drain'])
-                    input.doProceedEmpty()
+                    if (!input.isSettled()) decisions.add(releaseInput(input, identity(input.getContext().get(FlowNode)), 'drain'))
                 }
                 Thread.sleep(100)
             }
@@ -135,7 +144,7 @@ Thread.start('parallel-composition-observer') {
                 [id: identity(node), node: node.id, kind: node.getDescriptor().getFunctionName() == 'input' ? 'approval' : 'task',
                  start: Integer.parseInt(stage.id), end: Integer.parseInt(end.id),
                  branch: branch?.getAction(ThreadNameAction)?.getThreadName(), directory: dir == null ? null : ArgumentsAction.getArguments(dir).get('path'),
-                 gitBranch: args.get('branch'), message: args.get('message'), result: error == null ? 'success' : 'failure',
+                 gitBranch: args.get('branch'), message: args.get('message'), inputId: args.get('id'), result: error == null ? 'success' : 'failure',
                  errorType: error?.getClass()?.getName(), errorMessage: error?.getMessage(),
                  causes: error instanceof FlowInterruptedException ? error.getCauses().collect { it.getClass().getName() } : []]
             }.sort { it.start }
@@ -155,7 +164,7 @@ Thread.start('parallel-composition-observer') {
             def origin = terminal == null ? null : ErrorAction.findOrigin(terminal, build.getExecution())
             results.add([id: run.id, finished: !build.isBuilding() && build.getExecution().isComplete(),
                 artifactSha256: digest(job.getDefinition().getScript().getBytes('UTF-8')), result: build.result.toString(),
-                initialPending: initial, decisions: decisions, leaves: rows, groups: groups, markers: markers,
+                initialPending: initial, initialInputIds: initialIds, decisions: decisions, leaves: rows, groups: groups, markers: markers,
                 checkoutEffects: effects.observations.findAll { it.job == run.id && it.build == build.number },
                 terminalOrigin: origin == null ? null : identity(origin)])
             new File('/evidence/' + run.id + '.log').setText(build.getLog(4000).join('\n') + '\n', 'UTF-8')

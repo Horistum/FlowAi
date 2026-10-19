@@ -11,6 +11,7 @@ invariant: Independent parallel branches preserve their own sequential order and
 architecturePurpose: Replace the pair-of-gates fixture matcher with branch membership, dependency and adapter-owned native isolation contracts.
 scope:
 - Support multiple top-level fork/join groups and varying nonzero branch counts, including empty branches and mixed sequential branch bodies.
+- Give parallel approvals explicit native routing IDs derived from preserved step identities; verify UI/API lookup rather than direct execution-object selection.
 - Compose native manual approvals and workspace-local checkout mappings independently of position, cardinality, messages and unused result aliases.
 - Keep native isolation applicability separate from leaf support; a branch directory does not isolate shared services or export branch state.
 - Enforce the same topology/dependency boundary for caller-supplied manifests.
@@ -26,7 +27,7 @@ ownershipBoundary:
 testsToAddOrUpdate:
 - Vary branch/group/body counts, duplicate labels/messages, empty bodies, leaf positions and local dependencies.
 - Reject unsupported isolation mappings, crossing dependencies, path collisions, forged payloads and unsupported control nesting.
-- Native mutations falsify serialization, omitted/reordered work, aliased directories, early successors, disabled cancellation and swallowed failure.
+- Native mutations falsify serialization, omitted/reordered work, aliased directories, early successors, disabled cancellation, swallowed failure and message-derived approval-ID collisions.
 validation:
   status: current-revision-ci-required
   requiredChecks:

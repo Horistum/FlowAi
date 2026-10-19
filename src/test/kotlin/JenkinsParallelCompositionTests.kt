@@ -41,7 +41,10 @@ class JenkinsParallelCompositionTests {
                 }"""
             }
             val rendered = provider.render(manifest(source(branches)))
-            assertEquals(count * 2, rendered.lineSequence().count { it.trimStart().startsWith("input message:") })
+            val inputs = rendered.lineSequence().filter { it.trimStart().startsWith("input message:") }.toList()
+            assertEquals(count * 2, inputs.size)
+            assertEquals(inputs.size, inputs.map { it.substringAfter(", id: ") }.distinct().size)
+            assertTrue(inputs.all { it.contains(", id: 'Flow_approve_") })
             assertEquals(count * 2, rendered.lineSequence().count { it.trimStart().startsWith("dir(") })
             assertEquals(count * 2, rendered.lineSequence().count { it.trimStart().startsWith("git branch:") })
         }

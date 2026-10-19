@@ -18,7 +18,7 @@ internal object JenkinsParallelWorkspaceCertification {
         require(block.lineSequence().filter { it.trimStart().startsWith("dir(") }.map { it.trim() }.toList() ==
             listOf("dir('$left') {", "dir('$right') {"))
         require(block.lineSequence().filter { it.trimStart().startsWith("input message:") }.map { it.trim() }.toList() ==
-            listOf("input message: 'Approve left branch?'", "input message: 'Approve right branch?'"))
+            listOf("input message: 'Approve left branch?', id: 'Flow_approve_1'", "input message: 'Approve right branch?', id: 'Flow_approve_2'"))
         val git = "git branch: 'selected', url: 'git://127.0.0.1:9418/repository.git'"
         val leftGit = "$indent      ${if (failure) git.replace("'selected'", "'missing-revision'") else git}"
         val rootGit = "$indent$git"
@@ -33,7 +33,7 @@ internal object JenkinsParallelWorkspaceCertification {
         val dirEnd = "\n$indent    }"
         val offset = text.indexOf(dirStart)
         val directory = text.substring(offset, text.indexOf(dirEnd, offset) + dirEnd.length)
-        val gate = "$indent    input message: 'Approve left branch?'"
+        val gate = "$indent    input message: 'Approve left branch?', id: 'Flow_approve_1'"
         require(directory.contains(leftGit) && offset > text.indexOf(gate))
         val earlyWork = replace(replace(text, directory + "\n", ""), gate, "$directory\n$gate")
         val earlySuccessor = replace(replace(text, "\n$rootGit\n", "\n"), block, "$rootGit\n$block")
