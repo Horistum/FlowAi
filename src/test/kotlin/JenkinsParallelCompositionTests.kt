@@ -67,6 +67,10 @@ class JenkinsParallelCompositionTests {
             "if true { ${ParallelCompositionFixture.GATE} }", "parallel { branch \"nested\" { } }",
             "retry { max: 2 delay: \"0s\" backoff: fixed } { }"))
             assertFails { provider.render(manifest(source("branch \"unknown\" { $body }"))) }
+        val dynamic = source("branch \"dynamic\" { ${ParallelCompositionFixture.checkout("dynamic")} }")
+            .replace("flow \"parallel\" {", "flow \"parallel\" { input { revision: text default \"selected\" }")
+            .replace("branch: \"selected\"", "branch: revision")
+        assertFails { provider.render(manifest(dynamic)) }
         // An unused alias is harmless; branch-produced values are not exported.
         assertFails { provider.render(manifest(source("branch \"producer\" { ${ParallelCompositionFixture.checkout("result")} }",
             "if result.ok { ${ParallelCompositionFixture.checkout("consumer")} }"))) }

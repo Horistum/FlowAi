@@ -1,5 +1,8 @@
 package org.flowlang.targets.builtin
 
+import org.flowlang.ast.StringLiteralNode
+import org.flowlang.parser.ExpressionParser
+import org.flowlang.projection.ProjectionBindingKind
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.compiler.CanonicalParallelNode
@@ -17,6 +20,7 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
             catalog.structuralDefinitions.none { it.structure == TargetStructuralProjectionKind.PARALLEL &&
                 it.kind == JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE && it.reference == "approval-parallel" &&
                 it.supportScope == TargetStructuralProjectionSupportScope.PLAN_SCOPED }) return declared
+        val ownedCatalog = requireNotNull(catalog)
         val groups = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<ParallelGroupNode>()
         if (groups.isEmpty() || groups.size != authorization.graph.nodes.filterIsInstance<CanonicalParallelNode>().size ||
             groups.any { it !in authorization.executionPlan.nodes || it.branches.isEmpty() }) return declared
@@ -27,13 +31,13 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
                 val dependencies = when (node) {
                     is ApprovalNode -> {
                         if (node.mode != "manual" || node.resultName != null || node.outputs.isNotEmpty() ||
-                            runCatching { catalog.compileApproval(node)?.let(::controlLocal) }.getOrNull() != true) return declared
+                            runCatching { ownedCatalog.compileApproval(node)?.let(::controlLocal) }.getOrNull() != true) return declared
                         node.dependsOn + node.dependencies
                     }
                     is TaskNode -> {
                         val rule = declared.projectionRules.singleOrNull { it.module == node.module && it.action == node.action }
                             ?: return declared
-                        if (!runCatching { workspaceLocal(catalog.compile(rule, node)) }.getOrDefault(false)) return declared
+                        if (!runCatching { workspaceLocal(ownedCatalog.compile(rule, node), node.params) }.getOrDefault(false)) return declared
                         node.dependsOn + node.dependencies
                     }
                     else -> return declared // Other controls need their own interaction evidence.
@@ -67,9 +71,19 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
                 payload.reference == "input" && payload.bindings["mode"]?.value == "manual" &&
                 !payload.bindings["message"]?.value.isNullOrBlank()
 
-        private fun workspaceLocal(payload: TargetRendererPayload): Boolean = runCatching {
+        private fun workspaceLocal(payload: TargetRendererPayload, parameters: Map<String, String>): Boolean = runCatching {
             if (payload.target != "jenkins" || payload.kind != JenkinsProjectionPayloadKinds.JENKINS_STEP ||
                 payload.reference != "git") return@runCatching false
+            for (name in listOf("url", "branch")) {
+                val binding = payload.bindings[name] ?: return@runCatching false
+                val literal = when (binding.kind) {
+                    ProjectionBindingKind.LITERAL -> binding.value
+                    ProjectionBindingKind.TASK_PARAMETER -> if (binding.name !in parameters && binding.value == binding.defaultValue)
+                        binding.defaultValue else (ExpressionParser.parseSource(binding.value ?: return@runCatching false) as? StringLiteralNode)?.value
+                    else -> null
+                }
+                if (literal.isNullOrBlank() || literal.contains('$')) return@runCatching false
+            }
             val context = "Jenkins branch workspace mapping"
             CheckoutProjectionValues.gitUrl(payload, "url", context)
             val branch = CheckoutProjectionValues.branch(payload, "branch", context)
@@ -78,7 +92,7 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
         }.getOrDefault(false)
 
         internal fun usesWorkspace(step: TargetStep): Boolean = step.type == "action" &&
-            step.rendererPayload?.let(::workspaceLocal) == true
+            step.rendererPayload?.let { workspaceLocal(it, step.params) } == true
 
         internal fun requireBranch(branch: TargetStep) {
             require(branch.type == "parallel-branch" && branch.id.length <= 128 && Regex("[a-z0-9_-]+").matches(branch.id)) {
