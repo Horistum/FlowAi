@@ -100,6 +100,8 @@ def verify(contract, observed, reject=False):
             require(row["message"] == leaf["message"], "Changed approval message")
         if identity == fault:
             require(row["errorType"] == ("org.jenkinsci.plugins.workflow.steps.FlowInterruptedException" if reject else "hudson.AbortException"), "Changed failure origin")
+            if not reject:
+                require("Couldn't find any revision to build" in row.get("errorMessage", ""), "Changed checkout failure cause")
         elif row["result"] == "failure":
             require(row["causes"] == ["org.jenkinsci.plugins.workflow.cps.steps.ParallelStep$FailFastCause"], "Sibling was not natively cancelled")
     if failed:
@@ -127,9 +129,12 @@ def verify(contract, observed, reject=False):
         if interval:
             require(prior < interval["start"], "Successor ran before join")
             prior = interval["end"]
-    # Physical content is probed at canonical directories, independently of emitted dir arguments.
-    markers = {path: None for path in observed["markers"]}
+    # Compare physical effects at native checkout completion, before later root work can
+    # legitimately remove completed branch directories. No post-join durability is inferred.
+    expected_effects, actual_effects = {}, {}
     for row in sorted(rows.values(), key=lambda r: r["end"]):
         if row["kind"] == "task" and row["result"] == "success":
-            markers[row["directory"] or "."] = row["gitBranch"] + "\n"
-    require(observed["markers"] == markers, "Workspace contents differ from source branch effects")
+            expected_effects.setdefault(row["directory"], []).append(row["gitBranch"] + "\n")
+    for effect in observed["checkoutEffects"]:
+        actual_effects.setdefault(effect["directory"], []).append(effect["marker"])
+    require(actual_effects == expected_effects, "Physical checkout effects differ from source branch order or workspace")

@@ -23,6 +23,7 @@ def sample():
     observed = {'result': 'SUCCESS', 'initialPending': ['a', 'c'], 'leaves': [row('a', 3, 10), row('c', 5, 15), row('b', 11, 13), row('d', 20, 22)],
                 'groups': [{'start': 1, 'end': 19, 'branches': [{'id': 'left', 'start': 2, 'end': 14},
                     {'id': 'right', 'start': 4, 'end': 16}, {'id': 'empty', 'start': 6, 'end': 7}]}],
+                'checkoutEffects': [{'directory': '.flow-parallel/left', 'marker': 'selected\n'}, {'directory': None, 'marker': 'selected\n'}],
                 'markers': {'.': 'selected\n', '.flow-parallel/left': 'selected\n', '.flow-parallel/right': None, '.flow-parallel/empty': None}}
     return contract, observed
 
@@ -34,6 +35,9 @@ class ParallelCompositionOracleTests(unittest.TestCase):
         # Sibling gate may complete before or after local work; no total order is invented.
         observed['leaves'][1]['end'] = 9
         verify(contract, observed)
+        # Root work may clear old directories after join; callback effects remain authoritative.
+        observed['markers']['.flow-parallel/left'] = None
+        verify(contract, observed)
 
     def test_serialization_omission_order_join_and_directory_mutations_are_rejected(self):
         contract, observed = sample()
@@ -44,7 +48,7 @@ class ParallelCompositionOracleTests(unittest.TestCase):
         bad = copy.deepcopy(observed); bad['leaves'][-1]['start'] = 18; changes.append(bad)
         bad = copy.deepcopy(observed); bad['leaves'][2]['directory'] = '.flow-parallel/right'; changes.append(bad)
         bad = copy.deepcopy(observed); bad['groups'][0]['branches'].pop(); changes.append(bad)
-        bad = copy.deepcopy(observed); bad['markers']['.flow-parallel/left'] = 'alternate\n'; changes.append(bad)
+        bad = copy.deepcopy(observed); bad['checkoutEffects'][0]['marker'] = 'alternate\n'; changes.append(bad)
         bad = copy.deepcopy(observed); bad['leaves'].append(bad['leaves'][0]); changes.append(bad)
         for bad in changes:
             with self.assertRaises(ValueError): verify(contract, bad)
@@ -54,8 +58,9 @@ class ParallelCompositionOracleTests(unittest.TestCase):
         contract['leaves']['b']['params']['branch'] = 'missing-revision'
         observed['result'] = 'FAILURE'; observed['terminalOrigin'] = 'b'
         observed['leaves'].pop()
-        observed['leaves'][2].update(result='failure', errorType='hudson.AbortException', gitBranch='missing-revision')
+        observed['leaves'][2].update(result='failure', errorType='hudson.AbortException', errorMessage="Couldn't find any revision to build", gitBranch='missing-revision')
         observed['markers'] = {key: None for key in observed['markers']}
+        observed['checkoutEffects'] = []
         verify(contract, observed)
         observed['terminalOrigin'] = 'c'
         with self.assertRaises(ValueError): verify(contract, observed)
@@ -65,6 +70,7 @@ class ParallelCompositionOracleTests(unittest.TestCase):
         observed['result'] = 'ABORTED'; observed['terminalOrigin'] = 'a'; observed['leaves'] = observed['leaves'][:2]
         observed['leaves'][0].update(result='failure', errorType='org.jenkinsci.plugins.workflow.steps.FlowInterruptedException')
         observed['markers'] = {key: None for key in observed['markers']}
+        observed['checkoutEffects'] = []
         verify(contract, observed, reject=True)
         contract['groups'][0]['failFast'] = True
         with self.assertRaises(ValueError): verify(contract, observed, reject=True)

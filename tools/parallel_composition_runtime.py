@@ -75,21 +75,23 @@ def prepare(inputs, output):
     return contracts, variants, inventory
 
 
-def assess(contracts, variants, inventory, runtime):
+def assess(contracts, variants, inventory, runtime, revisions):
     require(runtime['status'] == 'completed' and runtime['jenkins'] == '2.580.1' and runtime['java'].startswith('25') and
             runtime['plugins']['git'] == '5.10.1', 'Unexpected native runtime')
     require([r['id'] for r in runtime['runs']] == [r['id'] for r in inventory], 'Changed run inventory')
+    require(set(revisions) == {'selected', 'alternate'} and len(set(revisions.values())) == 2, 'Changed fixture revision inventory')
     cases = []
     for run, invocation in zip(runtime['runs'], inventory):
         variant = variants[run['id']]
         require(run['finished'] is True and run['artifactSha256'] == sha(variant['text'].encode()), 'Incomplete run or changed artifact')
         require(set(run['markers']) == set(invocation['directories']) and
                 len({r['node'] for r in run['leaves']}) == len(run['leaves']), 'Changed probe or invocation inventory')
-        require(all(r['errorType'] != 'hudson.AbortException' or "Couldn't find any revision to build" in r['errorMessage']
-                    for r in run['leaves']), 'Unexpected native failure origin')
         rejection = None
         try:
             verify(contracts[variant['case']], run, variant['reject'])
+            require(all(effect['job'] == run['id'] and effect['build'] == 1 and
+                        effect['revision'] == revisions.get(effect['marker'].strip()) for effect in run['checkoutEffects']),
+                    'Physical checkout revision differs from fixture reference')
         except ValueError as error:
             rejection = str(error)
         require((rejection is None) == (variant['variant'] == 'baseline'), f"Baseline failed or mutant survived: {run['id']}: {rejection}")
@@ -122,6 +124,8 @@ def main():
         if branch == 'alternate': git('fixture-branch', 'checkout', '-b', branch)
         (working / 'marker.txt').write_text(branch + '\n')
         git('fixture-add-' + branch, 'add', 'marker.txt'); git('fixture-commit-' + branch, 'commit', '-m', branch)
+    revisions = {branch: git('fixture-revision-' + branch, 'rev-parse', branch) for branch in ('selected', 'alternate')}
+    (output / 'fixture-revisions.json').write_text(json.dumps(revisions, indent=2) + '\n')
     process('fixture-bare', ['git', 'clone', '--bare', str(working), str(fixture / 'repository.git')])
     shutil.rmtree(working)
     # Only the bare fixture enters the container; receipts cover its actual bytes.
@@ -137,7 +141,7 @@ def main():
             '--mount', f'type=bind,src={runtime},dst=/evidence',
             '--mount', f'type=bind,src={native / "parallel-composition-observer.groovy"},dst=/usr/share/jenkins/ref/init.groovy.d/parallel.groovy,readonly', image], 1200)
         data = runtime / 'runtime.json'; require(0 < data.stat().st_size < 2 * 1024 * 1024, 'Oversized native evidence')
-        cases = assess(contracts, variants, inventory, json.loads(data.read_text()))
+        cases = assess(contracts, variants, inventory, json.loads(data.read_text()), revisions)
         proof = {'status': 'passed', 'sourceRevision': revision, 'workflowRevision': os.environ['WORKFLOW_REVISION'],
                  'runId': os.environ['GITHUB_RUN_ID'], 'attempt': os.environ['GITHUB_RUN_ATTEMPT'], 'imageId': image,
                  'cases': cases, 'files': receipts(output), 'publicSupportPromoted': False, 'portableExecution': False,
@@ -145,7 +149,8 @@ def main():
                  'limits': ['Top-level groups and sequential control-local/workspace-local leaves only',
                             'No branch output export, other control nesting, shared-service/security isolation or fresh-workspace claim',
                             'Native evidence covers manual inputs and full-history literal-branch git mappings',
-                            'Observation stages restore original calls byte-for-byte; compiler, CI and native graph are trusted',
+                            'Observation stages restore original calls byte-for-byte; compiler, CI, SCM callbacks and native graph are trusted',
+                            'Physical checkout effects are captured on completion; later root work may remove completed branch directories',
                             'Separate composition regression, not a signed portfolio expansion']}
         (output / 'proof.json').write_text(json.dumps(proof, indent=2) + '\n')
         print(f'PASS: parallel composition: {len(cases)} native runs; all baselines pass and all mutants rejected')

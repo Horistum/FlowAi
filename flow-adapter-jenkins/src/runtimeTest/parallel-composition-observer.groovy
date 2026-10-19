@@ -1,5 +1,11 @@
 import groovy.json.JsonOutput
 import groovy.json.JsonSlurper
+import hudson.FilePath
+import hudson.model.Run
+import hudson.model.TaskListener
+import hudson.model.listeners.SCMListener
+import hudson.scm.SCM
+import hudson.scm.SCMRevisionState
 import hudson.init.InitMilestone
 import jenkins.model.Jenkins
 import org.jenkinsci.plugins.workflow.actions.ArgumentsAction
@@ -17,6 +23,27 @@ import org.jenkinsci.plugins.workflow.support.actions.PauseAction
 import org.jenkinsci.plugins.workflow.support.steps.input.InputAction
 import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
+
+// Observe physical checkout effects before a later root checkout may replace old branch directories.
+// SCM callbacks run outside the synchronous CPS graph listener; no pipeline action is injected.
+class ParallelCheckoutEffects extends SCMListener {
+    List observations = Collections.synchronizedList([])
+    @Override void onCheckout(Run build, SCM scm, FilePath workspace, TaskListener listener,
+                              File changelogFile, SCMRevisionState pollingBaseline) {
+        def root = Jenkins.get().getWorkspaceFor(build.getParent()).getRemote()
+        def path = workspace.getRemote()
+        if (workspace.isRemote() || !(path == root || path.startsWith(root + '/')))
+            throw new IllegalStateException('Checkout escaped the disposable workspace')
+        def marker = workspace.child('marker.txt')
+        if (!marker.exists() || marker.length() > 1024) throw new IllegalStateException('Missing or oversized checkout marker')
+        def process = new ProcessBuilder('git', '-C', path, 'rev-parse', 'HEAD').redirectErrorStream(true).start()
+        if (!process.waitFor(20, TimeUnit.SECONDS)) { process.destroyForcibly(); throw new IllegalStateException('Revision probe timed out') }
+        def revision = process.inputStream.getText('UTF-8').trim()
+        if (process.exitValue() != 0 || !(revision ==~ /[0-9a-f]{40}/)) throw new IllegalStateException('Invalid native revision')
+        observations.add([job: build.getParent().getName(), build: build.getNumber(),
+            directory: path == root ? null : path.substring(root.length() + 1), marker: marker.readToString(), revision: revision])
+    }
+}
 
 // Disposable observer: release inputs by identity; record native facts without deciding equivalence.
 Thread.start('parallel-composition-observer') {
@@ -50,6 +77,8 @@ Thread.start('parallel-composition-observer') {
             def stage = stageOf(node)
             stage == null ? null : ArgumentsAction.getArguments(stage).get('name').substring('flow-observe:'.length())
         }
+        def effects = new ParallelCheckoutEffects()
+        jenkins.getExtensionList(SCMListener).add(effects)
         def results = []
         new JsonSlurper().parse(new File('/artifacts/runs.json')).each { run ->
             if (!(run.id ==~ /[a-z0-9-]+/) || !(run.artifact ==~ /[a-z0-9-]+\.Jenkinsfile/) ||
@@ -127,6 +156,7 @@ Thread.start('parallel-composition-observer') {
             results.add([id: run.id, finished: !build.isBuilding() && build.getExecution().isComplete(),
                 artifactSha256: digest(job.getDefinition().getScript().getBytes('UTF-8')), result: build.result.toString(),
                 initialPending: initial, decisions: decisions, leaves: rows, groups: groups, markers: markers,
+                checkoutEffects: effects.observations.findAll { it.job == run.id && it.build == build.number },
                 terminalOrigin: origin == null ? null : identity(origin)])
             new File('/evidence/' + run.id + '.log').setText(build.getLog(4000).join('\n') + '\n', 'UTF-8')
         }
