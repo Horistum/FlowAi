@@ -11,7 +11,8 @@ The invariant is independent of task identity, cardinality or implementation bin
 The adapter accepts literal string collections with independently materialized tasks,
 conditions and nested finite loops. Each nested loop establishes a distinct lexical
 item binding; sibling scopes can reuse a name. Input and active outer-item collisions
-are rejected. Renderer validation repeats the control/scope boundary for forged
+are rejected. Native `docker` and renderer-owned image result bindings cannot be
+captured by a loop item. Renderer validation repeats the control/scope boundary for forged
 manifests. Existing leaf payload, expression, result-binding and continuity owners
 still decide whether the composed artifact is executable. Empty bodies are valid.
 

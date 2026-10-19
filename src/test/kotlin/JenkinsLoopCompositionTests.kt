@@ -45,12 +45,28 @@ class JenkinsLoopCompositionTests {
             if (step is IfNode) step.copy(then = step.then.map { (it as ActionNode).copy(dependsOn = listOf("producer")) }) else step
         })
         val unit = GitHubConditionCompositionFixture.compile(root, document.copy(flow = document.flow.copy(steps = listOf(bound))))
-        val artifact = provider.render(pipeline.generate(TargetMaterializationRequest.fromCompilation(unit,
-            testTargetSelection("jenkins", targets), strict = true)))
+        val composed = pipeline.generate(TargetMaterializationRequest.fromCompilation(unit,
+            testTargetSelection("jenkins", targets), strict = true))
+        val artifact = provider.render(composed)
         assertContains(artifact, "for (def entry in ['first', 'first', 'last']) {")
         assertContains(artifact, "for (def nested in ['one', 'two']) {")
         assertContains(artifact, "docker.build(")
         assertEquals(SupportLevel.UNSUPPORTED, targets.getValue("jenkins").dynamicLoops)
+        val image = composed.jobs.single().steps.flatMap { it.flatten() }.single { it.rendererPayload?.reference == "docker-build" }
+        val imageVariable = "flowImage_" + image.id.replace(Regex("[^A-Za-z0-9_]+"), "_").trim('_')
+        for (item in listOf("docker", imageVariable)) {
+            val colliding = bound.copy(item = item)
+            assertFails {
+                val collisionUnit = GitHubConditionCompositionFixture.compile(root,
+                    document.copy(flow = document.flow.copy(steps = listOf(colliding))))
+                provider.render(pipeline.generate(TargetMaterializationRequest.fromCompilation(collisionUnit,
+                    testTargetSelection("jenkins", targets), strict = true)))
+            }
+            val job = composed.jobs.single(); val outer = job.steps.single()
+            val error = assertFailsWith<IllegalArgumentException> { provider.renderer.render(composed.copy(jobs = listOf(job.copy(steps =
+                listOf(outer.copy(params = outer.params + ("item" to item))))))) }
+            assertContains(error.message.orEmpty(), if (item == "docker") "native execution scope" else "image result variables")
+        }
     }
 
     @Test fun taskIdentityAndCardinalityDoNotDefineLoopEligibility() {

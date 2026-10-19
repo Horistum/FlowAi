@@ -26,6 +26,11 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             }.map { it.id }
             TargetProjectionIdentityChecks.requireNames(
                 "render.jobs.${job.id}.image-variables", imageIds, JenkinsImageBuildProjectionValues::jenkinsVariable)
+            val loopItems = job.steps.flatMap { it.flatten() }.filter { it.type == "loop" }
+                .mapNotNull { it.params["item"] }.toSet()
+            require(imageIds.none { JenkinsImageBuildProjectionValues.jenkinsVariable(it) in loopItems }) {
+                "Jenkins loop items cannot capture renderer-owned image result variables."
+            }
         }
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)

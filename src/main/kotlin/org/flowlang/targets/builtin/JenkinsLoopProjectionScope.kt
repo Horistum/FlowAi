@@ -60,7 +60,7 @@ class JenkinsLoopProjectionScope(private val catalog: TargetNativeProjectionCata
         } }
 
         private val reserved = ("abstract assert boolean break byte case catch char class const continue def default do double else enum extends final finally float for goto if implements import in instanceof int interface long native new package private protected public return short static strictfp super switch synchronized this throw throws trait transient try void volatile while true false null as record sealed permits var yield " +
-            "params env currentBuild steps git checkout input error pipeline script node stage retry parallel sleep flowError").split(' ').toSet()
+            "params env currentBuild steps git checkout docker input error pipeline script node stage retry parallel sleep flowError").split(' ').toSet()
 
         fun safeItem(item: String): Boolean = Regex("[A-Za-z_][A-Za-z0-9_]*").matches(item) && item !in reserved
 
