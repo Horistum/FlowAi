@@ -100,6 +100,7 @@ org/flowlang/conformance/JsonSchemaSmokeValidator.kt
 org/flowlang/conformance/LanguageContractIntegrityLifecycle.kt
 org/flowlang/conformance/LanguageIntegrityCompletion.kt
 org/flowlang/conformance/LanguageIntegrityIntegrationChecks.kt
+org/flowlang/conformance/LoopCompositionFixture.kt
 org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyContracts.kt
 org/flowlang/conformance/OperationalDomainAdequacyRoadmapLifecycleAuthority.kt
@@ -117,7 +118,6 @@ org/flowlang/conformance/ReferenceCorpusExecutionHarness.kt
 org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt
 org/flowlang/conformance/ReferenceSnapshotHonesty.kt
 org/flowlang/conformance/RetryCompositionFixture.kt
-org/flowlang/conformance/LoopCompositionFixture.kt
 org/flowlang/conformance/ScenarioAndPlanChecks.kt
 org/flowlang/conformance/ScenarioPackQualityAnalyzer.kt
 org/flowlang/conformance/SchemaScenarioCatalogChecks.kt
