@@ -1,5 +1,5 @@
 version: AR-06AE
-activeCorrection: .flow-agent/work-packages/loop-control-composition.yaml
+activeCorrection: .flow-agent/work-packages/match-control-composition.yaml
 historicalScope: The original bounded certification below is retained as evidence; current implementation composition is governed by AR-06AE-C1.
 name: Bounded Jenkins Checkout Result Certification
 status: candidate

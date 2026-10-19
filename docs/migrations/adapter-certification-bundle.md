@@ -853,3 +853,22 @@ existing observation channel and leaves the signed 39-scenario portfolio require
 Native evidence covers checkout; image-build composition is projection-only evidence.
 Dynamic collections and retry/match/parallel/approval/error-handler loop bodies remain
 unsupported. No public target-support or portability promotion follows from this slice.
+
+## Exclusive match composition correction (AR-06AE-C6)
+
+Match case/default bodies now compose independently materialized tasks, conditions
+and nested matches. Task identity, count and native operation no longer define
+branch eligibility. Inert string sources, disjoint literal Boolean cases and empty
+error branches remain required. Empty selected branches do not fall through.
+Sequential order, local result bindings and failure propagation remain explicit;
+branch values cannot escape or establish a sibling branch's inputs. Leaf payloads,
+expressions and workspace continuity remain independently validated.
+
+Source-derived selection obligations are checked against canonical child edges and
+manifest branch membership, then compared with native observations and falsifying
+mutants through the shared disposable runner. Different-leaf composition also has
+projection tests with explicit workspace continuity. Native evidence covers checkout.
+
+No Core/public syntax, generic support, portability or signed-portfolio change.
+Retry, loop, parallel, approval and error-handler interactions inside match remain
+outside this slice. All prior certification and composition checks stay required.

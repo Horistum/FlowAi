@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 107
+stateVersion: 108
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -565,5 +565,14 @@ recoveryLoopControlComposition:
   workPackage: .flow-agent/work-packages/loop-control-composition.yaml
   report: .flow-agent/reports/loop-control-composition.md
   mergedMain: 8bad3e11f2d70d3dd316fc3276f6a80b380e88c0
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryMatchControlComposition:
+  candidate: AR-06AE-C6
+  status: candidate
+  workPackage: .flow-agent/work-packages/match-control-composition.yaml
+  report: .flow-agent/reports/match-control-composition.md
+  mergedMain: 0c62d57e5edb382422cf34d59df92ec1634a26d1
   validation: current-revision-ci-required
   supportPromotion: false

@@ -293,14 +293,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
     private fun renderJenkinsMatch(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String, bindings: JenkinsConditionValueScope.Bindings) {
         requireJenkinsStructure(step, "literal-match")
         val cases = step.children.filter { it.type == "match-case" }
-        require(JenkinsMatchProjectionScope.supports(step.params.getValue("source"), cases.map { it.params.getValue("condition") })) {
-            "Jenkins match requires a string-literal source and disjoint literal boolean cases."
-        }
-        require(step.children.single { it.type == "match-error" }.children.isEmpty()) {
-            "Jenkins literal match cannot execute an error branch."
-        }
-        require(step.children.flatMap { it.children }.all { it.type == "action" && it.module == "git" && it.action == "checkout" }) {
-            "Jenkins literal match supports native checkout bodies only."
+        require(JenkinsMatchProjectionScope.supportsRenderedMatch(step)) {
+            "Jenkins match requires exclusive literal cases, an empty error branch and sequential tasks, conditions or nested matches."
         }
         // The source is an inert literal; no implicit result is introduced into the native scope.
         cases.forEachIndexed { index, branch ->

@@ -14,7 +14,45 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+# Each upload name has one producer. A rerun replaces that producer's earlier
+# partial archive; portfolio admission still requires its successful pinned receipt.
 jobs:
+  match-composition-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Prepare independently checked match compositions
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsMatch*' :flow-conformance-kit:installDist --stacktrace
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.MatchCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/match-prepared"
+      - name: Verify exclusive selection and native negative evidence
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_match_composition_oracle.py' -v
+          python3 tools/match_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/match-prepared" "$RUNNER_TEMP/match-evidence"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: match-composition-runtime
+          path: |
+            ${{ runner.temp }}/match-evidence/
+            flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
   loop-composition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -49,6 +87,7 @@ jobs:
             flow-conformance-kit/build/test-results/test/*.xml
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   retry-composition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -84,6 +123,7 @@ jobs:
             flow-conformance-kit/build/test-results/test/*.xml
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   github-condition-composition:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -126,6 +166,7 @@ jobs:
           path: ${{ runner.temp }}/cross-runtime-composition
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   github-actions-checkout-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -213,6 +254,7 @@ jobs:
           path: ${{ runner.temp }}/flow-github-checkout/evidence/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-checkout-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -254,6 +296,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-runtime-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-shared-checkout-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -299,6 +342,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-shared-checkout-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-failure-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -340,6 +384,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-failure-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-checkout-result-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -384,6 +429,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-checkout-result-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-secret-condition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -426,6 +472,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-secret-condition-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-condition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -469,6 +516,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-condition-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-error-boundary-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -512,6 +560,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-error-boundary-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-local-recovery-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -555,6 +604,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-local-recovery-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-parallel-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -607,6 +657,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-parallel-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
 
   jenkins-match-runtime:
@@ -655,6 +706,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-match-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-loop-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -701,6 +753,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-loop-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-retry-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -746,6 +799,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-retry-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-approval-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -789,6 +843,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-approval-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   jenkins-shared-condition-runtime:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -832,6 +887,7 @@ jobs:
           path: flow-conformance-kit/build/jenkins-shared-condition-certification/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   github-actions-condition-prepare:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
@@ -1207,6 +1263,7 @@ jobs:
           path: ${{ runner.temp }}/github-condition-evidence/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true
 
   adapter-certification-portfolio:
     needs: [jenkins-checkout-result-runtime, jenkins-secret-condition-runtime, jenkins-shared-condition-runtime, github-actions-condition-runtime, jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
@@ -1249,3 +1306,4 @@ jobs:
           path: flow-conformance-kit/build/adapter-certification-portfolio/
           if-no-files-found: error
           retention-days: 7
+          overwrite: true

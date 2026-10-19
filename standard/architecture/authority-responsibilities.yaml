@@ -727,6 +727,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/conformance/GitHubConditionCompositionFixture.kt"
       - "src/main/kotlin/org/flowlang/conformance/JenkinsCheckoutRuntimeCertification.kt"
       - "src/main/kotlin/org/flowlang/conformance/LoopCompositionFixture.kt"
+      - "src/main/kotlin/org/flowlang/conformance/MatchCompositionFixture.kt"
       - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt"
       - "src/main/kotlin/org/flowlang/conformance/ReferenceSnapshotBundleGenerator.kt"
       - "src/main/kotlin/org/flowlang/conformance/RetryCompositionFixture.kt"
