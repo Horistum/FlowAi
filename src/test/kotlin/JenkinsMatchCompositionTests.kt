@@ -78,9 +78,10 @@ class JenkinsMatchCompositionTests {
         val consumer = "if result.ok == true { ${RetryCompositionFixture.checkout("consumer")} }"
         val artifact = provider.render(manifest(source("$producer match \"nested\" { when true { $consumer } }")))
         assertTrue(artifact.indexOf("def flowCheckoutSucceeded = true") < artifact.indexOf("if (flowCheckoutSucceeded"))
-        // Sibling branch aliases can be reused but cannot establish one another's values.
-        provider.render(manifest(source("$producer $consumer", "$producer ${consumer.replace("consumer", "other")}")))
-        for (text in listOf(source(consumer, producer), source(producer, consumer),
+        // Authored result identities remain unique; siblings cannot establish one another's values.
+        provider.render(manifest(source("$producer $consumer",
+            "${producer.replace("-> result", "-> fallbackResult")} ${consumer.replace("result.ok", "fallbackResult.ok").replace("consumer", "other")}")))
+        for (text in listOf(source(producer, producer), source(consumer, producer), source(producer, consumer),
             source("match \"nested\" { when true { $producer } } $consumer"),
             source("$producer ${consumer.replace("result.ok", "result.commit")}")))
             assertFails { provider.render(manifest(text)) }
