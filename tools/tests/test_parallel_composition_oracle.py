@@ -99,6 +99,12 @@ class ParallelCompositionOracleTests(unittest.TestCase):
             with self.assertRaises(ValueError): bind(expected, g, m)
         graph['nodes'].reverse()
         bind(expected, graph, manifest)
+        # Canonical structural IDs and adapter-safe IDs are distinct projections.
+        manifest['jobs'][0]['steps'][0]['id'] = 'native_parallel'
+        manifest['jobs'][0]['steps'][0]['children'][0]['children'][0]['id'] = 'native_approval'
+        bound = bind(expected, graph, manifest)
+        self.assertEqual(['native_parallel'], bound['roots'])
+        self.assertEqual(['native_approval'], bound['groups'][0]['branches'][0]['leaves'])
 
     def test_envelopes_restore_identical_calls_and_reject_missing_inventory(self):
         text = "  input message: 'same'\n  git branch: 'selected', url: 'git://fixture/repo'\n"

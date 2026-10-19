@@ -32,23 +32,23 @@ def expectation(document):
 def bind(expected, graph, manifest):
     nodes = {n["id"]: n for n in graph["nodes"]}
     require(len(nodes) == len(graph["nodes"]) and len(graph["workflows"]) == len(manifest["jobs"]) == 1, "Ambiguous inventory")
-    seen, leaves, groups = set(), {}, []
+    seen, leaves, groups, native_ids, native_by_canonical = set(), {}, [], set(), {}
     def visit(source, ids, steps, owner=None):
         require(len(source) == len(ids) == len(steps), "Changed branch membership")
         for item, identity, step in zip(source, ids, steps):
-            require(identity in nodes and identity not in seen and step["id"] == identity, "Missing, reused or cyclic node")
-            seen.add(identity); node = nodes[identity]
+            require(identity in nodes and identity not in seen and step["id"] not in native_ids, "Missing, reused or cyclic node")
+            seen.add(identity); native_ids.add(step["id"]); native_by_canonical[identity] = step["id"]; node = nodes[identity]
             require(step["materialization"]["status"] == "NATIVE", "Non-native composition")
             if item["kind"] == "parallel":
                 require(node["kind"] == "PARALLEL" and step["type"] == "parallel" and
                         node["failFast"] is item["failFast"] and step["metadata"]["failFast"] == str(item["failFast"]).lower() and
                         len(item["branches"]) == len(node["branches"]) == len(step["children"]), "Changed parallel policy or branches")
-                group = {"id": identity, "failFast": item["failFast"], "branches": []}
+                group = {"id": step["id"], "failFast": item["failFast"], "branches": []}
                 groups.append(group)
                 for src, canonical, branch in zip(item["branches"], node["branches"], step["children"]):
                     require(src["name"] == canonical["name"] == branch["name"] and branch["type"] == "parallel-branch", "Changed branch identity")
                     require(branch["id"] not in {b["id"] for g in groups for b in g["branches"]}, "Duplicate branch identity")
-                    group["branches"].append({"id": branch["id"], "leaves": canonical["nodeIds"]})
+                    group["branches"].append({"id": branch["id"], "leaves": [child["id"] for child in branch["children"]]})
                     visit(src["body"], canonical["nodeIds"], branch["children"], branch["id"])
             else:
                 require(not step["children"], "Leaf has children")
@@ -61,14 +61,12 @@ def bind(expected, graph, manifest):
                     require(node["kind"] == "APPROVAL" and step["type"] == "approval" and
                             node["mode"] == step["params"]["mode"] == "manual" and
                             node["message"] == step["params"]["message"] == item["message"], "Changed approval")
-                leaves[identity] = dict(item, owner=owner)
+                leaves[step["id"]] = dict(item, owner=owner)
     roots = graph["workflows"][0]["rootNodeIds"]
     visit(expected, roots, manifest["jobs"][0]["steps"])
     require(seen == set(nodes), "Orphan canonical node")
-    require(all(e["kind"] == "ORDERING" and e["sourceNodeId"] in leaves and e["targetNodeId"] in leaves and
-                leaves[e["sourceNodeId"]]["owner"] == leaves[e["targetNodeId"]]["owner"] and
-                leaves[e["sourceNodeId"]]["kind"] == "approval" for e in graph["dependencyEdges"]), "Unmodeled canonical dependency")
-    return {"roots": roots, "groups": groups, "leaves": leaves}
+    require(not graph["dependencyEdges"], "This source oracle does not introduce explicit dependency edges")
+    return {"roots": [native_by_canonical[i] for i in roots], "groups": groups, "leaves": leaves}
 
 
 def verify(contract, observed, reject=False):
