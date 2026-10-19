@@ -12,6 +12,7 @@ import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.generators.manifest.*
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.targets.builtin.flatten
 
 class JenkinsLoopCompositionTests {
     private val root = File(".")
