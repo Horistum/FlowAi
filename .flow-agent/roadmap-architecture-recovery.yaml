@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 48
+revision: 49
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/cross-runtime-condition-composition.yaml"
-  decisionBasis: "PR #230 merged at 991393ecb14f4e8f1329989ff163010bc09e43bb. AR-06AE-C1 replaced fixture-shaped value bindings and C2 generalized Boolean condition and successor composition. AR-06AE-C3 now independently compares the same authored composition on native Jenkins and GitHub using source-derived selection and ordering obligations. No production applicability exception or public support promotion is added. Subsequent work replaces remaining retry/loop/match/parallel shape gates with control and topology contracts. Native fixture counts cannot substitute for generality. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/retry-control-composition.yaml"
+  decisionBasis: "PR #231 merged at de9e38d9cab7dbcbddc1fe0b60d3c68906b81e64. AR-06AE-C3 independently compared the same canonical condition composition on native Jenkins and GitHub. AR-06AE-C4 replaces single-checkout retry eligibility with whole-body sequential control composition: independently materialized tasks, conditions and nested fixed zero-delay retry. Native invocation observations must distinguish omitted work, flattened retries and repeated success. Loop, match and parallel composition remain subsequent control/topology work; public support and portability claims are unchanged. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8

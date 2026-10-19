@@ -810,3 +810,28 @@ cross-job value transport, injected failure/cancellation equivalence or generic
 portability. CI runners, compiler preparation and native observation channels are
 trusted. Existing signed certification, support declarations and acceptance
 lifecycles remain unchanged.
+
+## Sequential retry composition (AR-06AE-C4)
+
+After PR #231, retry eligibility follows a sequential control contract instead of
+requiring exactly one checkout. A fixed zero-delay retry may contain independently
+materialized tasks, conditions and nested retries. Every nested policy must preserve
+its authored positive total attempt limit. Unsupported leaves, provider mappings,
+control kinds and lexical value references remain non-executable. The renderer
+rechecks these boundaries even for caller-supplied manifests.
+
+Each failed attempt re-enters the entire body. Successful prefixes may therefore
+repeat; normal completion stops retry immediately. Empty bodies complete without
+executing a leaf. This is invocation replay, not rollback or a fresh workspace, and
+it introduces no cross-attempt value export. Approval, loop, match and parallel
+composition still require separately justified replay/topology contracts.
+
+The `retry-composition-runtime` check compiles normal Flow Source and compares
+native Jenkins invocation traces with an independent AST-derived retry model.
+Three baselines cover both Boolean assignments and nested exhaustion; six mutants
+remove prefix/tail work, flatten retry scopes, exceed attempt limits or repeat a
+successful body. Evidence binds source, canonical graph, native artifacts, SCM
+callbacks, failed native FlowNodes and completed stage boundaries to the CI run.
+The native leaf proof covers checkout; image-build composition has projection
+coverage only. All 39 signed portfolio scenarios remain required, with no public
+support promotion, portability claim, acceptance transition or AR-06 closure.

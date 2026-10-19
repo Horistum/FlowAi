@@ -1,0 +1,42 @@
+version: AR-06AE-C4
+name: Sequential Retry Control Composition
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next PR under the corrected composition roadmap.
+  predecessorPullRequest: 231
+  mergedMain: de9e38d9cab7dbcbddc1fe0b60d3c68906b81e64
+invariant: Retry re-enters the complete sequential body after failure and stops after normal completion; task identity and cardinality do not define control support.
+architecturePurpose: Separate provider-owned control semantics from independently authorized native leaf operations instead of matching a certification fixture.
+scope:
+- Replace the single-checkout body gate with recursive sequential task, condition and retry control composition.
+- Preserve positive total attempt limits, fixed zero delay, explicit provider scope and topology prerequisites.
+- Recheck the control boundary at rendering and preserve independent leaf materialization and lexical result bindings.
+- Compare actual native invocation order and outcomes with an independent source-derived model for whole-body replay, nested exhaustion, skipped suffixes and early success.
+nonGoals:
+- No Core semantics, public syntax/version or generic public support promotion.
+- No delay/backoff expansion, approval replay, loop/match/parallel composition or cancellation certification.
+- No rollback, fresh workspace, cross-attempt value export or general state isolation claim.
+- No signed-portfolio expansion, historical acceptance transition or milestone closure.
+ownershipBoundary:
+  core: Canonical retry policy, authored body order and module retry declarations remain authoritative.
+  adapters: Own native control mapping, renderer validation and independent leaf materialization.
+  conformance: Own source-derived invocation expectations and native observation envelopes.
+testsToAddOrUpdate:
+- Multiple tasks, renamed identities, empty bodies, conditions, nested retries and different native leaf mappings compose without fixture-shaped eligibility.
+- Unsupported nested policies, providers, leaf bindings, control kinds and scope escapes fail closed.
+- Native baselines preserve complete-body replay and distinguish six omitted, flattened, excessive and repeated-success mutations.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - retry-composition-runtime
+  - cross-runtime-condition-composition
+  - adapter-certification-portfolio
+  preservedChecks: All existing module isolation, native scenarios and authenticated portfolio checks remain required.
+documentationToUpdate:
+- .flow-agent/reports/retry-control-composition.md
+- docs/migrations/adapter-certification-bundle.md
+- .flow-agent/roadmap-architecture-recovery.yaml

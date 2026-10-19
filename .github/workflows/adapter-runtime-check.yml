@@ -15,6 +15,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  retry-composition-runtime:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Prepare independently checked retry compositions
+        run: |
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsRetry*' :flow-conformance-kit:installDist --stacktrace
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.RetryCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/retry-prepared"
+      - name: Verify whole-body replay and native negative evidence
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          python3 -m unittest discover -s tools/tests -p 'test_retry_composition_oracle.py' -v
+          python3 tools/retry_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/retry-prepared" "$RUNNER_TEMP/retry-evidence"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: retry-composition-runtime
+          path: |
+            ${{ runner.temp }}/retry-evidence/
+            flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+
   github-condition-composition:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     strategy:

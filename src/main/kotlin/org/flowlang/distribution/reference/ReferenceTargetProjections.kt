@@ -82,14 +82,14 @@ object ReferenceTargetProjections {
             if (record.target != "jenkins") record else record.copy(claims = record.claims.map { claim ->
                 if (claim.family != AdapterControlFamily.RETRY) claim else claim.copy(
                     status = AdapterControlClaimStatus.PARTIAL,
-                    mechanism = "Native Jenkins retry(count) preserves the attempt limit and early success; the projection scope admits only fixed zero-delay single-checkout bodies.",
+                    mechanism = "Native Jenkins retry(count) re-enters the complete sequential body and preserves the attempt limit and early success; leaf materialization and lexical bindings remain independently required.",
                     semantics = claim.semantics.copy(supported = claim.semantics.supported + "retry.attempt-limit",
                         unsupported = claim.semantics.unsupported - "retry.attempt-limit"),
                     evidenceReferences = (claim.evidenceReferences + listOf(retry.implementationEvidenceReference,
                         retry.behavioralEvidenceReference,
                         "src/main/kotlin/org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt")).distinct(),
                     prerequisites = claim.prerequisites + "The composed provider and authorized plan must satisfy JenkinsRetryProjectionScope.",
-                    limitations = listOf("Only fixed zero-delay single-checkout retry bodies are executable.",
+                    limitations = listOf("Only fixed zero-delay sequential tasks, conditions and nested retries are executable; each leaf still requires its own native mapping.",
                         "No delay, variable backoff, failure-filter, transient-recovery or cancellation certification.")
                 )
             })

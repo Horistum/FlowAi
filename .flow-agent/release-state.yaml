@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 105
+stateVersion: 106
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -547,5 +547,14 @@ recoveryCrossRuntimeConditionComposition:
   workPackage: .flow-agent/work-packages/cross-runtime-condition-composition.yaml
   report: .flow-agent/reports/cross-runtime-condition-composition.md
   mergedMain: 991393ecb14f4e8f1329989ff163010bc09e43bb
+  validation: current-revision-ci-required
+  supportPromotion: false
+
+recoveryRetryControlComposition:
+  candidate: AR-06AE-C4
+  status: candidate
+  workPackage: .flow-agent/work-packages/retry-control-composition.yaml
+  report: .flow-agent/reports/retry-control-composition.md
+  mergedMain: de9e38d9cab7dbcbddc1fe0b60d3c68906b81e64
   validation: current-revision-ci-required
   supportPromotion: false
