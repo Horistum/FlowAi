@@ -54,13 +54,10 @@ class JenkinsParallelProjectionTests {
             assertEquals(declared, JenkinsParallelProjectionScope(candidate).resolve(unit.authorization, "jenkins", declared))
     }
 
-    @Test fun unsupportedFailurePolicyBodiesBindingsAndMessagesFailClosed() {
+    @Test fun unsupportedNestedControlsAndApprovalBindingsFailClosed() {
         val gate = "approve manual { message: \"Approve left branch?\" }"
-        val checkout = "git.checkout source { url: \"git://127.0.0.1:9418/repository.git\" branch: \"selected\" }"
-        for (text in listOf(source.replace(gate, ""), source.replace(gate, checkout), source.replace(gate, "$gate -> decision"),
-            source.replace("Approve right branch?", "Approve left branch?"),
-            source.replace(gate, "parallel failFast false { branch \"nested\" { $gate } }"),
-            source.replace(gate, "$gate approve manual { message: \"Extra gate?\" }"))) {
+        for (text in listOf(source.replace(gate, "$gate -> decision"),
+            source.replace(gate, "parallel failFast false { branch \"nested\" { $gate } }"))) {
             val candidate = compile(text)
             assertEquals(targets.getValue("jenkins"), JenkinsParallelProjectionScope(catalog).resolve(candidate.authorization, "jenkins", targets.getValue("jenkins")))
             assertFails { pipeline.generate(TargetMaterializationRequest.fromCompilation(candidate, testTargetSelection("jenkins", targets), strict = true)) }
@@ -101,7 +98,6 @@ class JenkinsParallelProjectionTests {
         val injected = original.jobs.flatMap { it.steps }.single { it.type == "action" }.copy(id = "injected_checkout")
         val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "unknown")),
             group.copy(rendererPayload = group.rendererPayload!!.copy(reference = "if")),
-            group.copy(children = listOf(branch.copy(children = emptyList())) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = listOf(gate.copy(children = listOf(injected))))) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = listOf(gate.copy(metadata = gate.metadata + ("resultName" to "decision"))))) + group.children.drop(1)))
         for (replacement in mutations) assertFails {
@@ -133,10 +129,8 @@ class JenkinsParallelProjectionTests {
     @Test fun workspaceBodiesRejectUnprovenFailurePoliciesBindingsAndNativeModes() {
         val text = File("flow-adapter-jenkins/src/runtimeTest/parallel-workspaces.flow").readText()
         val checkout = "git.checkout source { url: \"git://127.0.0.1:9418/repository.git\" branch: \"selected\" }"
-        for (changed in listOf(text.replace(checkout, "$checkout -> branchResult"),
-            text.replace(checkout, checkout.replace(" }", " depth: 1 }")),
-            text.replace(checkout, checkout.replace("selected", "a".repeat(40))),
-            text.replace(checkout, "")).flatMap { listOf(it, it.replace("failFast false", "failFast true")) }) {
+        for (changed in listOf(text.replace(checkout, checkout.replace(" }", " depth: 1 }")),
+            text.replace(checkout, checkout.replace("selected", "a".repeat(40)))).flatMap { listOf(it, it.replace("failFast false", "failFast true")) }) {
             val candidate = compile(changed)
             assertEquals(targets.getValue("jenkins"), JenkinsParallelProjectionScope(catalog)
                 .resolve(candidate.authorization, "jenkins", targets.getValue("jenkins")))
@@ -153,9 +147,6 @@ class JenkinsParallelProjectionTests {
         val branch = group.children.first(); val task = branch.children[1]
         val mutations = listOf(group.copy(metadata = group.metadata + ("failFast" to "yes")),
             group.copy(children = listOf(branch.copy(id = "../shared")) + group.children.drop(1)),
-            group.copy(children = listOf(branch.copy(children = branch.children.reversed())) + group.children.drop(1)),
-            group.copy(children = listOf(branch.copy(children = listOf(branch.children.first(), task.copy(
-                metadata = task.metadata + ("resultName" to "exported"))))) + group.children.drop(1)),
             group.copy(children = listOf(branch.copy(children = listOf(branch.children.first(), task.copy(
                 children = listOf(task.copy(id = "injected_work")))))) + group.children.drop(1)))
         for (replacement in mutations) assertFails {

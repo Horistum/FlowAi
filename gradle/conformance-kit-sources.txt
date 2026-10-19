@@ -106,6 +106,7 @@ org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyContracts.kt
 org/flowlang/conformance/OperationalDomainAdequacyRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/OperationalDomainCorpusLoader.kt
+org/flowlang/conformance/ParallelCompositionFixture.kt
 org/flowlang/conformance/PlanningReadinessChecks.kt
 org/flowlang/conformance/ProjectionSurfaceChecks.kt
 org/flowlang/conformance/PurposeCoverage.kt

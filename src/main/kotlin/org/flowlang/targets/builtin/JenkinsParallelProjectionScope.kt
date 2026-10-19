@@ -1,24 +1,15 @@
 package org.flowlang.targets.builtin
 
-import org.flowlang.ast.StringLiteralNode
-import org.flowlang.parser.ExpressionParser
-import org.flowlang.planner.TaskNode
-import org.flowlang.planner.PlanDependencyKind
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.capabilities.TargetCapability
 import org.flowlang.compiler.CanonicalParallelNode
 import org.flowlang.compiler.CompilationAuthorization
-import org.flowlang.generators.manifest.TargetNativeProjectionCatalog
-import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
-import org.flowlang.generators.manifest.TargetStructuralProjectionKind
-import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
-import org.flowlang.planner.ApprovalNode
-import org.flowlang.planner.ParallelGroupNode
-import org.flowlang.planner.PlanDependencyRelations
+import org.flowlang.generators.manifest.*
+import org.flowlang.planner.*
 import org.flowlang.topology.ExecutionTopologyKind
 import org.flowlang.topology.ExecutionTopologySupportStatus
 
-/** One bounded fork/join; optional checkout bodies have branch-local directories, never exported outputs. */
+/** Fork/join applicability follows branch ownership and native isolation, not fixture cardinality. */
 class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjectionCatalog?) : TargetProjectionCapabilityResolver {
     override fun resolve(authorization: CompilationAuthorization, target: String, declared: TargetCapability): TargetCapability {
         authorization.requireIntegrity()
@@ -26,59 +17,83 @@ class JenkinsParallelProjectionScope(private val catalog: TargetNativeProjection
             catalog.structuralDefinitions.none { it.structure == TargetStructuralProjectionKind.PARALLEL &&
                 it.kind == JenkinsProjectionPayloadKinds.JENKINS_STRUCTURE && it.reference == "approval-parallel" &&
                 it.supportScope == TargetStructuralProjectionSupportScope.PLAN_SCOPED }) return declared
-        val groups = authorization.graph.nodes.filterIsInstance<CanonicalParallelNode>()
-        val bound = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<ParallelGroupNode>()
-        if (groups.size != 1 || bound.size != 1) return declared
-        val group = bound.single()
-        if (group !in authorization.executionPlan.nodes || group.branches.size != 2) return declared
-        val workspaceBodies = group.branches.all { it.steps.size == 2 }
-        if (!workspaceBodies && group.branches.any { it.steps.size != 1 }) return declared
-        val approvals = group.branches.map { it.steps.firstOrNull() as? ApprovalNode ?: return declared }
-        if (workspaceBodies) {
-            val tasks = group.branches.mapIndexed { index, branch ->
-                val task = branch.steps[1] as? TaskNode ?: return declared
-                if (!supportsCheckout(task, approvals[index].id)) return declared
-                task
+        val groups = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<ParallelGroupNode>()
+        if (groups.isEmpty() || groups.size != authorization.graph.nodes.filterIsInstance<CanonicalParallelNode>().size ||
+            groups.any { it !in authorization.executionPlan.nodes || it.branches.isEmpty() }) return declared
+        val branchIds = mutableSetOf<String>()
+        for (group in groups) for (branch in group.branches) {
+            val prior = mutableSetOf<String>()
+            for (node in branch.steps) {
+                val dependencies = when (node) {
+                    is ApprovalNode -> {
+                        if (node.mode != "manual" || node.resultName != null || node.outputs.isNotEmpty() ||
+                            runCatching { catalog.compileApproval(node)?.let(::controlLocal) }.getOrNull() != true) return declared
+                        node.dependsOn + node.dependencies
+                    }
+                    is TaskNode -> {
+                        val rule = declared.projectionRules.singleOrNull { it.module == node.module && it.action == node.action }
+                            ?: return declared
+                        if (!runCatching { workspaceLocal(catalog.compile(rule, node)) }.getOrDefault(false)) return declared
+                        node.dependsOn + node.dependencies
+                    }
+                    else -> return declared // Other controls need their own interaction evidence.
+                }
+                if (dependencies.any { it !in prior }) return declared
+                prior += node.id
+                branchIds += node.id
             }
-            val taskIds = tasks.map { it.id }.toSet()
-            if (authorization.executionPlan.dependencyRelations.any { it.kind != PlanDependencyKind.ORDERING &&
-                (it.sourceNodeId in taskIds || it.targetNodeId in taskIds) }) return declared
         }
-        if (approvals.any { it.mode != "manual" || it.message.isNullOrBlank() || it.resultName != null ||
-                it.outputs.isNotEmpty() || it.dependsOn.isNotEmpty() || it.dependencies.isNotEmpty() } ||
-            approvals.map { it.message }.distinct().size != 2) return declared
+        // Directory placement establishes no value/state transfer, even between sequential native leaves.
+        if (authorization.executionPlan.dependencyRelations.any { it.kind != PlanDependencyKind.ORDERING &&
+                (it.sourceNodeId in branchIds || it.targetNodeId in branchIds) }) return declared
         val topology = declared.topologyProfile ?: return declared
         if (topology.target != target || topology.declarations.count { it.kind == ExecutionTopologyKind.BRANCH_ISOLATION } != 1)
             return declared
-        val scopedTopology = topology.copy(declarations = topology.declarations.map { declaration ->
-            if (declaration.kind != ExecutionTopologyKind.BRANCH_ISOLATION) declaration else declaration.copy(
-                status = ExecutionTopologySupportStatus.SUPPORTED,
-                evidenceReference = if (workspaceBodies && group.failFast)
-                    "src/test/kotlin/JenkinsWorkspaceCancellationRuntimeTests.kt#workspacePoliciesPreserveJoinCancellationAndOriginalFailure"
-                else if (workspaceBodies)
-                    "src/test/kotlin/JenkinsParallelWorkspaceRuntimeTests.kt#branchDirectoriesPreserveApprovalWorkJoinAndRejection"
-                else if (group.failFast)
-                    "src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt#cancellationAndSuccessfulJoinRequireAuthenticatedNativeEvidence"
-                else "src/test/kotlin/JenkinsParallelRuntimeCertificationTests.kt#parallelGatesPreserveConcurrentPendingJoinAndRejection",
-                detail = if (workspaceBodies) "Two native approval branches write checkout state only in distinct identity-derived directories; no output export, fresh-workspace, security or state-transfer claim."
-                    else "Two distinct native input executions remain independently pending in parallel branches; no branch workspace mutation, result bindings or state-isolation claim.")
-        })
         return declared.copy(features = declared.features + ("parallel.dag" to SupportLevel.SUPPORTED),
-            topologyProfile = scopedTopology,
-            notes = declared.notes + "Parallel supports one top-level pair of manual gates with distinct messages and either failFast policy, or approval then isolated checkout with either policy; no output continuity, security isolation or fresh-workspace claim.")
+            topologyProfile = topology.copy(declarations = topology.declarations.map { declaration ->
+                if (declaration.kind != ExecutionTopologyKind.BRANCH_ISOLATION) declaration else declaration.copy(
+                    status = ExecutionTopologySupportStatus.SUPPORTED,
+                    evidenceReference = "src/test/kotlin/JenkinsParallelCompositionTests.kt; tools/parallel_composition_runtime.py; " +
+                        "src/test/kotlin/JenkinsParallelWorkspaceRuntimeTests.kt; src/test/kotlin/JenkinsWorkspaceCancellationRuntimeTests.kt",
+                    detail = "Independent native control executions and workspace-local leaves compose in identity-derived branch directories; authored failFast and fork/join are preserved. No branch output export, fresh workspace, shared-service or security isolation claim.")
+            }),
+            notes = declared.notes + "Top-level fork/join groups compose sequential branch leaves with owned control-local or workspace-local mappings; branch cardinality, labels, messages and leaf positions do not determine applicability.")
     }
 
-    private fun supportsCheckout(task: TaskNode, gateId: String): Boolean {
-        if (task.module != "git" || task.action != "checkout" || task.resultName != null || task.outputs.isNotEmpty() ||
-            (task.dependsOn + task.dependencies).any { it != gateId } ||
-            task.params.keys.any { it !in setOf("url", "branch", "depth") } ||
-            task.params["depth"]?.trim()?.let { it != "0" } == true) return false
-        fun literal(name: String): String? = runCatching {
-            (ExpressionParser.parseSource(task.params[name] ?: return null) as? StringLiteralNode)?.value
-                ?.takeIf { it.isNotBlank() && !it.contains('$') }
-        }.getOrNull()
-        val branch = literal("branch") ?: return false
-        return literal("url") != null && !Regex("[0-9a-fA-F]{40}").matches(branch)
-    }
+    companion object {
+        /** Native contracts, deliberately separate from module/action identity and support claims. */
+        private fun controlLocal(payload: TargetRendererPayload): Boolean =
+            payload.target == "jenkins" && payload.kind == JenkinsProjectionPayloadKinds.JENKINS_STEP &&
+                payload.reference == "input" && payload.bindings["mode"]?.value == "manual" &&
+                !payload.bindings["message"]?.value.isNullOrBlank()
 
+        private fun workspaceLocal(payload: TargetRendererPayload): Boolean = runCatching {
+            if (payload.target != "jenkins" || payload.kind != JenkinsProjectionPayloadKinds.JENKINS_STEP ||
+                payload.reference != "git") return@runCatching false
+            val context = "Jenkins branch workspace mapping"
+            CheckoutProjectionValues.gitUrl(payload, "url", context)
+            val branch = CheckoutProjectionValues.branch(payload, "branch", context)
+            val depth = payload.bindings["depth"]?.let { CheckoutProjectionValues.depth(payload, "depth", context) } ?: 0
+            depth == 0 && !Regex("[0-9a-fA-F]{40}").matches(branch)
+        }.getOrDefault(false)
+
+        internal fun usesWorkspace(step: TargetStep): Boolean = step.type == "action" &&
+            step.rendererPayload?.let(::workspaceLocal) == true
+
+        internal fun requireBranch(branch: TargetStep) {
+            require(branch.type == "parallel-branch" && branch.id.length <= 128 && Regex("[a-z0-9_-]+").matches(branch.id)) {
+                "Jenkins parallel branch needs a safe, preserved directory identity."
+            }
+            val prior = mutableSetOf<String>()
+            branch.children.forEach { step ->
+                require(step.children.isEmpty() && step.dependsOn.all { it in prior } &&
+                    step.materialization.status == TargetMaterializationStatus.NATIVE &&
+                    (usesWorkspace(step) || step.type == "approval" && step.params["mode"] == "manual" &&
+                        step.metadata["resultName"] == null && step.rendererPayload?.let(::controlLocal) == true)) {
+                    "Jenkins branch '${branch.id}' requires independent sequential leaves with owned native isolation mappings."
+                }
+                prior += step.id
+            }
+        }
+    }
 }
