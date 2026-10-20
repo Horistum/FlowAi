@@ -1,8 +1,13 @@
 import java.io.File
 import kotlin.test.*
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
+import org.flowlang.ast.ActionNode
+import org.flowlang.ast.ForNode
+import org.flowlang.ast.MatchNode
+import org.flowlang.ast.RetryNode
 import org.flowlang.capabilities.SupportLevel
 import org.flowlang.conformance.MatchCompositionFixture
+import org.flowlang.conformance.GitHubConditionCompositionFixture
 import org.flowlang.conformance.RetryCompositionFixture
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.generators.manifest.*
@@ -78,7 +83,7 @@ class JenkinsMatchSequentialCompositionTests {
 
     @Test fun nestedPoliciesAndLeavesAreValidatedEvenOnUnselectedPaths() {
         val leaf = RetryCompositionFixture.checkout("leaf")
-        for (body in listOf(retry(leaf).replace("0s", "1s"), loop(leaf).replace("[\"first\", \"first\", \"last\"]", "[1]"),
+        for (body in listOf(retry(leaf).replace("0s", "1s"), loop(leaf, "inner").replace("[\"first\", \"first\", \"last\"]", "[1]"),
             match(leaf, "", "enabled"), "approve manual { message: \"Decision\" }")) {
             assertFails { provider.render(manifest(source(retry(match(loop(body), "", "false"))))) }
             assertFails { provider.render(manifest(source(loop(match("", retry(body)))))) }
@@ -94,9 +99,22 @@ class JenkinsMatchSequentialCompositionTests {
         assertContains(provider.render(manifest(source(match(loop(retry("$producer $consumer")))))), "if (flowCheckoutSucceeded")
         for (body in listOf(match(retry(producer), consumer), match(loop(producer)) + consumer))
             assertFails { provider.render(manifest(source(body))) }
-        assertFailsWith<UnresolvedPlanningContinuityException> {
-            manifest(source(match(loop("$producer docker.build builder { image: \"example/app:test\" path: \".\" push: false }"))))
-        }
+        val text = source(match(loop(retry("$producer docker.build builder { image: \"example/app:test\" path: \".\" push: false }"))))
+        assertFailsWith<UnresolvedPlanningContinuityException> { manifest(text) }
+        // Different native leaves compose once canonical workspace continuity is explicit.
+        val document = RetryCompositionFixture.compile(root, text).ast
+        val selection = document.flow.steps.single() as MatchNode
+        val iteration = selection.cases.single().steps.single() as ForNode
+        val attempt = iteration.body.single() as RetryNode
+        val boundAttempt = attempt.copy(steps = listOf(attempt.steps.first(),
+            (attempt.steps.last() as ActionNode).copy(dependsOn = listOf("result"))))
+        val boundSelection = selection.copy(cases = listOf(selection.cases.single().copy(
+            steps = listOf(iteration.copy(body = listOf(boundAttempt))))))
+        val unit = GitHubConditionCompositionFixture.compile(root, document.copy(flow = document.flow.copy(steps = listOf(boundSelection))))
+        val composed = pipeline.generate(TargetMaterializationRequest.fromCompilation(unit, testTargetSelection("jenkins", targets), strict = true))
+        val artifact = provider.render(composed)
+        assertContains(artifact, "docker.build(")
+        assertTrue(artifact.indexOf("checkout scmGit(") < artifact.indexOf("docker.build("))
     }
 
     @Test fun forgedManifestsCannotHideInvalidBranchesPoliciesOrScope() {
