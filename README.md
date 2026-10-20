@@ -229,6 +229,8 @@ The `targets` command publishes registry declarations, provider structural mappi
 scopes and repository reference maturity. It does not assess native runtime
 certification or authorize a plan. See the [target maturity report v2 migration](docs/migrations/target-maturity-report-v2.md)
 for the report contract and the separate authenticated coverage reports.
+The [composition coverage report](docs/validation/composition-coverage.md) reconciles
+signed scenarios with independently replayed CI composition observations and their remaining gaps.
 
 Export the public standard bundle:
 

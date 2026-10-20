@@ -4,15 +4,18 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import java.io.File
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
 import org.flowlang.compiler.requireAccepted
+import org.flowlang.compiler.CompilationFrontend
+import org.flowlang.compiler.CompilationSource
+import org.flowlang.compiler.FlowSourceCompilationInput
 import org.flowlang.distribution.reference.ReferenceTargetProjections
 import org.flowlang.frontend.FrontendCompilerComposition
-import org.flowlang.frontend.source.FlowSourceFrontend
+import org.flowlang.parser.FlowParser
 import org.flowlang.materialization.TargetMaterializationRequest
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.safety.StandardEnvironmentSafetyPolicyNotes
 
-/** Verification fixture through the normal source frontend, never a product execution path. */
+/** Verification fixture through the normal parser and compiler, with a reproducible logical source identity. */
 internal object RetryCompositionFixture {
     const val REVISION = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
     const val ABSENT_REVISION = "0000000000000000000000000000000000000000"
@@ -42,13 +45,12 @@ internal object RetryCompositionFixture {
         }
     """.trimIndent()
 
-    fun compile(root: File, source: String) = kotlin.io.path.createTempFile(suffix = ".flow").toFile().let { file ->
-        try {
-            file.writeText(source)
-            FlowSourceFrontend(FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File(root, "modules")),
-                StandardEnvironmentSafetyPolicyNotes.policy(root))).compile(file).requireAccepted()
-        } finally { file.delete() }
-    }
+    fun compile(root: File, source: String) = FrontendCompilerComposition.compiler(
+        ModuleRegistry.fromDirectory(File(root, "modules")), StandardEnvironmentSafetyPolicyNotes.policy(root)
+    ).compile(FlowSourceCompilationInput(
+        source = CompilationSource.fromBytes(CompilationFrontend.FLOW_SOURCE, "composition.flow", source.toByteArray(Charsets.UTF_8)),
+        ast = FlowParser().parse(source, "composition.flow")
+    )).requireAccepted()
 }
 
 object RetryCompositionCli {

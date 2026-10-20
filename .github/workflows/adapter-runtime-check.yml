@@ -18,6 +18,8 @@ concurrency:
 # partial archive; portfolio admission still requires its successful pinned receipt.
 jobs:
   parallel-composition-runtime:
+    outputs:
+      receipt: ${{ steps.composition-receipt.outputs.receipt }}
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -42,18 +44,33 @@ jobs:
         run: |
           python3 -m unittest discover -s tools/tests -p 'test_parallel_composition_oracle.py' -v
           python3 tools/parallel_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/parallel-prepared" "$RUNNER_TEMP/parallel-evidence"
+      - name: Pin Completed Composition Evidence
+        id: composition-receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt parallel-composition-runtime "$RUNNER_TEMP/parallel-evidence"
+      - name: Retain Focused Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: parallel-composition-tests
+          path: flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: parallel-composition-runtime
-          path: |
-            ${{ runner.temp }}/parallel-evidence/
-            flow-conformance-kit/build/test-results/test/*.xml
+          path: ${{ runner.temp }}/parallel-evidence/
           if-no-files-found: error
           retention-days: 7
           overwrite: true
 
   match-composition-runtime:
+    outputs:
+      receipt: ${{ steps.composition-receipt.outputs.receipt }}
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -78,18 +95,33 @@ jobs:
         run: |
           python3 -m unittest discover -s tools/tests -p 'test_match_composition_oracle.py' -v
           python3 tools/match_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/match-prepared" "$RUNNER_TEMP/match-evidence"
+      - name: Pin Completed Composition Evidence
+        id: composition-receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt match-composition-runtime "$RUNNER_TEMP/match-evidence"
+      - name: Retain Focused Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: match-composition-tests
+          path: flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: match-composition-runtime
-          path: |
-            ${{ runner.temp }}/match-evidence/
-            flow-conformance-kit/build/test-results/test/*.xml
+          path: ${{ runner.temp }}/match-evidence/
           if-no-files-found: error
           retention-days: 7
           overwrite: true
 
   loop-composition-runtime:
+    outputs:
+      receipt: ${{ steps.composition-receipt.outputs.receipt }}
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -114,18 +146,33 @@ jobs:
         run: |
           python3 -m unittest discover -s tools/tests -p 'test_loop_composition_oracle.py' -v
           python3 tools/loop_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/loop-prepared" "$RUNNER_TEMP/loop-evidence"
+      - name: Pin Completed Composition Evidence
+        id: composition-receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt loop-composition-runtime "$RUNNER_TEMP/loop-evidence"
+      - name: Retain Focused Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: loop-composition-tests
+          path: flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: loop-composition-runtime
-          path: |
-            ${{ runner.temp }}/loop-evidence/
-            flow-conformance-kit/build/test-results/test/*.xml
+          path: ${{ runner.temp }}/loop-evidence/
           if-no-files-found: error
           retention-days: 7
           overwrite: true
 
   retry-composition-runtime:
+    outputs:
+      receipt: ${{ steps.composition-receipt.outputs.receipt }}
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -150,13 +197,26 @@ jobs:
         run: |
           python3 -m unittest discover -s tools/tests -p 'test_retry_composition_oracle.py' -v
           python3 tools/retry_composition_runtime.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/retry-prepared" "$RUNNER_TEMP/retry-evidence"
+      - name: Pin Completed Composition Evidence
+        id: composition-receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt retry-composition-runtime "$RUNNER_TEMP/retry-evidence"
+      - name: Retain Focused Test Reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retry-composition-tests
+          path: flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: retry-composition-runtime
-          path: |
-            ${{ runner.temp }}/retry-evidence/
-            flow-conformance-kit/build/test-results/test/*.xml
+          path: ${{ runner.temp }}/retry-evidence/
           if-no-files-found: error
           retention-days: 7
           overwrite: true
@@ -172,6 +232,8 @@ jobs:
       enabled: ${{ matrix.enabled }}
 
   cross-runtime-condition-composition:
+    outputs:
+      receipt: ${{ steps.composition-receipt.outputs.receipt }}
     needs: [github-condition-composition]
     runs-on: ubuntu-latest
     timeout-minutes: 25
@@ -195,6 +257,12 @@ jobs:
         run: |
           python3 -m unittest discover -s tools/tests -p 'test_condition_composition_oracle.py' -v
           python3 tools/cross_runtime_condition_composition.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/shared-composition" "$RUNNER_TEMP/cross-runtime-composition"
+      - name: Pin Completed Composition Evidence
+        id: composition-receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt cross-runtime-condition-composition "$RUNNER_TEMP/cross-runtime-composition"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -1302,6 +1370,8 @@ jobs:
           overwrite: true
 
   adapter-certification-portfolio:
+    outputs:
+      receipt: ${{ steps.coverage-receipt.outputs.receipt }}
     needs: [jenkins-checkout-result-runtime, jenkins-secret-condition-runtime, jenkins-shared-condition-runtime, github-actions-condition-runtime, jenkins-parallel-runtime, jenkins-match-runtime, jenkins-loop-runtime, jenkins-retry-runtime, jenkins-shared-checkout-runtime, github-actions-checkout-runtime, jenkins-checkout-runtime, jenkins-failure-runtime, jenkins-condition-runtime, jenkins-error-boundary-runtime, jenkins-local-recovery-runtime, jenkins-approval-runtime]
     # Run despite intentionally skipped native condition jobs. The portfolio verifier rejects
     # any missing, failed or skipped producer, so incomplete evidence fails instead of skipping.
@@ -1333,6 +1403,12 @@ jobs:
           FLOW_CERTIFICATION_REVISION: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           FLOW_CERTIFICATION_JOB_RECEIPTS: ${{ toJSON(needs) }}
         run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:verifyAdapterCertificationPortfolio --stacktrace
+      - name: Pin Authenticated Portfolio Publication
+        id: coverage-receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt adapter-certification-portfolio flow-conformance-kit/build/adapter-certification-portfolio
       - name: Publish Portfolio Summary
         run: cat flow-conformance-kit/build/adapter-certification-portfolio/target-coverage.md >> "$GITHUB_STEP_SUMMARY"
       - name: Upload Verified Portfolio
@@ -1340,6 +1416,60 @@ jobs:
         with:
           name: adapter-certification-portfolio
           path: flow-conformance-kit/build/adapter-certification-portfolio/
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  adapter-composition-coverage:
+    needs: [adapter-certification-portfolio, cross-runtime-condition-composition, retry-composition-runtime, loop-composition-runtime, match-composition-runtime, parallel-composition-runtime]
+    if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - name: Checkout Exact Revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Build Current Compiler And Verification Entrypoints
+        run: ./gradlew --no-daemon --build-cache :flow-conformance-kit:installDist --stacktrace
+      - name: Download Same-Run Control Compositions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: '*-composition-runtime'
+          path: build/composition-inputs
+      - name: Download Same-Run Cross-Runtime Composition
+        uses: actions/download-artifact@v4
+        with:
+          name: cross-runtime-condition-composition
+          path: build/composition-inputs/cross-runtime-condition-composition
+      - name: Download Same-Run Authenticated Portfolio
+        uses: actions/download-artifact@v4
+        with:
+          name: adapter-certification-portfolio
+          path: build/composition-inputs/adapter-certification-portfolio
+      - name: Replay Native Observations And Reconcile Coverage
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+          FLOW_COMPOSITION_JOB_RECEIPTS: ${{ toJSON(needs) }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/composition_coverage.py publish "$GITHUB_WORKSPACE" build/composition-inputs build/composition-coverage
+      - name: Publish Reconciled Coverage Summary
+        run: cat build/composition-coverage/composition-coverage.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload Verified Composition Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: adapter-composition-coverage
+          path: build/composition-coverage/
           if-no-files-found: error
           retention-days: 7
           overwrite: true
