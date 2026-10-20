@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 54
+revision: 55
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/sequential-match-composition.yaml"
-  decisionBasis: "PR #238 merged at 8a4ae19e1c9b34e353dd877dd63adaa8c9345774. C9 independently admits composition evidence and C10 unifies retry/loop recursion. AR-06AE-C11 removes the remaining separate match body allowlist, extending the same bounded sequential contract through exclusive selection with lexical scope and native replay evidence. Signed portfolio bytes and statuses remain unchanged. Broader control interactions, state/value transfer and provider coverage remain open. No support or portability promotion: AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/github-workspace-composition.yaml"
+  decisionBasis: "PR #239 merged at 06e7428d59721ef2670338ed4308892d1f1f6849. C11 composes sequential selection; C12 addresses provider and continuity gaps by replacing the GitHub two-task workspace exception with an unconditional single-source endpoint contract. Native transfer falsification also exposed and corrects the default Git-context bypass: builds must consume restored local bytes. Credential persistence is disabled before export. Independent inputs, tasks and repeated consumers no longer invalidate an admitted relation. CI-bound native fan-out evidence is separate from the signed portfolio and independent composition admission. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -258,6 +258,7 @@ milestones:
       - "AR-06AE-C9: admit source-bound composition observations by regenerating compiler inputs and replaying independent native evidence; reconcile them with every target/construct row while preserving signed portfolio scope and explicit gaps."
       - "AR-06AE-C10: compose fixed zero-delay retry and finite literal-string loops in both nesting directions with one recursive adapter contract, lexical-scope validation and independently replayed native observations."
       - "AR-06AE-C11: bring exclusive literal match into the shared sequential control contract, preserving branch selection, lexical bindings, retry ownership and finite iteration with independent native observations and falsifying mutations."
+      - "C12 candidate removes the exact task-sequence workspace exception in favor of unconditional single-source endpoints, explicit ordering and unique consumer workspace requirements. GitHub image builds use the restored local context; exported checkouts do not persist credentials. Native fan-out observes regular, binary and hidden file bytes and requires missing-transfer and hidden-file mutants to fail. Independent producer paths and direct-manifest transfer tampering have JVM coverage. The current GitHub reference is corrected; historical Jenkins evidence and signed portfolio admission stay unchanged."
       - "Next: address remaining control interactions, value/state continuity and provider coverage with independent evidence, using reconciled gaps to select the next bounded invariant. CI-bound observations, repository declarations and reference snapshots cannot close target-wide certification or portability outcomes."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 

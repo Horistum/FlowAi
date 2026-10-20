@@ -48,7 +48,7 @@ The Docker Pipeline plugin provides a structured `docker.build(image)` API and a
 
 ### GitHub Actions
 
-The renderer uses the action's default Git context. A non-root Flow context becomes `{{defaultContext}}:<path>`. A custom Dockerfile must be inside that context and is rendered relative to the selected Git context. Authentication and registry login remain external target configuration.
+AR-06AE-C12 corrects the initial Git-context mapping: the renderer always selects the restored local workspace path (`.` or the authored subdirectory). A custom Dockerfile must be inside that context and retains its workspace-relative path. Default Git context would ignore transferred workspace bytes. Authentication and registry login remain external target configuration.
 
 ### Tekton
 

@@ -25,13 +25,13 @@ class GitHubActionsWorkspaceContinuityTests {
     private val targets = TargetRegistryYamlLoader.loadDirectory(File(root, "targets"))
 
     @Test
-    fun boundedScopeIsExactRepositoryBackedAndFidelityLimited() {
+    fun boundedScopeIsRelationBasedRepositoryBackedAndFidelityLimited() {
         val scope = BuiltInAdapterContinuityScopedSupport.githubActionsCheckoutBuildWorkspace
         assertEquals("github-actions", scope.target)
         assertEquals("git.checkout", scope.sourceAction)
         assertEquals("docker.build", scope.targetAction)
         assertEquals("source", scope.channel)
-        assertEquals(listOf("git.checkout", "docker.build"), scope.exactPlanActions)
+        assertEquals(org.flowlang.adapters.continuity.AdapterContinuityEndpointScope.TOP_LEVEL_SINGLE_SOURCE_WORKSPACE, scope.endpointScope)
         assertTrue(scope.limitations.any { it.contains("regular-file bytes") })
         assertTrue(scope.limitations.any { it.contains("Unix mode bits") })
         assertTrue(scope.limitations.any { it.contains("Symbolic-link identity") })
@@ -86,7 +86,9 @@ class GitHubActionsWorkspaceContinuityTests {
                 target = "follow-up"
             )
         )
-        assertGenericWorkspaceSupportRemainsRejected(largerWorkflow, declared)
+        assertEquals(SupportLevel.SUPPORTED, AdapterContinuityScopedCapabilityResolver().resolve(
+            plan = largerWorkflow, target = "github-actions", declared = declared
+        ).features.getValue("continuity.workspace"))
     }
 
     private fun assertGenericWorkspaceSupportRemainsRejected(

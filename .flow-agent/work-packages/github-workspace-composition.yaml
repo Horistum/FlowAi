@@ -1,0 +1,57 @@
+version: AR-06AE-C12
+name: Composable GitHub Workspace Transfers
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer confirms the predecessor merge and requests continued roadmap implementation.
+  predecessorPullRequest: 239
+  mergedMain: 06e7428d59721ef2670338ed4308892d1f1f6849
+invariant: Each admitted workspace consumer receives bytes from its uniquely resolved producer through an explicit artifact transfer; unrelated tasks and repeated consumers do not change that relation.
+architecturePurpose: Replace the complete task-sequence exception with an adapter-owned endpoint and topology contract while preserving Core continuity authority.
+scope:
+- Unconditional native checkout producers and image-build consumers on the source workspace channel.
+- Independent tasks, inputs, multiple independent producer paths and repeated consumers.
+- Single workspace source per consumer, producer upload deduplication, exact consumer downloads and retained ordering.
+- Build from the restored local path instead of the default Git context; disable credential persistence before workspace export.
+- Update the current GitHub executable reference and its active scope binding; preserve the historical Jenkins reference, frozen profile sources and reference scenario identity.
+- Independent native GitHub execution of generated fan-out transfers and falsifying missing-transfer and hidden-file mutants.
+nonGoals:
+- No Core, public DSL, target-wide support, VALUE or STATE continuity changes.
+- No conditional endpoints, workspace merging, permission or symbolic-link preservation.
+- No signed portfolio promotion, frozen Jenkins snapshot rewrite or AR-06 closure.
+ownershipBoundary:
+  core: Owns resolved dependencies, producer identities and workspace channels.
+  adapters: Own transfer applicability and native materialization, independent of fixture identity and task cardinality.
+  conformance: Binds generated native steps to the executed workflow and verifies independent file observations and mutant failures.
+expectedFilesToInspect:
+- src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedSupportContracts.kt
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedSupportContracts.kt
+- src/main/kotlin/org/flowlang/adapters/continuity/BuiltInAdapterContinuityScopedSupport.kt
+- src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt
+- .github/workflows/adapter-runtime-check.yml
+expectedFilesToAdd:
+- src/main/kotlin/org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
+- .github/workflows/github-workspace-composition.yml
+- tools/verify_github_workspace_composition.py
+testsToAddOrUpdate:
+- Relation matching with independent tasks, inputs, repeated consumers and independent producer paths.
+- Reject wrong channels, ambiguous or missing producers, nested endpoints, multiple workspace sources and missing ordering.
+- Native artifact round trips preserve regular bytes, relative paths and hidden files; mutants fail independently.
+conformanceToAddOrUpdate:
+- Retain source, canonical graph, manifest, generated workflow and executed envelope for the exact CI revision.
+- Keep existing composition admission and signed certification portfolio unchanged.
+documentationToUpdate:
+- docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md
+- .flow-agent/reports/github-workspace-composition.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, github-workspace-composition]
+  preservedChecks: All isolation and existing native runtime gates remain required.
+followUp:
+- Conditional continuity, metadata-preserving transfer, VALUE and STATE transport and reconciled portfolio admission remain open.

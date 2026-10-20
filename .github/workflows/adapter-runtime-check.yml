@@ -17,6 +17,10 @@ concurrency:
 # Each upload name has one producer. A rerun replaces that producer's earlier
 # partial archive; portfolio admission still requires its successful pinned receipt.
 jobs:
+  github-workspace-composition:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    uses: ./.github/workflows/github-workspace-composition.yml
+
   parallel-composition-runtime:
     outputs:
       receipt: ${{ steps.composition-receipt.outputs.receipt }}

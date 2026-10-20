@@ -27,6 +27,7 @@ class GitHubActionsManifestRenderer(
         val readiness = TargetRenderPolicy.requireSafe(manifest)
         if (readiness.mode == TargetRenderMode.REVIEW_ONLY) return TargetReviewArtifactRenderer.render(manifest, readiness)
         check(readiness.mode == TargetRenderMode.EXECUTABLE)
+        GitHubActionsWorkspaceContinuityPlanner.requireConsistentTransfers(manifest)
         require(GitHubJobConditionAuthority.materialize(manifest.jobs) == manifest.jobs) {
             "GitHub conditional scheduling requires explicit ancestor waits."
         }
@@ -94,7 +95,10 @@ class GitHubActionsManifestRenderer(
             sb.appendLine("      - name: ${yamlScalar(step.name)}")
             sb.appendLine("        uses: ${yamlScalar(payload.reference)}")
             when (payload.reference) {
-                "actions/checkout@v4" -> renderCheckoutBindings(step.id, payload, sb)
+                "actions/checkout@v4" -> renderCheckoutBindings(step.id, payload, sb,
+                    exportingWorkspace = materializedSteps.any {
+                        it.rendererPayload?.reference == GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE
+                    })
                 "docker/build-push-action@v7" -> renderImageBuildBindings(step.id, payload, manifest, sb)
                 GitHubActionsWorkspaceContinuityPlanner.UPLOAD_REFERENCE ->
                     renderWorkspaceUploadBindings(step.id, payload, sb)
@@ -108,7 +112,8 @@ class GitHubActionsManifestRenderer(
     private fun renderCheckoutBindings(
         stepId: String,
         payload: TargetRendererPayload,
-        sb: StringBuilder
+        sb: StringBuilder,
+        exportingWorkspace: Boolean
     ) {
         val context = "GitHub checkout payload for '$stepId'"
         val repository = GitHubActionsCheckoutProjectionValues.githubRepository(payload, "repository", context)
@@ -120,6 +125,8 @@ class GitHubActionsManifestRenderer(
         sb.appendLine("          repository: ${yamlScalar(repository)}")
         sb.appendLine("          ref: ${yamlScalar(ref)}")
         sb.appendLine("          fetch-depth: ${yamlScalar(depth.toString())}")
+        // The workspace archive includes hidden files, including .git/config.
+        if (exportingWorkspace) sb.appendLine("          persist-credentials: false")
     }
 
     private fun renderImageBuildBindings(
@@ -145,9 +152,7 @@ class GitHubActionsManifestRenderer(
         val push = ImageBuildProjectionValues.push(payload, "push", context)
 
         sb.appendLine("        with:")
-        GitHubActionsImageBuildProjectionValues.githubContext(buildContext)?.let {
-            sb.appendLine("          context: ${yamlScalar(it)}")
-        }
+        sb.appendLine("          context: ${yamlScalar(GitHubActionsImageBuildProjectionValues.githubContext(buildContext))}")
         GitHubActionsImageBuildProjectionValues.githubDockerfile(buildContext, dockerfile)?.let {
             sb.appendLine("          file: ${yamlScalar(it)}")
         }

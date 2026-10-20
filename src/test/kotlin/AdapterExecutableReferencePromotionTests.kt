@@ -1,3 +1,4 @@
+import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
 import org.flowlang.distribution.reference.ReferenceAdapterEvidence
 import java.io.File
 import kotlin.test.Test
@@ -25,7 +26,20 @@ class AdapterExecutableReferencePromotionTests {
         assertEquals("github-actions", promotion.target)
         assertEquals("checkout-build-image", promotion.scenarioId)
         assertTrue(promotion.snapshotReference.contains("github-actions"))
-        assertTrue(promotion.scopeIdentity.endsWith("git.checkout,docker.build"))
+        assertEquals(BuiltInAdapterContinuityScopedSupport.githubActionsCheckoutBuildWorkspace.identity, promotion.scopeIdentity)
+    }
+
+    @Test
+    fun obsoleteTaskSequenceScopeCannotPromoteTheEndpointContract() {
+        val document = AdapterExecutableReferencePromotionLoader.load(root)
+        val stale = document.copy(promotions = document.promotions.map {
+            it.copy(scopeIdentity = "github-actions|ARTIFACT|artifact.shared-workspace|git.checkout|docker.build|source|git.checkout,docker.build")
+        })
+        val report = authority.evaluate(stale)
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any { it.code == "ADAPTER_PROMOTION_SCOPE_UNKNOWN" })
+        // The active overlay still certifies the original reference scenario only.
+        assertEquals(listOf("checkout-build-image"), document.promotions.map { it.scenarioId })
     }
 
     @Test

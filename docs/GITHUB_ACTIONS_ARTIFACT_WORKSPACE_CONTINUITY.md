@@ -1,111 +1,35 @@
-# A1.0 GitHub Actions Artifact and Workspace Continuity
+# GitHub Actions Artifact and Workspace Continuity
 
 ## Decision
 
-A1.0 makes the canonical `checkout-build-image` plan executable on GitHub Actions by materializing the resolved Flow `WORKSPACE` relation as an explicit workflow-artifact transfer.
+AR-06AE-C12 replaces the A1.0 complete-plan exception with an adapter-owned producer/channel/consumer contract. Core still determines the resolved `WORKSPACE` relation; `needs` supplies ordering only. A producer uploads once per workspace channel and each admitted consumer restores the same artifact into its isolated job.
 
-The implementation does not reinterpret `needs` as data movement. `needs` expresses job ordering only. Workspace continuity is provided by a producer-owned `actions/upload-artifact@v7` step and a consumer-owned `actions/download-artifact@v8` step using one deterministic artifact identity.
+## Applicability
 
-## Bounded support scope
+The bounded implementation admits a resolved `git.checkout` → `source` → `docker.build` relation when both endpoints are unconditional top-level tasks, the consumer explicitly depends on the producer, and the consumer has exactly one workspace requirement. Additional inputs, independent tasks, multiple independent producer paths and repeated consumers do not change applicability. Other leaf and control capabilities remain independently checked.
 
-The executable claim is deliberately limited to the complete ordered plan shape:
+The scope rejects conditional or repeated endpoints, missing or ambiguous producers, other channels, missing ordering and multiple workspace sources. Whole-workspace downloads into `.` cannot silently merge competing producers. `VALUE` and `STATE` transport remain separate and unsupported here.
 
-1. `git.checkout`
-2. workspace channel `source`
-3. `docker.build`
+`AdapterContinuityScopedSupport.endpointScope` replaces the internal `exactPlanActions` property. The public artifact schemas and Core semantics do not change. The general registry retains unsupported workspace status; the resolver creates a plan-specific effective capability view only when every workspace relation is admitted.
 
-The scope authority compares the complete task-action sequence in addition to producer, consumer, semantic family and channel. A larger workflow, another channel, an unresolved producer, a `VALUE` relation or a `STATE` relation therefore remains unsupported.
+## Native execution
 
-The general target registry continues to declare `continuity.workspace` as unsupported for GitHub Actions. A plan-specific capability resolver creates an immutable effective target view only for the exact bounded plan. The authored registry object is never mutated.
+`actions/upload-artifact@v7` follows the checkout, includes hidden files and rejects an empty workspace. `actions/download-artifact@v8` restores the identical producer/channel artifact before each build. Uploads are deduplicated across consumers; independent producers retain different artifact identities.
 
-## Execution boundary
+Image builds now explicitly select the restored local directory (`context: .` or the authored subdirectory). The earlier default Git context could fetch the workflow repository again and ignore transferred files. Custom Dockerfile paths remain relative to the workspace and must stay within the selected context. See the action's [Git and path context documentation](https://github.com/docker/build-push-action#usage).
 
-The production projection sequence is:
+A checkout that exports its workspace uses `persist-credentials: false`, because the archive includes hidden `.git` files. This prevents checkout authentication from being retained in the exported Git configuration.
 
-```text
-git.checkout
-  -> actions/upload-artifact@v7
-  -> needs ordering
-  -> actions/download-artifact@v8
-  -> docker/build-push-action@v7
-```
+The renderer rechecks transfer placement, inventories, identities, endpoints and ordering, including caller-supplied manifests. It cannot repair an omitted download or substitute a different artifact. Unmatched planning relations retain diagnostic blockers and cannot become executable.
 
-The upload step:
+## Fidelity and evidence
 
-- uploads the complete selected path from `.`;
-- includes hidden files;
-- fails when the producer workspace is empty;
-- uses a deterministic identity derived from producer node and channel.
+The bounded claim covers regular-file bytes, relative paths and hidden entries. Archived transfer does not preserve Unix mode bits; symbolic-link identity and metadata-dependent consumers remain outside this scope. It does not claim a bit-identical POSIX filesystem.
 
-The download step restores the same artifact into `.` before the consumer action. Renderer payloads are typed and validated by the GitHub Actions native projection catalog before executable rendering.
+The local reconstruction tests remain useful contract tests. The C12 native workflow adds actual GitHub upload/download and Docker builds for one source, two consumers and an independent checkout. The generated source AST, canonical graph, manifest and workflow are retained alongside the exact executed envelope. An independent Python oracle checks source-derived dependencies, canonical workspace edges, manifest transfer placement and native SHA-256/size observations for text, binary and hidden files.
 
-## Transfer fidelity boundary
+Two native mutants must fail: a build with its download removed, and a build whose archive omitted hidden files. Mutant jobs explicitly assert that the build failed; skipped or missing mutants do not count. A regression to default Git context defeats the missing-transfer falsification and fails the gate.
 
-The current transfer uses the default archived form of `actions/upload-artifact@v7`. GitHub documents that zipped artifact upload does not preserve Unix file permissions: downloaded directories receive mode `755` and files receive mode `644`. Executable bits are therefore outside the certified continuity boundary.
+Evidence is bound to the source revision, workflow revision, run and attempt, with file receipts. This is CI-bound evidence from the checked execution envelope and GitHub job outputs. It is not yet admitted by the independent composition-coverage replay and is not a signed certification bundle. Multiple independent producer paths and alternate task counts are covered by JVM tests, not additional native certification claims.
 
-The repository proof certifies:
-
-- regular-file byte content;
-- relative file paths;
-- hidden entries included by the generated upload binding;
-- one deterministic producer and consumer artifact identity.
-
-The repository proof does not certify:
-
-- Unix mode bits or executable permissions;
-- symbolic-link identity or link-target semantics;
-- a bit-identical POSIX filesystem reconstruction;
-- Docker builds whose correctness depends on metadata not represented by regular-file bytes and paths.
-
-The behavioral reconstruction test intentionally models the generated transfer contract with local file copies. It proves byte preservation for the committed regular-file fixture, but it is not evidence that the real GitHub artifact archive preserves filesystem metadata.
-
-Any future scope expansion to executable scripts, symlink-sensitive build contexts or other metadata-dependent consumers requires a typed metadata-preserving transfer mechanism and new independent behavioral evidence. The existing scoped declaration must not be reused for that expansion.
-
-## Fail-closed behavior
-
-Normal materialization requires both:
-
-- compatibility against the plan-specific effective capability profile;
-- the adapter-owned continuity execution gate.
-
-Diagnostic materialization does not throw away unsupported evidence. It emits an `ADAPTER_REQUIRED` review step and remains non-executable. Unsupported or ambiguous relations cannot be repaired by the renderer.
-
-## Evidence boundaries
-
-A1.0 keeps two reference boundaries separate:
-
-- `conformance/snapshots/checkout-build-image` remains the historical Jenkins executable reference and is regenerated only as Jenkins evidence;
-- `conformance/snapshots/github-actions-checkout-build-image` is the A1.0 GitHub Actions target-scoped executable reference.
-
-This separation prevents adapter evolution from rewriting the frozen pre-A1 Jenkins and Core evidence boundary.
-
-The post-A0 promotion is declared in `adapters/portfolio/executable-reference-promotions.yaml`. It overlays one bounded executable-reference claim without changing the historical A0.1 base portfolio record. The A1.0 conformance inventory independently validates lifecycle state, promotion integrity, production regeneration, fail-closed polarity and Jenkins preservation.
-
-## Behavioral proof
-
-Tests verify that:
-
-- upload follows the producer action;
-- download precedes the consumer action;
-- producer and consumer use the same artifact identity;
-- hidden entries are included by the generated binding;
-- regular text and binary file bytes survive the bounded local reconstruction model;
-- an empty producer workspace fails;
-- another channel or an additional task does not receive scoped support;
-- generic `VALUE` and `STATE` continuity are not promoted;
-- Unix mode bits and symbolic-link identity are explicitly outside the certified boundary;
-- Jenkins remains executable and unchanged;
-- Tekton and unsupported GitHub Actions plans remain blocked.
-
-## Explicit non-goals
-
-A1.0 does not claim:
-
-- generic GitHub Actions workspace continuity;
-- generic artifact support for arbitrary producer and consumer actions;
-- bit-identical filesystem continuity;
-- Unix permission or symbolic-link preservation;
-- value propagation;
-- mutable or durable state propagation;
-- equivalence between ordering and continuity;
-- target-specific semantics inside Flow Core.
+The current GitHub executable reference is updated for local context and credential handling. Its active promotion overlay binds the new endpoint-scope identity while retaining the same checkout-build-image scenario and support class; stale task-sequence scope identities remain rejected. The historical Jenkins reference stays unchanged. No target-wide support, portability, signed portfolio promotion or AR-06 closure follows from this work.

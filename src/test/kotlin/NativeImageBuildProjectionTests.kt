@@ -119,7 +119,7 @@ class NativeImageBuildProjectionTests {
 
         val github = rendered.getValue("github-actions")
         assertTrue(github.contains("uses: \"docker/build-push-action@v7\""))
-        assertTrue(github.contains("context: \"{{defaultContext}}:services/api\""))
+        assertTrue(github.contains("context: \"services/api\""))
         assertTrue(github.contains("tags: \"ghcr.io/acme/service:${'$'}{{ inputs.version }}\""))
         assertTrue(github.contains("push: true"))
         assertTrue(!github.contains("run: docker"))
@@ -148,7 +148,7 @@ class NativeImageBuildProjectionTests {
 
         assertTrue(github.contains("tags: \"acme/service:1.0\""))
         assertTrue(github.contains("push: false"))
-        assertTrue(!github.contains("          context:"))
+        assertTrue(github.contains("          context: \".\""))
         assertTrue(!github.contains("          file:"))
 
         assertTrue(tekton.contains("- name: CONTEXT\n          value: \".\""))
@@ -167,7 +167,7 @@ class NativeImageBuildProjectionTests {
 
         val github = render(plan, "github-actions")
         val tekton = render(plan, "tekton")
-        assertTrue(github.contains("file: \"Dockerfile.release\""))
+        assertTrue(github.contains("file: \"services/api/Dockerfile.release\""))
         assertTrue(tekton.contains("value: \"services/api/Dockerfile.release\""))
 
         val provider = BuiltInTargetProjections.registry.requireProvider("jenkins")
@@ -177,7 +177,7 @@ class NativeImageBuildProjectionTests {
     }
 
     @Test
-    fun githubRejectsDockerfileOutsideSelectedGitContext() {
+    fun githubRejectsDockerfileOutsideSelectedWorkspaceContext() {
         val plan = imageBuildPlan(
             image = "acme/service:1.0",
             path = "services/api",

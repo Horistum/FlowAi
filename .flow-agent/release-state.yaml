@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 113
+stateVersion: 114
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -278,7 +278,7 @@ lastKnownValidation:
     - "SI-01 changed AST and ExecutionPlan-family artifact contracts without changing package or public-standard versions."
     - "The v0.9.7 Core semantic foundation remains CLOSED with its 91-check pre-closure inventory frozen."
     - "A0.1 through A0.7 and A1.0 are completed; A0.8 does not exist."
-    - "GitHub Actions is executable only for the bounded checkout-build-image workspace path; the generic workspace profile remains unsupported."
+    - "GitHub Actions admits bounded unconditional git.checkout/source to docker.build/source workspace relations; the generic workspace profile remains unsupported."
     - "The historical Jenkins executable reference remains independently canonical and unchanged."
     - "A1.0 post-A0 promotion evidence is isolated from the frozen A0 portfolio and inventory."
     - "PR #106 merged as commit 7a63b67690739c63fd529010a7666c936bfcf9b3; A1.0 evidence is part of main history."
@@ -625,4 +625,16 @@ recoverySequentialMatchComposition:
   predecessorMain: 8a4ae19e1c9b34e353dd877dd63adaa8c9345774
   validation: current-revision-ci-required
   signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryGitHubWorkspaceComposition:
+  candidate: AR-06AE-C12
+  status: candidate
+  workPackage: .flow-agent/work-packages/github-workspace-composition.yaml
+  report: .flow-agent/reports/github-workspace-composition.md
+  predecessorMain: 06e7428d59721ef2670338ed4308892d1f1f6849
+  validation: current-revision-ci-required
+  localPythonTests: 253
+  signedPortfolioExpanded: false
+  independentCompositionAdmission: false
   supportPromotion: false
