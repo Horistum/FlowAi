@@ -31,6 +31,7 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/conformance/RetryCompositionFixture.kt
 - src/main/kotlin/org/flowlang/conformance/CompilerAxisConformanceChecks.kt
 - src/test/kotlin/JenkinsRetryCompositionTests.kt
+- src/test/kotlin/CompilerAxisConformanceTests.kt
 - README.md
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml

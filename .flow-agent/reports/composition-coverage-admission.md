@@ -30,6 +30,11 @@ as an unlisted compiler-boundary caller. The exact caller inventory now includes
 this conformance fixture beside the existing parsed-AST fixtures. It still enters
 the full validating compiler and never constructs graph authorization directly.
 The exact-set rule and the regression rejecting unlisted callers remain intact.
+The isolated compiler-axis mutation fixture also copies this admitted caller;
+its strict UTF-8 and authored source identity tests continue to establish a
+valid baseline before applying their negative mutations. The focused retry CI
+job now runs these existing compiler-axis regressions as well, so missing
+fixture inventory is reported before the full integration suite completes.
 
 The new artifact preserves the original signed portfolio and target coverage
 bytes, with a separately labeled CI-bound composition matrix. Its rows retain

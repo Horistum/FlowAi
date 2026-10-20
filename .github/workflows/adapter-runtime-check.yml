@@ -188,7 +188,7 @@ jobs:
       - uses: gradle/actions/setup-gradle@v5
       - name: Prepare independently checked retry compositions
         run: |
-          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsRetry*' :flow-conformance-kit:installDist --stacktrace
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsRetry*' --tests '*CompilerAxisConformanceTests*' :flow-conformance-kit:installDist --stacktrace
           java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.RetryCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/retry-prepared"
       - name: Verify whole-body replay and native negative evidence
         env:
