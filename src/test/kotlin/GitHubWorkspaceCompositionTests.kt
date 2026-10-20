@@ -201,8 +201,10 @@ class GitHubWorkspaceCompositionTests {
             provider.renderer.render(m.copy(jobs = m.jobs.map { if (it.id == changed.id) changed else it }))
         } }
         val producer = m.jobs.first()
-        assertFails { provider.renderer.render(m.copy(jobs = listOf(producer.copy(
-            metadata = producer.metadata + ("condition" to "true"))) + m.jobs.drop(1))) }
+        for (guard in listOf("condition" to "true", "errorHandler" to "true")) {
+            assertFails { provider.renderer.render(m.copy(jobs = listOf(producer.copy(
+                metadata = producer.metadata + guard)) + m.jobs.drop(1))) }
+        }
     }
 
 }

@@ -167,6 +167,7 @@ object GitHubActionsWorkspaceContinuityPlanner {
             if (reference == UPLOAD_REFERENCE || step.type == "adapter-continuity-upload") {
                 require(reference == UPLOAD_REFERENCE && step.type == "adapter-continuity-upload" &&
                     job.steps.size == 2 && job.steps.last() == step && job.metadata["condition"] == null &&
+                    job.metadata["errorHandler"] != "true" &&
                     job.steps.first().module == "git" && job.steps.first().action == "checkout" &&
                     job.steps.first().metadata["condition"] == null &&
                     step.metadata["continuitySourceJob"] == job.id) { "Invalid GitHub workspace producer." }
