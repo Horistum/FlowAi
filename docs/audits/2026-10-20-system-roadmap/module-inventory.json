@@ -1,0 +1,80 @@
+{
+  "completeDisjointPartition": true,
+  "modules": [
+    {
+      "module": "flow-adapter-contracts",
+      "files": 1,
+      "lines": 43
+    },
+    {
+      "module": "flow-adapter-evidence",
+      "files": 35,
+      "lines": 7345
+    },
+    {
+      "module": "flow-adapter-github-actions",
+      "files": 14,
+      "lines": 1266
+    },
+    {
+      "module": "flow-adapter-jenkins",
+      "files": 12,
+      "lines": 1286
+    },
+    {
+      "module": "flow-adapter-runtime",
+      "files": 48,
+      "lines": 9611
+    },
+    {
+      "module": "flow-adapter-tekton",
+      "files": 6,
+      "lines": 413
+    },
+    {
+      "module": "flow-cli",
+      "files": 8,
+      "lines": 1913
+    },
+    {
+      "module": "flow-compiler",
+      "files": 56,
+      "lines": 12892
+    },
+    {
+      "module": "flow-conformance-kit",
+      "files": 173,
+      "lines": 38520
+    },
+    {
+      "module": "flow-frontends",
+      "files": 37,
+      "lines": 5026
+    },
+    {
+      "module": "flow-module-contracts",
+      "files": 8,
+      "lines": 853
+    },
+    {
+      "module": "flow-reference-distribution",
+      "files": 8,
+      "lines": 517
+    },
+    {
+      "module": "flow-semantic-kernel",
+      "files": 7,
+      "lines": 1665
+    },
+    {
+      "module": "flow-standard-artifacts",
+      "files": 23,
+      "lines": 3935
+    }
+  ],
+  "auditedRevision": "73b1c5054406175d96f7c6db5de4c39f80eb9313",
+  "countingMethod": "Non-empty, non-comment entries in each Gradle production ownership manifest; line count is len(read_text().splitlines()) for owned source files.",
+  "trackedFiles": 1994,
+  "mainKotlinFiles": 436,
+  "mainKotlinLines": 85285
+}

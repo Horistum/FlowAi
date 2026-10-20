@@ -1,0 +1,33 @@
+version: AUDIT-2026-10-20
+name: Source-to-Artifact System and Roadmap Audit
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer explicitly requests a thorough whole-system code audit and independently verified roadmap status before selecting the next implementation PR.
+  auditedRevision: 73b1c5054406175d96f7c6db5de4c39f80eb9313
+  auditedTree: dc25349ee6928c81dd76d8b772c2df1a14d4034e
+invariant: Roadmap conclusions must distinguish source-level evidence, reproduced behavior, current-revision CI evidence and remaining uncertainty.
+architecturePurpose: Verify preservation of authored meaning across the complete compiler and materialization path, and reconcile recovery claims with implementation and behavioral evidence.
+scope:
+- Inventory every production source owner and review the frontend, compiler, semantic kernel, materialization, adapters, distribution, CLI and conformance boundaries.
+- Trace all recovery milestones and deferred roadmap streams to implementation or explicit gaps.
+- Reproduce suspected semantic loss with independently changed source inputs and inspect actual canonical graphs and rendered artifacts.
+- Measure bounded availability-analysis growth using the real implementation.
+- Verify current-main CI artifact digests, source manifests and native composition observations.
+- Publish reproducible observations and a prioritized implementation recommendation.
+nonGoals:
+- No production behavior or public contract change, milestone closure or release version bump.
+- No certification promotion, new adapter capability or activation of AR-07 or EF-09.
+- No replacement of existing governance or certification authorities with the audit probe.
+expectedFilesToChange:
+- .flow-agent/work-packages/system-roadmap-audit-2026-10-20.yaml
+- docs/audits/2026-10-20-system-roadmap/
+validation:
+  required:
+  - Compile and execute the audit probe against the actual repository implementation.
+  - Include a positive control where a source mutation changes the canonical graph.
+  - Record exact source revision and distinguish observations from regression expectations.
+  - Run existing Python and Flow Agent validation and verify current-main JVM and conformance evidence.
+  - Validate the final audit PR at its exact head and synthetic merge candidate.
+  limitations: Native runtime evidence is replayed from the current-main CI artifacts; this audit does not run a new local Jenkins or GitHub Actions runtime.

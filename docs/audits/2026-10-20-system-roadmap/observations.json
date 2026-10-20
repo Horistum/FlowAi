@@ -1,0 +1,304 @@
+{
+  "auditedRevision": "73b1c5054406175d96f7c6db5de4c39f80eb9313",
+  "toolchain": {
+    "jdk": "25.0.4.1+1",
+    "kotlin": "2.4.10",
+    "gradle": "9.5.0"
+  },
+  "observations": [
+    {
+      "id": "referenced-variable",
+      "accepted": true,
+      "leftSourceSha256": "c8a356287321cd613336b8555ce8ab6eeb4abe5c39f500b7f758cdbbf767c402",
+      "rightSourceSha256": "805718a0ea4b7e88ff0a60e127bee559b1d932a840b53b0d956862603a57077f",
+      "leftGraphSha256": "0bfa36624be8080e9315feb38fd6a487a2e677a2ac365ca477a22add09e793ef",
+      "rightGraphSha256": "0bfa36624be8080e9315feb38fd6a487a2e677a2ac365ca477a22add09e793ef",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true
+    },
+    {
+      "id": "transform-predicate",
+      "accepted": true,
+      "leftSourceSha256": "c6ed3a947583e262552804367cf0077c01b2090342f85dd30d5cf0afc92a2431",
+      "rightSourceSha256": "accfcb2306f08d928ea30836773c6f381a39b0cea998c796c0212299e31fc589",
+      "leftGraphSha256": "ffc2da233ecbda38e4857cb0751c147b6ad4d88b2bb424b12ccaf7dc58446ae1",
+      "rightGraphSha256": "ffc2da233ecbda38e4857cb0751c147b6ad4d88b2bb424b12ccaf7dc58446ae1",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true
+    },
+    {
+      "id": "transform-selection",
+      "accepted": true,
+      "leftSourceSha256": "9847b34ddccd43957418f95f700d32f438abf4bcf289834419c4da531c15e843",
+      "rightSourceSha256": "fc022e239579a50ddd36b6d0d5b26b6a51497050eb72f73c8f04e68d2362419e",
+      "leftGraphSha256": "ffc2da233ecbda38e4857cb0751c147b6ad4d88b2bb424b12ccaf7dc58446ae1",
+      "rightGraphSha256": "ffc2da233ecbda38e4857cb0751c147b6ad4d88b2bb424b12ccaf7dc58446ae1",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true
+    },
+    {
+      "id": "aggregate-fields",
+      "accepted": true,
+      "leftSourceSha256": "bf27eb9146f4639b67394edc7cb4a5b7bfc5ebd65cd338639d79f78578cec2ee",
+      "rightSourceSha256": "ac8558a5134007b5897318af9eec48272331a9e0ff657296ba33990cda5a41e4",
+      "leftGraphSha256": "0302ba8202ebd5964ca196cc28e94ce2a473055782a018e958b645f4434c25c0",
+      "rightGraphSha256": "0302ba8202ebd5964ca196cc28e94ce2a473055782a018e958b645f4434c25c0",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true
+    },
+    {
+      "id": "validation-rule",
+      "accepted": true,
+      "leftSourceSha256": "1b2acb1836bcfc29cdbf0a4ea9247efd9862a0387c515cf7b6deb72a497d6d17",
+      "rightSourceSha256": "fc494ae62e658dfe2f4c9ae98c3155117267fd2339beaf6c651aa238b2a42d0b",
+      "leftGraphSha256": "906afb6349117358ab57d7689410aae7724e5ea8aae43f738705956523782aba",
+      "rightGraphSha256": "906afb6349117358ab57d7689410aae7724e5ea8aae43f738705956523782aba",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true
+    },
+    {
+      "id": "action-expectation",
+      "accepted": true,
+      "leftSourceSha256": "c4f415d1093b27e27fbcbd96370a676e293ab0b0ebb816c0936395b61e0ee1f4",
+      "rightSourceSha256": "df848fcb2c4f2b6303c1d18ce9a739f1d96d2f0fc2ed3cd1dc6bab13cd74bbbd",
+      "leftGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "rightGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true,
+      "rendering": [
+        {
+          "target": "jenkins",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a",
+          "rightSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a"
+        },
+        {
+          "target": "github-actions",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd",
+          "rightSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd"
+        }
+      ]
+    },
+    {
+      "id": "action-error-handler",
+      "accepted": true,
+      "leftSourceSha256": "71d42f501a0490763b9c308ec5ced5d442a779c614729d113e66aa97e0062a75",
+      "rightSourceSha256": "253d6d5f73f9faa2306350d3b36f8c2ca2443a7f865df6ecc2fa0e987ceddac2",
+      "leftGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "rightGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true,
+      "rendering": [
+        {
+          "target": "jenkins",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a",
+          "rightSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a"
+        },
+        {
+          "target": "github-actions",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd",
+          "rightSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd"
+        }
+      ]
+    },
+    {
+      "id": "action-conditional-handler",
+      "accepted": true,
+      "leftSourceSha256": "1a676dea8869a214861e22d87a559d3175032e3ae462621bf0839713eaa127f3",
+      "rightSourceSha256": "ec058b6f30abd976cafbb696fa8730290ae9480ed01ca57543517e8516a4c155",
+      "leftGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "rightGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true,
+      "rendering": [
+        {
+          "target": "jenkins",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a",
+          "rightSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a"
+        },
+        {
+          "target": "github-actions",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd",
+          "rightSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd"
+        }
+      ]
+    },
+    {
+      "id": "approval-unknown-parameter",
+      "accepted": true,
+      "leftSourceSha256": "4a548f3153f4edf497ae52dcbb1fd700db6375f472c1b93a14026655d7ad58c2",
+      "rightSourceSha256": "5043e3b184190ccd6ab9340af1e56ebe2d2ece1434f18eadd801bd06c4ed6634",
+      "leftGraphSha256": "aa1167511d5c6e0d3a0b37b0ff319cb1f89c0af54e82d055223f4d9c4ed7811a",
+      "rightGraphSha256": "aa1167511d5c6e0d3a0b37b0ff319cb1f89c0af54e82d055223f4d9c4ed7811a",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true,
+      "rendering": [
+        {
+          "target": "jenkins",
+          "rendered": true,
+          "sameArtifact": true,
+          "leftSha256": "af13c34f15f81591cbc32e8e44824754ba81703a0e1aea5fc150e71b50e8aa7c",
+          "rightSha256": "af13c34f15f81591cbc32e8e44824754ba81703a0e1aea5fc150e71b50e8aa7c"
+        },
+        {
+          "target": "github-actions",
+          "rendered": false,
+          "error": "org.flowlang.generators.manifest.UnresolvedExecutionTopologyException: Execution topology does not match target 'github-actions': topology.suspendResume.approve-1=DEGRADED"
+        }
+      ]
+    },
+    {
+      "id": "input-nonstring-options",
+      "accepted": true,
+      "leftSourceSha256": "481bb5ca8f9d24fc96a6c80b269882e735cd31633908b6d5a34590a93e7e7413",
+      "rightSourceSha256": "b7a4d01b24cd683cd200d6f9db924413c115331d7185f8df305a8989f36de4b2",
+      "leftGraphSha256": "a27ecb53c47d3cc66cac6d04952520da48f167970b0e15bfbbceef47b7837f17",
+      "rightGraphSha256": "a27ecb53c47d3cc66cac6d04952520da48f167970b0e15bfbbceef47b7837f17",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": true,
+      "sameDigest": true,
+      "samePlan": true
+    },
+    {
+      "id": "positive-control-checkout-branch",
+      "accepted": true,
+      "leftSourceSha256": "71d42f501a0490763b9c308ec5ced5d442a779c614729d113e66aa97e0062a75",
+      "rightSourceSha256": "be92edfcec77d629300b17e282cd4bd9dd9e6d3399e31dad6befbd6bcaefa553",
+      "leftGraphSha256": "b515dfdf01ae7ee207daa381631dab0322a72a3ace0771a121eebd1b397da1c2",
+      "rightGraphSha256": "2b2229aa44555f4c41a1b308967070ef2322736003ae6b9cb8becf05f304c31a",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": false,
+      "sameDigest": false,
+      "samePlan": false,
+      "rendering": [
+        {
+          "target": "jenkins",
+          "rendered": true,
+          "sameArtifact": false,
+          "leftSha256": "145c6528b2cf9593ab1496eecc1380dd9d5af0a22b628d5c668ea2ce55cd772a",
+          "rightSha256": "a0840376a5f8b88b2defc595a0873351e77b5e67d39cb18e33e1799213c4c765"
+        },
+        {
+          "target": "github-actions",
+          "rendered": true,
+          "sameArtifact": false,
+          "leftSha256": "0d317064bdb52bc7b6643d87050dd954ad6d7fb7f251ee2f4d230fbe8ae6f3dd",
+          "rightSha256": "df7087c538944828d965fb377260fe78b4ca0432316613595aacd200a1ba9f79"
+        }
+      ]
+    },
+    {
+      "id": "positive-control-direct-condition",
+      "accepted": true,
+      "leftSourceSha256": "d1097d56ef128d7baff6a9f0bd798b3e992150aadbdaed1dfab9ed23ce556855",
+      "rightSourceSha256": "8a3152b77c5a64d58bdea83f30cdb352854dabc7f790ca1745aade9a8dffad91",
+      "leftGraphSha256": "6abfe3705706cfdc512be987c6c24e6af07a5c6380f1bf5bbaa3e4e8773ee48e",
+      "rightGraphSha256": "2544eb7ad3e02cfc4c0c1255d773da9a16d01dd01d2ee7578af2d4e25d41d543",
+      "leftValidationIssues": [],
+      "rightValidationIssues": [],
+      "sameGraph": false,
+      "sameDigest": false,
+      "samePlan": false
+    }
+  ],
+  "inputAdmission": [
+    {
+      "id": "unknown-input-type",
+      "accepted": true,
+      "graphSha256": "3cf2dd34b65954e96172e70a4d87f1eb14c4e5dffb506460bb472d2b191943e0",
+      "validationIssues": []
+    },
+    {
+      "id": "boolean-string-default",
+      "accepted": true,
+      "graphSha256": "b02014602dccd20a6c9d331d29c63561fe7d5eae036ebe43a133316b7e9f319b",
+      "validationIssues": []
+    },
+    {
+      "id": "option-default-outside-domain",
+      "accepted": true,
+      "graphSha256": "e1670eae64167d74d21a1d2ee2530ce546d30f6c814814cf4e5c0e04922fc71b",
+      "validationIssues": [
+        {
+          "level": "warning",
+          "code": "INPUT_DEFAULT_NOT_IN_OPTION",
+          "message": "Default 'c' for input 'value' is not one of [a, b]",
+          "location": {
+            "line": 3,
+            "column": 9
+          }
+        }
+      ]
+    }
+  ],
+  "pathExpansion": [
+    {
+      "conditions": 4,
+      "sourceBytes": 173,
+      "exitPaths": 16,
+      "milliseconds": 0,
+      "issues": 0
+    },
+    {
+      "conditions": 8,
+      "sourceBytes": 269,
+      "exitPaths": 256,
+      "milliseconds": 3,
+      "issues": 0
+    },
+    {
+      "conditions": 12,
+      "sourceBytes": 365,
+      "exitPaths": 4096,
+      "milliseconds": 55,
+      "issues": 0
+    },
+    {
+      "conditions": 14,
+      "sourceBytes": 413,
+      "exitPaths": 16384,
+      "milliseconds": 164,
+      "issues": 0
+    }
+  ]
+}

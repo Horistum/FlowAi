@@ -1,0 +1,30 @@
+// Opt-in diagnostic, not a regression gate or certification authority.
+gradle.projectsEvaluated {
+    def host = rootProject.project(':flow-cli')
+    def runtime = host.sourceSets.main.runtimeClasspath
+    def destination = rootProject.layout.buildDirectory.dir('system-audit/classes').get().asFile
+    def input = rootProject.file('docs/audits/2026-10-20-system-roadmap/AuditProbe.kt')
+    def compileProbe = host.tasks.register('compileSystemAuditProbe', JavaExec) {
+        dependsOn host.tasks.named('classes')
+        classpath = rootProject.project(':flow-semantic-kernel').configurations.compilerProbeRuntime
+        mainClass = 'org.jetbrains.kotlin.cli.jvm.K2JVMCompiler'
+        doFirst {
+            destination.mkdirs()
+            args '-no-stdlib', '-no-reflect', '-jvm-target', '25', '-classpath', runtime.asPath,
+                '-d', destination.absolutePath, input.absolutePath
+        }
+    }
+    host.tasks.register('runSystemAuditProbe', JavaExec) {
+        dependsOn compileProbe
+        workingDir rootProject.projectDir
+        classpath = runtime + host.files(destination)
+        mainClass = 'AuditProbeKt'
+        maxHeapSize = '512m'
+        args rootProject.projectDir.absolutePath,
+            rootProject.layout.buildDirectory.dir('system-audit/observations').get().asFile.absolutePath
+        doFirst {
+            // Allows a separately bounded JVM experiment without another Gradle invocation.
+            new File(destination.parentFile, 'classpath.txt').text = classpath.asPath
+        }
+    }
+}

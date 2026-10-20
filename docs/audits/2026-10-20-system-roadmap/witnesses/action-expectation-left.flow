@@ -1,0 +1,8 @@
+version "1.0"
+use module "git" version "1.0"
+flow "audit" {
+systems { system "repo" { type: git } }
+steps {
+git.checkout repo { url: "https://github.com/Horistum/FlowAi.git" branch: "main" } -> result { expect { true } }
+}
+}
