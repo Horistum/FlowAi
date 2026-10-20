@@ -14,6 +14,18 @@ import org.flowlang.modules.ModuleRegistry
 import org.flowlang.targets.builtin.JenkinsRetryProjectionScope
 
 class JenkinsRetryCompositionTests {
+    @Test fun compilerEvidenceReproducesWithoutErasingSourceChanges() {
+        val mapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        val source = RetryCompositionFixture.source()
+        val first = RetryCompositionFixture.compile(File("."), source)
+        val second = RetryCompositionFixture.compile(File("."), source)
+        assertContentEquals(mapper.writeValueAsBytes(first.ast), mapper.writeValueAsBytes(second.ast))
+        assertContentEquals(mapper.writeValueAsBytes(first.graph), mapper.writeValueAsBytes(second.graph))
+        val changed = RetryCompositionFixture.compile(File("."), RetryCompositionFixture.source(failure = true))
+        assertNotEquals(mapper.writeValueAsString(first.ast), mapper.writeValueAsString(changed.ast))
+        assertNotEquals(mapper.writeValueAsString(first.graph), mapper.writeValueAsString(changed.graph))
+    }
+
     private val root = File(".")
     private val targets by lazy { TargetRegistryYamlLoader.loadDirectory(File(root, "targets")) }
     private val provider get() = ReferenceTargetProjections.registry.requireProvider("jenkins")

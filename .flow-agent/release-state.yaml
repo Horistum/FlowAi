@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 110
+stateVersion: 111
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -594,4 +594,15 @@ recoveryCompositionCapabilityPublication:
   mergedMain: 55ab3204cfe7fcada06ab5ccf5f5d8c240e6252c
   validation: current-revision-ci-required
   targetMaturityReportVersion: "2.0"
+  supportPromotion: false
+
+recoveryCompositionCoverageAdmission:
+  candidate: AR-06AE-C9
+  status: candidate
+  workPackage: .flow-agent/work-packages/composition-coverage-admission.yaml
+  report: .flow-agent/reports/composition-coverage-admission.md
+  mergedMain: 8fd10a8f08ce38b3cd14bffc79c06cbc18473b31
+  validation: current-revision-ci-required
+  compositionCoverageReportVersion: 1
+  signedPortfolioExpanded: false
   supportPromotion: false

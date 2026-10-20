@@ -1,0 +1,57 @@
+version: AR-06AE-C9
+name: Source-Bound Composition Coverage Admission
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests quality completion according to the roadmap and prior architecture context after PR 236 was merged.
+  predecessorPullRequest: 236
+  mergedMain: 8fd10a8f08ce38b3cd14bffc79c06cbc18473b31
+invariant: Composition coverage is published only after independently pinning successful same-attempt producer bytes, regenerating compiler inputs and replaying native observations; it never becomes signed portfolio evidence or target-wide support.
+architecturePurpose: Reconcile existing reusable condition, retry, loop, match and parallel composition evidence with declared-target coverage, preserving their distinct trust boundaries and explicit gaps.
+scope:
+- Bind five existing composition archives and the existing authenticated portfolio to successful producer job outputs, exact source/workflow revisions, run and attempt.
+- Regenerate canonical fixture inputs and target projections from the current checkout and compare their exact bytes before replaying existing independent native oracles.
+- Use a stable logical source identity in verification fixtures without erasing source content or changing compiler semantics.
+- Preserve signed portfolio coverage and expose CI-bound composition observations separately for all declared targets and constructs.
+- Publish complete output atomically with actual-byte receipts; reject stale, missing, duplicated, mutated, oversized or unsafe input.
+- Preserve every existing native runtime and conformance check.
+nonGoals:
+- No new canonical semantics, target-specific public syntax, product runtime execution or new native scenario family.
+- No replacement of signed certification, support promotion, portability claim or reference maturity change.
+- No AR-06 closure, AR-07 activation, EF-09 resumption or historical acceptance changes.
+ownershipBoundary:
+  core: Existing canonical meaning and compiler remain authoritative.
+  adapters: Existing composed mappings and renderers remain authoritative.
+  conformance: Replay independent observations and publish their exact evidence scope and remaining gaps.
+expectedFilesToChange:
+- .github/workflows/adapter-runtime-check.yml
+- tools/composition_coverage.py
+- tools/tests/test_composition_coverage.py
+- src/main/kotlin/org/flowlang/conformance/RetryCompositionFixture.kt
+- src/main/kotlin/org/flowlang/conformance/CompilerAxisConformanceChecks.kt
+- src/test/kotlin/JenkinsRetryCompositionTests.kt
+- src/test/kotlin/CompilerAxisConformanceTests.kt
+- README.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+- .flow-agent/work-packages/behavioral-adapter-certification.yaml
+- .flow-agent/work-packages/jenkins-checkout-result-certification.yaml
+- .flow-agent/work-packages/composition-coverage-admission.yaml
+- .flow-agent/reports/composition-coverage-admission.md
+- docs/validation/composition-coverage.md
+testsToAddOrUpdate:
+- Successful producer receipts bind exact revision, workflow, run, attempt and bytes; missing, failed, duplicated and stale inputs are rejected.
+- Rewritten proof flags cannot replace replay of native baseline and mutant observations.
+- Repeated fixture compilation preserves exact AST and graph bytes while changed source remains distinguishable.
+- Unsafe paths, symbolic links, duplicate JSON keys and exceeded budgets fail closed.
+- Missing composition evidence remains visible for every declared target and construct, without altering signed portfolio coverage.
+- Publication preserves exact file receipts and leaves no partial output on failure.
+validation:
+  status: current-revision-ci-required
+  requiredChecks:
+  - compile-test-conformance
+  - merge-candidate-compile-test-conformance
+  - adapter-certification-portfolio
+  - adapter-composition-coverage
+  preservedChecks: All module-isolation, native certification and composition jobs remain required.
