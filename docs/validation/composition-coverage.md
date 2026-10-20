@@ -36,9 +36,22 @@ signatures or additions to the signed portfolio.
 | --- | --- | --- | --- |
 | `cross-runtime-condition-composition` | Jenkins, GitHub Actions | Conditions | Bounded Boolean inputs, branches and ordering; no general control/value transfer |
 | `retry-composition-runtime` | Jenkins | Retry | Fixed zero-delay retry with supported sequential/condition/nested retry bodies |
-| `loop-composition-runtime` | Jenkins | Loops | Finite literal string iteration and lexical item bindings |
+| `loop-composition-runtime` | Jenkins | Loops | Finite literal string iteration, lexical item bindings and fixed zero-delay retry in both nesting directions |
 | `match-composition-runtime` | Jenkins | Match | Inert literal string sources and exclusive literal Boolean cases |
 | `parallel-composition-runtime` | Jenkins | Parallelism | Top-level groups, branch-local sequences, workspace routing and authored failure policy |
+
+AR-06AE-C10 extends the existing loop producer to distinguish retry around a loop
+from retry inside each iteration. The first replays completed iterations on a new
+attempt; the second retains the current loop item and does not repeat completed
+iterations. Both directions retain success, false-condition, empty-collection and
+permanent native failure baselines. Mutants flatten retry, repeat successful work,
+change collection order/multiplicity, invent an iteration or swallow a failure.
+The independent consumer regenerates and replays these additional cases through
+the same producer. The primary matrix construct stays `LOOPS`; the attached claim
+and cases explicitly describe its interaction with retry. It does not manufacture
+another signed assessment or imply general retry/state isolation. Transient-fault
+budget reset also has oracle regression coverage, but is not claimed as a native
+observation by these permanent-fault/success fixtures.
 
 The complete per-producer claims and limitations accompany the published report.
 Every other target/construct cell remains `NO_COMPOSITION_EVIDENCE`, including

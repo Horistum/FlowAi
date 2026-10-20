@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 111
+stateVersion: 112
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -604,5 +604,15 @@ recoveryCompositionCoverageAdmission:
   mergedMain: 8fd10a8f08ce38b3cd14bffc79c06cbc18473b31
   validation: current-revision-ci-required
   compositionCoverageReportVersion: 1
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryRetryLoopComposition:
+  candidate: AR-06AE-C10
+  status: candidate
+  workPackage: .flow-agent/work-packages/retry-loop-composition.yaml
+  report: .flow-agent/reports/retry-loop-composition.md
+  predecessorMain: 1734e2f77f943f4fe41b515116965539332c2f56
+  validation: current-revision-ci-required
   signedPortfolioExpanded: false
   supportPromotion: false

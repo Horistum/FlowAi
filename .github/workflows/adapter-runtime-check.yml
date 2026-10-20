@@ -135,11 +135,11 @@ jobs:
           distribution: temurin
           java-version: '25'
       - uses: gradle/actions/setup-gradle@v5
-      - name: Prepare independently checked loop compositions
+      - name: Prepare independently checked loop and retry interactions
         run: |
-          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsLoop*' :flow-conformance-kit:installDist --stacktrace
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*JenkinsLoop*' --tests '*JenkinsRetryLoop*' :flow-conformance-kit:installDist --stacktrace
           java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.LoopCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/loop-prepared"
-      - name: Verify finite iteration and native negative evidence
+      - name: Verify iteration, retry boundaries and native negative evidence
         env:
           EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           WORKFLOW_REVISION: ${{ github.sha }}

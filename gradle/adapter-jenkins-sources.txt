@@ -8,4 +8,5 @@ org/flowlang/targets/builtin/JenkinsNativeProjectionCatalog.kt
 org/flowlang/targets/builtin/JenkinsParallelProjectionScope.kt
 org/flowlang/targets/builtin/JenkinsProjectionRenderingSupport.kt
 org/flowlang/targets/builtin/JenkinsRetryProjectionScope.kt
+org/flowlang/targets/builtin/JenkinsSequentialControlScope.kt
 org/flowlang/targets/builtin/JenkinsTargetExpressionTranslator.kt

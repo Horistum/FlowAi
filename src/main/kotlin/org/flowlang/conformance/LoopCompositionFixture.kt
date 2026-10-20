@@ -34,6 +34,51 @@ internal object LoopCompositionFixture {
           }
         }
     """.trimIndent()
+
+    val outcomes = listOf("success", "failure", "empty") +
+        listOf("retry-loop", "loop-retry").flatMap { direction ->
+            listOf("success", "failure", "empty").map { "$direction-$it" }
+        }
+
+    fun interactionSource(direction: String, outcome: String): String {
+        require(direction in listOf("retry-loop", "loop-retry"))
+        require(outcome in listOf("success", "failure", "empty"))
+        val collection = if (outcome == "empty") "[]" else "[\"alternate\", \"selected\", \"selected\"]"
+        val selected = RetryCompositionFixture.checkout("selected",
+            if (outcome == "failure") RetryCompositionFixture.ABSENT_REVISION else RetryCompositionFixture.REVISION)
+        val body = """
+            if enabled and outer == "selected" { $selected }
+            if outer == "alternate" { ${RetryCompositionFixture.checkout("alternate")} }
+        """.trimIndent()
+        fun retry(body: String) = """
+            retry { max: 2 delay: "0s" backoff: fixed } {
+              ${RetryCompositionFixture.checkout("attemptPrefix")}
+              $body
+              ${RetryCompositionFixture.checkout("attemptTail")}
+            }
+        """.trimIndent()
+        fun loop(body: String) = """
+            for outer in $collection {
+              ${RetryCompositionFixture.checkout("iterationPrefix")}
+              $body
+              ${RetryCompositionFixture.checkout("iterationTail")}
+            }
+        """.trimIndent()
+        val composed = if (direction == "retry-loop") retry(loop(body)) else loop(retry(body))
+        return """
+            version "1.0"
+            use module "git" version "1.0"
+            flow "retry-loop-composition" {
+              input { enabled: boolean default true }
+              systems { system "source" { type: git } }
+              steps {
+                $composed
+                ${RetryCompositionFixture.checkout("successor")}
+              }
+            }
+        """.trimIndent()
+    }
+
 }
 
 object LoopCompositionCli {
@@ -46,9 +91,10 @@ object LoopCompositionCli {
         val selection = TargetSelectionAuthority.requireSelected(TargetSelectionAuthority.fromCliOption("jenkins", targets), "loop composition")
         val pipeline = ReferenceTargetProjections.pipeline(targets, rootDir = root,
             modules = ModuleRegistry.fromDirectory(File(root, "modules")))
-        for (outcome in listOf("success", "failure", "empty")) {
+        for (outcome in LoopCompositionFixture.outcomes) {
             val dir = File(out, outcome).apply { mkdirs() }
-            val source = LoopCompositionFixture.source(outcome)
+            val source = if (outcome in listOf("success", "failure", "empty")) LoopCompositionFixture.source(outcome)
+                else LoopCompositionFixture.interactionSource(outcome.substringBeforeLast("-"), outcome.substringAfterLast("-"))
             val unit = RetryCompositionFixture.compile(root, source)
             val manifest = pipeline.generate(TargetMaterializationRequest.fromCompilation(unit, selection, strict = true))
             File(dir, "source.flow").writeText(source)

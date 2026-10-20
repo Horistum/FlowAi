@@ -47,7 +47,7 @@ def items(expression):
 def expectation(document, supplied, failures=None):
     flow = document["flow"]
     require(not flow.get("errorHandler") and not flow.get("vars") and not flow.get("triggers"), "Unsupported flow scope")
-    inputs, tasks, loops = {}, {}, []
+    inputs, tasks, loops, policies = {}, {}, [], []
     for item in flow.get("input", []):
         name = item["name"]
         require(name not in inputs and item["valueType"]["kind"] == "boolean", "Invalid input")
@@ -69,6 +69,14 @@ def expectation(document, supplied, failures=None):
                 condition(step["condition"], scope)
                 structure.append({"kind": "condition", "then": validate(step["then"], scope),
                                   "otherwise": validate(step.get("otherwise", []), scope)})
+            elif kind == "Retry":
+                policy = step.get("policy", {})
+                require(set(policy) == {"max", "delay", "backoff"} and
+                        type(policy["max"]) is int and policy["max"] > 0 and
+                        type(policy["delay"]) is str and policy["delay"].strip().lower() in ("0", "0s", "0m", "0h", "0ms") and
+                        type(policy["backoff"]) is str and policy["backoff"].lower() == "fixed", "Unsupported retry policy")
+                policies.append(policy)
+                structure.append({"kind": "retry", "policy": policy, "body": validate(step["steps"], scope)})
             elif kind == "For":
                 name, collection = step["item"], items(step["source"])
                 require(name and name not in scope, "Overlapping loop binding")
@@ -104,6 +112,13 @@ def expectation(document, supplied, failures=None):
                 branch = step["then"] if condition(step["condition"], scope) else step.get("otherwise", [])
                 if not execute(branch, scope):
                     return False
+            elif step["type"] == "Retry":
+                for _ in range(step["policy"]["max"]):
+                    consume()
+                    if execute(step["steps"], scope):
+                        break
+                else:
+                    return False
             else:
                 for element in items(step["source"]):
                     consume()
@@ -111,7 +126,7 @@ def expectation(document, supplied, failures=None):
                         return False
         return True
     result = "SUCCESS" if execute(flow["steps"], inputs) else "FAILURE"
-    return {"inputs": inputs, "tasks": tasks, "loops": loops, "structure": structure,
+    return {"inputs": inputs, "tasks": tasks, "loops": loops, "policies": policies, "structure": structure,
             "trace": trace, "result": result, "edges": set()}
 
 
@@ -127,6 +142,9 @@ def bind_control_structure(expected, graph):
             node = nodes[identity]
             if node["kind"] == "TASK":
                 structure.append({"kind": "task", "name": node["resultName"]})
+            elif node["kind"] == "RETRY":
+                structure.append({"kind": "retry", "policy": {k: node[k] for k in ("max", "delay", "backoff")},
+                                  "body": visit(node["bodyNodeIds"])})
             elif node["kind"] == "LOOP":
                 collection = json.loads(node["source"])
                 require(type(collection) is list and all(type(v) is str for v in collection), "Invalid canonical collection")

@@ -256,6 +256,7 @@ milestones:
       - "AR-06AE-C7: replace parallel fixture cardinality, branch-body and message-identity gates with branch membership, sequential dependencies and native isolation contracts; independently prove fork/join composition and failure policies."
       - "AR-06AE-C8: audit corrected composition boundaries; distinguish repository reference maturity from authenticated native certification and publish provider-owned structural mapping scopes without execution authorization."
       - "AR-06AE-C9: admit source-bound composition observations by regenerating compiler inputs and replaying independent native evidence; reconcile them with every target/construct row while preserving signed portfolio scope and explicit gaps."
+      - "AR-06AE-C10: compose fixed zero-delay retry and finite literal-string loops in both nesting directions with one recursive adapter contract, lexical-scope validation and independently replayed native observations."
       - "Next: address remaining control interactions, value/state continuity and provider coverage with independent evidence, using reconciled gaps to select the next bounded invariant. CI-bound observations, repository declarations and reference snapshots cannot close target-wide certification or portability outcomes."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 

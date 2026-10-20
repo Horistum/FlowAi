@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from loop_composition_oracle import bind_control_structure, expectation, verify_observations
-from test_retry_composition_oracle import action, document, rows
+from test_retry_composition_oracle import action, document, retry, rows
 
 
 def loop(name, values, body):
@@ -93,6 +93,75 @@ class LoopCompositionOracleTests(unittest.TestCase):
             mutant = copy.deepcopy(graph); mutant["nodes"][0].update(changes)
             with self.assertRaises(ValueError): bind_control_structure(e, mutant)
         with self.assertRaises(ValueError): bind_control_structure(e, dict(graph, nodes=nodes + [{"id": "orphan", "kind": "TASK", "resultName": "unused"}]))
+
+
+    def test_retry_around_loop_restarts_completed_iterations_on_failure(self):
+        body = loop("item", ["a", "b", "b"], [branch("item", "a", [action("a")], [action("b")])])
+        e = expectation(document([retry([action("prefix"), body, action("suffix")], 2), action("tail")]), {}, {"b": None})
+        self.assertEqual([("prefix", "success"), ("a", "success"), ("b", "failure")] * 2,
+                         [(r["task"], r["result"]) for r in e["trace"]])
+        self.assertEqual("FAILURE", e["result"])
+        verify_observations(e, rows(e["trace"]), "FAILURE")
+        with self.assertRaises(ValueError): verify_observations(e, rows(e["trace"][:3]), "FAILURE")
+
+    def test_retry_inside_loop_preserves_current_item_without_replaying_completed_items(self):
+        body = retry([action("prefix"), branch("item", "a", [action("a")], [action("b")]), action("suffix")], 2)
+        e = expectation(document([loop("item", ["a", "b", "b"], [body]), action("tail")]), {}, {"b": None})
+        self.assertEqual([("prefix", "success"), ("a", "success"), ("suffix", "success"),
+                          ("prefix", "success"), ("b", "failure"), ("prefix", "success"), ("b", "failure")],
+                         [(r["task"], r["result"]) for r in e["trace"]])
+        self.assertEqual("FAILURE", e["result"])
+        verify_observations(e, rows(e["trace"]), "FAILURE")
+
+    def test_recovery_then_next_iteration_gets_a_fresh_retry_budget(self):
+        body = retry([action("prefix"), branch("item", "a", [action("a")], [action("b")]), action("suffix")], 2)
+        e = expectation(document([loop("item", ["a", "b"], [body]), action("tail")]), {}, {"a": 1, "b": 1})
+        self.assertEqual([("prefix", "success"), ("a", "failure"), ("prefix", "success"), ("a", "success"), ("suffix", "success"),
+                          ("prefix", "success"), ("b", "failure"), ("prefix", "success"), ("b", "success"), ("suffix", "success"), ("tail", "success")],
+                         [(r["task"], r["result"]) for r in e["trace"]])
+        self.assertEqual("SUCCESS", e["result"])
+        # Fault budgets are model tests; native certification only claims the supplied permanent-fault/success cases.
+        verify_observations(e, rows(e["trace"]), "SUCCESS")
+
+    def test_nested_retry_and_loop_keep_outer_bindings_and_attempt_counts(self):
+        d = document([retry([loop("outer", ["a"], [retry([loop("inner", ["x"], [
+            branch("outer", "a", [action("bad")])])], 3)])], 2)])
+        e = expectation(d, {}, {"bad": None})
+        self.assertEqual([{"task": "bad", "result": "failure"}] * 6, e["trace"])
+        for steps in ([loop("item", [], [retry([loop("item", [], [])])])],
+                      [retry([loop("item", [], [])]), branch("item", "a", [])]):
+            with self.assertRaises(ValueError): expectation(document(steps), {})
+
+    def test_empty_iteration_and_success_never_force_retry_replay(self):
+        for body in (retry([loop("item", [], [action("never")])]), loop("item", [], [retry([action("never")])])):
+            e = expectation(document([body, action("tail")]), {})
+            self.assertEqual([{"task": "tail", "result": "success"}], e["trace"])
+        e = expectation(document([loop("item", ["a", "a"], [retry([action("once")], 4)])]), {})
+        self.assertEqual([{"task": "once", "result": "success"}] * 2, e["trace"])
+        with self.assertRaises(ValueError): verify_observations(e, rows(e["trace"] * 2), "SUCCESS")
+
+    def test_nested_policy_and_execution_budget_remain_bounded(self):
+        for mutation in ({"max": 0}, {"max": True}, {"delay": "1s"}, {"backoff": "exponential"}, {"extra": "ignored"}):
+            child = retry([action("a")]); child["policy"].update(mutation)
+            with self.assertRaises(ValueError): expectation(document([loop("item", [], [child])]), {})
+        with self.assertRaises(ValueError):
+            expectation(document([retry([loop("item", ["a"], [action("bad")])], 10001)]), {}, {"bad": None})
+
+    def test_canonical_retry_and_loop_nesting_cannot_be_swapped_or_flattened(self):
+        e = expectation(document([retry([loop("item", ["a", "b"], [action("leaf")])], 2)]), {})
+        graph = {"workflows": [{"rootNodeIds": ["retry"]}], "nodes": [
+            {"id": "retry", "kind": "RETRY", "max": 2, "delay": "0s", "backoff": "fixed", "bodyNodeIds": ["loop"]},
+            {"id": "loop", "kind": "LOOP", "item": "item", "source": '["a", "b"]', "bodyNodeIds": ["leaf"]},
+            {"id": "leaf", "kind": "TASK", "resultName": "leaf"}]}
+        bind_control_structure(e, graph)
+        for field, changed in (("max", 1), ("delay", "1s"), ("bodyNodeIds", ["leaf"])):
+            mutant = copy.deepcopy(graph); mutant["nodes"][0][field] = changed
+            with self.assertRaises(ValueError): bind_control_structure(e, mutant)
+        swapped = copy.deepcopy(graph)
+        swapped["workflows"][0]["rootNodeIds"] = ["loop"]
+        swapped["nodes"][0]["bodyNodeIds"] = ["leaf"]
+        swapped["nodes"][1]["bodyNodeIds"] = ["retry"]
+        with self.assertRaises(ValueError): bind_control_structure(e, swapped)
 
 
 if __name__ == "__main__":

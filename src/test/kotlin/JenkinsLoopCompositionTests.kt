@@ -102,7 +102,7 @@ class JenkinsLoopCompositionTests {
         assertEquals(TargetRenderMode.REVIEW_ONLY, TargetRenderPolicy.evaluate(review).mode)
         assertFailsWith<TargetRenderBlockedException> { provider.render(review) }
         for (body in listOf("approve manual { message: \"Iteration decision\" }",
-            "retry { max: 2 delay: \"0s\" backoff: fixed } { ${RetryCompositionFixture.checkout("child")} }"))
+            "retry { max: 2 delay: \"1s\" backoff: fixed } { ${RetryCompositionFixture.checkout("child")} }"))
             assertFails { provider.render(manifest(source(body))) }
         val m = manifest(); val job = m.jobs.single(); val loop = job.steps.first(); val leaf = loop.children.first()
         for (replacement in listOf(leaf.copy(type = "approval"),
