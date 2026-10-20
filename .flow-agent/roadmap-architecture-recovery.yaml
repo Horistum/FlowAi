@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 53
+revision: 54
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/composition-coverage-admission.yaml"
-  decisionBasis: "PR #236 merged at 8fd10a8f08ce38b3cd14bffc79c06cbc18473b31. C8 separated repository reference maturity from native certification. AR-06AE-C9 admits the five existing composition archives through successful same-attempt producer receipts, fresh compiler regeneration and independent native replay, then reconciles their bounded observations with every declared target/construct row. Signed portfolio bytes and statuses remain unchanged; missing composition coverage stays explicit. Broader control interactions, state/value transfer and portable composition evidence remain open. No support or portability promotion: AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/sequential-match-composition.yaml"
+  decisionBasis: "PR #238 merged at 8a4ae19e1c9b34e353dd877dd63adaa8c9345774. C9 independently admits composition evidence and C10 unifies retry/loop recursion. AR-06AE-C11 removes the remaining separate match body allowlist, extending the same bounded sequential contract through exclusive selection with lexical scope and native replay evidence. Signed portfolio bytes and statuses remain unchanged. Broader control interactions, state/value transfer and provider coverage remain open. No support or portability promotion: AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 deliveryModel:
   roadmapMilestoneCount: 8
@@ -257,6 +257,7 @@ milestones:
       - "AR-06AE-C8: audit corrected composition boundaries; distinguish repository reference maturity from authenticated native certification and publish provider-owned structural mapping scopes without execution authorization."
       - "AR-06AE-C9: admit source-bound composition observations by regenerating compiler inputs and replaying independent native evidence; reconcile them with every target/construct row while preserving signed portfolio scope and explicit gaps."
       - "AR-06AE-C10: compose fixed zero-delay retry and finite literal-string loops in both nesting directions with one recursive adapter contract, lexical-scope validation and independently replayed native observations."
+      - "AR-06AE-C11: bring exclusive literal match into the shared sequential control contract, preserving branch selection, lexical bindings, retry ownership and finite iteration with independent native observations and falsifying mutations."
       - "Next: address remaining control interactions, value/state continuity and provider coverage with independent evidence, using reconciled gaps to select the next bounded invariant. CI-bound observations, repository declarations and reference snapshots cannot close target-wide certification or portability outcomes."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 

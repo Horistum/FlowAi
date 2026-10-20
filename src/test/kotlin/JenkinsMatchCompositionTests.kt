@@ -96,8 +96,8 @@ class JenkinsMatchCompositionTests {
         val review = manifest(source("docker.push builder { image: \"example/app:test\" }"))
         assertEquals(TargetRenderMode.REVIEW_ONLY, TargetRenderPolicy.evaluate(review).mode)
         assertFailsWith<TargetRenderBlockedException> { provider.render(review) }
-        for (body in listOf("approve manual { message: \"Decision\" }", "for item in [\"one\"] { }",
-            "retry { max: 2 delay: \"0s\" backoff: fixed } { }",
+        for (body in listOf("approve manual { message: \"Decision\" }", "for item in [1] { }",
+            "retry { max: 2 delay: \"1s\" backoff: fixed } { }",
             "match \"nested\" { when true { } when true { } }", "match \"nested\" { when enabled { } }"))
             assertFails { provider.render(manifest(source(body))) }
         val original = manifest(source(RetryCompositionFixture.checkout("child")))

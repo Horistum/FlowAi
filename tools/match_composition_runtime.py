@@ -20,6 +20,15 @@ def bind(expected, manifest, graph):
                 result.append({"kind": "task", "name": step["metadata"]["resultName"]})
             elif step["type"] == "condition":
                 result.append({"kind": "condition", "condition": step["params"]["condition"], "body": visit(step["children"])})
+            elif step["type"] == "retry":
+                require(set(step["params"]) == {"max", "delay", "backoff"}, "Unexpected retry parameters")
+                result.append({"kind": "retry", "policy": dict(step["params"], max=int(step["params"]["max"])),
+                               "body": visit(step["children"])})
+            elif step["type"] == "loop":
+                require(set(step["params"]) == {"item", "source"}, "Unexpected loop parameters")
+                collection = json.loads(step["params"]["source"])
+                require(type(collection) is list and all(type(v) is str for v in collection), "Invalid native collection")
+                result.append({"kind": "loop", "item": step["params"]["item"], "items": collection, "body": visit(step["children"])})
             elif step["type"] == "match":
                 children = step["children"]
                 require(len(children) >= 3 and [c["type"] for c in children] ==
@@ -44,18 +53,34 @@ def bind(expected, manifest, graph):
 
 def prepare(inputs, output):
     contracts, variants, mappings = {}, {}, {}
-    for outcome in ("success", "default", "empty", "failure"):
+    for outcome in ("success", "default", "empty", "failure", *(
+            f"{direction}-{result}" for direction in ("retry-match", "match-retry") for result in ("success", "default", "empty", "failure"))):
+        result = outcome.split("-")[-1]
+        interaction = outcome != result
         directory = inputs / outcome
         document = json.loads((directory / "source.ast.json").read_text())
         initial = expectation(document, {"enabled": True})
         failures = {name: None for name, action in initial["tasks"].items() if action["params"]["branch"]["value"] == ABSENT}
-        require(bool(failures) == (outcome == "failure"), "Fault declaration differs from source")
+        require(bool(failures) == (result == "failure"), "Fault declaration differs from source")
         initial = expectation(document, {"enabled": True}, failures)
         mapping = bind(initial, json.loads((directory / "manifest.json").read_text()), json.loads((directory / "canonical-graph.json").read_text()))
         baseline, calls = jenkins_envelope((directory / "Jenkinsfile").read_text(), mapping)
         by_name = {mapping[key]: value[1] for key, value in calls.items()}
         candidates = {"baseline": baseline}
-        if outcome in ("success", "empty"):
+        if interaction:
+            if result in ("success", "default"):
+                candidates["repeated-success"] = replace_once(baseline, "retry(2) {", "for (def flowReplayProbe in [1, 2]) {")
+                candidates["deduplicated"] = replace_once(baseline, "['alternate', 'selected', 'selected']", "['alternate', 'selected']")
+                candidates["reordered"] = replace_once(baseline, "['alternate', 'selected', 'selected']", "['selected', 'alternate', 'selected']")
+            if result in ("success", "empty"):
+                candidates["selected-fallthrough"] = replace_once(baseline, "else if (true)", "else if (false)")
+            elif result == "default":
+                candidates["default-substitution"] = replace_once(baseline, "else if (false)", "else if (true)")
+            elif result == "failure":
+                candidates["flattened-retry"] = replace_once(baseline, "retry(2) {", "retry(1) {")
+                block = by_name["selected"]
+                candidates["swallowed-failure"] = replace_once(baseline, block, "try {\n" + block + "} catch (Exception flowMutationFailure) { }\n")
+        elif outcome in ("success", "empty"):
             candidates["selected-fallthrough" if outcome == "success" else "empty-fallthrough"] = replace_once(
                 baseline, "\n          } else if (true) {", "\n          } else if (false) {")
         if outcome == "success":
@@ -67,7 +92,7 @@ def prepare(inputs, output):
         elif outcome == "failure":
             block = by_name["selected"]
             candidates["swallowed-failure"] = replace_once(baseline, block, "try {\n" + block + "} catch (Exception flowMutationFailure) { }\n")
-        for enabled in ((True, False) if outcome in ("success", "default") else (True,)):
+        for enabled in ((True, False) if result in ("success", "default") else (True,)):
             case = f"{outcome}-{'true' if enabled else 'false'}"
             contracts[case] = expectation(document, {"enabled": enabled}, failures)
             mappings[case] = mapping
@@ -87,6 +112,6 @@ def prepare(inputs, output):
 
 
 if __name__ == "__main__":
-    run_composition(prepare, "match", "native exclusive branch composition, empty selection, ordering and failure propagation",
-                    ["Inert string sources, disjoint literal Boolean cases, tasks, conditions and nested matches only",
-                     "No implicit result, branch-output export, rollback, workspace isolation or cancellation equivalence claim"])
+    run_composition(prepare, "match", "native exclusive selection with retry and finite iteration, empty/default routing, replay ownership and failure propagation",
+                    ["Inert string sources and disjoint literal Boolean cases compose with fixed zero-delay retries, finite string loops, tasks and conditions",
+                     "No dynamic matching, error branches, implicit result, output export, rollback, workspace isolation or cancellation equivalence claim"])

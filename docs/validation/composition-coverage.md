@@ -37,7 +37,7 @@ signatures or additions to the signed portfolio.
 | `cross-runtime-condition-composition` | Jenkins, GitHub Actions | Conditions | Bounded Boolean inputs, branches and ordering; no general control/value transfer |
 | `retry-composition-runtime` | Jenkins | Retry | Fixed zero-delay retry with supported sequential/condition/nested retry bodies |
 | `loop-composition-runtime` | Jenkins | Loops | Finite literal string iteration, lexical item bindings and fixed zero-delay retry in both nesting directions |
-| `match-composition-runtime` | Jenkins | Match | Inert literal string sources and exclusive literal Boolean cases |
+| `match-composition-runtime` | Jenkins | Match | Inert literal string sources and exclusive literal Boolean cases, composed with fixed zero-delay retry and finite string iteration |
 | `parallel-composition-runtime` | Jenkins | Parallelism | Top-level groups, branch-local sequences, workspace routing and authored failure policy |
 
 AR-06AE-C10 extends the existing loop producer to distinguish retry around a loop
@@ -52,6 +52,17 @@ and cases explicitly describe its interaction with retry. It does not manufactur
 another signed assessment or imply general retry/state isolation. Transient-fault
 budget reset also has oracle regression coverage, but is not claimed as a native
 observation by these permanent-fault/success fixtures.
+
+AR-06AE-C11 extends the existing match producer with retry around selection and
+retry inside a selected branch, including finite loops in both directions.
+Selection stays exclusive on every attempt and iteration. Default branches use
+the same recursive contract; an empty selected branch never falls through.
+Source-derived traces distinguish whole-body replay from retry of the selected
+body, preserve duplicate elements and order, and suppress successors on failure.
+Mutants substitute the default, flatten retry, repeat successful bodies, alter
+iteration order/multiplicity or swallow failure. All previous match observations
+remain required. The same admission/replay consumer publishes the additional
+cases on the primary `MATCH` row; no new producer or signed assessment is added.
 
 The complete per-producer claims and limitations accompany the published report.
 Every other target/construct cell remains `NO_COMPOSITION_EVIDENCE`, including

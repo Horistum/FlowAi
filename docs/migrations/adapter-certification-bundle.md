@@ -923,5 +923,33 @@ Signed portfolio bytes and all previous checks remain required.
 
 This is invocation replay over existing native controls, not transactionality,
 fresh workspaces, idempotency, general state transfer or portable execution.
-Nonzero retry delay, dynamic collections and parallel/match/approval/recovery
+Nonzero retry delay, dynamic collections and parallel/approval/recovery
 interactions remain outside this mapping. AR-06 stays active.
+
+## Exclusive selection in sequential composition (AR-06AE-C11)
+
+Literal match now consumes the same recursive adapter contract as retry and loop.
+Supported sequential bodies may nest independently materialized tasks, conditions,
+exclusive literal matches, fixed zero-delay retries and finite string loops in
+any order. The separate match body allowlist is removed. Each construct still
+validates its own parameters, and leaf mappings and continuity are independently
+authorized. Core semantics and public schemas are unchanged.
+
+Every case and default inherits the enclosing lexical bindings. A loop declaration
+cannot capture an outer item or input through a match or retry boundary. Sibling
+scopes may reuse a local item; branch values do not become implicit exports.
+Caller-supplied manifests must preserve the ordered case/error/default wrappers,
+their exact parameter shapes and the complete recursive body contract.
+
+The existing match producer executes both retry nesting directions with finite
+iteration, selected/default/empty branches, both Boolean inputs and permanent
+native failures. Source AST expectations, canonical/manifest ownership checks,
+native observations and mutations independently constrain selection, replay,
+iteration order/multiplicity and failure propagation. The composition consumer
+regenerates and replays this evidence before publication. Oracle fault budgets
+also probe transient recovery; these are not native transient-fault evidence.
+
+Dynamic match sources/guards, nonempty error branches, child-scope value exports,
+nonzero retry delay, dynamic collections and parallel/approval/recovery interaction
+remain outside the mapping. No target-wide support, signed portfolio scope or
+portable execution claim changes. AR-06 remains active, AR-07 planned and EF-09 paused.

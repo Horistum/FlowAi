@@ -3,6 +3,7 @@ package org.flowlang.targets.builtin
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.LoopNode
+import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.PlanNode
 import org.flowlang.planner.RetryGroupNode
 import org.flowlang.planner.TaskNode
@@ -16,10 +17,13 @@ internal object JenkinsSequentialControlScope {
             supportsBody(node.body, bindings)
         is LoopNode -> JenkinsLoopProjectionScope.safeItem(node.item) && node.item !in bindings &&
             JenkinsLoopProjectionScope.literalItems(node.source) != null && supportsBody(node.body, bindings + node.item)
+        is MatchPlanNode -> JenkinsMatchProjectionScope.supports(node.source, node.cases.map { it.condition }) &&
+            node.errorCase.isEmpty() && node.cases.all { supportsBody(it.steps, bindings) } &&
+            supportsBody(node.defaultSteps, bindings)
         else -> false
     } }
 
-    /** Carry loop bindings through retries so a nested declaration cannot capture its ancestor. */
+    /** Carry loop bindings through every control so a nested declaration cannot capture its ancestor. */
     fun supportsRenderedBody(steps: List<TargetStep>, bindings: Set<String>): Boolean = steps.all { step -> when (step.type) {
         "action" -> step.children.isEmpty()
         "condition" -> supportsRenderedBody(step.children, bindings)
@@ -31,6 +35,7 @@ internal object JenkinsSequentialControlScope {
             step.params.getValue("item").let { item -> JenkinsLoopProjectionScope.safeItem(item) && item !in bindings &&
                 JenkinsLoopProjectionScope.literalItems(step.params.getValue("source")) != null &&
                 supportsRenderedBody(step.children, bindings + item) }
+        "match" -> JenkinsMatchProjectionScope.supportsRenderedMatch(step, bindings)
         else -> false
     } }
 }

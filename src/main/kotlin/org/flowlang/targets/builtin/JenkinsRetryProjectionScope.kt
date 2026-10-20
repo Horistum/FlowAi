@@ -39,7 +39,7 @@ class JenkinsRetryProjectionScope(private val catalog: TargetNativeProjectionCat
         })
         return declared.copy(features = declared.features + ("retry.task" to SupportLevel.SUPPORTED),
             topologyProfile = scopedTopology,
-            notes = declared.notes + "Jenkins retry replays sequential independently materialized tasks, conditions, finite literal-string loops and nested retries with a positive total attempt limit and fixed zero delay; other controls and policies remain unsupported.")
+            notes = declared.notes + "Jenkins retry replays sequential independently materialized tasks, conditions, literal matches, finite literal-string loops and nested retries with a positive total attempt limit and fixed zero delay; other controls and policies remain unsupported.")
     }
 
     companion object {

@@ -6,7 +6,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from match_composition_oracle import bind_control_structure, expectation, projected_structure, verify_observations
 from match_composition_runtime import bind
-from test_retry_composition_oracle import action, document, rows
+from test_retry_composition_oracle import action, document, retry, rows
+from test_loop_composition_oracle import loop, branch
 
 
 def match(cases, fallback=None):
@@ -16,6 +17,90 @@ def match(cases, fallback=None):
 
 
 class MatchCompositionOracleTests(unittest.TestCase):
+    def test_retry_outside_selection_replays_prefix_but_inside_retries_only_selected_body(self):
+        selected = match([(False, [action("unused")]), (True, [action("bad"), action("suffix")])], [action("fallback")])
+        outside = document([retry([action("prefix"), selected], 2), action("tail")])
+        inside = document([action("prefix"), match([(True, [retry([action("bad"), action("suffix")], 2)])]), action("tail")])
+        for d, names in ((outside, ["prefix", "bad", "prefix", "bad"]), (inside, ["prefix", "bad", "bad"])):
+            e = expectation(d, {}, {"bad": None})
+            self.assertEqual(names, [r["task"] for r in e["trace"]])
+            verify_observations(e, rows(e["trace"]), "FAILURE")
+            with self.assertRaises(ValueError): verify_observations(e, rows(e["trace"][:-1]), "FAILURE")
+            with self.assertRaises(ValueError): verify_observations(e, rows(e["trace"]), "SUCCESS")
+
+    def test_loop_order_and_multiplicity_survive_selected_and_default_branches(self):
+        for selected in (True, False):
+            body = [retry([branch("item", "a", [action("a")], [action("b")])], 2)]
+            selection = match([(selected, body if selected else [action("unused")])], [] if selected else body)
+            e = expectation(document([loop("item", ["b", "a", "a"], [selection]), action("tail")]), {})
+            self.assertEqual(["b", "a", "a", "tail"], [r["task"] for r in e["trace"]])
+            for trace in (e["trace"][1:], list(reversed(e["trace"])), e["trace"] + e["trace"]):
+                with self.assertRaises(ValueError): verify_observations(e, rows(trace), "SUCCESS")
+
+    def test_transient_fault_model_stops_on_success_and_resets_attempts_per_iteration(self):
+        body = [match([(True, [retry([action("prefix"), action("bad"), action("suffix")], 2)])])]
+        e = expectation(document([loop("item", ["a", "b"], body), action("tail")]), {}, {"bad": 1})
+        self.assertEqual(["prefix", "bad", "prefix", "bad", "suffix", "prefix", "bad", "suffix", "tail"],
+                         [r["task"] for r in e["trace"]])
+        self.assertEqual("SUCCESS", e["result"])
+        # Fault budgets are oracle probes, not evidence of native transient recovery.
+        verify_observations(e, rows(e["trace"]), "SUCCESS")
+
+    def test_empty_selection_and_empty_iteration_preserve_successors(self):
+        cases = [retry([match([(True, [])], [action("fallback")])], 2),
+                 match([(False, [action("unused")])], [loop("item", [], [retry([action("never")], 2)])]),
+                 loop("item", ["a", "a"], [match([(True, [])], [retry([action("fallback")], 2)])])]
+        for node in cases:
+            e = expectation(document([node, action("tail")]), {})
+            self.assertEqual(["tail"], [r["task"] for r in e["trace"]])
+
+    def test_all_branches_preserve_lexical_scope_and_validate_nested_policies(self):
+        for selected in (True, False):
+            invalid = [loop("item", [], []), retry([], 0), dict(retry([], 2), policy={"max": 2, "delay": "1s", "backoff": "fixed"}),
+                       loop("inner", [1], []), branch("missing", "a", []), {"type": "Approval"}]
+            for node in invalid:
+                for selection in (match([(selected, [node])]), match([(selected, [])], [node])):
+                    with self.assertRaises(ValueError): expectation(document([loop("item", [], [selection])]), {})
+        with self.assertRaises(ValueError):
+            expectation(document([match([(True, [loop("item", [], [])])], [branch("item", "a", [])])]), {})
+        expectation(document([match([(True, [loop("item", [], [])])], [loop("item", [], [])])]), {})
+
+    def test_nested_empty_control_expansion_is_bounded(self):
+        with self.assertRaisesRegex(ValueError, "budget"):
+            expectation(document([loop("item", ["a"] * 10001, [match([(True, [])])])]), {})
+
+    def test_mixed_canonical_and_manifest_control_ownership_cannot_be_relocated(self):
+        e = expectation(document([retry([match([(True, [loop("item", ["a", "a", "b"], [action("leaf")])])])], 2)]), {})
+        graph = {"workflows": [{"rootNodeIds": ["r"]}], "dependencyEdges": [], "nodes": [
+            {"id": "r", "kind": "RETRY", "max": 2, "delay": "0s", "backoff": "fixed", "bodyNodeIds": ["m"]},
+            {"id": "m", "kind": "MATCH", "source": '"inert"', "cases": [{"condition": "true", "nodeIds": ["l"]}],
+             "errorNodeIds": [], "defaultNodeIds": []},
+            {"id": "l", "kind": "LOOP", "item": "item", "source": '["a", "a", "b"]', "bodyNodeIds": ["leaf"]},
+            {"id": "leaf", "kind": "TASK", "resultName": "leaf", "semantics": {"parameters": {"branch": '"' + 'a' * 40 + '"'}}}]}
+        def node(kind, params, children):
+            return {"type": kind, "params": params, "children": children, "materialization": {"status": "NATIVE"}}
+        leaf = dict(node("action", {"branch": "a" * 40}, []), id="leaf", module="git", action="checkout", metadata={"resultName": "leaf"})
+        iteration = node("loop", {"item": "item", "source": '["a", "a", "b"]'}, [leaf])
+        selection = node("match", {"source": '"inert"'}, [node("match-case", {"condition": "true"}, [iteration]),
+                         node("match-error", {}, []), node("match-default", {}, [])])
+        attempt = node("retry", {"max": "2", "delay": "0s", "backoff": "fixed"}, [selection])
+        manifest = {"jobs": [{"steps": [attempt]}]}
+        self.assertEqual({"leaf": "leaf"}, bind(e, manifest, graph))
+        for index in range(5):
+            changed = copy.deepcopy(manifest); r = changed["jobs"][0]["steps"][0]
+            m = r["children"][0]; l = m["children"][0]["children"][0]
+            if index == 0: r["params"]["max"] = "1"
+            elif index == 1: l["params"]["source"] = '["a", "b"]'
+            elif index == 2: l["params"]["item"] = "changed"
+            elif index == 3:
+                r["children"] = [l]; m["children"][0]["children"] = l["children"]; l["children"] = [m]
+            else: r["params"]["extra"] = "ignored"
+            with self.assertRaises(ValueError): bind(e, changed, graph)
+        for index, update in ((0, {"max": 1}), (2, {"source": '["a", "b"]'}), (2, {"item": "changed"}),
+                              (2, {"bodyNodeIds": ["r"]})):
+            changed = copy.deepcopy(graph); changed["nodes"][index].update(update)
+            with self.assertRaises(ValueError): bind_control_structure(e, changed)
+
     def test_unique_selection_and_default_are_independent_of_case_position(self):
         for position in range(5):
             node = match([(index == position, [action(str(index))]) for index in range(5)], [action("default")])
