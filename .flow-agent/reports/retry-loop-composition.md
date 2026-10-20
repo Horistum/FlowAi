@@ -57,6 +57,13 @@ regressions cover production mapping and rejection behavior. The existing loop j
 runs those focused tests before native execution, while full tests, standalone
 conformance and module isolation remain required.
 
+The first CI run compiled the change and passed five of the six new JVM tests.
+It exposed an incorrect expectation in the remaining test: a definitely available
+Core value can produce a diagnostic `REVIEW_ONLY` manifest when the adapter lacks
+a child-scope export; manifest creation need not throw. The regression now asserts
+that exact review-only state and executable-render rejection. Production checks
+remain unchanged.
+
 Validation status: current-revision CI required. The local JDK is 17, not the pinned
 JDK 25 toolchain. Exact-head and synthetic merge compilation/tests/conformance, all
 native checks and final composition evidence replay must pass before acceptance.

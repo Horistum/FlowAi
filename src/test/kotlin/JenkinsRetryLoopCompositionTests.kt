@@ -87,8 +87,12 @@ class JenkinsRetryLoopCompositionTests {
         val artifact = provider.render(manifest(source(loop(retry("$producer $consumer")))))
         assertTrue(artifact.indexOf("retry(2)") < artifact.indexOf("def flowCheckoutSucceeded = true"))
         assertTrue(artifact.indexOf("def flowCheckoutSucceeded = true") < artifact.indexOf("if (flowCheckoutSucceeded"))
-        assertFails { manifest(source(loop(retry(producer) + consumer))) }
-        assertFails { manifest(source(retry(loop(producer) + consumer))) }
+        // Definite availability in Core does not establish a native child-scope export.
+        val escapedRetry = manifest(source(loop(retry(producer) + consumer)))
+        assertEquals(TargetRenderMode.REVIEW_ONLY, TargetRenderPolicy.evaluate(escapedRetry).mode)
+        assertFalse(escapedRetry.compatibility.executable)
+        assertFailsWith<TargetRenderBlockedException> { provider.render(escapedRetry) }
+        assertFails { provider.render(manifest(source(retry(loop(producer) + consumer)))) }
         assertFailsWith<UnresolvedPlanningContinuityException> {
             manifest(source(retry(loop("$producer docker.build builder { image: \"example/app:test\" path: \".\" push: false }"))))
         }
