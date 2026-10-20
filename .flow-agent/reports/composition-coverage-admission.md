@@ -25,6 +25,12 @@ compiler with a stable logical identity. A regression proves identical-source
 AST/graph reproducibility and changed-source distinction. Core semantics, adapter
 projection behavior and public syntax are unchanged.
 
+The initial CI run correctly rejected the helper's new direct compilation input
+as an unlisted compiler-boundary caller. The exact caller inventory now includes
+this conformance fixture beside the existing parsed-AST fixtures. It still enters
+the full validating compiler and never constructs graph authorization directly.
+The exact-set rule and the regression rejecting unlisted callers remain intact.
+
 The new artifact preserves the original signed portfolio and target coverage
 bytes, with a separately labeled CI-bound composition matrix. Its rows retain
 signed status and scenario identities, show bounded observations for six cells,

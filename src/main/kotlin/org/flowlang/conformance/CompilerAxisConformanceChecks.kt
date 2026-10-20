@@ -253,10 +253,11 @@ class CompilerAxisConformanceChecks(
         )
         requireExactProductionCallers(
             symbol = "FlowSourceCompilationInput(",
-            // Parsed-AST conformance fixtures still cross the full validating compiler;
-            // neither owns a product frontend nor constructs graph authorization directly.
+            // Conformance fixtures still cross the full validating compiler;
+            // none owns a product frontend or constructs graph authorization directly.
             expectedPaths = setOf(COMPILATION_CONTRACTS, FLOW_SOURCE_FRONTEND, AR02B_CONFORMANCE,
-                "src/main/kotlin/org/flowlang/conformance/GitHubConditionCompositionFixture.kt"),
+                "src/main/kotlin/org/flowlang/conformance/GitHubConditionCompositionFixture.kt",
+                "src/main/kotlin/org/flowlang/conformance/RetryCompositionFixture.kt"),
             errors = this
         )
         requireExactProductionCallers(

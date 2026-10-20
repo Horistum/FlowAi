@@ -29,6 +29,7 @@ expectedFilesToChange:
 - tools/composition_coverage.py
 - tools/tests/test_composition_coverage.py
 - src/main/kotlin/org/flowlang/conformance/RetryCompositionFixture.kt
+- src/main/kotlin/org/flowlang/conformance/CompilerAxisConformanceChecks.kt
 - src/test/kotlin/JenkinsRetryCompositionTests.kt
 - README.md
 - .flow-agent/roadmap-architecture-recovery.yaml
