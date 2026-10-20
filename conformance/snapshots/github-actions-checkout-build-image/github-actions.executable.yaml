@@ -20,6 +20,7 @@ jobs:
           repository: "octocat/Hello-World"
           ref: "main"
           fetch-depth: "0"
+          persist-credentials: false
       - name: "Upload Flow workspace source"
         uses: "actions/upload-artifact@v7"
         with:
@@ -40,5 +41,6 @@ jobs:
       - name: "docker_build_1"
         uses: "docker/build-push-action@v7"
         with:
+          context: "."
           tags: "ghcr.io/flowlang/reference:${{ inputs.version }}"
           push: false

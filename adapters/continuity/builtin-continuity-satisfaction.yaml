@@ -152,7 +152,7 @@ targets:
           - "Job ordering does not prove data transfer."
       - family: ARTIFACT
         status: UNSUPPORTED
-        mechanism: "Generic GitHub Actions workspace continuity remains unsupported. The exact git.checkout to docker.build source-channel reference is a bounded scoped exception that emits actions/upload-artifact@v7 and actions/download-artifact@v8."
+        mechanism: "Generic GitHub Actions workspace continuity remains unsupported. Unconditional single-source git.checkout to docker.build source-channel relations are a bounded scoped exception that emits actions/upload-artifact@v7 and actions/download-artifact@v8."
         semantics:
           supported: []
           unsupported:
@@ -168,7 +168,7 @@ targets:
         prerequisites:
           - "To claim generic support, generalize the scoped transfer contract to arbitrary admitted producer, consumer and channel combinations with independent behavioral evidence."
         limitations:
-          - "The bounded checkout-build-image exception must not be interpreted as target-wide support."
+          - "The bounded unconditional producer/channel/consumer contract must not be interpreted as target-wide support."
           - "The zipped artifact path preserves tested regular-file bytes, relative paths and hidden entries but does not preserve Unix mode bits; symbolic-link identity is not certified."
       - family: MUTABLE_STATE
         status: UNSUPPORTED

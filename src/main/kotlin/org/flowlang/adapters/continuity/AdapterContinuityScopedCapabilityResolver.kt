@@ -9,7 +9,7 @@ import org.flowlang.topology.ExecutionTopologyProfile
 import org.flowlang.topology.ExecutionTopologySupportStatus
 
 /**
- * Promotes only the exact A1.0 GitHub Actions workspace path for one concrete plan.
+ * Promotes only admitted GitHub Actions workspace relations for one concrete plan.
  *
  * The authored target registry intentionally remains UNSUPPORTED for generic
  * workspace continuity. A plan receives an effective SUPPORTED view only when

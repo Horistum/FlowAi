@@ -1,8 +1,8 @@
 package org.flowlang.targets.builtin
 
 internal object GitHubActionsImageBuildProjectionValues {
-    fun githubContext(contextPath: String): String? =
-        if (contextPath == ".") null else "{{defaultContext}}:$contextPath"
+    // Default Git context bypasses downloaded workspace bytes, so always select a local path.
+    fun githubContext(contextPath: String): String = contextPath
 
     fun githubDockerfile(contextPath: String, dockerfile: String?): String? {
         if (dockerfile == null || ImageBuildProjectionValues.isDefaultDockerfile(contextPath, dockerfile)) return null
@@ -11,6 +11,6 @@ internal object GitHubActionsImageBuildProjectionValues {
         require(dockerfile.startsWith(prefix)) {
             "GitHub image-build Dockerfile '$dockerfile' must be inside build context '$contextPath'."
         }
-        return dockerfile.removePrefix(prefix)
+        return dockerfile
     }
 }

@@ -1,0 +1,239 @@
+name: GitHub workspace composition
+on:
+  workflow_call:
+permissions:
+  contents: read
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      revision: ${{ steps.prepare.outputs.revision }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '25'
+      - uses: gradle/actions/setup-gradle@v5
+      - name: Bind generated transfers to executed envelope
+        id: prepare
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*GitHubWorkspaceCompositionTests*' --tests '*GitHubActionsWorkspaceContinuityTests*' --tests '*AdapterContinuityProviderBehaviorTests*' --tests '*NativeImageBuildProjectionTests*' :flow-conformance-kit:installDist --stacktrace
+          git fetch --no-tags origin "$WORKFLOW_REVISION"
+          git show "$WORKFLOW_REVISION:.github/workflows/github-workspace-composition.yml" > "$RUNNER_TEMP/workspace-envelope.yml"
+          cmp .github/workflows/github-workspace-composition.yml "$RUNNER_TEMP/workspace-envelope.yml"
+          java -cp 'flow-conformance-kit/build/install/flow-conformance/lib/*' org.flowlang.conformance.GitHubWorkspaceCompositionCli "$GITHUB_WORKSPACE" "$RUNNER_TEMP/workspace-envelope.yml" "$RUNNER_TEMP/workspace-evidence" "$EXPECTED_SHA"
+          python3 tools/verify_github_workspace_composition.py prepare "$RUNNER_TEMP/workspace-evidence"
+          printf 'revision=%s\n' "$EXPECTED_SHA" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: github-workspace-tests
+          path: flow-conformance-kit/build/test-results/test/*.xml
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: github-workspace-prepared
+          path: ${{ runner.temp }}/workspace-evidence/
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true
+
+  git_checkout_1:
+    name: "git_checkout_1"
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    timeout-minutes: 10
+    outputs:
+      inventory: ${{ steps.observe.outputs.inventory }}
+    steps:
+      - name: "git_checkout_1"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: ${{ needs.prepare.outputs.revision }}
+          fetch-depth: "0"
+          persist-credentials: false
+      - name: "Upload Flow workspace source"
+        uses: "actions/upload-artifact@v7"
+        with:
+          name: "flow-workspace-git_checkout_1-source"
+          path: "."
+          if-no-files-found: "error"
+          include-hidden-files: "true"
+      - name: Observe workspace bytes
+        id: observe
+        shell: bash
+        run: |
+          python3 tools/verify_github_workspace_composition.py observe
+      - name: "Prepare hidden-file mutant"
+        uses: "actions/upload-artifact@v7"
+        with:
+          name: "workspace-hidden-mutant"
+          path: "."
+          if-no-files-found: "error"
+          include-hidden-files: "false"
+
+  docker_build_1:
+    name: "docker_build_1"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    timeout-minutes: 10
+    outputs:
+      inventory: ${{ steps.observe.outputs.inventory }}
+    steps:
+      - name: "Restore Flow workspace source"
+        uses: "actions/download-artifact@v8"
+        with:
+          name: "flow-workspace-git_checkout_1-source"
+          path: "."
+      - name: "docker_build_1"
+        uses: "docker/build-push-action@v7"
+        with:
+          context: "conformance/fixtures/workspace-bytes"
+          tags: "flow-workspace:consumer1"
+          push: false
+      - name: Observe workspace bytes
+        id: observe
+        shell: bash
+        run: |
+          python3 tools/verify_github_workspace_composition.py observe
+
+  docker_build_2:
+    name: "docker_build_2"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    timeout-minutes: 10
+    outputs:
+      inventory: ${{ steps.observe.outputs.inventory }}
+    steps:
+      - name: "Restore Flow workspace source"
+        uses: "actions/download-artifact@v8"
+        with:
+          name: "flow-workspace-git_checkout_1-source"
+          path: "."
+      - name: "docker_build_2"
+        uses: "docker/build-push-action@v7"
+        with:
+          context: "conformance/fixtures/workspace-bytes"
+          tags: "flow-workspace:consumer2"
+          push: false
+      - name: Observe workspace bytes
+        id: observe
+        shell: bash
+        run: |
+          python3 tools/verify_github_workspace_composition.py observe
+
+  git_checkout_2:
+    name: "git_checkout_2"
+    runs-on: ubuntu-latest
+    needs: [prepare]
+    timeout-minutes: 10
+    outputs:
+      inventory: ${{ steps.observe.outputs.inventory }}
+    steps:
+      - name: "git_checkout_2"
+        uses: "actions/checkout@v4"
+        with:
+          repository: "Horistum/FlowAi"
+          ref: ${{ needs.prepare.outputs.revision }}
+          fetch-depth: "0"
+      - name: Observe workspace bytes
+        id: observe
+        shell: bash
+        run: |
+          python3 tools/verify_github_workspace_composition.py observe
+
+  missing-transfer-mutant:
+    name: "missing-transfer-mutant"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    timeout-minutes: 10
+    steps:
+      - name: "docker_build_1"
+        id: build
+        continue-on-error: true
+        uses: "docker/build-push-action@v7"
+        with:
+          context: "conformance/fixtures/workspace-bytes"
+          tags: "flow-workspace:consumer1"
+          push: false
+      - name: Require falsification
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          test "$OUTCOME" = failure
+
+  hidden-file-mutant:
+    name: "hidden-file-mutant"
+    runs-on: ubuntu-latest
+    needs: [prepare, git_checkout_1]
+    timeout-minutes: 10
+    steps:
+      - name: "Restore Flow workspace source"
+        uses: "actions/download-artifact@v8"
+        with:
+          name: "workspace-hidden-mutant"
+          path: "."
+      - name: Verify selective loss
+        shell: bash
+        run: |
+          test -f conformance/fixtures/workspace-bytes/payload.txt
+          test ! -e conformance/fixtures/workspace-bytes/.hidden
+      - name: "docker_build_1"
+        id: build
+        continue-on-error: true
+        uses: "docker/build-push-action@v7"
+        with:
+          context: "conformance/fixtures/workspace-bytes"
+          tags: "flow-workspace:consumer1"
+          push: false
+      - name: Require falsification
+        shell: bash
+        env:
+          OUTCOME: ${{ steps.build.outcome }}
+        run: |
+          test "$OUTCOME" = failure
+
+  collect:
+    needs: [prepare, git_checkout_1, docker_build_1, docker_build_2, git_checkout_2, missing-transfer-mutant, hidden-file-mutant]
+    if: ${{ always() && !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: github-workspace-prepared
+          path: ${{ runner.temp }}/workspace-evidence
+      - name: Verify native file observations and required mutant failures
+        env:
+          FLOW_JOB_RESULTS: ${{ toJSON(needs) }}
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
+          python3 -m unittest discover -s tools/tests -p 'test_github_workspace_composition.py' -v
+          python3 tools/verify_github_workspace_composition.py verify "$RUNNER_TEMP/workspace-evidence"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: github-workspace-composition
+          path: ${{ runner.temp }}/workspace-evidence/
+          if-no-files-found: error
+          retention-days: 7
+          overwrite: true

@@ -172,8 +172,8 @@ class AdapterExecutableContinuityConformanceChecks(
                 target = "follow-up"
             )
         )
-        if (pipeline.effectiveTarget(CanonicalExecutionGraphGate.authorizeCompatibilityPlan(largerPlan, "conformance:a1.larger-plan"), GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.UNSUPPORTED) {
-            add("A larger workflow must not borrow executability from the bounded reference scenario.")
+        if (pipeline.effectiveTarget(CanonicalExecutionGraphGate.authorizeCompatibilityPlan(largerPlan, "conformance:a1.larger-plan"), GITHUB_ACTIONS).features[WORKSPACE_FEATURE] != SupportLevel.SUPPORTED) {
+            add("Independent tasks must not invalidate an admitted workspace relation; leaf executability is checked separately.")
         }
     }
 

@@ -130,6 +130,7 @@ src/test/kotlin/AdapterControlProviderBehaviorTests.kt
 src/test/kotlin/AdapterTriggerProviderBehaviorTests.kt
 src/test/kotlin/CrossTargetCheckoutProjectionTests.kt
 src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt
+src/test/kotlin/GitHubWorkspaceCompositionTests.kt
 src/test/kotlin/JenkinsLoopRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsMatchRuntimeCertificationTests.kt
 src/test/kotlin/JenkinsParallelCancellationRuntimeTests.kt

@@ -6,6 +6,7 @@ import org.flowlang.adapters.continuity.AdapterContinuityRequirementAuthority
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupport
 import org.flowlang.adapters.continuity.AdapterContinuityScopedSupportAuthority
 import org.flowlang.adapters.continuity.BuiltInAdapterContinuityScopedSupport
+import org.flowlang.generators.manifest.TargetManifest
 import org.flowlang.generators.manifest.TargetJob
 import org.flowlang.generators.manifest.TargetMaterialization
 import org.flowlang.generators.manifest.TargetRendererPayload
@@ -149,6 +150,47 @@ object GitHubActionsWorkspaceContinuityPlanner {
                 "continuity.jobs.${job.id}.steps", job.steps.flatMap { it.flatten() }.map { it.id }, ::sanitizeId)
         }
         return result
+    }
+
+    /** Recheck transfer topology at the direct renderer boundary, including caller-supplied manifests. */
+    fun requireConsistentTransfers(manifest: TargetManifest) {
+        val uploads = mutableMapOf<String, TargetJob>()
+        val downloads = mutableListOf<Pair<TargetJob, TargetStep>>()
+        fun artifact(step: TargetStep): String {
+            val identity = requireNotNull(step.rendererPayload?.bindings?.get("name")?.name)
+            require(step.metadata["continuityArtifactIdentity"] == identity &&
+                step.metadata["continuityChannel"] == "source") { "GitHub workspace transfer identity differs." }
+            return identity
+        }
+        for (job in manifest.jobs) for (step in job.steps.flatMap { it.flatten() }) {
+            val reference = step.rendererPayload?.reference
+            if (reference == UPLOAD_REFERENCE || step.type == "adapter-continuity-upload") {
+                require(reference == UPLOAD_REFERENCE && step.type == "adapter-continuity-upload" &&
+                    job.steps.size == 2 && job.steps.last() == step && job.metadata["condition"] == null &&
+                    job.steps.first().module == "git" && job.steps.first().action == "checkout" &&
+                    step.metadata["continuitySourceJob"] == job.id) { "Invalid GitHub workspace producer." }
+                require(uploads.put(artifact(step), job) == null) { "Duplicate GitHub workspace artifact producer." }
+            }
+            if (reference == DOWNLOAD_REFERENCE || step.type == "adapter-continuity-download") {
+                require(reference == DOWNLOAD_REFERENCE && step.type == "adapter-continuity-download" &&
+                    job.steps.size == 2 && job.steps.first() == step && job.metadata["condition"] == null &&
+                    job.steps.last().module == "docker" && job.steps.last().action == "build" &&
+                    step.metadata["continuityTargetJob"] == job.id) { "Invalid GitHub workspace consumer." }
+                downloads += job to step
+            }
+        }
+        val expected = manifest.metadata["workspaceContinuityTransferCount"]?.toIntOrNull() ?: 0
+        require(expected == downloads.size) { "GitHub workspace transfer inventory differs." }
+        val used = mutableSetOf<String>()
+        downloads.forEach { (consumer, step) ->
+            val identity = artifact(step)
+            val producer = requireNotNull(uploads[identity]) { "GitHub workspace download has no producer." }
+            require(producer.id == step.metadata["continuitySourceJob"] && producer.id in consumer.dependsOn) {
+                "GitHub workspace download lost its producer or ordering dependency."
+            }
+            used += identity
+        }
+        require(used == uploads.keys) { "GitHub workspace upload has no consumer." }
     }
 
     fun transferCount(plan: ExecutionPlan): Int = AdapterContinuityRequirementAuthority.derive(plan)
