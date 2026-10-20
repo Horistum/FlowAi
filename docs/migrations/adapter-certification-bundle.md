@@ -823,8 +823,8 @@ rechecks these boundaries even for caller-supplied manifests.
 Each failed attempt re-enters the entire body. Successful prefixes may therefore
 repeat; normal completion stops retry immediately. Empty bodies complete without
 executing a leaf. This is invocation replay, not rollback or a fresh workspace, and
-it introduces no cross-attempt value export. Approval, loop, match and parallel
-composition still require separately justified replay/topology contracts.
+it introduces no cross-attempt value export. Approval, match and parallel composition still require separately justified
+replay/topology contracts. Loop interaction is added by AR-06AE-C10 below.
 
 The `retry-composition-runtime` check compiles normal Flow Source and compares
 native Jenkins invocation traces with an independent AST-derived retry model.
@@ -851,8 +851,8 @@ short-circuiting. Six falsifying mutations test deduplication, reordering, flatt
 nesting, omitted work, invented iterations and swallowed failures. This uses the
 existing observation channel and leaves the signed 39-scenario portfolio required.
 Native evidence covers checkout; image-build composition is projection-only evidence.
-Dynamic collections and retry/match/parallel/approval/error-handler loop bodies remain
-unsupported. No public target-support or portability promotion follows from this slice.
+Dynamic collections and match/parallel/approval/error-handler loop bodies remain
+unsupported. Fixed zero-delay retry interaction is added by AR-06AE-C10 below. No public target-support or portability promotion follows from this slice.
 
 ## Exclusive match composition correction (AR-06AE-C6)
 
@@ -894,3 +894,34 @@ The existing signed portfolio is unchanged. Separate source-derived native regre
 evidence covers overlap, sequential order, empty/multiple groups, physical workspace
 contents, join, rejection, failure and both authored cancellation policies. No public
 support, portable execution or fresh-workspace/security-isolation claim is promoted.
+
+
+## Retry and finite iteration interaction (AR-06AE-C10)
+
+The existing sequential mappings now compose in both directions: fixed zero-delay
+retry can contain finite literal-string iteration, and an iteration can contain
+retry. One adapter-owned recursive validator checks plan and manifest trees,
+including all nested policies and lexical item bindings. Task identities and body
+counts do not select eligibility. Conditions and alternating retry/loop nesting
+consume the same contracts; leaves, producer values and declared continuity keep
+their independent materialization gates.
+
+Retry around a loop re-enters the entire body after failure, including earlier
+successful iterations. Retry inside a loop repeats only the current retry body
+with the current item still in scope. It does not restart the loop or export child
+results. Empty collections remain empty and successful bodies stop after their
+first attempt. An exhausted retry fails its enclosing loop and suppresses later
+iterations and successors. A nested loop cannot capture an outer item across a
+retry boundary; malformed caller-supplied manifests are also rejected.
+
+The existing `loop-composition-runtime` producer adds both nesting directions to
+its source-derived AST/canonical/manifest checks, native SCM observations and
+negative mutations. `adapter-composition-coverage` recompiles the same inputs and
+replays those observations before publishing. Its format and primary `LOOPS` row
+stay unchanged, with interaction details carried in the existing claim/cases.
+Signed portfolio bytes and all previous checks remain required.
+
+This is invocation replay over existing native controls, not transactionality,
+fresh workspaces, idempotency, general state transfer or portable execution.
+Nonzero retry delay, dynamic collections and parallel/match/approval/recovery
+interactions remain outside this mapping. AR-06 stays active.

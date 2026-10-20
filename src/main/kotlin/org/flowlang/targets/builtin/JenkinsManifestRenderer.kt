@@ -244,8 +244,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
 
     private fun renderJenkinsRetry(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String, bindings: JenkinsConditionValueScope.Bindings) {
         requireJenkinsStructure(step, "retry")
-        require(JenkinsRetryProjectionScope.supportsRenderedBody(step.children)) {
-            "Jenkins retry requires sequential tasks, conditions and nested retries; other control mappings need explicit replay evidence."
+        require(JenkinsRetryProjectionScope.supportsRenderedBody(step.children, manifest.inputs.map { it.name }.toSet())) {
+            "Jenkins retry requires sequential tasks, conditions, finite loops and fixed zero-delay retries; other control mappings need explicit replay evidence."
         }
         require(step.params.keys == setOf("max", "delay", "backoff")) { "Jenkins retry requires the complete authored policy." }
         val max = requireNotNull(step.params["max"]?.toIntOrNull()) { "Jenkins retry requires an integer total attempt limit." }
@@ -268,7 +268,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "Jenkins loop supports only an authored string-literal list."
         }
         require(JenkinsLoopProjectionScope.supportsRenderedBody(step.children, manifest.inputs.map { it.name }.toSet() + item)) {
-            "Jenkins loop requires sequential tasks, conditions and finite nested loops with distinct lexical item bindings."
+            "Jenkins loop requires sequential tasks, conditions, fixed zero-delay retries and finite nested loops with distinct lexical item bindings."
         }
         sb.appendLine("${indent}for (def $item in ${items.joinToString(", ", "[", "]") { groovyString(it) }}) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ", bindings) }

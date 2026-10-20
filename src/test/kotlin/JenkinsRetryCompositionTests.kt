@@ -102,7 +102,7 @@ class JenkinsRetryCompositionTests {
         assertFailsWith<TargetRenderBlockedException> { provider.render(missingLeaf) }
         assertFalse(provider.renderer.render(missingLeaf).contains("retry(2)"))
         for (body in listOf("approve manual { message: \"Replay decision\" }",
-            "for item in [\"one\"] { ${RetryCompositionFixture.checkout("child")} }"))
+            "retry { max: 2 delay: \"1s\" backoff: fixed } { ${RetryCompositionFixture.checkout("child")} }"))
             assertFails { manifest(source(body)) }
         val m = manifest(); val job = m.jobs.single(); val retry = job.steps.first()
         val child = retry.children.first()

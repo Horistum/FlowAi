@@ -9,11 +9,8 @@ import org.flowlang.generators.manifest.TargetProjectionCapabilityResolver
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.generators.manifest.TargetStep
-import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.PlanDependencyRelations
-import org.flowlang.planner.PlanNode
 import org.flowlang.planner.RetryGroupNode
-import org.flowlang.planner.TaskNode
 import org.flowlang.topology.ExecutionTopologyKind
 import org.flowlang.topology.ExecutionTopologySupportStatus
 
@@ -30,7 +27,7 @@ class JenkinsRetryProjectionScope(private val catalog: TargetNativeProjectionCat
         // The control mapping re-enters the whole sequential body. Leaf support is independently
         // authorized by materialization; neither a task name nor its position proves replay support.
         val boundRetries = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<RetryGroupNode>()
-        if (boundRetries.size != retries.size || boundRetries.any { !supportsBody(it.body) }) return declared
+        if (boundRetries.size != retries.size || boundRetries.any { !JenkinsSequentialControlScope.supportsBody(it.body, authorization.executionPlan.inputs.map { input -> input.name }.toSet()) }) return declared
         val topology = declared.topologyProfile ?: return declared
         if (topology.target != target || topology.declarations.count { it.kind == ExecutionTopologyKind.ATTEMPT_ISOLATION } != 1)
             return declared
@@ -42,23 +39,13 @@ class JenkinsRetryProjectionScope(private val catalog: TargetNativeProjectionCat
         })
         return declared.copy(features = declared.features + ("retry.task" to SupportLevel.SUPPORTED),
             topologyProfile = scopedTopology,
-            notes = declared.notes + "Jenkins retry replays sequential independently materialized tasks, conditions and nested retries with a positive total attempt limit and fixed zero delay; other controls and policies remain unsupported.")
+            notes = declared.notes + "Jenkins retry replays sequential independently materialized tasks, conditions, finite literal-string loops and nested retries with a positive total attempt limit and fixed zero delay; other controls and policies remain unsupported.")
     }
 
     companion object {
-        private fun supportsBody(nodes: List<PlanNode>): Boolean = nodes.all { node -> when (node) {
-            is TaskNode -> true
-            is ConditionNode -> supportsBody(node.then) && supportsBody(node.otherwise)
-            is RetryGroupNode -> supports(node.max, node.delay, node.backoff) && supportsBody(node.body)
-            else -> false
-        } }
-
-        /** Recheck the same control boundary at rendering, including caller-supplied manifests. */
-        internal fun supportsRenderedBody(steps: List<TargetStep>): Boolean = steps.all { step -> when (step.type) {
-            "action" -> step.children.isEmpty()
-            "condition", "retry" -> supportsRenderedBody(step.children)
-            else -> false
-        } }
+        /** Recheck native policies and lexical scope even for caller-supplied manifests. */
+        internal fun supportsRenderedBody(steps: List<TargetStep>, bindings: Set<String>): Boolean =
+            JenkinsSequentialControlScope.supportsRenderedBody(steps, bindings)
 
         fun supports(max: Int, delay: String, backoff: String): Boolean = max > 0 &&
             delay.trim().lowercase() in setOf("0", "0s", "0m", "0h", "0ms") && backoff.equals("fixed", ignoreCase = true)
