@@ -42,6 +42,7 @@ def bind(document, graph, manifest, revision):
         require((step["module"], step["action"]) in {("git", "checkout"), ("docker", "build")}, "Unexpected leaf")
         tasks[name] = step
     nodes = [node for node in graph["nodes"] if node["kind"] == "TASK"]
+    require(len(nodes) == len(graph["nodes"]), "Unexpected canonical control node")
     names = {node["id"]: node["resultName"] for node in nodes}
     require(len(nodes) == len(names) == len(tasks) and set(names.values()) == set(tasks), "Canonical tasks differ")
     for node in nodes:

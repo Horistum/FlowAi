@@ -1,5 +1,7 @@
 # AR-06AE-C12: Composable GitHub workspace transfers
 
+Frozen adapter profile evidence remains byte-identical; current applicability is supplied by the existing scoped-declaration overlay.
+
 The predecessor PR #239 merged at `06e7428d59721ef2670338ed4308892d1f1f6849`. AR-06 remains active.
 
 ## Problem and change
@@ -18,6 +20,6 @@ Missing-transfer and hidden-file mutants must fail their builds; the workflow ex
 
 ## Validation state
 
-Local Flow Agent validation and all 252 Python tooling tests pass. The pinned JDK 25 toolchain is not available locally; compilation, JVM tests, standalone conformance, module isolation, native runtime checks and the synthetic merge candidate require the current GitHub CI revision. Final run identities and results belong in the PR description after those jobs complete.
+Local Flow Agent validation and all 253 Python tooling tests pass. The pinned JDK 25 toolchain is not available locally; compilation, JVM tests, standalone conformance, module isolation, native runtime checks and the synthetic merge candidate require the current GitHub CI revision. Final run identities and results belong in the PR description after those jobs complete.
 
 AR-06 stays open. Remaining gaps include conditional workspace endpoints, metadata-preserving transfer, VALUE and STATE transport, and evidence admission for this new native producer. No target-wide support or portability promotion is claimed.

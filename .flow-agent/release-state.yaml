@@ -591,7 +591,7 @@ recoveryCompositionCapabilityPublication:
   status: candidate
   workPackage: .flow-agent/work-packages/composition-capability-publication.yaml
   report: .flow-agent/reports/composition-capability-publication.md
-  mergedMain: 55ab3204cfe7fcada06ab5ccf5f5d8c240e6252c
+  mergedMain: 55ab3204cfe7fcada06ab5ccf5f5d8c240e6253c
   validation: current-revision-ci-required
   targetMaturityReportVersion: "2.0"
   supportPromotion: false
@@ -634,7 +634,7 @@ recoveryGitHubWorkspaceComposition:
   report: .flow-agent/reports/github-workspace-composition.md
   predecessorMain: 06e7428d59721ef2670338ed4308892d1f1f6849
   validation: current-revision-ci-required
-  localPythonTests: 252
+  localPythonTests: 253
   signedPortfolioExpanded: false
   independentCompositionAdmission: false
   supportPromotion: false

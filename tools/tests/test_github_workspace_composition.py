@@ -52,6 +52,12 @@ class WorkspaceCompositionTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "continuity"):
             oracle.bind(source, graph, manifest, REVISION)
 
+    def test_extra_canonical_control_cannot_hide_behind_flat_native_jobs(self):
+        source, graph, manifest = fixture()
+        graph["nodes"].append({"id": "unexpected", "kind": "CONDITION"})
+        with self.assertRaisesRegex(ValueError, "control"):
+            oracle.bind(source, graph, manifest, REVISION)
+
     def test_stale_checkout_and_changed_parameters_are_rejected(self):
         for part in ("source", "canonical", "manifest"):
             source, graph, manifest = fixture()
