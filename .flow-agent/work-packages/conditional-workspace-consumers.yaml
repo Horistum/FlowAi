@@ -1,0 +1,52 @@
+version: AR-06AE-C13
+name: Conditional Workspace Consumers
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap PR after the predecessor merge.
+  predecessorPullRequest: 240
+  mergedMain: 784ca80d1ec4a3d22464d4c1638c10d11dc21fd9
+invariant: A consumer selected by supported Boolean control receives its unconditional producer's workspace before execution; an unselected consumer neither restores nor builds.
+architecturePurpose: Compose existing condition and workspace contracts without treating control ancestry as a missing data transport or redefining Core availability.
+scope:
+- Unconditional checkout producers and single-source image-build consumers at top level or under nested conditions.
+- Preserve producer ordering, upload deduplication, consumer job guards and independent leaf/expression gates.
+- Recheck consumer job/action guard consistency and supported Boolean context at the direct renderer boundary.
+- Extend the existing native workspace experiment with selected and unselected nested consumers and a guard-omission mutant.
+nonGoals:
+- No conditional producers, branch-output merging, loop/retry/parallel consumers, VALUE or STATE transport.
+- No shell projection, Core semantics, public schema or target-wide support change.
+- No filesystem metadata fidelity, signed portfolio expansion, independent composition admission or AR-06 closure.
+ownershipBoundary:
+  core: Owns path-sensitive availability and resolved dependency/continuity relations.
+  adapters: Own endpoint scope, transfer generation and conditional job materialization.
+  conformance: Independently derives branch selection from source and compares native execution and file bytes.
+expectedFilesToInspect:
+- src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedSupportContracts.kt
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubJobConditionAuthority.kt
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/adapters/continuity/BuiltInAdapterContinuityScopedSupport.kt
+- src/main/kotlin/org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
+- src/test/kotlin/GitHubWorkspaceCompositionTests.kt
+- .github/workflows/github-workspace-composition.yml
+- tools/verify_github_workspace_composition.py
+- tools/tests/test_github_workspace_composition.py
+testsToAddOrUpdate:
+- Both branches, nested predicates, Boolean inputs and repeated consumers retain one producer upload.
+- Conditional producers, unsupported control ancestry, missing ordering, ambiguous relations and unsupported predicates remain blocked.
+- Forged job/action guards fail direct rendering; mutation of the native envelope fails binding.
+- Independent source/graph branch ownership, selected/skipped outcomes and guard-omission falsification.
+conformanceToAddOrUpdate:
+- Extend the existing CI-bound workspace proof and retain both original transfer mutants.
+- Preserve all current signed assessments, composition admissions and reference snapshots.
+documentationToUpdate:
+- docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md
+- .flow-agent/reports/conditional-workspace-consumers.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, github-workspace-composition]
+  preservedChecks: All existing isolation, runtime certification and composition admission gates.

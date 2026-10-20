@@ -167,13 +167,16 @@ object GitHubActionsWorkspaceContinuityPlanner {
             if (reference == UPLOAD_REFERENCE || step.type == "adapter-continuity-upload") {
                 require(reference == UPLOAD_REFERENCE && step.type == "adapter-continuity-upload" &&
                     job.steps.size == 2 && job.steps.last() == step && job.metadata["condition"] == null &&
+                    job.metadata["errorHandler"] != "true" &&
                     job.steps.first().module == "git" && job.steps.first().action == "checkout" &&
+                    job.steps.first().metadata["condition"] == null &&
                     step.metadata["continuitySourceJob"] == job.id) { "Invalid GitHub workspace producer." }
                 require(uploads.put(artifact(step), job) == null) { "Duplicate GitHub workspace artifact producer." }
             }
             if (reference == DOWNLOAD_REFERENCE || step.type == "adapter-continuity-download") {
                 require(reference == DOWNLOAD_REFERENCE && step.type == "adapter-continuity-download" &&
-                    job.steps.size == 2 && job.steps.first() == step && job.metadata["condition"] == null &&
+                    job.steps.size == 2 && job.steps.first() == step &&
+                    consistentConsumerCondition(job, manifest) &&
                     job.steps.last().module == "docker" && job.steps.last().action == "build" &&
                     step.metadata["continuityTargetJob"] == job.id) { "Invalid GitHub workspace consumer." }
                 downloads += job to step
@@ -191,6 +194,16 @@ object GitHubActionsWorkspaceContinuityPlanner {
             used += identity
         }
         require(used == uploads.keys) { "GitHub workspace upload has no consumer." }
+    }
+
+    private fun consistentConsumerCondition(job: TargetJob, manifest: TargetManifest): Boolean {
+        val guard = job.metadata["condition"]
+        if (job.steps.last().metadata["condition"] != guard || job.metadata["errorHandler"] == "true") return false
+        if (guard == null) return true
+        val booleanInputs = if (manifest.triggers.any { it.type != "MANUAL" }) emptySet() else
+            manifest.inputs.filter { it.type == "boolean" && (it.required || it.defaultValue in setOf("true", "false")) }
+                .map { it.name }.toSet()
+        return GitHubBooleanCondition.supports(guard, booleanInputs)
     }
 
     fun transferCount(plan: ExecutionPlan): Int = AdapterContinuityRequirementAuthority.derive(plan)

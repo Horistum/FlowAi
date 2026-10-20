@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 114
+stateVersion: 115
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -635,6 +635,18 @@ recoveryGitHubWorkspaceComposition:
   predecessorMain: 06e7428d59721ef2670338ed4308892d1f1f6849
   validation: current-revision-ci-required
   localPythonTests: 253
+  signedPortfolioExpanded: false
+  independentCompositionAdmission: false
+  supportPromotion: false
+
+recoveryConditionalWorkspaceConsumers:
+  candidate: AR-06AE-C13
+  status: candidate
+  workPackage: .flow-agent/work-packages/conditional-workspace-consumers.yaml
+  report: .flow-agent/reports/conditional-workspace-consumers.md
+  predecessorMain: 784ca80d1ec4a3d22464d4c1638c10d11dc21fd9
+  validation: current-revision-ci-required
+  localPythonTests: 257
   signedPortfolioExpanded: false
   independentCompositionAdmission: false
   supportPromotion: false

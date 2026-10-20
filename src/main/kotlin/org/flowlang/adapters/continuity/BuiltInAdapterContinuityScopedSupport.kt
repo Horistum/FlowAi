@@ -9,7 +9,7 @@ object BuiltInAdapterContinuityScopedSupport {
         sourceAction = "git.checkout",
         targetAction = "docker.build",
         channel = "source",
-        endpointScope = AdapterContinuityEndpointScope.TOP_LEVEL_SINGLE_SOURCE_WORKSPACE,
+        endpointScope = AdapterContinuityEndpointScope.UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE,
         evidenceReferences = listOf(
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt",
             "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsManifestRenderer.kt",
@@ -20,7 +20,8 @@ object BuiltInAdapterContinuityScopedSupport {
             "docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md"
         ),
         limitations = listOf(
-            "The proof covers regular-file bytes, relative paths and hidden entries for unconditional git.checkout/source to docker.build/source relations; repeated consumers and independent paths do not broaden filesystem fidelity.",
+            "The proof covers regular-file bytes, relative paths and hidden entries from unconditional git.checkout/source producers to top-level or condition-scoped docker.build/source consumers; repeated consumers and independent paths do not broaden filesystem fidelity.",
+            "Consumer predicates retain the independent Boolean condition contract; conditional producers and loop/retry/parallel consumers remain unsupported.",
             "The zipped GitHub Actions artifact transfer does not preserve Unix mode bits, so consumers that require executable permissions are outside the certified scope.",
             "Symbolic-link identity is not certified by the current repository evidence and must not be inferred from regular-file byte reconstruction."
         )
