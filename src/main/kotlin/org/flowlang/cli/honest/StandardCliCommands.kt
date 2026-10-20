@@ -69,7 +69,7 @@ internal object StandardCliCommands {
 
     private fun runTargets(output: CliOutputCollector, contractRoot: File) {
         val targets = targetRegistry(contractRoot)
-        output.section("FLOW TARGET CAPABILITY MATRIX", targets.values.sortedBy { it.target })
+        output.section("FLOW TARGET CAPABILITY DECLARATIONS", targets.values.sortedBy { it.target })
         output.section(
             "FLOW TARGET MATURITY REPORT",
             AdapterTargetMaturityPublisher(

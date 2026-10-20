@@ -5,6 +5,8 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import org.flowlang.cli.Json
+import org.flowlang.generators.manifest.*
 import org.flowlang.adapters.maturity.AdapterTargetMaturityEvidenceLoader
 import org.flowlang.adapters.maturity.AdapterTargetMaturityPublisher
 import org.flowlang.adapters.maturity.TargetMaturityStage
@@ -25,7 +27,7 @@ class TargetMaturityPublicationTests {
     )
 
     @Test
-    fun currentDistributionPublishesScopedCumulativeMaturityWithoutBroadExecutability() {
+    fun currentDistributionPublishesReferenceMaturityWithoutRuntimeCertification() {
         val report = publisher.analyze()
 
         assertEquals(
@@ -34,6 +36,10 @@ class TargetMaturityPublicationTests {
             report.findings.joinToString { "${it.code}:${it.target}:${it.scopeId}:${it.message}" }
         )
         val byTarget = report.assessments.associateBy { it.target }
+        assertEquals("2.0", report.reportVersion)
+        assertEquals("REPOSITORY_REFERENCE_INVENTORY", report.evidenceBasis)
+        assertFalse(report.runtimeCertificationAssessed)
+        assertFalse(report.executionAuthorized)
         assertEquals(
             mapOf(
                 "local" to TargetMaturityStage.ANALYZABLE,
@@ -46,8 +52,7 @@ class TargetMaturityPublicationTests {
             byTarget.mapValues { it.value.highestTargetWideStage }
         )
         byTarget.values.forEach { assessment ->
-            assertFalse(TargetMaturityStage.EXECUTABLE in assessment.targetWideStages)
-            assertFalse(TargetMaturityStage.BEHAVIORALLY_CERTIFIED in assessment.targetWideStages)
+            assertFalse(TargetMaturityStage.REFERENCE_EXECUTABLE in assessment.targetWideStages)
             assertEquals(
                 TargetMaturityStage.entries.take(assessment.targetWideStages.size),
                 assessment.targetWideStages
@@ -62,13 +67,13 @@ class TargetMaturityPublicationTests {
         scoped.forEach { scope ->
             assertTrue(scope.valid)
             assertEquals(TargetMaturityStage.entries.toList(), scope.stages)
-            assertEquals(TargetMaturityStage.BEHAVIORALLY_CERTIFIED, scope.highestStage)
+            assertEquals(TargetMaturityStage.REFERENCE_EXECUTABLE, scope.highestStage)
             assertTrue(scope.limitations.isNotEmpty())
         }
     }
 
     @Test
-    fun missingBehaviorEvidenceCannotRemainBehaviorallyCertified() {
+    fun missingBehaviorReferencesInvalidateExecutableReferenceMaturity() {
         val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
         val mutated = document.copy(
             scopes = document.scopes.map { scope ->
@@ -87,10 +92,120 @@ class TargetMaturityPublicationTests {
         val jenkins = report.assessments.single { it.target == "jenkins" }.scopes.single()
 
         assertEquals("FAIL", report.status)
-        assertEquals(TargetMaturityStage.EXECUTABLE, jenkins.highestStage)
+        assertEquals(TargetMaturityStage.RENDERABLE, jenkins.highestStage)
         assertFalse(jenkins.valid)
         assertTrue(report.findings.any {
             it.code == "TARGET_MATURITY_BEHAVIOR_EVIDENCE_MISSING" && it.target == "jenkins"
+        })
+    }
+
+    @Test
+    fun existingUnrelatedTestFilesCannotManufactureRuntimeCertification() {
+        val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
+        val report = publisher.evaluate(document.copy(scopes = document.scopes.map {
+            it.copy(behavioralEvidenceReferences = listOf("src/test/kotlin/TargetMaturityCompositionTests.kt"))
+        }))
+        // Existing paths are inventory evidence only. No native result was supplied or executed.
+        assertEquals("PASS", report.status)
+        assertTrue(report.assessments.flatMap { it.scopes }.all {
+            it.highestStage == TargetMaturityStage.REFERENCE_EXECUTABLE
+        })
+        val json = Json.mapper.writeValueAsString(report)
+        assertFalse(json.contains("BEHAVIORALLY_CERTIFIED"))
+        assertFalse(report.runtimeCertificationAssessed)
+        assertFalse(report.executionAuthorized)
+    }
+
+    @Test
+    fun invalidReferenceScopesCannotRetainExecutableReferenceMaturity() {
+        val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
+        val original = document.scopes.single { it.target == "jenkins" }
+        for (invalid in listOf(
+            original.copy(sourceReference = "https://example.invalid/proof"),
+            original.copy(scenarioId = "different-scenario"),
+            original.copy(implementationEvidenceReferences = listOf("src/main/Missing.kt")),
+            original.copy(limitations = emptyList())
+        )) {
+            val report = publisher.evaluate(document.copy(scopes = document.scopes.map {
+                if (it.target == original.target) invalid else it
+            }))
+            val scope = report.assessments.single { it.target == original.target }.scopes.single()
+            assertEquals("FAIL", report.status)
+            assertFalse(scope.valid)
+            assertEquals(TargetMaturityStage.RENDERABLE, scope.highestStage)
+        }
+    }
+
+    @Test
+    fun invalidDocumentHeadersInvalidateEveryReferenceScope() {
+        val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
+        for ((invalid, code) in listOf(
+            document.copy(kind = "UnrecognizedEvidence") to "TARGET_MATURITY_KIND_INVALID",
+            document.copy(version = "999.0") to "TARGET_MATURITY_VERSION_INVALID"
+        )) {
+            val report = publisher.evaluate(invalid)
+            assertEquals("FAIL", report.status)
+            assertTrue(report.findings.any { it.code == code })
+            val scopes = report.assessments.flatMap { it.scopes }
+            assertEquals(document.scopes.size, scopes.size)
+            scopes.forEach {
+                assertFalse(it.valid)
+                assertEquals(TargetMaturityStage.RENDERABLE, it.highestStage)
+            }
+        }
+    }
+
+    @Test
+    fun duplicateScopeIdentitiesCannotRetainExecutableReferenceMaturity() {
+        val document = AdapterTargetMaturityEvidenceLoader.load(rootDir)
+        val duplicate = document.scopes.single { it.target == "jenkins" }
+        val report = publisher.evaluate(document.copy(scopes = document.scopes + duplicate))
+        assertEquals("FAIL", report.status)
+        assertTrue(report.findings.any {
+            it.code == "TARGET_MATURITY_SCOPE_DUPLICATE" && it.target == duplicate.target && it.scopeId == duplicate.scopeId
+        })
+        val jenkins = report.assessments.single { it.target == duplicate.target }.scopes
+        assertEquals(2, jenkins.size)
+        jenkins.forEach {
+            assertFalse(it.valid)
+            assertEquals(TargetMaturityStage.RENDERABLE, it.highestStage)
+        }
+        val unrelated = report.assessments.single { it.target == "github-actions" }.scopes.single()
+        assertTrue(unrelated.valid)
+        assertEquals(TargetMaturityStage.REFERENCE_EXECUTABLE, unrelated.highestStage)
+    }
+
+    @Test
+    fun structuralPublicationFollowsProviderScopeRatherThanTargetNames() {
+        val registry = BuiltInTargetProjections.registry
+        val original = registry.requireProvider("jenkins")
+        val catalog = original.nativeProjectionCatalog
+        val changed = TargetNativeProjectionCatalog.of(original.target, catalog.definitions,
+            catalog.approvalDefinitions, catalog.structuralDefinitions.map {
+                if (it.structure == TargetStructuralProjectionKind.PARALLEL)
+                    it.copy(supportScope = TargetStructuralProjectionSupportScope.TARGET_WIDE) else it
+            }.reversed())
+        val generator = object : TargetManifestGenerator by original.generator {
+            override val nativeProjectionCatalog = changed
+        }
+        val replacement = TargetProjectionProvider(generator, original.renderer)
+        val composed = TargetProjectionRegistry.of(registry.targetIds.map {
+            if (it == original.target) replacement else registry.requireProvider(it)
+        })
+        val baseline = publisher.analyze().assessments.single { it.target == "jenkins" }
+        assertEquals(TargetStructuralProjectionSupportScope.PLAN_SCOPED,
+            baseline.structuralProjections.single { it.structure == TargetStructuralProjectionKind.PARALLEL }.supportScope)
+        val report = AdapterTargetMaturityPublisher(rootDir, targets, composed).analyze()
+        val assessment = report.assessments.single { it.target == "jenkins" }
+        assertEquals(changed.structuralDefinitions.sortedBy { it.structure.name }, assessment.structuralProjections)
+        assertEquals("FAIL", report.status) // An unmatched target-wide claim still fails reconciliation.
+        assertTrue(report.findings.any { it.code == "TARGET_MATURITY_PROVIDER_STRUCTURE_UNDECLARED" })
+        assertEquals(TargetMaturityStage.RENDERABLE, assessment.highestTargetWideStage)
+        val absent = AdapterTargetMaturityPublisher(rootDir, targets, TargetProjectionRegistry.empty()).analyze()
+        assertEquals("FAIL", absent.status)
+        assertTrue(absent.assessments.all { it.structuralProjections.isEmpty() })
+        assertTrue(absent.assessments.flatMap { it.scopes }.none {
+            it.highestStage == TargetMaturityStage.REFERENCE_EXECUTABLE
         })
     }
 

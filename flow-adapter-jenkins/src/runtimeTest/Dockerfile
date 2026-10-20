@@ -1,5 +1,6 @@
 FROM jenkins/jenkins:2.580.1-jdk25
-RUN jenkins-plugin-cli --latest=false --plugins \
+COPY install-plugins.sh /usr/local/bin/flow-install-plugins.sh
+RUN sh /usr/local/bin/flow-install-plugins.sh --latest=false --plugins \
     git:5.10.1 \
     pipeline-model-definition:2.2293.v6e7193cec599 \
     timestamper:1.30 \

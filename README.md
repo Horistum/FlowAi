@@ -225,6 +225,11 @@ Inspect standard catalogs:
 ./gradlew run --args="modules"
 ```
 
+The `targets` command publishes registry declarations, provider structural mapping
+scopes and repository reference maturity. It does not assess native runtime
+certification or authorize a plan. See the [target maturity report v2 migration](docs/migrations/target-maturity-report-v2.md)
+for the report contract and the separate authenticated coverage reports.
+
 Export the public standard bundle:
 
 ```bash

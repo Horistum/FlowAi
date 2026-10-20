@@ -15,8 +15,8 @@ scopes:
       - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
       - "src/test/kotlin/TargetStructuralProjectionHonestyTests.kt"
     limitations:
-      - "Certification is limited to the exact checkout-build-image scenario and its committed inputs."
-      - "Parallel, loop, match and retry structures remain unsupported and cannot borrow this scenario's executability."
+      - "This inventory records the checkout-build-image reference snapshot and committed inputs; it does not assess native runtime certification or authorize a current plan."
+      - "Parallel, loop, match and retry eligibility depends on independent provider mappings and plan validation; this reference does not promote those structures."
       - "Generic standard.execute and standard.rollback operations remain review-only without concrete Jenkins bindings."
 
   - target: github-actions
@@ -34,6 +34,6 @@ scopes:
       - "src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt"
       - "tests/FlowFirstExecutableReferenceScenarioTests.kt"
     limitations:
-      - "Certification is limited to the exact checkout-build-image scenario and scoped artifact-backed workspace transfer."
+      - "This inventory records the checkout-build-image reference snapshot with scoped artifact-backed workspace transfer; it does not assess native runtime certification or authorize a current plan."
       - "Generic GitHub Actions workspace continuity remains unsupported outside the declared scope."
       - "Conditions, parallelism, loops, match, retry and general failure handling are not promoted by this evidence."

@@ -12,6 +12,7 @@ import org.flowlang.capabilities.TargetCapability
 import org.flowlang.capabilities.TargetProjectionMode
 import org.flowlang.adapters.contract.AdapterCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
+import org.flowlang.generators.manifest.TargetNativeStructuralProjectionDefinition
 import org.flowlang.generators.manifest.providerFor
 import org.flowlang.generators.manifest.requireProvider
 import org.flowlang.generators.manifest.TargetStructuralProjectionKind
@@ -22,8 +23,7 @@ enum class TargetMaturityStage {
     DECLARED,
     ANALYZABLE,
     RENDERABLE,
-    EXECUTABLE,
-    BEHAVIORALLY_CERTIFIED
+    REFERENCE_EXECUTABLE
 }
 
 enum class TargetMaturityEvidenceSource {
@@ -166,22 +166,26 @@ data class TargetMaturityAssessment(
     val role: String,
     val targetWideStages: List<TargetMaturityStage>,
     val highestTargetWideStage: TargetMaturityStage?,
+    val structuralProjections: List<TargetNativeStructuralProjectionDefinition>,
     val scopes: List<TargetMaturityScopeAssessment>
 )
 
 data class AdapterTargetMaturityReport(
-    val reportVersion: String = "1.0",
+    val reportVersion: String = "2.0",
     val status: String,
     val assessments: List<TargetMaturityAssessment>,
     val findings: List<TargetMaturityFinding>
-)
+) {
+    val evidenceBasis: String = "REPOSITORY_REFERENCE_INVENTORY"
+    val runtimeCertificationAssessed: Boolean = false
+    val executionAuthorized: Boolean = false
+}
 
 /**
- * Current distribution maturity derived from immutable historical evidence plus
- * explicitly scoped post-history evidence.
+ * Repository reference maturity and current provider mapping declarations.
  *
- * Target-wide renderability and scenario-scoped executability are deliberately
- * separate. One executable scenario never promotes a whole target adapter.
+ * An executable snapshot records a reference, not a current plan decision or
+ * authenticated native execution. File existence cannot certify runtime behavior.
  */
 class AdapterTargetMaturityPublisher(
     private val rootDir: File,
@@ -226,19 +230,20 @@ class AdapterTargetMaturityPublisher(
             )
         }
         val duplicateScopes = document.scopes
-            .groupingBy { "${it.target}::${it.scopeId}" }
+            .groupingBy { it.target to it.scopeId }
             .eachCount()
             .filterValues { it > 1 }
             .keys
-            .sorted()
-        duplicateScopes.forEach { identity ->
+        duplicateScopes.sortedWith(compareBy({ it.first }, { it.second })).forEach { (target, scopeId) ->
             findings += finding(
                 "TARGET_MATURITY_SCOPE_DUPLICATE",
-                identity.substringBefore("::"),
-                identity.substringAfter("::"),
-                "Target maturity scope '$identity' is declared more than once."
+                target,
+                scopeId,
+                "Target maturity scope '$target::$scopeId' is declared more than once."
             )
         }
+        val documentValid = document.kind == AdapterTargetMaturityEvidenceLoader.KIND &&
+            document.version == AdapterTargetMaturityEvidenceLoader.VERSION
 
         val portfolioResult = runCatching { AdapterPortfolioLoader.load(rootDir) }
         val portfolio = portfolioResult.getOrNull()
@@ -310,6 +315,7 @@ class AdapterTargetMaturityPublisher(
                         portfolio = portfolioRecord,
                         promotion = promotionsByTarget[targetName],
                         targetWideStages = targetWideStages,
+                        referenceContextValid = documentValid && (scope.target to scope.scopeId) !in duplicateScopes,
                         findings = findings
                     )
                 }
@@ -318,6 +324,8 @@ class AdapterTargetMaturityPublisher(
                 role = portfolioRecord?.role?.name ?: "UNRECORDED",
                 targetWideStages = targetWideStages,
                 highestTargetWideStage = targetWideStages.lastOrNull(),
+                structuralProjections = provider?.nativeProjectionCatalog?.structuralDefinitions.orEmpty()
+                    .sortedBy { it.structure.name },
                 scopes = scoped
             )
         }
@@ -399,6 +407,7 @@ class AdapterTargetMaturityPublisher(
         portfolio: AdapterPortfolioRecord?,
         promotion: AdapterExecutableReferencePromotion?,
         targetWideStages: List<TargetMaturityStage>,
+        referenceContextValid: Boolean,
         findings: MutableList<TargetMaturityFinding>
     ): TargetMaturityScopeAssessment {
         val start = findings.size
@@ -414,14 +423,14 @@ class AdapterTargetMaturityPublisher(
             findings += scopeFinding(
                 "TARGET_MATURITY_SCOPE_ROLE_INVALID",
                 scope,
-                "Scoped executable maturity requires a target-adapter portfolio record."
+                "Executable reference maturity requires a target-adapter portfolio record."
             )
         }
         if (!providerAvailable) {
             findings += scopeFinding(
                 "TARGET_MATURITY_SCOPE_PROVIDER_MISSING",
                 scope,
-                "Scoped executable maturity requires a composed projection provider."
+                "Executable reference maturity requires a composed projection provider."
             )
         }
 
@@ -450,25 +459,22 @@ class AdapterTargetMaturityPublisher(
             findings += scopeFinding(
                 "TARGET_MATURITY_LIMITATION_MISSING",
                 scope,
-                "Scoped executable maturity must declare at least one limitation."
+                "Executable reference maturity must declare at least one limitation."
             )
         }
 
+        val scopeValid = referenceContextValid && findings.size == start
         val stages = targetWideStages.toMutableList()
         if (
             TargetMaturityStage.RENDERABLE in stages &&
             sourceValid &&
-            snapshotValid
-        ) {
-            stages += TargetMaturityStage.EXECUTABLE
-        }
-        if (
-            stages.lastOrNull() == TargetMaturityStage.EXECUTABLE &&
+            snapshotValid &&
             implementationValid &&
             behaviorValid &&
-            scope.limitations.isNotEmpty()
+            scope.limitations.isNotEmpty() &&
+            scopeValid
         ) {
-            stages += TargetMaturityStage.BEHAVIORALLY_CERTIFIED
+            stages += TargetMaturityStage.REFERENCE_EXECUTABLE
         }
         require(stages == TargetMaturityStage.entries.take(stages.size)) {
             "Target maturity stages must remain cumulative and ordered for ${scope.target}/${scope.scopeId}."
@@ -481,7 +487,7 @@ class AdapterTargetMaturityPublisher(
             source = scope.source,
             stages = stages,
             highestStage = stages.lastOrNull(),
-            valid = findings.size == start,
+            valid = scopeValid,
             evidenceReferences = listOf(scope.sourceReference, scope.snapshotReference) +
                 scope.implementationEvidenceReferences + scope.behavioralEvidenceReferences,
             limitations = scope.limitations
