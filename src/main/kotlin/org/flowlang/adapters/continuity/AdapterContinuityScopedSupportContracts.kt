@@ -16,8 +16,8 @@ import org.flowlang.planner.TryPlanNode
 
 /** Adapter-owned applicability, not an alternative definition of Core continuity. */
 enum class AdapterContinuityEndpointScope {
-    /** Whole-workspace restore into one isolated consumer, without merging producers. */
-    TOP_LEVEL_SINGLE_SOURCE_WORKSPACE
+    /** Unconditional producer; isolated consumer at top level or under conditions only. */
+    UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE
 }
 
 /** Bounded continuity evidence supplied explicitly by a concrete adapter. */
@@ -90,9 +90,9 @@ object AdapterContinuityScopedSupportAuthority {
                 declaration.targetAction == targetAction &&
                 declaration.channel == requirement.channel &&
                 when (declaration.endpointScope) {
-                    AdapterContinuityEndpointScope.TOP_LEVEL_SINGLE_SOURCE_WORKSPACE ->
+                    AdapterContinuityEndpointScope.UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE ->
                         requirement.relationKind == PlanDependencyKind.WORKSPACE &&
-                            source in plan.nodes && consumer in plan.nodes && source.id != consumer.id &&
+                            source in plan.nodes && consumer in plan.nodes.conditionScopedTasks() && source.id != consumer.id &&
                             source.id in consumer.dependsOn &&
                             plan.dependencyRelations.count {
                                 it.kind == PlanDependencyKind.WORKSPACE && it.targetNodeId == consumer.id
@@ -112,5 +112,16 @@ private fun List<PlanNode>.flattenPlanNodes(): List<PlanNode> = flatMap { node -
         is RetryGroupNode -> node.body.flattenPlanNodes()
         is TryPlanNode -> node.body.flattenPlanNodes() + node.errorHandler.flattenPlanNodes()
         is TaskNode, is ApprovalNode, is DataOpNode, is ControlNode -> emptyList()
+    }
+}
+
+/** Conditions select jobs without repeating them or changing the producer's availability.
+ * Other controls need their own lifetime and transport contract; do not flatten them here.
+ */
+private fun List<PlanNode>.conditionScopedTasks(): List<TaskNode> = flatMap { node ->
+    when (node) {
+        is TaskNode -> listOf(node)
+        is ConditionNode -> node.then.conditionScopedTasks() + node.otherwise.conditionScopedTasks()
+        else -> emptyList()
     }
 }

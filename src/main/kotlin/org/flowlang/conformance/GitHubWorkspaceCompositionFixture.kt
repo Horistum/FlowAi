@@ -30,15 +30,29 @@ internal object GitHubWorkspaceCompositionFixture {
                 } + producer.copy(result = ResultBindingNode(name = "independent"))))
     }
 
+    fun conditionalDocument(revision: String): FlowDocument {
+        val base = document(revision)
+        fun consumer(index: Int) = (base.flow.steps[1] as ActionNode).copy(
+            result = ResultBindingNode(name = "consumer$index"),
+            params = (base.flow.steps[1] as ActionNode).params +
+                ("image" to StringLiteralNode(value = "flow-workspace:consumer$index")))
+        return base.copy(flow = base.flow.copy(steps = base.flow.steps.dropLast(1) +
+            IfNode(condition = BooleanLiteralNode(value = true), then = listOf(
+                IfNode(condition = BooleanLiteralNode(value = false), then = listOf(consumer(3)),
+                    otherwise = listOf(consumer(4)))), otherwise = listOf(consumer(5))) + base.flow.steps.last()))
+    }
+
     /** Pin every native action and dependency. Only observation and named falsifying mutations may differ. */
     @Suppress("UNCHECKED_CAST")
     fun validateEnvelope(generated: String, envelope: String, revision: String) {
         val expected = FlowYaml.readMap(generated)["jobs"] as Map<String, Map<String, Any?>>
         val actual = FlowYaml.readMap(envelope)["jobs"] as Map<String, Map<String, Any?>>
-        require(actual.keys == expected.keys + setOf("prepare", "missing-transfer-mutant", "hidden-file-mutant", "collect"))
+        require(actual.keys == expected.keys + setOf("prepare", "missing-transfer-mutant", "hidden-file-mutant", "guard-omission-mutant", "collect"))
         for ((id, job) in expected) {
             val native = actual.getValue(id)
-            require(native.keys == setOf("name", "runs-on", "needs", "timeout-minutes", "outputs", "steps"))
+            require(native.keys == setOf("name", "runs-on", "needs", "timeout-minutes", "outputs", "steps") +
+                if (job["if"] == null) emptySet() else setOf("if"))
+            require(native["if"] == job["if"]) { "Changed generated guard in $id" }
             require(native["name"] == job["name"] && native["runs-on"] == job["runs-on"])
             require(native["needs"] == listOf("prepare") + (job["needs"] as? List<String>).orEmpty())
             require(native["timeout-minutes"] == 10)
@@ -56,6 +70,8 @@ internal object GitHubWorkspaceCompositionFixture {
             val extras = if (id == "git_checkout_1") listOf(observer(), hiddenUpload(production.last())) else listOf(observer())
             require(steps.drop(production.size) == extras) { "Changed observer or mutant upload in $id" }
         }
+        require(actual.getValue("guard-omission-mutant") == actual.getValue("docker_build_3") - "if" +
+            ("name" to "guard-omission-mutant")) { "Guard-omission mutant differs" }
         val baseline = actual.getValue("docker_build_1")
         val steps = baseline["steps"] as List<Map<String, Any?>>
         val build = steps[1] + mapOf("id" to "build", "continue-on-error" to true)
@@ -85,7 +101,7 @@ object GitHubWorkspaceCompositionCli {
         require(args.size == 4) { "Expected repository root, executed envelope, output directory and source revision." }
         val root = File(args[0]); val out = File(args[2]).apply { mkdirs() }
         val fixture = GitHubWorkspaceCompositionFixture
-        val document = fixture.document(args[3])
+        val document = fixture.conditionalDocument(args[3])
         val compilation = GitHubConditionCompositionFixture.compile(root, document)
         val manifest = GitHubConditionCompositionFixture.manifest(root, compilation, "github-actions")
         val rendered = ReferenceTargetProjections.registry.requireProvider("github-actions").render(manifest)

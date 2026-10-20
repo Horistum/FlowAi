@@ -81,7 +81,8 @@ class GitHubWorkspaceCompositionTests {
             withRelation(relation.copy(resolution = PlanDependencyResolution.AMBIGUOUS)),
             withRelation(relation.copy(resolution = PlanDependencyResolution.UNRESOLVED)),
             plan.copy(nodes = listOf(ConditionNode("guard", condition = "true", then = listOf(source))) + plan.nodes.drop(1)),
-            plan.copy(nodes = listOf(source, ConditionNode("guard", condition = "true", then = listOf(consumer))) + plan.nodes.drop(2)),
+            plan.copy(nodes = listOf(source, ConditionNode("guard", condition = "true", then = listOf(
+                RetryGroupNode("retry", max = 2, delay = "0s", backoff = "fixed", body = listOf(consumer))))) + plan.nodes.drop(2)),
             plan.copy(nodes = listOf(source, consumer.copy(dependsOn = emptyList())) + plan.nodes.drop(2)),
             plan.copy(nodes = listOf(source.copy(action = "push")) + plan.nodes.drop(1)),
             plan.copy(dependencyRelations = plan.dependencyRelations + relation.copy(channel = "other")))
@@ -133,17 +134,75 @@ class GitHubWorkspaceCompositionTests {
         assertFalse(rendered.contains("{{defaultContext}}"))
     }
 
-    @Test fun executedEnvelopePreservesEveryGeneratedTransferAndFalsifiesTwoMutants() {
-        val rendered = provider.render(manifest(fixture.document(revision)))
+    @Test fun executedEnvelopePreservesEveryGeneratedTransferAndFalsifiesThreeMutants() {
+        val rendered = provider.render(manifest(fixture.conditionalDocument(revision)))
         val envelope = File(root, fixture.WORKFLOW).readText()
         fixture.validateEnvelope(rendered, envelope, revision)
         for (changed in listOf(envelope.replace("include-hidden-files: \"true\"", "include-hidden-files: \"false\""),
             envelope.replace("needs: [prepare, git_checkout_1]", "needs: [prepare]"),
             envelope.replace("path: \".\"", "path: \"subdirectory\""),
             envelope.replace("flow-workspace-git_checkout_1-source", "wrong-artifact"),
+            envelope.replace("if: \${{ ((true && false)) }}", "if: \${{ true }}"),
             envelope.replace("test \"\$OUTCOME\" = failure", "true"))) {
             assertNotEquals(envelope, changed)
             assertFails { fixture.validateEnvelope(rendered, changed, revision) }
         }
     }
+    @Test fun nestedConditionConsumersRetainSelectionAndOneSharedUpload() {
+        val document = fixture.conditionalDocument(revision)
+        val unit = compile(document)
+        assertTrue(matched(unit.authorization.executionPlan))
+        val m = manifest(document)
+        assertEquals("5", m.metadata["workspaceContinuityTransferCount"])
+        assertEquals(1, m.jobs.flatMap { it.steps }.count { it.type == "adapter-continuity-upload" })
+        val conditional = m.jobs.filter { it.metadata["condition"] != null }
+        assertEquals(3, conditional.size)
+        conditional.forEach { job ->
+            assertEquals(listOf("git_checkout_1"), job.dependsOn)
+            assertEquals(listOf("adapter-continuity-download", "action"), job.steps.map { it.type })
+            assertEquals(job.metadata["condition"], job.steps.last().metadata["condition"])
+        }
+        val rendered = provider.render(m)
+        assertTrue(rendered.contains("if: \${{ ((true && false)) }}"))
+        assertTrue(rendered.contains("if: \${{ ((true && !(false))) }}"))
+        assertTrue(rendered.contains("if: \${{ (!(true)) }}"))
+    }
+
+    @Test fun consumerPredicatesUseTheIndependentBooleanInputContract() {
+        val base = fixture.conditionalDocument(revision)
+        val branch = base.flow.steps[3] as IfNode
+        for (value in listOf(false, true)) {
+            val document = base.copy(flow = base.flow.copy(
+                input = base.flow.input + InputNode(name = "enabled", valueType = ValueTypeNode("boolean"),
+                    default = BooleanLiteralNode(value = value)),
+                steps = base.flow.steps.map { if (it == branch) branch.copy(
+                    condition = ReferenceNode(path = listOf("enabled"))) else it }))
+            val m = manifest(document)
+            assertEquals("5", m.metadata["workspaceContinuityTransferCount"])
+            assertTrue(provider.render(m).contains("inputs.enabled"))
+            val event = document.copy(flow = document.flow.copy(triggers = listOf(
+                TriggerNode(id = "push", triggerType = "EVENT", event = "push"))))
+            assertFails { provider.render(manifest(event)) }
+        }
+    }
+
+    @Test fun directRendererRejectsLostForgedAndUnavailableConsumerGuards() {
+        val m = manifest(fixture.conditionalDocument(revision))
+        val consumer = m.jobs.first { it.metadata["condition"] != null }
+        val leaf = consumer.steps.last()
+        val changes = listOf(
+            consumer.copy(metadata = consumer.metadata - "condition"),
+            consumer.copy(metadata = consumer.metadata + ("condition" to "true")),
+            consumer.copy(steps = consumer.steps.dropLast(1) + leaf.copy(metadata = leaf.metadata - "condition")),
+            consumer.copy(metadata = consumer.metadata + ("condition" to "missing"), steps = consumer.steps.dropLast(1) +
+                leaf.copy(metadata = leaf.metadata + ("condition" to "missing"))),
+            consumer.copy(metadata = consumer.metadata + ("errorHandler" to "true")))
+        changes.forEach { changed -> assertFails {
+            provider.renderer.render(m.copy(jobs = m.jobs.map { if (it.id == changed.id) changed else it }))
+        } }
+        val producer = m.jobs.first()
+        assertFails { provider.renderer.render(m.copy(jobs = listOf(producer.copy(
+            metadata = producer.metadata + ("condition" to "true"))) + m.jobs.drop(1))) }
+    }
+
 }
