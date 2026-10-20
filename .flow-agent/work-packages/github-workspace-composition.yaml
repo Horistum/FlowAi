@@ -14,7 +14,7 @@ scope:
 - Independent tasks, inputs, multiple independent producer paths and repeated consumers.
 - Single workspace source per consumer, producer upload deduplication, exact consumer downloads and retained ordering.
 - Build from the restored local path instead of the default Git context; disable credential persistence before workspace export.
-- Update the current GitHub executable reference for these corrected native bindings; preserve the historical Jenkins reference.
+- Update the current GitHub executable reference and its active scope binding; preserve the historical Jenkins reference, frozen profile sources and reference scenario identity.
 - Independent native GitHub execution of generated fan-out transfers and falsifying missing-transfer and hidden-file mutants.
 nonGoals:
 - No Core, public DSL, target-wide support, VALUE or STATE continuity changes.

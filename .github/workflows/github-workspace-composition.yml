@@ -26,7 +26,7 @@ jobs:
           WORKFLOW_REVISION: ${{ github.sha }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*GitHubWorkspaceCompositionTests*' --tests '*GitHubActionsWorkspaceContinuityTests*' --tests '*AdapterContinuityProviderBehaviorTests*' --tests '*NativeImageBuildProjectionTests*' :flow-conformance-kit:installDist --stacktrace
+          ./gradlew --no-daemon --build-cache :flow-conformance-kit:test --tests '*GitHubWorkspaceCompositionTests*' --tests '*GitHubActionsWorkspaceContinuityTests*' --tests '*AdapterContinuityProviderBehaviorTests*' --tests '*NativeImageBuildProjectionTests*' --tests '*AdapterExecutableReferencePromotionTests*' :flow-conformance-kit:installDist --stacktrace
           git fetch --no-tags origin "$WORKFLOW_REVISION"
           git show "$WORKFLOW_REVISION:.github/workflows/github-workspace-composition.yml" > "$RUNNER_TEMP/workspace-envelope.yml"
           cmp .github/workflows/github-workspace-composition.yml "$RUNNER_TEMP/workspace-envelope.yml"
