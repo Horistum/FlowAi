@@ -31,7 +31,7 @@ class JenkinsLoopProjectionScope(private val catalog: TargetNativeProjectionCata
         } || bound.any { !JenkinsSequentialControlScope.supportsBody(listOf(it), inputs) }) return declared
         return declared.copy(features = declared.features + mapOf("loop.dynamic" to SupportLevel.SUPPORTED,
             "loops.dynamic" to SupportLevel.SUPPORTED),
-            notes = declared.notes + "Finite string-literal-list loops preserve sequential order and duplicates across independently materialized tasks, conditions, fixed zero-delay retries and nested loops; no dynamic collections or loop-output continuity claim.")
+            notes = declared.notes + "Finite string-literal-list loops preserve sequential order and duplicates across independently materialized tasks, conditions, literal matches, fixed zero-delay retries and nested loops; no dynamic collections or loop-output continuity claim.")
     }
 
     companion object {

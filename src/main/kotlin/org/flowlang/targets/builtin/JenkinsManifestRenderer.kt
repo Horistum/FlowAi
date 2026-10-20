@@ -245,7 +245,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
     private fun renderJenkinsRetry(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String, bindings: JenkinsConditionValueScope.Bindings) {
         requireJenkinsStructure(step, "retry")
         require(JenkinsRetryProjectionScope.supportsRenderedBody(step.children, manifest.inputs.map { it.name }.toSet())) {
-            "Jenkins retry requires sequential tasks, conditions, finite loops and fixed zero-delay retries; other control mappings need explicit replay evidence."
+            "Jenkins retry requires sequential tasks, conditions, literal matches, finite loops and fixed zero-delay retries; other control mappings need explicit replay evidence."
         }
         require(step.params.keys == setOf("max", "delay", "backoff")) { "Jenkins retry requires the complete authored policy." }
         val max = requireNotNull(step.params["max"]?.toIntOrNull()) { "Jenkins retry requires an integer total attempt limit." }
@@ -268,7 +268,7 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
             "Jenkins loop supports only an authored string-literal list."
         }
         require(JenkinsLoopProjectionScope.supportsRenderedBody(step.children, manifest.inputs.map { it.name }.toSet() + item)) {
-            "Jenkins loop requires sequential tasks, conditions, fixed zero-delay retries and finite nested loops with distinct lexical item bindings."
+            "Jenkins loop requires sequential tasks, conditions, literal matches, fixed zero-delay retries and finite nested loops with distinct lexical item bindings."
         }
         sb.appendLine("${indent}for (def $item in ${items.joinToString(", ", "[", "]") { groovyString(it) }}) {")
         step.children.forEach { renderJenkinsStep(it, manifest, sb, "$indent  ", bindings) }
@@ -278,8 +278,8 @@ class JenkinsManifestRenderer : TargetManifestRenderer {
     private fun renderJenkinsMatch(step: TargetStep, manifest: TargetManifest, sb: StringBuilder, indent: String, bindings: JenkinsConditionValueScope.Bindings) {
         requireJenkinsStructure(step, "literal-match")
         val cases = step.children.filter { it.type == "match-case" }
-        require(JenkinsMatchProjectionScope.supportsRenderedMatch(step)) {
-            "Jenkins match requires exclusive literal cases, an empty error branch and sequential tasks, conditions or nested matches."
+        require(JenkinsMatchProjectionScope.supportsRenderedMatch(step, manifest.inputs.map { it.name }.toSet())) {
+            "Jenkins match requires exclusive literal cases, an empty error branch and sequential tasks, conditions, fixed zero-delay retries, finite loops or nested matches."
         }
         // The source is an inert literal; no implicit result is introduced into the native scope.
         cases.forEachIndexed { index, branch ->

@@ -12,11 +12,8 @@ import org.flowlang.generators.manifest.TargetStructuralProjectionKind
 import org.flowlang.generators.manifest.TargetStructuralProjectionSupportScope
 import org.flowlang.generators.manifest.TargetStep
 import org.flowlang.parser.ExpressionParser
-import org.flowlang.planner.ConditionNode
 import org.flowlang.planner.MatchPlanNode
 import org.flowlang.planner.PlanDependencyRelations
-import org.flowlang.planner.PlanNode
-import org.flowlang.planner.TaskNode
 
 /** Disjoint literal cases only: no inferred predicate precedence or implicit-result binding. */
 class JenkinsMatchProjectionScope(private val catalog: TargetNativeProjectionCatalog?) : TargetProjectionCapabilityResolver {
@@ -28,38 +25,24 @@ class JenkinsMatchProjectionScope(private val catalog: TargetNativeProjectionCat
                 it.supportScope == TargetStructuralProjectionSupportScope.PLAN_SCOPED }) return declared
         val matches = authorization.graph.nodes.filterIsInstance<CanonicalMatchNode>()
         val bound = PlanDependencyRelations.flatten(authorization.executionPlan.nodes).filterIsInstance<MatchPlanNode>()
-        if (matches.isEmpty() || matches.size != bound.size || bound.any { !supportedMatch(it) }) return declared
+        val inputs = authorization.executionPlan.inputs.map { it.name }.toSet()
+        if (matches.isEmpty() || matches.size != bound.size ||
+            bound.any { !JenkinsSequentialControlScope.supportsBody(listOf(it), inputs) }) return declared
         return declared.copy(features = declared.features + ("match.basic" to SupportLevel.SUPPORTED),
-            notes = declared.notes + "Match preserves exclusive literal selection across independently materialized tasks, conditions and nested matches; string-literal sources and empty error branches only, with no implicit-result or branch-output continuity claim.")
+            notes = declared.notes + "Match preserves exclusive literal selection across independently materialized tasks, conditions, fixed zero-delay retries, finite string loops and nested matches; string-literal sources and empty error branches only, with no implicit-result or branch-output continuity claim.")
     }
 
-    private fun supportedMatch(node: MatchPlanNode): Boolean =
-        supports(node.source, node.cases.map { it.condition }) && node.errorCase.isEmpty() &&
-            node.cases.all { supportedBody(it.steps) } && supportedBody(node.defaultSteps)
-
-    private fun supportedBody(nodes: List<PlanNode>): Boolean = nodes.all { node -> when (node) {
-        is TaskNode -> true // Leaf payloads, value bindings and continuity have independent owners.
-        is ConditionNode -> supportedBody(node.then) && supportedBody(node.otherwise)
-        is MatchPlanNode -> supportedMatch(node)
-        else -> false
-    } }
-
     companion object {
-        /** Renderer callers must preserve the same sequential control boundary. */
-        internal fun supportsRenderedBody(steps: List<TargetStep>): Boolean = steps.all { step -> when (step.type) {
-            "action" -> step.children.isEmpty()
-            "condition" -> supportsRenderedBody(step.children)
-            "match" -> supportsRenderedMatch(step)
-            else -> false
-        } }
-
-        internal fun supportsRenderedMatch(step: TargetStep): Boolean {
+        /** Selection wrappers own no bindings; every branch inherits the same lexical scope. */
+        internal fun supportsRenderedMatch(step: TargetStep, bindings: Set<String>): Boolean {
             val cases = step.children.takeWhile { it.type == "match-case" }
             return step.params.keys == setOf("source") &&
                 step.children.map { it.type } == List(cases.size) { "match-case" } + listOf("match-error", "match-default") &&
                 cases.all { it.params.keys == setOf("condition") } &&
+                step.children.drop(cases.size).all { it.params.isEmpty() } &&
                 supports(step.params.getValue("source"), cases.map { it.params.getValue("condition") }) &&
-                step.children[cases.size].children.isEmpty() && step.children.all { supportsRenderedBody(it.children) }
+                step.children[cases.size].children.isEmpty() &&
+                step.children.all { JenkinsSequentialControlScope.supportsRenderedBody(it.children, bindings) }
         }
 
         fun supports(source: String, conditions: List<String>): Boolean = runCatching {
