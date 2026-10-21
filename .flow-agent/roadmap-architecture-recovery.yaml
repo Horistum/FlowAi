@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 57
+revision: 58
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,17 +25,24 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/action-result-handler-containment.yaml"
-  decisionBasis: "Audit PR #242 merged at 19c8a802cce5d9be5bf40478dd513060ca0e5714 and falsified action result-handler preservation (A-01). The maintainer authorized the audit's first bounded correction: reject unsupported handler rules in common validation and direct planning before graph authorization. This contains semantic loss without implementing handlers or promoting adapters. A-02 through A-06 remain open; A-04 availability budgeting is the next recommended correction. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/availability-analysis-budget.yaml"
+  decisionBasis: "PR #243 merged at 0b308420610fdcefda30cf0df44cdd59bf3ad315 and contained A-01 handler semantic loss. The maintainer authorized the next audit correction, A-04: deterministic availability-analysis budgets and fail-closed compiler/direct-planner rejection. This candidate bounds explicit path enumeration without changing accepted semantic meaning or promoting adapters. Compact state representation remains an A-04 follow-up. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
-  activeFinding: A-01
-  disposition: containment-candidate
-  report: .flow-agent/reports/action-result-handler-containment.md
-  remainingFindings: [A-02, A-03, A-04, A-05, A-06]
+  activeFinding: A-04
+  disposition: resource-containment-candidate
+  report: .flow-agent/reports/availability-analysis-budget.md
+  previousContainment:
+    finding: A-01
+    pullRequest: 243
+    mergedMain: 0b308420610fdcefda30cf0df44cdd59bf3ad315
+    status: merged
+    canonicalHandlerSupport: false
+  remainingFindings: [A-02, A-03, A-05, A-06]
   nextRecommendedFinding: A-04
-  closureRule: Containment is not full handler implementation or closure of the remaining audit findings.
+  nextScope: Reduce equivalent availability states or adopt compact representation with branch, guard and explicit-merge parity evidence.
+  closureRule: Resource containment is not scalable symbolic analysis, handler implementation or closure of the other audit findings.
 
 deliveryModel:
   roadmapMilestoneCount: 8

@@ -3,6 +3,7 @@ package org.flowlang.validator
 import org.flowlang.ast.*
 import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
+import org.flowlang.core.FlowAvailabilityLimitException
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityIssueKind
 import org.flowlang.core.FlowValueAvailability
@@ -45,8 +46,11 @@ class FlowValidator(
         "number", "alpha", "alphanumeric", "slug", "semver", "hostname"
     )
 
-    fun validate(document: FlowDocument): ValidationReport =
+    fun validate(document: FlowDocument): ValidationReport = try {
         validate(document, FlowAvailabilityAnalyzer().analyze(document))
+    } catch (failure: FlowAvailabilityLimitException) {
+        failure.validationReport()
+    }
 
     internal fun validate(
         document: FlowDocument,
@@ -490,3 +494,9 @@ class FlowValidator(
         fun child() = Scope(this)
     }
 }
+
+/** Exhaustion is a terminal validation error, never a partial availability report. */
+internal fun FlowAvailabilityLimitException.validationReport(): ValidationReport = ValidationReport(
+    valid = false,
+    issues = listOf(ValidationIssue("error", code, requireNotNull(message), sourceLocation))
+)

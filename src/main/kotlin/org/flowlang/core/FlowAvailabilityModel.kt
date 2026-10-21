@@ -331,7 +331,9 @@ data class FlowAvailabilityState(
     fun binding(name: String): FlowBindingState =
         bindings[name] ?: FlowBindingState.Undefined
 
-    internal fun withBinding(name: String, state: FlowBindingState): FlowAvailabilityState {
+    internal fun withBinding(name: String, state: FlowBindingState, budget: FlowAvailabilityBudget): FlowAvailabilityState {
+        budget.state(this)
+        budget.binding(state)
         if (!reachable) return this
         require(state.coveredPaths.all { it in paths }) {
             "Binding '$name' cannot be installed with path evidence outside the current state."
@@ -341,17 +343,23 @@ data class FlowAvailabilityState(
         return copy(bindings = next.toSortedMap())
     }
 
-    internal fun withExternal(name: String, valueType: FlowValueType? = null): FlowAvailabilityState =
-        if (!reachable) this else withBinding(name, FlowBindingState.external(paths, valueType))
+    internal fun withExternal(name: String, budget: FlowAvailabilityBudget, valueType: FlowValueType? = null): FlowAvailabilityState =
+        if (!reachable) this else withBinding(name, FlowBindingState.external(paths, valueType), budget)
 
-    internal fun restore(name: String, original: FlowBindingState): FlowAvailabilityState =
-        if (!reachable) this else withBinding(name, original)
+    internal fun restore(name: String, original: FlowBindingState, budget: FlowAvailabilityBudget): FlowAvailabilityState =
+        if (!reachable) this else withBinding(name, original, budget)
 
     internal fun enterAlternative(
         joinPoint: FlowStatementPath,
         arm: String,
+        budget: FlowAvailabilityBudget,
         mergeable: Boolean = true
     ): FlowAvailabilityState {
+        budget.state(this)
+        // Match FlowPathIdentity.child's wire encoding before constructing any child.
+        val suffixLength = 1L + joinPoint.workflow.value.length + 1 + joinPoint.value.length +
+            1 + arm.length.toString().length + 1 + arm.length
+        paths.forEach { budget.pathCharacters(it.value.length + suffixLength) }
         val mapping = paths.associateWith { it.child(joinPoint, arm, mergeable) }
         return copy(
             paths = mapping.values.toSet(),
@@ -359,7 +367,8 @@ data class FlowAvailabilityState(
         )
     }
 
-    internal fun restrictTo(selected: Set<FlowPathIdentity>): FlowAvailabilityState {
+    internal fun restrictTo(selected: Set<FlowPathIdentity>, budget: FlowAvailabilityBudget): FlowAvailabilityState {
+        budget.state(this)
         val kept = paths.intersect(selected)
         if (kept.isEmpty()) return copy(reachable = false, paths = emptySet(), bindings = emptyMap())
         val next = bindings.mapValues { (_, state) -> state.restrictTo(kept) }

@@ -48,7 +48,9 @@ internal fun issueForState(
     )
 }
 
-internal fun joinAlternatives(states: List<FlowAvailabilityState>): FlowAvailabilityState {
+internal fun joinAlternatives(states: List<FlowAvailabilityState>, budget: FlowAvailabilityBudget): FlowAvailabilityState {
+    budget.work(states.size.toLong())
+    states.forEach(budget::state)
     val workflow = states.firstOrNull()?.workflow ?: FlowWorkflowIdentity.Main
     require(states.all { it.workflow == workflow }) {
         "Cannot join value availability from different workflows."
@@ -58,8 +60,17 @@ internal fun joinAlternatives(states: List<FlowAvailabilityState>): FlowAvailabi
         return states.firstOrNull()?.unreachable()
             ?: FlowAvailabilityState(workflow = workflow, reachable = false, paths = emptySet())
     }
-    val paths = reachable.flatMap(FlowAvailabilityState::paths).toSet()
+    val paths = linkedSetOf<FlowPathIdentity>()
+    reachable.forEach { state ->
+        state.paths.forEach { path ->
+            if (path !in paths) {
+                budget.paths(paths.size + 1)
+                paths += path
+            }
+        }
+    }
     val names = reachable.flatMap { it.bindings.keys }.toSortedSet()
+    budget.work(names.size.toLong() * reachable.size)
     val joined = names.associateWith { name ->
         joinAlternativeBinding(reachable.map { it.binding(name) }, paths)
     }.filterValues { it.availability != FlowValueAvailability.UNDEFINED }
@@ -95,7 +106,8 @@ internal fun joinAlternativeBinding(
 
 internal fun joinConcurrent(
     input: FlowAvailabilityState,
-    branches: List<FlowAvailabilityState>
+    branches: List<FlowAvailabilityState>,
+    budget: FlowAvailabilityBudget
 ): FlowAvailabilityState {
     if (branches.isEmpty()) return input
     require(branches.all { it.workflow == input.workflow }) {
@@ -107,7 +119,7 @@ internal fun joinConcurrent(
     // Branches carry non-mergeable concurrent path identities. Their local
     // producers therefore remain visible as unsafe partial/ambiguous evidence,
     // while an explicit phi merge is reserved for mutually exclusive paths.
-    return joinAlternatives(branches)
+    return joinAlternatives(branches, budget)
 }
 
 internal val IMPLICIT_RESULT_NAMES = setOf(
