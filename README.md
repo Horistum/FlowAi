@@ -3,6 +3,9 @@
 Action-local result handler rules currently fail compilation explicitly; see the
 [action result handler admission and migration contract](docs/ACTION_RESULT_HANDLER_CONTAINMENT.md).
 
+Availability analysis has deterministic compiler resource budgets; see
+[availability analysis limits and rejection behavior](docs/AVAILABILITY_ANALYSIS_LIMITS.md).
+
 <a id="flow-ai"></a>
 
 Horistum is an AI-first standardization layer for IT and DevOps automation intent.

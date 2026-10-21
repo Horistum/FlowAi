@@ -68,3 +68,7 @@ checks:
   - architecture-recovery.language.action-handlers-rejected-before-authorization
   - architecture-recovery.language.action-handlers-direct-planner-rejection
   - architecture-recovery.language.empty-action-handler-is-noop
+
+  - architecture-recovery.analysis.source-budget-rejection
+  - architecture-recovery.analysis.direct-planner-budget-rejection
+  - architecture-recovery.analysis.bounded-merge-preservation

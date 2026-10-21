@@ -4,6 +4,8 @@ import org.flowlang.ai.normalization.IntentProposalDecision
 import org.flowlang.ai.normalization.IntentProposalReview
 import org.flowlang.ai.normalization.IntentProposalReviewEvidence
 import org.flowlang.ast.FlowDocument
+import org.flowlang.core.FlowAvailabilityBudget
+import org.flowlang.core.FlowAvailabilityLimitException
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowWorkflowIdentity
 import org.flowlang.intent.IntentDocument
@@ -22,6 +24,7 @@ import org.flowlang.planner.PlanTrigger
 import org.flowlang.planner.RuntimeParamRenderer
 import org.flowlang.planner.WorkflowPlanningResult
 import org.flowlang.lowering.IntentLoweringAuthority
+import org.flowlang.validator.validationReport
 import org.flowlang.validator.FlowValidator
 
 /**
@@ -216,9 +219,14 @@ class FlowCompilationService(
     ): CompilationResult {
         val multiple = program.workflows.size > 1
         val drafts = mutableListOf<WorkflowCompilationDraft>()
+        val availabilityBudget = FlowAvailabilityBudget()
         program.workflows.sortedBy { it.name }.forEach { workflow ->
             val identity = FlowWorkflowIdentity(workflow.name)
-            val availability = flowAvailabilityAnalyzer.analyze(workflow.document, identity)
+            val availability = try {
+                flowAvailabilityAnalyzer.analyze(workflow.document, identity, availabilityBudget)
+            } catch (failure: FlowAvailabilityLimitException) {
+                return availabilityRejection(source, evidence, workflow.document, failure)
+            }
             val validation = flowValidator.validate(workflow.document, availability)
             if (!validation.valid) {
                 return CompilationResult.Rejected(
@@ -364,7 +372,11 @@ class FlowCompilationService(
         evidence: FrontendCompilationEvidence,
         ast: FlowDocument
     ): CompilationResult {
-        val availability = flowAvailabilityAnalyzer.analyze(ast)
+        val availability = try {
+            flowAvailabilityAnalyzer.analyze(ast)
+        } catch (failure: FlowAvailabilityLimitException) {
+            return availabilityRejection(source, evidence, ast, failure)
+        }
         val validation = flowValidator.validate(ast, availability)
         if (!validation.valid) {
             return CompilationResult.Rejected(
@@ -438,6 +450,22 @@ class FlowCompilationService(
             )
         }
     }
+
+    private fun availabilityRejection(
+        source: CompilationSource,
+        evidence: FrontendCompilationEvidence,
+        ast: FlowDocument,
+        failure: FlowAvailabilityLimitException
+    ): CompilationResult.Rejected = CompilationResult.Rejected(
+        rejection(
+            source = source,
+            stage = CompilationStage.FLOW_VALIDATION,
+            diagnostics = listOf(CompilationDiagnostic(failure.code, requireNotNull(failure.message))),
+            evidence = evidence,
+            ast = ast,
+            flowValidation = failure.validationReport()
+        )
+    )
 
     private fun rejection(
         source: CompilationSource,

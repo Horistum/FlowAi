@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 116
+stateVersion: 117
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -661,5 +661,19 @@ recoveryActionResultHandlerContainment:
   validation: current-revision-ci-required
   localPythonTests: 257
   canonicalHandlerSupport: false
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryAvailabilityAnalysisBudget:
+  candidate: AR-A04
+  status: candidate
+  workPackage: .flow-agent/work-packages/availability-analysis-budget.yaml
+  report: .flow-agent/reports/availability-analysis-budget.md
+  predecessorMain: 0b308420610fdcefda30cf0df44cdd59bf3ad315
+  auditFinding: A-04
+  validation: local-regressions-passed-current-revision-ci-required
+  localPythonTests: 257
+  localBudgetAndSemanticRegressionTests: 71
+  compactStateRepresentation: false
   signedPortfolioExpanded: false
   supportPromotion: false

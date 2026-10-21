@@ -1,0 +1,57 @@
+version: AR-A04
+name: Availability Analysis Budget
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests the next roadmap correction after merging PR 243.
+  predecessorPullRequest: 243
+  mergedMain: 0b308420610fdcefda30cf0df44cdd59bf3ad315
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-04)
+invariant: Availability analysis must stop at deterministic resource limits before expansion and must never authorize a partial analysis or plan.
+architecturePurpose: Bound target-neutral compiler analysis independently of source size, selected adapter, JVM heap and elapsed time.
+scope:
+- Budget path cardinality, cumulative state/expression work, generated path characters and recursion depth.
+- Enforce the budget in the shared analyzer and translate exhaustion into validation-stage rejection in all compiler frontends.
+- Reject direct planning and direct analysis explicitly; retain no partial accepted product.
+- Preserve existing definite/maybe, existence-guard, explicit merge and concurrent-path behavior within the budget.
+nonGoals:
+- No symbolic state representation, path coalescing or broader workflow admission in this correction.
+- No handler execution, adapter promotion, runtime executor or schema change.
+- No repair of audit A-02, A-03, A-05 or A-06.
+ownershipBoundary:
+  core: Owns deterministic analysis budgets and fail-closed admission.
+  adapters: Consume only accepted canonical graphs; unchanged.
+  conformance: Replays source growth and positive path-sensitive controls.
+expectedFilesToInspect:
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityModel.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityJoins.kt
+- src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityBudget.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityModel.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityJoins.kt
+- src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt
+- src/main/kotlin/org/flowlang/validator/FlowValidator.kt
+- gradle/compiler-sources.txt
+- src/main/kotlin/org/flowlang/conformance/AvailabilityBudgetConformanceChecks.kt
+- architecture-recovery/conformance/check-inventory.yaml
+- architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml
+testsToAddOrUpdate:
+- Budget boundaries and cumulative accounting without wall-clock assertions.
+- Source and typed-AST exponential growth, broad branches, bindings and deep recursion.
+- Direct analyzer, validator, planner and common compiler rejection; reuse after rejection.
+- Preserve branch-local values, explicit merges, guards, concurrency rejection and canonical positive controls.
+conformanceToAddOrUpdate:
+- Standalone compiler rejection and positive path-sensitive checks.
+documentationToUpdate:
+- docs/AVAILABILITY_ANALYSIS_LIMITS.md
+- .flow-agent/reports/availability-analysis-budget.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: local-regressions-passed-current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  preservedChecks: Module isolation and adapter runtime certification.

@@ -49,15 +49,17 @@ class FlowAvailabilityAnalyzer {
 
     internal fun analyze(
         document: FlowDocument,
-        workflow: FlowWorkflowIdentity
+        workflow: FlowWorkflowIdentity,
+        budget: FlowAvailabilityBudget = FlowAvailabilityBudget()
     ): FlowAvailabilityAnalysis {
-        val builder = Builder(document, workflow)
+        val builder = Builder(document, workflow, budget)
         return builder.analyze()
     }
 
     private class Builder(
         private val document: FlowDocument,
-        private val workflow: FlowWorkflowIdentity
+        private val workflow: FlowWorkflowIdentity,
+        private val budget: FlowAvailabilityBudget
     ) {
         private val entries = linkedMapOf<FlowStatementPath, FlowAvailabilityState>()
         private val exits = linkedMapOf<FlowStatementPath, FlowAvailabilityState>()
@@ -66,13 +68,13 @@ class FlowAvailabilityAnalyzer {
         private val issues = mutableListOf<FlowAvailabilityIssue>()
         private val merges = mutableListOf<FlowMergeContract>()
 
-        fun analyze(): FlowAvailabilityAnalysis {
+        fun analyze(): FlowAvailabilityAnalysis = budget.visit(FlowStatementPath("flow", workflow), null) {
             var base = FlowAvailabilityState()
             document.flow.input.forEach { input ->
-                base = base.withExternal(input.name, FlowValueType.fromWire(input.valueType.kind))
+                base = base.withExternal(input.name, budget, FlowValueType.fromWire(input.valueType.kind))
             }
-            document.flow.vars.map { it.name }.distinct().forEach { name -> base = base.withExternal(name) }
-            document.flow.systems.map { it.name }.distinct().forEach { name -> base = base.withExternal(name) }
+            document.flow.vars.map { it.name }.distinct().forEach { name -> base = base.withExternal(name, budget) }
+            document.flow.systems.map { it.name }.distinct().forEach { name -> base = base.withExternal(name, budget) }
 
             document.flow.vars.forEachIndexed { index, variable ->
                 val path = FlowStatementPath.variable(index, workflow)
@@ -87,12 +89,12 @@ class FlowAvailabilityAnalyzer {
             }
 
             document.flow.errorHandler?.steps?.let { statements ->
-                analyzeStatements(statements, base.withExternal("error")) { index ->
+                analyzeStatements(statements, base.withExternal("error", budget)) { index ->
                     FlowStatementPath.globalErrorStep(index, workflow)
                 }
             }
 
-            return FlowAvailabilityAnalysis(
+            FlowAvailabilityAnalysis(
                 entryStates = entries.toMap(),
                 exitStates = exits.toMap(),
                 producedBindings = produced.toMap(),
@@ -119,11 +121,22 @@ class FlowAvailabilityAnalyzer {
             return state
         }
 
+        private fun statementLocation(statement: StatementNode): SourceLocation? = when (statement) {
+            is ActionNode -> statement.sourceLocation
+            is ApproveNode -> statement.sourceLocation
+            is RetryNode -> statement.sourceLocation
+            is IfNode -> (statement.condition as? ReferenceNode)?.location
+            is ForNode -> (statement.source as? ReferenceNode)?.location
+            is MatchNode -> (statement.source as? ReferenceNode)?.location
+            else -> null
+        }
+
         private fun analyzeStatement(
             statement: StatementNode,
             input: FlowAvailabilityState,
             path: FlowStatementPath
-        ): FlowAvailabilityState {
+        ): FlowAvailabilityState = budget.visit(path, statementLocation(statement)) {
+            budget.state(input)
             entries[path] = input
             val output = when (statement) {
                 is ActionNode -> analyzeAction(statement, input, path)
@@ -136,20 +149,20 @@ class FlowAvailabilityAnalyzer {
                 is ApproveNode -> analyzeApprove(statement, input, path)
                 is TransformNode -> {
                     inspectExpression(statement.source, input, path, "transform source")
-                    val itemState = input.withExternal("item")
+                    val itemState = input.withExternal("item", budget)
                     statement.where?.let { inspectExpression(it, itemState, path, "transform predicate", allowUndefined = true) }
                     statement.select.values.forEach { inspectExpression(it, itemState, path, "transform projection", allowUndefined = true) }
                     define(input, path, statement.target)
                 }
                 is AggregateNode -> {
                     inspectExpression(statement.source, input, path, "aggregate source")
-                    val itemState = input.withExternal("item")
+                    val itemState = input.withExternal("item", budget)
                     statement.fields.values.forEach { inspectExpression(it, itemState, path, "aggregate field", allowUndefined = true) }
                     define(input, path, statement.target)
                 }
                 is ValidateNode -> {
                     inspectExpression(statement.target, input, path, "validate target")
-                    val itemState = input.withExternal("item")
+                    val itemState = input.withExternal("item", budget)
                     statement.rules.forEach { rule ->
                         rule.reference?.let { inspectExpression(it, itemState, path, "validate rule", allowUndefined = true) }
                         rule.expression?.let { inspectExpression(it, itemState, path, "validate rule", allowUndefined = true) }
@@ -179,13 +192,13 @@ class FlowAvailabilityAnalyzer {
                     input
                 }
                 is ErrorHandlerNode -> {
-                    val handlerInput = input.withExternal("error")
+                    val handlerInput = input.withExternal("error", budget)
                     analyzeStatements(statement.steps, handlerInput) { index -> path.child("steps", index) }
                     input
                 }
             }
             exits[path] = output
-            return output
+            output
         }
 
         private fun analyzeAction(
@@ -221,7 +234,7 @@ class FlowAvailabilityAnalyzer {
                     }
                     is WhenNode -> {
                         val implicit = withImplicitResult(output).let { state ->
-                            if (rule.isError) state.withExternal("error") else state
+                            if (rule.isError) state.withExternal("error", budget) else state
                         }
                         rule.condition?.let { inspectExpression(it, implicit, path, "result handler condition", allowUndefined = true) }
                         analyzeStatements(rule.steps, implicit) { index ->
@@ -262,11 +275,11 @@ class FlowAvailabilityAnalyzer {
             path: FlowStatementPath
         ): FlowAvailabilityState {
             val condition = analyzeCondition(statement.condition, input, path)
-            val thenInput = condition.whenTrue.enterAlternative(path, "if:true")
-            val otherwiseInput = condition.whenFalse.enterAlternative(path, "if:false")
+            val thenInput = condition.whenTrue.enterAlternative(path, "if:true", budget)
+            val otherwiseInput = condition.whenFalse.enterAlternative(path, "if:false", budget)
             val thenState = analyzeStatements(statement.then, thenInput) { index -> path.child("then", index) }
             val otherwiseState = analyzeStatements(statement.otherwise, otherwiseInput) { index -> path.child("otherwise", index) }
-            return joinAlternatives(listOf(thenState, otherwiseState))
+            return joinAlternatives(listOf(thenState, otherwiseState), budget)
         }
 
         private fun analyzeFor(
@@ -275,14 +288,14 @@ class FlowAvailabilityAnalyzer {
             path: FlowStatementPath
         ): FlowAvailabilityState {
             inspectExpression(statement.source, input, path, "loop source")
-            val zero = input.enterAlternative(path, "loop:zero")
-            val bodyBase = input.enterAlternative(path, "loop:body")
+            val zero = input.enterAlternative(path, "loop:zero", budget)
+            val bodyBase = input.enterAlternative(path, "loop:body", budget)
             val originalItem = bodyBase.binding(statement.item)
-            val bodyInput = bodyBase.withExternal(statement.item)
+            val bodyInput = bodyBase.withExternal(statement.item, budget)
             val bodyOutput = analyzeStatements(statement.body, bodyInput) { index -> path.child("body", index) }
-                .restore(statement.item, originalItem)
+                .restore(statement.item, originalItem, budget)
             // A dynamic loop may execute zero times.
-            return joinAlternatives(listOf(zero, bodyOutput))
+            return joinAlternatives(listOf(zero, bodyOutput), budget)
         }
 
         private fun analyzeParallel(
@@ -292,12 +305,12 @@ class FlowAvailabilityAnalyzer {
         ): FlowAvailabilityState {
             val branchOutputs = statement.branches.mapIndexed { branchIndex, branch ->
                 val branchIdentity = branch.name?.let { "parallel:name:$it" } ?: "parallel:index:$branchIndex"
-                val branchInput = input.enterAlternative(path, branchIdentity, mergeable = false)
+                val branchInput = input.enterAlternative(path, branchIdentity, budget, mergeable = false)
                 analyzeStatements(branch.steps, branchInput) { index ->
                     path.child("branches[$branchIndex].steps", index)
                 }
             }
-            return joinConcurrent(input, branchOutputs)
+            return joinConcurrent(input, branchOutputs, budget)
         }
 
         private fun analyzeMatch(
@@ -310,21 +323,21 @@ class FlowAvailabilityAnalyzer {
             val alternatives = mutableListOf<FlowAvailabilityState>()
             statement.cases.forEachIndexed { caseIndex, matchCase ->
                 matchCase.condition?.let { inspectExpression(it, implicit, path, "match condition", allowUndefined = true) }
-                val caseInput = input.enterAlternative(path, "match:case:$caseIndex")
+                val caseInput = input.enterAlternative(path, "match:case:$caseIndex", budget)
                 alternatives += analyzeStatements(matchCase.steps, caseInput) { index ->
                     path.child("cases[$caseIndex].steps", index)
                 }
             }
             statement.errorCase?.let { errorSteps ->
-                val errorBase = input.enterAlternative(path, "match:error")
+                val errorBase = input.enterAlternative(path, "match:error", budget)
                 val originalError = errorBase.binding("error")
-                alternatives += analyzeStatements(errorSteps, errorBase.withExternal("error")) { index ->
+                alternatives += analyzeStatements(errorSteps, errorBase.withExternal("error", budget)) { index ->
                     path.child("errorCase", index)
-                }.restore("error", originalError)
+                }.restore("error", originalError, budget)
             }
-            val defaultInput = input.enterAlternative(path, "match:default")
+            val defaultInput = input.enterAlternative(path, "match:default", budget)
             alternatives += analyzeStatements(statement.defaultSteps, defaultInput) { index -> path.child("default", index) }
-            return joinAlternatives(alternatives)
+            return joinAlternatives(alternatives, budget)
         }
 
         private fun analyzeTry(
@@ -332,85 +345,88 @@ class FlowAvailabilityAnalyzer {
             input: FlowAvailabilityState,
             path: FlowStatementPath
         ): FlowAvailabilityState {
-            val successInput = input.enterAlternative(path, "try:success")
+            val successInput = input.enterAlternative(path, "try:success", budget)
             val success = analyzeStatements(statement.steps, successInput) { index -> path.child("body", index) }
-            val failureBase = input.enterAlternative(path, "try:error")
+            val failureBase = input.enterAlternative(path, "try:error", budget)
             val originalError = failureBase.binding("error")
-            val handledFailure = analyzeStatements(statement.errorHandler.steps, failureBase.withExternal("error")) { index ->
+            val handledFailure = analyzeStatements(statement.errorHandler.steps, failureBase.withExternal("error", budget)) { index ->
                 path.child("errorHandler", index)
-            }.restore("error", originalError)
-            return joinAlternatives(listOf(success, handledFailure))
+            }.restore("error", originalError, budget)
+            return joinAlternatives(listOf(success, handledFailure), budget)
         }
 
         private fun analyzeCondition(
             expression: ExpressionNode,
             input: FlowAvailabilityState,
             path: FlowStatementPath
-        ): ConditionStates = when (expression) {
-            is UnaryPostfixExpressionNode -> {
-                val operand = expression.operand
-                if (expression.operator == "exists" && operand is ReferenceNode) {
-                    val reference = operand
-                    val binding = reference.path.firstOrNull()
-                    if (binding == null) {
-                        ConditionStates(input, input)
+        ): ConditionStates = budget.visit(path, (expression as? ReferenceNode)?.location) {
+            budget.state(input)
+            when (expression) {
+                is UnaryPostfixExpressionNode -> {
+                    val operand = expression.operand
+                    if (expression.operator == "exists" && operand is ReferenceNode) {
+                        val reference = operand
+                        val binding = reference.path.firstOrNull()
+                        if (binding == null) {
+                            ConditionStates(input, input)
+                        } else {
+                            inspectBinding(
+                                binding,
+                                input,
+                                path,
+                                reference.location,
+                                "existence guard",
+                                allowUniquePartialProducer = true
+                            )
+                            ConditionStates(
+                                whenTrue = refinePresent(input, binding),
+                                whenFalse = refineAbsent(input, binding)
+                            )
+                        }
                     } else {
-                        inspectBinding(
-                            binding,
-                            input,
-                            path,
-                            reference.location,
-                            "existence guard",
-                            allowUniquePartialProducer = true
-                        )
-                        ConditionStates(
-                            whenTrue = refinePresent(input, binding),
-                            whenFalse = refineAbsent(input, binding)
-                        )
+                        inspectExpression(expression, input, path, "condition")
+                        ConditionStates(input, input)
                     }
-                } else {
-                    inspectExpression(expression, input, path, "condition")
-                    ConditionStates(input, input)
                 }
-            }
-            is UnaryExpressionNode -> {
-                if (expression.operator == "not") {
-                    val nested = analyzeCondition(expression.operand, input, path)
-                    ConditionStates(nested.whenFalse, nested.whenTrue)
-                } else {
-                    inspectExpression(expression, input, path, "condition")
-                    ConditionStates(input, input)
-                }
-            }
-            is LogicalExpressionNode -> when (expression.operator) {
-                "and" -> {
-                    var trueState = input
-                    val falseStates = mutableListOf<FlowAvailabilityState>()
-                    expression.operands.forEach { operand ->
-                        val nested = analyzeCondition(operand, trueState, path)
-                        falseStates += nested.whenFalse
-                        trueState = nested.whenTrue
+                is UnaryExpressionNode -> {
+                    if (expression.operator == "not") {
+                        val nested = analyzeCondition(expression.operand, input, path)
+                        ConditionStates(nested.whenFalse, nested.whenTrue)
+                    } else {
+                        inspectExpression(expression, input, path, "condition")
+                        ConditionStates(input, input)
                     }
-                    ConditionStates(trueState, joinAlternatives(falseStates))
                 }
-                "or" -> {
-                    var falseState = input
-                    val trueStates = mutableListOf<FlowAvailabilityState>()
-                    expression.operands.forEach { operand ->
-                        val nested = analyzeCondition(operand, falseState, path)
-                        trueStates += nested.whenTrue
-                        falseState = nested.whenFalse
+                is LogicalExpressionNode -> when (expression.operator) {
+                    "and" -> {
+                        var trueState = input
+                        val falseStates = mutableListOf<FlowAvailabilityState>()
+                        expression.operands.forEach { operand ->
+                            val nested = analyzeCondition(operand, trueState, path)
+                            falseStates += nested.whenFalse
+                            trueState = nested.whenTrue
+                        }
+                        ConditionStates(trueState, joinAlternatives(falseStates, budget))
                     }
-                    ConditionStates(joinAlternatives(trueStates), falseState)
+                    "or" -> {
+                        var falseState = input
+                        val trueStates = mutableListOf<FlowAvailabilityState>()
+                        expression.operands.forEach { operand ->
+                            val nested = analyzeCondition(operand, falseState, path)
+                            trueStates += nested.whenTrue
+                            falseState = nested.whenFalse
+                        }
+                        ConditionStates(joinAlternatives(trueStates, budget), falseState)
+                    }
+                    else -> {
+                        inspectExpression(expression, input, path, "condition")
+                        ConditionStates(input, input)
+                    }
                 }
                 else -> {
                     inspectExpression(expression, input, path, "condition")
                     ConditionStates(input, input)
                 }
-            }
-            else -> {
-                inspectExpression(expression, input, path, "condition")
-                ConditionStates(input, input)
             }
         }
 
@@ -420,7 +436,7 @@ class FlowAvailabilityAnalyzer {
             path: FlowStatementPath,
             role: String,
             allowUndefined: Boolean = false
-        ) {
+        ): Unit = budget.visit(path, (expression as? ReferenceNode)?.location) {
             when (expression) {
                 is ReferenceNode -> expression.path.firstOrNull()?.let { binding ->
                     inspectBinding(binding, state, path, expression.location, role, allowUndefined = allowUndefined)
@@ -437,12 +453,12 @@ class FlowAvailabilityAnalyzer {
                 is TemplateStringNode -> expression.parts.forEach { inspectExpression(it, state, path, role, allowUndefined) }
                 is CallExpressionNode -> {
                     if (expression.function == "merge") {
-                        issues += mergeIssue(
+                        report(mergeIssue(
                             code = "MERGE_CONTEXT_INVALID",
                             message = "merge(...) is only valid as the complete value of a set statement.",
                             binding = "<merge>",
                             path = path
-                        )
+                        ))
                     }
                     expression.args.forEach { inspectExpression(it, state, path, role, allowUndefined) }
                 }
@@ -464,8 +480,10 @@ class FlowAvailabilityAnalyzer {
             allowUniquePartialProducer: Boolean = false,
             allowUndefined: Boolean = false
         ) {
+            budget.work()
             val binding = rawBinding
             val bindingState = state.binding(binding)
+            budget.binding(bindingState)
             val accepted = !state.reachable || bindingState.safeToRead ||
                 (allowUndefined && bindingState.availability == FlowValueAvailability.UNDEFINED) ||
                 (allowUniquePartialProducer &&
@@ -480,7 +498,7 @@ class FlowAvailabilityAnalyzer {
                 state = bindingState,
                 accepted = accepted
             )
-            if (!accepted) issues += issueForState(binding, bindingState, path, location, role)
+            if (!accepted) report(issueForState(binding, bindingState, path, location, role))
         }
 
         private fun analyzeMerge(
@@ -492,40 +510,42 @@ class FlowAvailabilityAnalyzer {
             if (!input.reachable) return define(input, path, statement.name, null)
             val firstIssue = issues.size
             if (expression.args.size < 2) {
-                issues += mergeIssue(
+                report(mergeIssue(
                     "MERGE_ARITY_INVALID",
                     "Explicit merge '${statement.name}' requires at least two source references.",
                     statement.name,
                     path
-                )
+                ))
             }
             val inputs = mutableListOf<FlowMergeInput>()
             val seen = mutableSetOf<String>()
             expression.args.forEachIndexed { index, argument ->
+                budget.work()
                 val reference = argument as? ReferenceNode
                 val rawBinding = reference?.takeIf { it.scope == "auto" && it.path.size == 1 }?.path?.singleOrNull()
                 if (rawBinding == null) {
-                    issues += mergeIssue(
+                    report(mergeIssue(
                         "MERGE_INPUT_INVALID",
                         "Explicit merge '${statement.name}' input $index must be one simple binding reference.",
                         statement.name,
                         path,
                         reference?.location
-                    )
+                    ))
                     return@forEachIndexed
                 }
                 val binding = rawBinding
                 if (!seen.add(binding)) {
-                    issues += mergeIssue(
+                    report(mergeIssue(
                         "MERGE_INPUT_DUPLICATE",
                         "Explicit merge '${statement.name}' repeats logical input '$rawBinding'.",
                         binding,
                         path,
                         reference.location
-                    )
+                    ))
                     return@forEachIndexed
                 }
                 val state = input.binding(binding)
+                budget.binding(state)
                 val producer = state.uniqueProducer
                 val accepted = state.availability != FlowValueAvailability.UNDEFINED && !state.external && producer != null
                 uses += FlowAvailabilityUse(
@@ -537,37 +557,37 @@ class FlowAvailabilityAnalyzer {
                     accepted = accepted
                 )
                 when {
-                    state.availability == FlowValueAvailability.UNDEFINED -> issues += mergeIssue(
+                    state.availability == FlowValueAvailability.UNDEFINED -> report(mergeIssue(
                         "MERGE_SOURCE_UNDEFINED",
                         "Explicit merge '${statement.name}' references undefined input '$rawBinding'.",
                         binding,
                         path,
                         reference.location
-                    )
-                    state.external -> issues += mergeIssue(
+                    ))
+                    state.external -> report(mergeIssue(
                         "MERGE_SOURCE_EXTERNAL",
                         "Explicit merge '${statement.name}' input '$rawBinding' has external rather than path-local producer provenance.",
                         binding,
                         path,
                         reference.location
-                    )
-                    producer == null -> issues += mergeIssue(
+                    ))
+                    producer == null -> report(mergeIssue(
                         "MERGE_SOURCE_AMBIGUOUS",
                         "Explicit merge '${statement.name}' input '$rawBinding' must identify exactly one producer.",
                         binding,
                         path,
                         reference.location
-                    )
+                    ))
                     else -> {
                         val sourcePaths = state.producerPaths.getValue(producer)
                         if (sourcePaths.any { !it.mergeable }) {
-                            issues += mergeIssue(
+                            report(mergeIssue(
                                 "MERGE_PATH_KIND_UNSUPPORTED",
                                 "Explicit merge '${statement.name}' cannot use concurrent branch input '$rawBinding'.",
                                 binding,
                                 path,
                                 reference.location
-                            )
+                            ))
                         } else {
                             inputs += FlowMergeInput(binding, producer, sourcePaths, state.valueType)
                         }
@@ -576,35 +596,36 @@ class FlowAvailabilityAnalyzer {
             }
             if (issues.size != firstIssue) return input
 
+            budget.work(input.paths.size.toLong() * inputs.size)
             val ownersByPath = input.paths.associateWith { incoming ->
                 inputs.filter { incoming in it.paths }
             }
             val uncovered = ownersByPath.filterValues(List<FlowMergeInput>::isEmpty).keys
             val overlapping = ownersByPath.filterValues { it.size > 1 }.keys
             if (uncovered.isNotEmpty()) {
-                issues += mergeIssue(
+                report(mergeIssue(
                     "MERGE_PATH_INCOMPLETE",
                     "Explicit merge '${statement.name}' does not cover paths: ${uncovered.map { it.value }.sorted().joinToString()}.",
                     statement.name,
                     path
-                )
+                ))
             }
             if (overlapping.isNotEmpty()) {
-                issues += mergeIssue(
+                report(mergeIssue(
                     "MERGE_PATH_OVERLAP",
                     "Explicit merge '${statement.name}' selects more than one input on paths: ${overlapping.map { it.value }.sorted().joinToString()}.",
                     statement.name,
                     path
-                )
+                ))
             }
             val knownTypes = inputs.mapNotNull(FlowMergeInput::valueType).distinct()
             if (knownTypes.size > 1) {
-                issues += mergeIssue(
+                report(mergeIssue(
                     "MERGE_TYPE_INCOMPATIBLE",
                     "Explicit merge '${statement.name}' has incompatible known types: ${knownTypes.map { it.value }.sorted().joinToString()}.",
                     statement.name,
                     path
-                )
+                ))
             }
             if (issues.size != firstIssue) return input
 
@@ -622,8 +643,15 @@ class FlowAvailabilityAnalyzer {
             produced[ProducerKey(path, org.flowlang.identity.SemanticId.of(statement.name))] = contract.producer
             return input.withBinding(
                 statement.name,
-                FlowBindingState.merged(contract.producer, input.paths, valueType)
+                FlowBindingState.merged(contract.producer, input.paths, valueType), budget
             )
+        }
+
+        private fun report(issue: FlowAvailabilityIssue) {
+            // Retained diagnostic text is work too; repeated invalid references
+            // must not accumulate unbounded messages from shared path evidence.
+            budget.work(issue.message.length.toLong())
+            issues += issue
         }
 
         private fun mergeIssue(
@@ -662,31 +690,34 @@ class FlowAvailabilityAnalyzer {
             rawBinding: String,
             valueType: FlowValueType? = null
         ): FlowAvailabilityState {
+            budget.work()
             val producer = FlowProducerIdentity(path, rawBinding)
             produced[ProducerKey(path, org.flowlang.identity.SemanticId.of(rawBinding))] = producer
             if (!input.reachable) return input
-            return input.withBinding(rawBinding, FlowBindingState.produced(producer, input.paths, valueType))
+            return input.withBinding(rawBinding, FlowBindingState.produced(producer, input.paths, valueType), budget)
         }
 
         private fun refinePresent(input: FlowAvailabilityState, binding: String): FlowAvailabilityState {
+            budget.state(input)
             val current = input.binding(binding)
             return when {
                 current.availability == FlowValueAvailability.UNDEFINED -> input.unreachable()
-                else -> input.restrictTo(current.coveredPaths)
+                else -> input.restrictTo(current.coveredPaths, budget)
             }
         }
 
         private fun refineAbsent(input: FlowAvailabilityState, binding: String): FlowAvailabilityState {
+            budget.state(input)
             val current = input.binding(binding)
             return when {
                 current.availability == FlowValueAvailability.UNDEFINED -> input
-                else -> input.restrictTo(input.paths - current.coveredPaths)
+                else -> input.restrictTo(input.paths - current.coveredPaths, budget)
             }
         }
 
         private fun withImplicitResult(input: FlowAvailabilityState): FlowAvailabilityState {
             var state = input
-            IMPLICIT_RESULT_NAMES.forEach { name -> state = state.withExternal(name) }
+            IMPLICIT_RESULT_NAMES.forEach { name -> state = state.withExternal(name, budget) }
             return state
         }
     }
