@@ -64,18 +64,39 @@ class FlowLegacyGeneratorFixtureRemovalTests {
     }
 
     @Test
-    fun historicalShellExamplesAreIsolatedAndBlockedAcrossTargets() {
+    fun historicalShellExamplesAreIsolatedAndRejectedBeforePlanning() {
         val discovered = migrationDir.listFiles { file -> file.isFile && file.extension == "flow" }
             .orEmpty().filter { it.readText().contains("shell.run") }.map { it.name }.toSet()
         assertEquals(expectedShellCommands.keys, discovered)
 
         discovered.sorted().forEach { example ->
-            val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(File(migrationDir, example)))
+            val ast = FlowParser().parse(File(migrationDir, example))
+            val validation = org.flowlang.frontend.FrontendCompilerComposition.flowValidator().validate(ast)
+            assertTrue(validation.issues.any { it.code == "ACTION_RESULT_HANDLER_UNSUPPORTED" })
+            assertFailsWith<org.flowlang.core.UnsupportedActionResultHandlerException> {
+                FlowPlanner(ModuleRegistry()).plan(ast)
+            }
+        }
+    }
+
+    @Test
+    fun unhandledShellCommandsRemainBlockedAcrossTargets() {
+        // Independent leaf fixtures retain the shell materialization gate even though
+        // the historical examples now fail earlier on unsupported handler semantics.
+        expectedShellCommands.values.flatten().toSet().forEach { command ->
+            val source = """
+                use module "shell" version "1.0"
+                flow "blocked-shell" {
+                    systems { system "local" { type: shell } }
+                    steps { shell.run local { command: "$command" } }
+                }
+            """.trimIndent()
+            val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(source))
             targets.keys.forEach { target ->
                 val manifest = manifest(plan, target)
                 val shellSteps = manifest.jobs.flatMap { job -> job.steps.flatMap { it.flattenForTest() } }
                     .filter { it.module == "shell" && it.action == "run" }
-                assertEquals(expectedShellCommands.getValue(example), shellSteps.mapNotNull { it.params["command"] }.toSet())
+                assertEquals(listOf(command), shellSteps.mapNotNull { it.params["command"] })
                 assertTrue(shellSteps.all { it.materialization.status == TargetMaterializationStatus.BLOCKED })
                 val readiness = TargetRenderPolicy.evaluate(manifest)
                 assertEquals(TargetRenderMode.FAIL_FAST, readiness.mode)

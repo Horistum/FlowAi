@@ -12,6 +12,8 @@ import org.flowlang.validator.SafetyBoundaryValidator
  * could therefore bypass the entire gate simply by being nested in a handler branch of a benign
  * action. These tests pin the closure of that gap, and its legitimate exception: rollback-sensitive
  * actions inside `when error { ... }` branches remain allowed (an error branch IS an error handler).
+ * These are safety-classification checks only; full compilation separately rejects action
+ * result-handler rules until they have a canonical planning contract (audit A-01).
  */
 class SafetyBoundaryHandlerTests {
     private fun parse(source: String) = FlowParser().parse(source.trimIndent())

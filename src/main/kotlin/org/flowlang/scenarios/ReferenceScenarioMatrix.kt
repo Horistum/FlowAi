@@ -12,14 +12,13 @@ object ReferenceScenarioMatrix {
     fun all(): List<ReferenceScenario> = positiveScenarios() + negativeScenarios()
     fun positiveScenarios(): List<ReferenceScenario> = listOf(
         buildTestDeploy(),
-        apiSync(),
         databaseMigration(),
         rollbackWorkflow(),
         cleanupWorkflow(),
         secretRotation(),
         notificationWorkflow()
     )
-    fun negativeScenarios(): List<ReferenceScenario> = listOf(unsafeCleanupWithoutApproval())
+    fun negativeScenarios(): List<ReferenceScenario> = listOf(unsafeCleanupWithoutApproval(), apiSync())
 
     private fun buildTestDeploy() = ReferenceScenario(
         id = "build-test-deploy",
@@ -92,10 +91,13 @@ object ReferenceScenarioMatrix {
         semanticExpectation = ReferenceSemanticExpectation(
             requiredCapabilities = setOf("api.call", "data.transform", "data.validate", "data.write", "data.aggregate", "notification.send", "secret.consume"),
             portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
-            notes = setOf("runtime secrets stay external", "data operations remain explicit even when a target cannot materialise them natively")
+            notes = setOf("runtime secrets stay external", "data operations remain explicit even when a target cannot materialise them natively",
+                "action result assertions currently block compilation (audit A-01)")
         ),
         risks = setOf(ReferenceScenarioRisk.SECRET_ACCESS, ReferenceScenarioRisk.DATA_WRITE),
         safetyRequirements = setOf("runtime secrets stay external", "data operations must be explicit when not materialised by the target"),
+        negativeCoverage = true,
+        expectedDiagnosticCodes = setOf("ACTION_RESULT_HANDLER_UNSUPPORTED"),
         source = """
             version "1.0"
             use module "rest" version "1.0"

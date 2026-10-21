@@ -19,6 +19,7 @@ productionEntrypoints:
 deferredProductEntrypoints: []
 independentConformancePaths:
   - "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt"
+  - "src/main/kotlin/org/flowlang/conformance/ActionResultHandlerConformanceChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AdapterBindingConformanceChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"

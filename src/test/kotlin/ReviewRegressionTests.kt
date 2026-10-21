@@ -23,8 +23,8 @@ class ReviewRegressionTests {
     private val registry = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
 
     @Test
-    fun deployWithApprovalExampleGeneratesThroughManifestPath() {
-        val ast = FlowParser().parse(File("examples/deploy-with-approval.flow"))
+    fun deployWithApprovalProjectionFixturePreservesParameters() {
+        val ast = FlowParser().parse(File("src/test/resources/flow/projection/deploy-with-approval.flow"))
         val validation = FrontendCompilerComposition.flowValidator(registry).validate(ast)
         assertTrue(validation.valid, validation.issues.toString())
 

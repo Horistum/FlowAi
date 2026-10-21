@@ -65,3 +65,6 @@ checks:
   - architecture-recovery.artifacts.failed-preparation-never-publishes
   - architecture-recovery.product.explicit-contracts-to-verified-publication
   - architecture-recovery.product.invalid-source-preserves-publication
+  - architecture-recovery.language.action-handlers-rejected-before-authorization
+  - architecture-recovery.language.action-handlers-direct-planner-rejection
+  - architecture-recovery.language.empty-action-handler-is-noop

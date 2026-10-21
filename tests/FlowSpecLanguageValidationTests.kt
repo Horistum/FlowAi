@@ -190,13 +190,16 @@ version "1.0"
 use module "shell" version "1.0"
 flow "t" {
   systems { system "local" { type: shell } }
-  steps { shell.run local { command: "x" } -> r { expect { ok == true } } }
+  steps { shell.run local { command: "x" } -> r }
 }
 """
 
 fun validatorTests() {
     H.ok("v/base-valid", validateSrc(VALID_DOC).valid)
     H.ok("v/base-no-errors", validateSrc(VALID_DOC).issues.none { it.level == "error" })
+    H.ok("v/action-handler-unsupported", hasError(validateSrc(
+        VALID_DOC.replace("-> r", "-> r { expect { ok == true } }")
+    ), "ACTION_RESULT_HANDLER_UNSUPPORTED"))
 
     H.ok("v/module-not-imported", hasError(validateSrc("""
         flow "t" { systems { system "l" { type: shell } } steps { shell.run l { command: "x" } } }

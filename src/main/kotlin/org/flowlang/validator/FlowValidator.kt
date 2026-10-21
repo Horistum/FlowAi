@@ -1,6 +1,7 @@
 package org.flowlang.validator
 
 import org.flowlang.ast.*
+import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityIssueKind
@@ -240,6 +241,9 @@ class FlowValidator(
         action: ActionNode, imported: Set<String>, systems: List<SystemNode>,
         scope: Scope, results: MutableSet<String>, issues: MutableList<ValidationIssue>
     ) {
+        ActionResultHandlerSupport.rejectionMessage(action)?.let { message ->
+            issues += err(ActionResultHandlerSupport.CODE, message, action.sourceLocation)
+        }
         if (action.module !in imported)
             issues += err("MODULE_NOT_IMPORTED", "Action uses module '${action.module}' but it is not imported", action.sourceLocation)
 

@@ -221,7 +221,11 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
         authored = root / "authored.intent.yaml"
         authored.write_bytes(resources["examples/intent/checkout-build-image.intent.yaml"])
         flow = root / "authored.flow"
-        flow.write_bytes(resources["examples/hello.flow"])
+        flow.write_text('version "1.0" use module "git" version "1.0" '
+                        'flow "relocated" { systems { system "repo" { type: git } } '
+                        'steps { git.checkout repo { url: "https://example.invalid/repo.git" branch: "main" } } }')
+        unsupported_handler = root / "unsupported-handler.flow"
+        unsupported_handler.write_bytes(resources["examples/hello.flow"])
         invalid = root / "incomplete contracts"
         invalid.mkdir()
         oversized = root / "oversized.source"
@@ -250,6 +254,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                 cases = [("resources", ["resources"], 0), ("modules", ["modules"], 0),
                          ("targets", ["targets"], 0), ("default-intent", ["intent"], 0),
                          ("flow", ["flow", str(flow)], 0),
+                         ("unsupported-handler", ["flow", str(unsupported_handler)], 2),
                          ("normalize", ["normalize", "build and test", "--app", "shop"], 0),
                          ("maintenance", ["normalize", "Run Kubernetes maintenance in namespace payments with dry-run.", "--environment", "prod"], 0),
                          ("external", ["resources", "--contracts", str(external)], 0),
@@ -271,7 +276,7 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                     (report_dir / f"{key}.stderr").write_text(result.stderr)
                     if result.returncode != exit_code or result.stderr:
                         raise ValueError(f"Relocated CLI {key} failed: exit={result.returncode}; {result.stdout[-1500:]} {result.stderr}")
-                    rejected = name in ("missing-external", "malformed-normalize", "existing-output") or name.startswith("limit-")
+                    rejected = name in ("missing-external", "malformed-normalize", "existing-output", "unsupported-handler") or name.startswith("limit-")
                     if not rejected:
                         document = sections(result.stdout)
                         records = document["FLOW CONTRACT RESOURCE PROVENANCE"]
@@ -290,6 +295,11 @@ def verify_relocated_product(isolated: Path, install: Path, report_dir: Path) ->
                             raise ValueError("Invalid or oversized input was not rejected before output writes.")
                         if name.startswith("limit-") and (len(result.stdout.encode()) > 4096 or len(failure.get("message", "")) > 2048):
                             raise ValueError("Limit rejection produced an oversized diagnostic.")
+                    if name == "unsupported-handler":
+                        if "ACTION_RESULT_HANDLER_UNSUPPORTED" not in failure.get("message", ""):
+                            raise ValueError("Relocated CLI lost the action-handler rejection diagnostic.")
+                        if "EXECUTION PLAN" in sections(result.stdout):
+                            raise ValueError("Rejected action handler produced a plan.")
                     if name in ("jenkins", "github-actions"):
                         publications[key] = verify_publication(cwd / name, resources)
                         if (cwd / name / "execution-plan.json").read_bytes() != (cwd / name / "canonical-execution-plan.json").read_bytes():

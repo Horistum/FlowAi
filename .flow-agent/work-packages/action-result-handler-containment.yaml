@@ -1,0 +1,57 @@
+version: AR-A01
+name: Action Result Handler Containment
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests continuation according to the merged system audit findings.
+  predecessorPullRequest: 242
+  mergedMain: 19c8a802cce5d9be5bf40478dd513060ca0e5714
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-01)
+invariant: An action with result-handler rules cannot become an accepted compilation or execution plan while those rules have no canonical representation.
+architecturePurpose: Contain audit A-01 at the target-neutral compiler and direct planner boundaries before unsupported control intent can authorize an executable artifact.
+scope:
+- Reject non-empty action result handlers with a stable diagnostic and source location.
+- Independently enforce the same support rule at the public planner boundary.
+- Retain parsing and AST inspection, empty handler no-ops, ordinary result bindings, standalone result conditions and existing try/workflow failure handlers.
+nonGoals:
+- No result-handler execution, canonical handler lowering or adapter implementation.
+- No repair of audit A-02 through A-06 or target support expansion.
+- No runtime executor, SDK, plugin lifecycle, target-specific syntax or schema change.
+ownershipBoundary:
+  core: Owns the shared unsupported-semantics guard and planning rejection.
+  adapters: Unchanged; rejected source cannot obtain compilation-backed authorization.
+  conformance: Exercises real source compilation and direct planning, including negative cases and positive controls.
+expectedFilesToInspect:
+- src/main/kotlin/org/flowlang/validator/FlowValidator.kt
+- src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
+- src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/validator/FlowValidator.kt
+- src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
+- gradle/compiler-sources.txt
+- src/main/kotlin/org/flowlang/core/ActionResultHandlerSupport.kt
+- src/main/kotlin/org/flowlang/conformance/ActionResultHandlerConformanceChecks.kt
+- architecture-recovery/conformance/check-inventory.yaml
+- tools/verify_relocated_product.py
+- src/main/kotlin/org/flowlang/scenarios/ReferenceScenarioMatrix.kt
+- architecture-recovery/ar-01/compiler-entrypoint-inventory.yaml
+- src/test/resources/flow/projection/
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+testsToAddOrUpdate:
+- Reject expect, conditional when and when error independently of rule values or branch reachability.
+- Reject nested and workflow-failure-region actions and direct AST planning without validation.
+- Preserve empty handlers, ordinary checkout results, standalone conditions and existing failure semantics.
+- Keep invalid-reference diagnostics from result-handler validation visible.
+conformanceToAddOrUpdate:
+- Add executable source-to-compiler rejection and direct-planner checks to standalone conformance.
+- Preserve signed runtime assessments and existing executable reference snapshots.
+documentationToUpdate:
+- docs/ACTION_RESULT_HANDLER_CONTAINMENT.md
+- .flow-agent/reports/action-result-handler-containment.md
+validation:
+  status: local-regressions-passed-current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  preservedChecks: All module isolation, runtime certification and composition admission gates.
