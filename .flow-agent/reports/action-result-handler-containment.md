@@ -53,6 +53,10 @@ change their graph digests. Ordinary checkout artifacts retain their audited
 Jenkins and GitHub Actions byte hashes. Other audit findings remain reproduced.
 
 Standalone conformance from the installed distribution passed all 277 checks.
+The first full CI run additionally exposed a frontend-module parity test that still
+compiled the assertion-bearing build/test example. It now uses a dedicated accepted
+checkout fixture, with a separate rejection/AST/location test for the original
+example. All 61 frontend-module tests pass locally.
 Exact-head, synthetic merge-candidate, module-isolation and native runtime results
 belong to the final PR revision and are recorded in the PR after CI completes.
 
