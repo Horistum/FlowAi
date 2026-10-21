@@ -37,5 +37,8 @@ private fun parserExceptionLocationTest() {
 
 private fun exampleLocationRegressionTest() {
     val report = FrontendCompilerComposition.flowValidator().validate(FlowParser().parse(exampleFile("api-sync.flow")))
-    H.ok("loc/examples-no-errors", report.issues.none { it.level == "error" })
+    val issues = report.issues.filter { it.level == "error" }
+    H.ok("loc/unsupported-handler-location", issues.isNotEmpty() && issues.all {
+        it.code == "ACTION_RESULT_HANDLER_UNSUPPORTED" && it.location != null
+    })
 }

@@ -20,9 +20,12 @@ fun descriptorRegistryParityTests() {
         try {
             val document = FlowParser().parse(source)
             val report = validator.validate(document)
-            H.ok("mod-parity/$file/valid", report.valid)
-            H.ok("mod-parity/$file/no-errors", report.issues.none { it.level == "error" })
-            H.ok("mod-parity/$file/plan", planner.plan(document).tasks.isNotEmpty())
+            H.ok("mod-parity/$file/unsupported-handler", !report.valid &&
+                report.issues.filter { it.level == "error" }.map { it.code }.toSet() == setOf("ACTION_RESULT_HANDLER_UNSUPPORTED"))
+            H.eq("mod-parity/$file/rejection-parity", report,
+                FrontendCompilerComposition.flowValidator().validate(document))
+            val failure = runCatching { planner.plan(document) }.exceptionOrNull()
+            H.ok("mod-parity/$file/no-plan", failure is org.flowlang.core.UnsupportedActionResultHandlerException)
         } catch (error: Exception) {
             H.ok("mod-parity/$file :: ${error.message}", false)
         }

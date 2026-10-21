@@ -40,7 +40,7 @@ class ManifestHonestyTests {
 
     @Test
     fun databaseWriteRequiresAdapterMaterialization() {
-        val steps = allSteps(jenkinsManifest("examples/api-sync.flow"))
+        val steps = allSteps(jenkinsManifest("src/test/resources/flow/projection/api-sync.flow"))
         val upsert = steps.firstOrNull { it.module == "database" && it.action == "upsert" }
         assertNotNull(upsert, "api-sync must contain the database.upsert step")
         assertTrue(upsert.materialization.status == TargetMaterializationStatus.ADAPTER_REQUIRED, "database.upsert must require notes-driven materialization: ${upsert.materialization}")
@@ -51,7 +51,7 @@ class ManifestHonestyTests {
 
     @Test
     fun dataOperationsAreSemanticOnlyUntilMaterializedByNotes() {
-        val steps = allSteps(jenkinsManifest("examples/api-sync.flow"))
+        val steps = allSteps(jenkinsManifest("src/test/resources/flow/projection/api-sync.flow"))
         for (type in listOf("transform", "validate", "aggregate")) {
             val step = steps.firstOrNull { it.type == type }
             assertNotNull(step, "api-sync must project a $type step")
@@ -62,7 +62,7 @@ class ManifestHonestyTests {
 
     @Test
     fun notificationRequiresAdapterMaterialization() {
-        val steps = allSteps(jenkinsManifest("examples/api-sync.flow"))
+        val steps = allSteps(jenkinsManifest("src/test/resources/flow/projection/api-sync.flow"))
         val notify = steps.firstOrNull { it.module == "notify" && it.action == "send" }
         assertNotNull(notify, "api-sync must contain the notify.send step")
         assertTrue(notify.materialization.status == TargetMaterializationStatus.ADAPTER_REQUIRED, "notify.send must require notes-driven materialization: ${notify.materialization}")

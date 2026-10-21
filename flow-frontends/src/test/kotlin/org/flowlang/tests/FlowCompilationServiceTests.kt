@@ -6,11 +6,14 @@ import java.io.File
 import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertIs
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import org.flowlang.compiler.CanonicalExecutionGraph
 import org.flowlang.compiler.CanonicalExecutionGraphDigestComputer
 import org.flowlang.compiler.CanonicalExecutionGraphProjection
+import org.flowlang.compiler.CompilationResult
+import org.flowlang.compiler.CompilationStage
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationSource
 import org.flowlang.frontend.CompilationSourceCapture
@@ -29,7 +32,7 @@ class FlowCompilationServiceTests {
 
     @Test
     fun flowSourceFrontendPreservesExistingAcceptedMeaningAndSourceLocations() {
-        val sourceFile = File("examples/build-test.flow")
+        val sourceFile = File("flow-frontends/src/test/resources/flow/accepted-checkout.flow")
         val unit = FlowSourceFrontend(compiler).compile(sourceFile).requireAccepted()
 
         val legacyAst = FlowParser().parse(sourceFile)
@@ -52,6 +55,16 @@ class FlowCompilationServiceTests {
         )
         assertEquals(unit.graphDigest, CanonicalExecutionGraphDigestComputer.digest(unit.graph))
         unit.authorization.requireIntegrity()
+    }
+
+    @Test
+    fun unsupportedHandlerSourceRetainsAstAndDiagnosticLocations() {
+        val sourceFile = File("examples/build-test.flow")
+        val result = assertIs<CompilationResult.Rejected>(FlowSourceFrontend(compiler).compile(sourceFile))
+        assertEquals(CompilationStage.FLOW_VALIDATION, result.rejection.stage)
+        assertEquals(FlowParser().parse(sourceFile), result.rejection.ast)
+        val issues = result.rejection.flowValidation!!.issues.filter { it.code == "ACTION_RESULT_HANDLER_UNSUPPORTED" }
+        assertTrue(issues.isNotEmpty() && issues.all { it.location != null && it.level == "error" })
     }
 
     @Test

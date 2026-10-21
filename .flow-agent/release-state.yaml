@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 115
+stateVersion: 116
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -649,4 +649,17 @@ recoveryConditionalWorkspaceConsumers:
   localPythonTests: 257
   signedPortfolioExpanded: false
   independentCompositionAdmission: false
+  supportPromotion: false
+
+recoveryActionResultHandlerContainment:
+  candidate: AR-A01
+  status: candidate
+  workPackage: .flow-agent/work-packages/action-result-handler-containment.yaml
+  report: .flow-agent/reports/action-result-handler-containment.md
+  predecessorMain: 19c8a802cce5d9be5bf40478dd513060ca0e5714
+  auditFinding: A-01
+  validation: current-revision-ci-required
+  localPythonTests: 257
+  canonicalHandlerSupport: false
+  signedPortfolioExpanded: false
   supportPromotion: false

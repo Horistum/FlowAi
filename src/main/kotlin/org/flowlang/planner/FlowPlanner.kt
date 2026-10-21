@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Base64
 import org.flowlang.ast.*
 import org.flowlang.controls.PlanningControlAuthority
+import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityState
@@ -383,6 +384,7 @@ class FlowPlanner(registry: ModuleCatalog) {
         availability: FlowAvailabilityAnalysis,
         path: FlowStatementPath
     ): TaskNode {
+        ActionResultHandlerSupport.requireSupported(action)
         val id = ctx.id("${action.module}_${action.action}")
         val contract = registry.findAction(action.module, action.action)
             ?: throw MissingPlanningActionContractException(action.module, action.action)

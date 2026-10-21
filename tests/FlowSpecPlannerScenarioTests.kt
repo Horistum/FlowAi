@@ -81,10 +81,10 @@ fun endToEndTests() {
             H.eq("e2e/$file/steps", d.flow.steps.size, steps)
             H.eq("e2e/$file/systems", d.flow.systems.size, systems)
             val rep = FrontendCompilerComposition.flowValidator().validate(d)
-            H.ok("e2e/$file/valid", rep.valid)
-            H.ok("e2e/$file/no-errors", rep.issues.none { it.level == "error" })
-            val plan = FlowPlanner(ModuleRegistry()).plan(d)
-            H.ok("e2e/$file/plan-tasks", plan.tasks.isNotEmpty())
+            H.ok("e2e/$file/handler-rejected", !rep.valid && rep.issues.any {
+                it.level == "error" && it.code == "ACTION_RESULT_HANDLER_UNSUPPORTED"
+            })
+            assertHandlerPlanningRejected("e2e/$file", d)
         } catch (e: Exception) {
             H.ok("e2e/$file :: ${e.message}", false)
         }
@@ -94,8 +94,7 @@ fun endToEndTests() {
         H.ok("e2e/complex/has-parallel", d.flow.steps.any { it is ParallelNode })
         H.ok("e2e/complex/has-if", d.flow.steps.any { it is IfNode })
         H.ok("e2e/complex/on-error", d.flow.errorHandler != null)
-        val plan = FlowPlanner(ModuleRegistry()).plan(d)
-        H.ok("e2e/complex/plan-parallel", plan.nodes.any { it is ParallelGroupNode })
+        assertHandlerPlanningRejected("e2e/complex", d)
     }
     run {
         val d = FlowParser().parse(exampleFile("api-sync.flow"))
@@ -159,7 +158,7 @@ fun roundTripTests() {
     }
 
     run {
-        val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(exampleFile("api-sync.flow")))
+        val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(File("src/test/resources/flow/projection/api-sync.flow")))
         for (target in projectionTargets.keys) {
             val rendered = renderManifest(manifestFor(plan, target))
             H.ok("gen/$target/review-kind", rendered.contains("kind: TargetProjectionReview"))
@@ -171,20 +170,15 @@ fun roundTripTests() {
 
 fun legacyProjectionBoundaryTests() {
     for (file in listOf("build-test.flow", "complex-devops-flow.flow")) {
-        val plan = FlowPlanner(ModuleRegistry()).plan(FlowParser().parse(exampleFile(file)))
-        for (target in projectionTargets.keys) {
-            val manifest = manifestFor(plan, target)
-            val readiness = TargetRenderPolicy.evaluate(manifest)
-            H.eq("legacy/$file/$target/mode", readiness.mode, TargetRenderMode.FAIL_FAST)
-            H.ok("legacy/$file/$target/shell-blocked", readiness.findings.any { it.status == TargetMaterializationStatus.BLOCKED.name })
-            try {
-                renderManifest(manifest)
-                H.ok("legacy/$file/$target/render-blocked", false)
-            } catch (e: TargetRenderBlockedException) {
-                H.ok("legacy/$file/$target/render-blocked", e.readiness.mode == TargetRenderMode.FAIL_FAST)
-            }
-        }
+        assertHandlerPlanningRejected("legacy/$file", FlowParser().parse(exampleFile(file)))
     }
+}
+
+private fun assertHandlerPlanningRejected(name: String, document: FlowDocument) {
+    val failure = runCatching { FlowPlanner(ModuleRegistry()).plan(document) }.exceptionOrNull()
+    H.ok("$name/unsupported-handler-blocks-plan",
+        failure is org.flowlang.core.UnsupportedActionResultHandlerException &&
+            failure.code == "ACTION_RESULT_HANDLER_UNSUPPORTED")
 }
 
 /* ============================ stress: many generated cases ============================ */

@@ -30,6 +30,38 @@ class CompilerStandaloneSemanticsTests {
     private fun approval(message: String) = FlowDocument(flow = FlowNode(name = "standalone",
         steps = listOf(ApproveNode(params = mapOf("message" to StringLiteralNode(value = message))))))
 
+    @Test fun typedActionHandlersCannotBypassCompilationOrDirectPlanning() {
+        val module = FlowModule("neutral", "1.0",
+            systemTypes = mapOf("neutral" to SystemTypeContract("neutral")),
+            actions = mapOf("read" to ModuleActionContract("read", targetTypes = setOf("neutral"))))
+        val catalog = object : ModuleCatalog {
+            override fun findModule(name: String) = module.takeIf { it.name == name }
+            override fun allModules() = listOf(module)
+        }
+        val action = ActionNode(module = "neutral", action = "read",
+            target = ReferenceNode(path = listOf("service")), result = ResultBindingNode(name = "result"))
+        fun document(action: ActionNode) = FlowDocument(
+            imports = listOf(ModuleImportNode(name = "neutral", version = "1.0")),
+            flow = FlowNode(name = "typed-handler", systems = listOf(SystemNode(name = "service", systemType = "neutral")),
+                steps = listOf(action)))
+        val compiler = FlowCompilationService(catalog, policy, noSyntax)
+        compiler.compile(input(document(action))).requireAccepted()
+        for (rule in listOf<ResultHandlerRuleNode>(
+            ExpectNode(expressions = listOf(BooleanLiteralNode(value = false))),
+            WhenNode(condition = BooleanLiteralNode(value = true), steps = listOf(FailNode(message = StringLiteralNode(value = "stop")))),
+            WhenNode(condition = null, isError = true, steps = emptyList())
+        )) {
+            val ast = document(action.copy(handler = ResultHandlerNode(rules = listOf(rule))))
+            val rejected = assertIs<CompilationResult.Rejected>(compiler.compile(input(ast)))
+            assertEquals(CompilationStage.FLOW_VALIDATION, rejected.rejection.stage)
+            assertEquals(listOf("ACTION_RESULT_HANDLER_UNSUPPORTED"), rejected.rejection.diagnostics.map { it.code })
+            val failure = assertFailsWith<org.flowlang.core.UnsupportedActionResultHandlerException> {
+                org.flowlang.planner.FlowPlanner(catalog).plan(ast)
+            }
+            assertEquals("ACTION_RESULT_HANDLER_UNSUPPORTED", failure.code)
+        }
+    }
+
     @Test fun typedSourceCompilesWithoutInvokingSyntaxOrLoadingFiles() {
         val unit = compiler().compile(input(approval("Review"))).requireAccepted()
         assertEquals("standalone", unit.graph.flowName)

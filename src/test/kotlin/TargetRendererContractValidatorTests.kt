@@ -102,7 +102,7 @@ class TargetRendererContractValidatorTests {
     }
 
     private fun manifest(target: String): TargetManifest {
-        val ast = FlowParser().parse(File("examples/api-sync.flow"))
+        val ast = FlowParser().parse(File("src/test/resources/flow/projection/api-sync.flow"))
         val plan = FlowPlanner(registry).plan(ast)
         val compatibility = CompatibilityAnalyzer(targets).analyze(plan, target)
         return when (target) {

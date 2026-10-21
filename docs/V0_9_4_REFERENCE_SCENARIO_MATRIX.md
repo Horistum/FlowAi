@@ -8,6 +8,14 @@ The reference scenario matrix is target-neutral. It records realistic automation
 
 Target-specific projection expectations are kept separately in `ReferenceAdapterProjectionMatrix`.
 
+## Current admission correction
+
+Audit A-01 reclassifies `api-sync` as negative compilation coverage with
+`ACTION_RESULT_HANDLER_UNSUPPORTED`. Its authored result assertions remain intact.
+The matrix retains the intended capabilities and portability requirements, but this
+scenario cannot currently pass the compiler or reach adapter projection. See
+[action result handler containment](ACTION_RESULT_HANDLER_CONTAINMENT.md).
+
 ## Scenario coverage
 
 The matrix covers:

@@ -121,7 +121,7 @@ class TargetSelectionAuthorityTests {
     @Test
     fun targetedCliResultRequiresSelectionEvidenceAndDerivesProcessStatus() {
         val modules = ModuleRegistry.fromDirectory(File("modules"), includeDefaults = true)
-        val plan = FlowPlanner(modules).plan(FlowParser().parse(File("examples/api-sync.flow")))
+        val plan = FlowPlanner(modules).plan(FlowParser().parse(File("src/test/resources/flow/projection/api-sync.flow")))
         val selected = AdapterRuntimeTestFixtures.fromTestFixture(
             "jenkins",
             "targeted-result",

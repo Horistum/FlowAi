@@ -27,7 +27,7 @@ class TargetManifestContractValidatorTests {
 
     @Test
     fun generatedMainTargetManifestsSatisfyProjectionContract() {
-        val ast = FlowParser().parse(File("examples/api-sync.flow"))
+        val ast = FlowParser().parse(File("src/test/resources/flow/projection/api-sync.flow"))
         val plan = FlowPlanner(registry).plan(ast)
         val manifests = listOf(
             JenkinsManifestGenerator().generate(plan, CompatibilityAnalyzer(targets).analyze(plan, "jenkins")),
