@@ -1,0 +1,144 @@
+{
+  "auditedRevision": "73b1c5054406175d96f7c6db5de4c39f80eb9313",
+  "auditedTree": "dc25349ee6928c81dd76d8b772c2df1a14d4034e",
+  "evidenceDate": "2026-10-20",
+  "runs": [
+    {
+      "id": 39426697791,
+      "url": "https://github.com/Horistum/FlowAi/actions/runs/39426697791",
+      "headSha": "73b1c5054406175d96f7c6db5de4c39f80eb9313",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-10-20T13:00:02Z",
+      "updatedAt": "2026-10-20T13:23:19Z"
+    },
+    {
+      "id": 39426697906,
+      "url": "https://github.com/Horistum/FlowAi/actions/runs/39426697906",
+      "headSha": "73b1c5054406175d96f7c6db5de4c39f80eb9313",
+      "status": "completed",
+      "conclusion": "success",
+      "createdAt": "2026-10-20T13:00:02Z",
+      "updatedAt": "2026-10-20T13:12:18Z"
+    }
+  ],
+  "jvm": {
+    "tests": 2287,
+    "suites": 398,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source": "current-main downloaded JUnit XML"
+  },
+  "standaloneConformance": {
+    "checks": 274,
+    "passed": 274,
+    "source": "current-main downloaded conformance log"
+  },
+  "isolation": {
+    "inputHashesMatched": 783,
+    "byProof": {
+      "adapter": 226,
+      "compiler": 95,
+      "kernel": 19,
+      "product": 443
+    },
+    "suites": 25,
+    "tests": 170,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "local": {
+    "pythonTests": 257,
+    "failures": 0,
+    "flowAgentValidation": "passed",
+    "flowAgentContextGeneration": "passed",
+    "fullJvmTests": "Not completed locally; exact-main CI baseline verified instead.",
+    "productCompilation": "passed",
+    "auditProbe": {
+      "sourcePairs": 12,
+      "collapsedPairs": 10,
+      "positiveControlsChanged": 2,
+      "inputAdmissionObservations": 3,
+      "pathMeasurements": 4,
+      "toolchain": {
+        "jdk": "25.0.4.1+1",
+        "kotlin": "2.4.10",
+        "gradle": "9.5.0"
+      }
+    },
+    "boundedStress": "557-byte, 20-condition input; 256 MiB heap; OutOfMemoryError; see stress-observation.json"
+  },
+  "runtimeJobs": {
+    "success": 54,
+    "skipped": 10
+  },
+  "artifacts": [
+    {
+      "id": 12268085288,
+      "name": "flow-ci-exact-head-test-reports",
+      "sha256": "9ba5b26befd9224a28f3c7dc00feba489c8fb062313817ea0670a1a8b3dc12a3",
+      "bytes": 889676,
+      "verification": "Downloaded archive SHA-256 matches GitHub API; relevant payloads inspected."
+    },
+    {
+      "id": 12266824219,
+      "name": "flow-ci-exact-head-gradle-logs",
+      "sha256": "7e50ec522ab85cb53a76a50a97d7af3ec3aca35c8d6e45c68cade9f2e1391dd4",
+      "bytes": 72829,
+      "verification": "Downloaded archive SHA-256 matches GitHub API; relevant payloads inspected."
+    },
+    {
+      "id": 12266073588,
+      "name": "flow-isolation-exact-head",
+      "sha256": "071e514961c4567936bf6d6d464d4866ff3b7921d6f9aff7e2fa2bc398ede5c3",
+      "bytes": 1455795,
+      "verification": "Downloaded archive SHA-256 matches GitHub API; relevant payloads inspected."
+    },
+    {
+      "id": 12266308241,
+      "name": "adapter-composition-coverage",
+      "sha256": "27a4737f3f21803c190d4967c36e54bc91a3e7745c5d13b3ee89b675e179b160",
+      "bytes": 104863,
+      "verification": "Downloaded archive SHA-256 matches GitHub API; relevant payloads inspected."
+    },
+    {
+      "id": 12266151965,
+      "name": "github-workspace-composition",
+      "sha256": "cfc245388474df8c9c86a333f23140898133ece31d2bdde63d02726f7de5cbf3",
+      "bytes": 10957,
+      "verification": "Downloaded archive SHA-256 matches GitHub API; relevant payloads inspected."
+    }
+  ],
+  "runtimeEvidence": {
+    "signedScenarios": {
+      "jenkins": 36,
+      "github-actions": 3,
+      "tekton": 0,
+      "argo-workflows": 0,
+      "azure-devops": 0,
+      "local": 0
+    },
+    "compositionRows": {
+      "total": 72,
+      "withEvidence": 6,
+      "withoutEvidence": 66
+    },
+    "replayScope": "Local replay of current-main GitHub workspace source/graph/manifest/envelope/observations; publication byte manifests checked. Signed portfolio reauthentication and five-archive composition replay were performed by current-main CI, not rerun as native runtimes locally."
+  },
+  "inspectedSourceSha256": {
+    ".flow-agent/roadmap.yaml": "89f513dfdb7f36dfa7fd2718a3750442dc1bc105572d1a1b3cce2f2e557a8a54",
+    ".flow-agent/roadmap-post-toolchain.yaml": "d1cd747dba0f582ff20bbe986479ffdc0efc0fb2bf981c91665528896bbd8840",
+    ".flow-agent/roadmap-architecture-recovery.yaml": "5e648c937c349c25ab784a73d40eb9cae288701bc0f7425f14287b9d90bc1935",
+    ".flow-agent/release-state.yaml": "4b8ab907022c64cdf45cd385bbdf10f7f3ef7c3b92d7a73de896d18ecb8d044c",
+    ".flow-agent/architecture-constitution.md": "51bb79f4055a64855df49733aedeaa494be55d01d0150bc832057010731d9310",
+    "src/main/kotlin/org/flowlang/ast/AstNodes.kt": "069611814f44a9f17cc5d3a08cd9a0d03e612223fd65323e392d99abb15ead11",
+    "src/main/kotlin/org/flowlang/compiler/FlowCompilationService.kt": "3610f8269af7c9cb90867f98fb474be055739e5f71c5094fddcb26a3752101bf",
+    "src/main/kotlin/org/flowlang/planner/FlowPlanner.kt": "5a8c117ebce8c01d03525bc0237bc32991b80d612edcca848577ae6d7333bc13",
+    "src/main/kotlin/org/flowlang/validator/FlowValidator.kt": "b7419a20b2245817b9cdd4b1ba6c201d46f16e15f7775e8c9b379d9997805d83",
+    "src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt": "13fc4715391df1b425fd8c36a5871d4a15fca7951f8b7434e5d235b2df1ca095",
+    "src/main/kotlin/org/flowlang/core/FlowAvailabilityModel.kt": "0c08cf9873b5e994966bda724c03c96a567049bb2afd01ae37f286a5936ccada",
+    "src/main/kotlin/org/flowlang/core/FlowAvailabilityJoins.kt": "87bb0d6399d4733caf3e46be7ffbf0bc95704fcd126d5be8a18ec6c8eaa91b30"
+  }
+}

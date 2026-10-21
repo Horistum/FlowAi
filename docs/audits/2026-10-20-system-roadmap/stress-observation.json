@@ -1,0 +1,13 @@
+{
+  "auditedRevision": "73b1c5054406175d96f7c6db5de4c39f80eb9313",
+  "conditions": 20,
+  "maxHeapMiB": 256,
+  "timeoutSeconds": 45,
+  "timedOut": false,
+  "exitCode": 1,
+  "elapsedSeconds": 40.728,
+  "sourceBytes": 557,
+  "sourceSha256": "41fc2b8eaa263269e7a23c0b9b5b571bb3d42d2b702a624a461fdc1225385de6",
+  "outOfMemoryError": true,
+  "stderr": "Exception in thread \"main\" java.lang.OutOfMemoryError: Java heap space\n\tat java.base/java.util.LinkedHashMap.newNode(LinkedHashMap.java:281)\n\tat java.base/java.util.HashMap.putVal(HashMap.java:649)\n\tat java.base/java.util.HashMap.put(HashMap.java:619)\n\tat java.base/java.util.HashSet.add(HashSet.java:230)\n\tat org.flowlang.core.FlowBindingState.remap$org_flowlang_flow_compiler(FlowAvailabilityModel.kt:506)\n\tat org.flowlang.core.FlowAvailabilityState.enterAlternative$org_flowlang_flow_compiler(FlowAvailabilityModel.kt:358)\n\tat org.flowlang.core.FlowAvailabilityState.enterAlternative$org_flowlang_flow_compiler$default(FlowAvailabilityModel.kt:350)\n\tat org.flowlang.core.FlowAvailabilityAnalyzer$Builder.analyzeIf(FlowAvailabilityAnalyzer.kt:265)\n\tat org.flowlang.core.FlowAvailabilityAnalyzer$Builder.analyzeStatement(FlowAvailabilityAnalyzer.kt:130)\n\tat org.flowlang.core.FlowAvailabilityAnalyzer$Builder.analyze(FlowAvailabilityAnalyzer.kt:86)\n\tat org.flowlang.core.FlowAvailabilityAnalyzer.analyze$org_flowlang_flow_compiler(FlowAvailabilityAnalyzer.kt:55)\n\tat org.flowlang.core.FlowAvailabilityAnalyzer.analyze(FlowAvailabilityAnalyzer.kt:48)\n\tat AuditProbeKt.main(AuditProbe.kt:108)\n"
+}
