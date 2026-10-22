@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 58
+revision: 59
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,24 +25,30 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/availability-analysis-budget.yaml"
-  decisionBasis: "PR #243 merged at 0b308420610fdcefda30cf0df44cdd59bf3ad315 and contained A-01 handler semantic loss. The maintainer authorized the next audit correction, A-04: deterministic availability-analysis budgets and fail-closed compiler/direct-planner rejection. This candidate bounds explicit path enumeration without changing accepted semantic meaning or promoting adapters. Compact state representation remains an A-04 follow-up. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/availability-neutral-joins.yaml"
+  decisionBasis: "PR #244 merged at 99fdaddb70aba4b0c42cdf821edd0687717a06a0 with deterministic availability budgets. The maintainer authorized the A-04 state-reduction follow-up. This candidate reuses the original availability state after complete exclusive splits whose analyzed alternatives preserve their entries exactly. It admits the original audit reproducer without weakening resource limits, producer provenance, guards or merge restrictions. General distinct-state compaction remains open. The next audit correction is A-02 payload preservation. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
   activeFinding: A-04
-  disposition: resource-containment-candidate
-  report: .flow-agent/reports/availability-analysis-budget.md
+  disposition: neutral-join-reduction-candidate
+  report: .flow-agent/reports/availability-neutral-joins.md
   previousContainment:
     finding: A-01
     pullRequest: 243
     mergedMain: 0b308420610fdcefda30cf0df44cdd59bf3ad315
     status: merged
     canonicalHandlerSupport: false
+  resourceContainment:
+    finding: A-04
+    pullRequest: 244
+    mergedMain: 99fdaddb70aba4b0c42cdf821edd0687717a06a0
+    status: merged
+  remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05, A-06]
-  nextRecommendedFinding: A-04
-  nextScope: Reduce equivalent availability states or adopt compact representation with branch, guard and explicit-merge parity evidence.
-  closureRule: Resource containment is not scalable symbolic analysis, handler implementation or closure of the other audit findings.
+  nextRecommendedFinding: A-02
+  nextScope: Preserve typed transform, aggregate and validate payloads in canonical planning or explicitly reject unsupported forms; prove behaviorally distinct source pairs.
+  closureRule: Resource containment and neutral-join reduction do not establish general symbolic scalability, handler implementation or closure of the other audit findings.
 
 deliveryModel:
   roadmapMilestoneCount: 8

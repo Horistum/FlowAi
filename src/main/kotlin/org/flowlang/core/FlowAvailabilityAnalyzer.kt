@@ -279,7 +279,10 @@ class FlowAvailabilityAnalyzer {
             val otherwiseInput = condition.whenFalse.enterAlternative(path, "if:false", budget)
             val thenState = analyzeStatements(statement.then, thenInput) { index -> path.child("then", index) }
             val otherwiseState = analyzeStatements(statement.otherwise, otherwiseInput) { index -> path.child("otherwise", index) }
-            return joinAlternatives(listOf(thenState, otherwiseState), budget)
+            return joinAvailabilityAlternatives(input, listOf(
+                AvailabilityAlternative(thenInput, thenState),
+                AvailabilityAlternative(otherwiseInput, otherwiseState)
+            ), budget)
         }
 
         private fun analyzeFor(
@@ -295,7 +298,10 @@ class FlowAvailabilityAnalyzer {
             val bodyOutput = analyzeStatements(statement.body, bodyInput) { index -> path.child("body", index) }
                 .restore(statement.item, originalItem, budget)
             // A dynamic loop may execute zero times.
-            return joinAlternatives(listOf(zero, bodyOutput), budget)
+            return joinAvailabilityAlternatives(input, listOf(
+                AvailabilityAlternative(zero, zero),
+                AvailabilityAlternative(bodyBase, bodyOutput)
+            ), budget)
         }
 
         private fun analyzeParallel(
@@ -320,24 +326,27 @@ class FlowAvailabilityAnalyzer {
         ): FlowAvailabilityState {
             inspectExpression(statement.source, input, path, "match source")
             val implicit = withImplicitResult(input)
-            val alternatives = mutableListOf<FlowAvailabilityState>()
+            val alternatives = mutableListOf<AvailabilityAlternative>()
             statement.cases.forEachIndexed { caseIndex, matchCase ->
                 matchCase.condition?.let { inspectExpression(it, implicit, path, "match condition", allowUndefined = true) }
                 val caseInput = input.enterAlternative(path, "match:case:$caseIndex", budget)
-                alternatives += analyzeStatements(matchCase.steps, caseInput) { index ->
+                val caseOutput = analyzeStatements(matchCase.steps, caseInput) { index ->
                     path.child("cases[$caseIndex].steps", index)
                 }
+                alternatives += AvailabilityAlternative(caseInput, caseOutput)
             }
             statement.errorCase?.let { errorSteps ->
                 val errorBase = input.enterAlternative(path, "match:error", budget)
                 val originalError = errorBase.binding("error")
-                alternatives += analyzeStatements(errorSteps, errorBase.withExternal("error", budget)) { index ->
+                val errorOutput = analyzeStatements(errorSteps, errorBase.withExternal("error", budget)) { index ->
                     path.child("errorCase", index)
                 }.restore("error", originalError, budget)
+                alternatives += AvailabilityAlternative(errorBase, errorOutput)
             }
             val defaultInput = input.enterAlternative(path, "match:default", budget)
-            alternatives += analyzeStatements(statement.defaultSteps, defaultInput) { index -> path.child("default", index) }
-            return joinAlternatives(alternatives, budget)
+            val defaultOutput = analyzeStatements(statement.defaultSteps, defaultInput) { index -> path.child("default", index) }
+            alternatives += AvailabilityAlternative(defaultInput, defaultOutput)
+            return joinAvailabilityAlternatives(input, alternatives, budget)
         }
 
         private fun analyzeTry(
@@ -352,7 +361,10 @@ class FlowAvailabilityAnalyzer {
             val handledFailure = analyzeStatements(statement.errorHandler.steps, failureBase.withExternal("error", budget)) { index ->
                 path.child("errorHandler", index)
             }.restore("error", originalError, budget)
-            return joinAlternatives(listOf(success, handledFailure), budget)
+            return joinAvailabilityAlternatives(input, listOf(
+                AvailabilityAlternative(successInput, success),
+                AvailabilityAlternative(failureBase, handledFailure)
+            ), budget)
         }
 
         private fun analyzeCondition(

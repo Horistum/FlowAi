@@ -1,0 +1,53 @@
+version: AR-A04B
+name: Availability-neutral alternative joins
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests the next roadmap correction after merging PR 244.
+  predecessorPullRequest: 244
+  mergedMain: 99fdaddb70aba4b0c42cdf821edd0687717a06a0
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-04)
+invariant: A complete exclusive split whose every alternative preserves its entry availability may reuse its original input state, without removing diagnostics, control nodes or provenance.
+architecturePurpose: Eliminate exponential growth caused by availability-neutral alternatives inside the shared target-neutral compiler.
+scope:
+- Compare analyzed alternative exits with their actual entries, after temporary binding restoration.
+- Reuse the pre-split state only when all alternatives preserve availability and reachability exactly.
+- Cover if, loop zero/body, match and try/error joins, including nested neutral alternatives and existence guards.
+- Preserve deterministic resource limits and the existing join for changed or concurrent outcomes.
+nonGoals:
+- No arbitrary provenance coalescing, symbolic solver, constant folding or dead-code removal.
+- No general scalability claim for distinct producer combinations.
+- No action-handler implementation, schema change, adapter promotion or unrelated audit repair.
+ownershipBoundary:
+  core: Owns availability equivalence and budget accounting.
+  adapters: Receive the same authored control structures and producer identities.
+  conformance: Verifies admission improvement and unsafe-reference rejection.
+architectureChecks:
+- No target-specific imports or runtime execution.
+- Shared analysis remains the authority for validation and planning.
+- All alternatives are analyzed before equivalence is considered.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityAnalyzer.kt
+- src/main/kotlin/org/flowlang/core/FlowAvailabilityJoins.kt
+- flow-compiler/src/test/kotlin/org/flowlang/compiler/AvailabilityBudgetTests.kt
+- flow-compiler/src/test/kotlin/org/flowlang/compiler/AvailabilityNeutralJoinTests.kt
+- src/test/kotlin/AvailabilityBudgetIntegrationTests.kt
+- src/main/kotlin/org/flowlang/conformance/AvailabilityBudgetConformanceChecks.kt
+testsToAddOrUpdate:
+- Original byte-identical 557-byte reproducer completes with one path in a 256 MiB child JVM.
+- Nested and repeated neutral alternatives retain input paths and bindings.
+- Partial and ambiguous producers, existence guards, explicit merges, failure and concurrent paths retain meaning.
+- Non-equivalent growth still fails closed at all public entry points.
+- Authored control nodes and diagnostics inside neutral branches remain present.
+conformanceToAddOrUpdate:
+- Neutral source admission plus non-equivalent source and direct planner budget rejection.
+documentationToUpdate:
+- docs/AVAILABILITY_ANALYSIS_LIMITS.md
+- .flow-agent/reports/availability-neutral-joins.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: local-validation-passed-current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  preservedChecks: Module isolation and adapter runtime certification.

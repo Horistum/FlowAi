@@ -29,7 +29,8 @@ class AvailabilityBudgetTests {
     private fun branches(count: Int) = flow(listOf(ParallelNode(branches = List(count) {
         ParallelBranchNode(name = "branch-$it", steps = emptyList())
     })))
-    private fun growth() = flow(List(20) { IfNode(condition = BooleanLiteralNode(value = true)) })
+    private fun growth() = flow(List(20) { IfNode(condition = BooleanLiteralNode(value = true),
+        then = listOf(SetNode(name = "value$it", value = NumberLiteralNode(value = it.toDouble())))) })
 
     @Test fun pathBoundaryIsInclusiveAndTheNextPathFailsBeforeAdmission() {
         val analyzer = FlowAvailabilityAnalyzer()
@@ -102,7 +103,8 @@ class AvailabilityBudgetTests {
         val ast = FlowDocument(flow = FlowNode(name = "handler-budget",
             input = listOf(InputNode(name = "enabled", valueType = ValueTypeNode("boolean"))),
             errorHandler = ErrorHandlerNode(steps = List(20) {
-                IfNode(condition = ReferenceNode(path = listOf("enabled"), location = location))
+                IfNode(condition = ReferenceNode(path = listOf("enabled"), location = location),
+                    then = listOf(SetNode(name = "value$it", value = BooleanLiteralNode(value = true))))
             })))
         val failure = assertFailsWith<FlowAvailabilityLimitException> { FlowAvailabilityAnalyzer().analyze(ast) }
         assertEquals(location, failure.sourceLocation)
@@ -114,7 +116,7 @@ class AvailabilityBudgetTests {
         val ast = flow(listOf(IfNode(condition = LogicalExpressionNode(operator = "or",
             operands = List(5_000) { BooleanLiteralNode(value = true) }))))
         val analysis = FlowAvailabilityAnalyzer().analyze(ast)
-        assertEquals(2, analysis.normalExitState.paths.size)
+        assertEquals(1, analysis.normalExitState.paths.size)
         assertTrue(analysis.issues.isEmpty())
     }
 
