@@ -31,12 +31,26 @@ Source ownership and conformance inventories include the new files.
 
 ## Validation
 
-Current revision CI is pending. The workspace disconnected after source inspection;
-no local build or test result is claimed. Required gates are exact-head and
-synthetic merge-candidate clean compilation, tests, standalone conformance and
-Flow Agent validation, with physical module isolation and existing adapter
-runtime checks. Results will be recorded after they run, before release-state
-advancement. Final exact-revision evidence belongs in the PR description.
+Preliminary Flow CI [39872958626](https://github.com/Horistum/FlowAi/actions/runs/39872958626)
+verified implementation head `8d3d0c8aad832ef265e95d8f5e38c2284900d323` and
+tree `b5de5e1340d7cbd089001b2c4a128b8db9358016`, covering both exact-head
+and merge-candidate trees. Its completed job logs record:
+
+- 257 Python tests and Flow Agent validation passed.
+- Physical kernel isolation: 19 tests.
+- Compiler isolation without frontends/adapters: 64 tests, including all five
+  new typed-AST payload regressions.
+- Generic adapter isolation: 44 tests.
+- Product isolation: 68 tests plus installed-product checks.
+
+These 195 isolated tests are preliminary validation, not the complete suite.
+The release state records this verified subset and still requires final-revision
+exact-head and synthetic merge-candidate clean builds, full tests and standalone
+conformance, plus existing native adapter certification. Final CI evidence is
+recorded in PR #246 rather than represented as a result known before that run.
+
+The workspace disconnected after source inspection. No local build or test result
+is claimed; validation runs in repository CI.
 
 ## Limits and next step
 

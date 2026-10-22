@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 118
+stateVersion: 119
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -693,5 +693,27 @@ recoveryAvailabilityNeutralJoins:
   neutralJoinReduction: true
   generalSymbolicRepresentation: false
   nextAuditFinding: A-02
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryDataOperationPayloadContainment:
+  candidate: AR-A02
+  status: candidate
+  workPackage: .flow-agent/work-packages/data-operation-payload-containment.yaml
+  report: .flow-agent/reports/data-operation-payload-containment.md
+  predecessorMain: 34a6c84a17bc103eb5eb7387bdbb8c4546c38649
+  auditFinding: A-02
+  validation: isolation-validation-passed-current-revision-ci-required
+  preliminaryValidationHead: 8d3d0c8aad832ef265e95d8f5e38c2284900d323
+  preliminaryValidationRun: 39872958626
+  localExecution: unavailable
+  pythonTests: 257
+  isolatedKernelTests: 19
+  isolatedCompilerTests: 64
+  isolatedAdapterTests: 44
+  isolatedProductTests: 68
+  dataPayloadContainment: true
+  canonicalDataPayloadSupport: false
+  nextAuditFinding: A-03
   signedPortfolioExpanded: false
   supportPromotion: false

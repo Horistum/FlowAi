@@ -49,7 +49,7 @@ documentationToUpdate:
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml
 validation:
-  status: pending-current-revision-ci
+  status: isolation-validation-passed-current-revision-ci-required
   localExecution: Unavailable after workspace disconnection; no local validation claim.
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
   preservedChecks: Module isolation and adapter runtime certification.
