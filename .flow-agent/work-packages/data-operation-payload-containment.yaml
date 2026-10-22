@@ -1,0 +1,55 @@
+version: AR-A02
+name: Data operation payload containment
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests the next roadmap correction after merging PR 245.
+  predecessorPullRequest: 245
+  mergedMain: 34a6c84a17bc103eb5eb7387bdbb8c4546c38649
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-02)
+invariant: Source data operations with unrepresented filters, selected fields, aggregate fields or validation rules cannot become accepted compilations or execution plans.
+architecturePurpose: Stop canonical information loss at shared target-neutral admission boundaries until typed data-operation value and effect contracts exist.
+scope:
+- Share one unsupported-payload rule between Flow validation and direct planning.
+- Reject transform where/select, aggregate fields and validate rules when present.
+- Preserve parsing and inspectable rejected ASTs, independent diagnostics and existing empty-payload behavior.
+- Prove the audit mutation pairs are rejected and accepted payload-free source distinctions survive graph projection and digest.
+- Verify Intent YAML and reviewed AI capability parameters remain represented through their existing action lowering.
+nonGoals:
+- No raw AST escape hatch, source-hash workaround or new data-operation execution semantics.
+- No adapter implementation, target support promotion, schema version change or signed portfolio expansion.
+- No repair of A-03/A-05/A-06 and no claim that A-02 typed lowering is implemented.
+ownershipBoundary:
+  core: Owns validation and direct planning rejection through a shared guard.
+  adapters: Unchanged; canonical acceptance does not establish executability.
+  conformance: Owns mutation rejection and accepted frontend preservation evidence.
+architectureChecks:
+- The guard imports only neutral AST types and introduces no adapter dependency.
+- Compiler and planner consume one rule; no duplicate traversal or parallel semantic model.
+- Parser acceptance remains separate from compilation acceptance.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/core/DataOperationPayloadSupport.kt
+- src/main/kotlin/org/flowlang/validator/FlowValidator.kt
+- src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
+- flow-compiler/src/test/kotlin/org/flowlang/compiler/DataOperationPayloadTests.kt
+- src/test/kotlin/DataOperationPayloadContainmentTests.kt
+- src/main/kotlin/org/flowlang/conformance/DataOperationPayloadConformanceChecks.kt
+testsToAddOrUpdate:
+- Four independent audit mutation pairs fail before graph authorization.
+- Both validation and direct planning reject nested control and failure regions.
+- Typed AST callers cannot bypass the rule, including malformed or unknown validation rule kinds.
+- Empty payloads remain admitted and source/target changes survive projection and serialization.
+- Intent YAML and reviewed AI payload mutations change plan, graph serialization and digest.
+conformanceToAddOrUpdate:
+- Source payload rejection, direct-planner rejection and empty-payload graph preservation.
+documentationToUpdate:
+- docs/DATA_OPERATION_PAYLOAD_CONTAINMENT.md
+- .flow-agent/reports/data-operation-payload-containment.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: pending-current-revision-ci
+  localExecution: Unavailable after workspace disconnection; no local validation claim.
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  preservedChecks: Module isolation and adapter runtime certification.
