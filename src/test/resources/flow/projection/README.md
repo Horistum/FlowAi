@@ -1,10 +1,14 @@
 # Projection fixtures
 
 These inputs exercise existing review-only manifest, secret, parameter and renderer
-contracts independently of action result handlers. They deliberately contain no
-handler assertions and are not migrations or equivalent replacements for the
-examples under `examples/`.
+contracts independently of unsupported source semantics. They contain no action
+handler assertions. The API-sync fixture also uses empty transform, aggregate and
+validate payloads solely to inspect data-operation node kinds in review artifacts.
+It provides no evidence for filtering, mapping, aggregation or validation behavior.
 
-The original examples remain unchanged and are now explicitly rejected by
-`ActionResultHandlerContainmentTests`: their assertions must not disappear in
-planning. Remaining data-operation semantic gaps are tracked as audit A-02.
+These fixtures are not migrations or equivalent replacements for the examples
+under `examples/`. The original examples remain unchanged and are explicitly
+rejected by `ActionResultHandlerContainmentTests` and
+`DataOperationPayloadContainmentTests`. Their authored assertions and data
+payloads must not disappear during planning. See
+[the A-02 admission boundary](../../../../../docs/DATA_OPERATION_PAYLOAD_CONTAINMENT.md).

@@ -73,3 +73,6 @@ checks:
   - architecture-recovery.analysis.source-budget-rejection
   - architecture-recovery.analysis.direct-planner-budget-rejection
   - architecture-recovery.analysis.bounded-merge-preservation
+  - architecture-recovery.language.data-payloads-rejected-before-authorization
+  - architecture-recovery.language.data-payloads-direct-planner-rejection
+  - architecture-recovery.language.empty-data-payload-graph-preservation

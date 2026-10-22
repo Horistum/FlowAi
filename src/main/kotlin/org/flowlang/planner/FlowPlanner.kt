@@ -5,6 +5,7 @@ import java.util.Base64
 import org.flowlang.ast.*
 import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.core.ActionResultHandlerSupport
+import org.flowlang.core.DataOperationPayloadSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityState
@@ -256,6 +257,7 @@ class FlowPlanner(registry: ModuleCatalog) {
         )
         is ApproveNode -> planApproval(statement, ctx, availability, path)
         is TransformNode -> {
+            DataOperationPayloadSupport.requireSupported(statement)
             val id = ctx.id("transform")
             ctx.registerProducer(availability.producerAt(path, statement.target), id)
             DataOpNode(
@@ -268,6 +270,7 @@ class FlowPlanner(registry: ModuleCatalog) {
             )
         }
         is AggregateNode -> {
+            DataOperationPayloadSupport.requireSupported(statement)
             val id = ctx.id("aggregate")
             ctx.registerProducer(availability.producerAt(path, statement.target), id)
             DataOpNode(
@@ -279,13 +282,16 @@ class FlowPlanner(registry: ModuleCatalog) {
                 effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.DATA_TRANSFORM)
             )
         }
-        is ValidateNode -> DataOpNode(
-            id = ctx.id("validate"),
-            kind = "Validate",
-            detail = ExpressionRenderer.render(statement.target),
-            semanticCapability = StandardCapability.VALIDATE.name,
-            effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.VALIDATE)
-        )
+        is ValidateNode -> {
+            DataOperationPayloadSupport.requireSupported(statement)
+            DataOpNode(
+                id = ctx.id("validate"),
+                kind = "Validate",
+                detail = ExpressionRenderer.render(statement.target),
+                semanticCapability = StandardCapability.VALIDATE.name,
+                effectModel = CanonicalIntentEffectAuthority.effectsFor(StandardCapability.VALIDATE)
+            )
+        }
         is SetNode -> availability.mergeAt(path)?.let { merge ->
             planMerge(statement, merge, ctx, path)
         } ?: run {

@@ -18,6 +18,7 @@ productionEntrypoints:
   - "src/main/kotlin/org/flowlang/conformance/RealWorldCorpusRunner.kt#evaluateIntent"
 deferredProductEntrypoints: []
 independentConformancePaths:
+  - "src/main/kotlin/org/flowlang/conformance/DataOperationPayloadConformanceChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AbstractTopologyMatrixAuthority.kt"
   - "src/main/kotlin/org/flowlang/conformance/ActionResultHandlerConformanceChecks.kt"
   - "src/main/kotlin/org/flowlang/conformance/AvailabilityBudgetConformanceChecks.kt"
