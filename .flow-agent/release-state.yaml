@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 117
+stateVersion: 118
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -675,5 +675,23 @@ recoveryAvailabilityAnalysisBudget:
   localPythonTests: 257
   localBudgetAndSemanticRegressionTests: 71
   compactStateRepresentation: false
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryAvailabilityNeutralJoins:
+  candidate: AR-A04B
+  status: candidate
+  workPackage: .flow-agent/work-packages/availability-neutral-joins.yaml
+  report: .flow-agent/reports/availability-neutral-joins.md
+  predecessorMain: 99fdaddb70aba4b0c42cdf821edd0687717a06a0
+  auditFinding: A-04
+  validation: local-validation-passed-current-revision-ci-required
+  localPythonTests: 257
+  localJvmTests: 2318
+  localConformanceChecks: 281
+  originalAuditReproducerPaths: 1
+  neutralJoinReduction: true
+  generalSymbolicRepresentation: false
+  nextAuditFinding: A-02
   signedPortfolioExpanded: false
   supportPromotion: false

@@ -45,9 +45,36 @@ retains a source location when the AST provides one.
   budget exhaustion; treating an incomplete analysis as valid is forbidden.
 
 Inputs exceeding these budgets must simplify branching or be split into genuinely
-independent compilations. Increasing the heap does not alter admission. Even empty
-branches contribute path evidence in the current representation. Conditions are
-not constant-folded merely to evade the limit.
+independent compilations. Increasing the heap does not alter admission. Conditions
+are not constant-folded merely to evade the limit.
+
+## Availability-neutral joins
+
+After analyzing a complete `if`, loop zero/body, `match` or `try`/error split, the
+analyzer compares every alternative's exit with its own entry. Temporary loop-item
+and error bindings are restored before comparison. If every alternative preserves
+its bindings, producer and external coverage, types, merge status and reachability
+exactly, the join reuses the original pre-split state. This also preserves partial
+coverage across `exists` and short-circuit guards: the original state remains
+maybe-defined outside the guard.
+
+All conditions and branch bodies are still analyzed and charged. Diagnostics,
+statement entry/exit snapshots and authored plan control nodes remain present.
+This is an availability optimization, not constant folding or removal of runtime
+control. Twenty empty conditions from the original 557-byte audit reproducer now
+finish with one path. Repeated neutral statements and nested neutral alternatives
+also avoid multiplying path identities.
+
+A changed binding or reachability uses the existing explicit join. Equal values
+from different producers are not equivalent. Parallel joins always retain their
+non-mergeable path identities. Neutral exclusive control surrounding concurrent
+paths preserves that evidence. This conservative rule does not merge arbitrary
+states with different historical paths or producer combinations.
+
+The equivalence scans consume the same cumulative work budget. All four limits
+remain unchanged; temporary alternatives are still subject to them. Reduced path
+evidence can change canonical graph digests for newly compiled sources. Previously
+issued authorization is not reused; graph integrity is checked on the new result.
 
 Within the budgets, producer identities, path-sensitive definite/maybe values,
 existence guards, explicit merges and concurrent-path restrictions retain their
@@ -55,13 +82,13 @@ existing meaning. Public AST/plan schemas, adapters and support claims are uncha
 
 ## Scope and follow-up
 
-This correction contains A-04's unbounded analysis. It does not replace explicit
-path enumeration with symbolic states or merge equivalent paths. Such optimization
-needs separate semantic parity evidence: careless coalescing can admit undefined
-values or erase explicit-merge provenance. A-04's scalability follow-up therefore
-remains open rather than being reported as full closure.
+A-04 now has deterministic resource containment and reduction of availability-neutral
+splits. General compaction of distinct producer combinations remains open. There
+is no claim of polynomial analysis for every workflow or unrestricted symbolic
+execution. Limits still reject non-equivalent exponential growth without returning
+a partial accepted result.
 
 Regression coverage includes the original byte-identical audit reproducer in a
-256 MiB child JVM, inclusive budget boundaries, each path-expanding construct,
-wide bindings and branches, deep typed ASTs, shared multi-workflow accounting,
+256 MiB child JVM, inclusive budget boundaries, changed-state growth through each
+control construct, wide bindings and branches, deep typed ASTs, shared multi-workflow accounting,
 compiler/direct-API rejection and positive path-sensitive joins.

@@ -12,6 +12,38 @@ internal data class ConditionStates(
     val whenFalse: FlowAvailabilityState
 )
 
+internal data class AvailabilityAlternative(
+    val entry: FlowAvailabilityState,
+    val exit: FlowAvailabilityState
+)
+
+/**
+ * Only complete exclusive splits may use this join. Every arm is analyzed first;
+ * callers remove temporary loop/error bindings before supplying its exit.
+ *
+ * Exact equality preserves producer coverage, types and reachability, including
+ * guard-refined subsets. If every arm is unchanged, their complete union has the
+ * original availability. Reusing it discards only redundant path distinctions.
+ * Concurrent branches and logical short-circuit subsets use the ordinary join.
+ */
+internal fun joinAvailabilityAlternatives(
+    input: FlowAvailabilityState,
+    alternatives: List<AvailabilityAlternative>,
+    budget: FlowAvailabilityBudget
+): FlowAvailabilityState {
+    budget.state(input)
+    budget.work(alternatives.size.toLong())
+    alternatives.forEach { alternative ->
+        budget.state(alternative.entry)
+        budget.state(alternative.exit)
+        require(alternative.entry.workflow == input.workflow && alternative.exit.workflow == input.workflow) {
+            "Cannot join value availability from different workflows."
+        }
+    }
+    if (alternatives.isNotEmpty() && alternatives.all { it.entry == it.exit }) return input
+    return joinAlternatives(alternatives.map(AvailabilityAlternative::exit), budget)
+}
+
 
 internal fun issueForState(
     binding: String,
