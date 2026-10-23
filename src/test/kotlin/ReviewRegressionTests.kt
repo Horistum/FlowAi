@@ -40,7 +40,7 @@ class ReviewRegressionTests {
         assertTrue(deployStep.rendererPayload == null, "Adapter-required manifest work must not carry executable renderer payload: $deployStep")
         assertEquals(TargetMaterializationStatus.ADAPTER_REQUIRED, deployStep.materialization.status)
         assertEquals("app", deployStep.params["app"])
-        assertEquals("\"${'$'}{app}-${'$'}{environment}\"", deployStep.params["namespace"])
+        assertEquals("${'$'}{app}-${'$'}{environment}", deployStep.params["namespace"])
         assertEquals("image.tag", deployStep.params["image"])
     }
 
