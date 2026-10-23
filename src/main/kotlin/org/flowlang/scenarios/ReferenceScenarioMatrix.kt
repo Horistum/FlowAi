@@ -92,12 +92,12 @@ object ReferenceScenarioMatrix {
             requiredCapabilities = setOf("api.call", "data.transform", "data.validate", "data.write", "data.aggregate", "notification.send", "secret.consume"),
             portabilityClass = ReferencePortabilityClass.UNIVERSAL_WITH_ADAPTER_REQUIREMENTS,
             notes = setOf("runtime secrets stay external", "data operations remain explicit even when a target cannot materialise them natively",
-                "action result assertions currently block compilation (audit A-01)")
+                "action result assertions and data payloads currently block compilation (audits A-01/A-02)")
         ),
         risks = setOf(ReferenceScenarioRisk.SECRET_ACCESS, ReferenceScenarioRisk.DATA_WRITE),
         safetyRequirements = setOf("runtime secrets stay external", "data operations must be explicit when not materialised by the target"),
         negativeCoverage = true,
-        expectedDiagnosticCodes = setOf("ACTION_RESULT_HANDLER_UNSUPPORTED"),
+        expectedDiagnosticCodes = setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "DATA_OPERATION_PAYLOAD_UNSUPPORTED"),
         source = """
             version "1.0"
             use module "rest" version "1.0"

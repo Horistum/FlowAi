@@ -20,8 +20,11 @@ fun descriptorRegistryParityTests() {
         try {
             val document = FlowParser().parse(source)
             val report = validator.validate(document)
-            H.ok("mod-parity/$file/unsupported-handler", !report.valid &&
-                report.issues.filter { it.level == "error" }.map { it.code }.toSet() == setOf("ACTION_RESULT_HANDLER_UNSUPPORTED"))
+            val expectedCodes = if (file == "api-sync.flow") {
+                setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "DATA_OPERATION_PAYLOAD_UNSUPPORTED")
+            } else setOf("ACTION_RESULT_HANDLER_UNSUPPORTED")
+            H.ok("mod-parity/$file/unsupported-payload", !report.valid &&
+                report.issues.filter { it.level == "error" }.map { it.code }.toSet() == expectedCodes)
             H.eq("mod-parity/$file/rejection-parity", report,
                 FrontendCompilerComposition.flowValidator().validate(document))
             val failure = runCatching { planner.plan(document) }.exceptionOrNull()

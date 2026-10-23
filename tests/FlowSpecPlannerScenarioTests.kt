@@ -26,8 +26,17 @@ fun plannerTests() {
     H.ok("plan/match-node", plan("match a { when a == 1 { shell.run l { command: \"x\" } } }").nodes.any { it is MatchPlanNode })
     H.ok("plan/retry-node", plan("retry { max: 2 } { shell.run l { command: \"x\" } }").nodes.any { it is RetryGroupNode })
     H.ok("plan/try-node", plan("try { shell.run l { command: \"x\" } } on error { skip \"y\" }").nodes.any { it is TryPlanNode })
-    H.ok("plan/transform-node", plan("transform a.items -> out { select { id: item.id } }").nodes.any { it is DataOpNode && it.kind == "Transform" })
-    H.ok("plan/aggregate-node", plan("aggregate items -> agg { total: count() }").nodes.any { it is DataOpNode && it.kind == "Aggregate" })
+    H.ok("plan/empty-transform-node", plan("transform a.items -> out {}").nodes.any { it is DataOpNode && it.kind == "Transform" })
+    H.ok("plan/empty-aggregate-node", plan("aggregate items -> agg {}").nodes.any { it is DataOpNode && it.kind == "Aggregate" })
+
+    for (body in listOf(
+        "transform a.items -> out { select { id: item.id } }",
+        "aggregate items -> agg { total: count() }",
+        "validate items { required item.id }"
+    )) {
+        val failure = runCatching { plan(body) }.exceptionOrNull()
+        H.ok("plan/payload-rejected/$body", failure is org.flowlang.core.UnsupportedDataOperationPayloadException)
+    }
 
     H.eq("plan/flatten-if", plan("if a == b { shell.run l { command: \"x\" }\nshell.run l { command: \"y\" } }").tasks.size, 2)
     H.eq("plan/flatten-parallel", plan("parallel { branch \"a\" { shell.run l { command: \"x\" } } branch \"b\" { shell.run l { command: \"y\" } } }").tasks.size, 2)

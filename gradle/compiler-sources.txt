@@ -14,6 +14,7 @@ org/flowlang/controls/CanonicalControlRequirementAuthority.kt
 org/flowlang/controls/ControlRequirementIdentityAuthority.kt
 org/flowlang/controls/PlanningControlAuthority.kt
 org/flowlang/core/ActionResultHandlerSupport.kt
+org/flowlang/core/DataOperationPayloadSupport.kt
 org/flowlang/core/FlowAvailabilityAnalyzer.kt
 org/flowlang/core/FlowAvailabilityBudget.kt
 org/flowlang/core/FlowAvailabilityJoins.kt

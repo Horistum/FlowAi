@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 59
+revision: 60
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,14 +25,14 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/availability-neutral-joins.yaml"
-  decisionBasis: "PR #244 merged at 99fdaddb70aba4b0c42cdf821edd0687717a06a0 with deterministic availability budgets. The maintainer authorized the A-04 state-reduction follow-up. This candidate reuses the original availability state after complete exclusive splits whose analyzed alternatives preserve their entries exactly. It admits the original audit reproducer without weakening resource limits, producer provenance, guards or merge restrictions. General distinct-state compaction remains open. The next audit correction is A-02 payload preservation. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/data-operation-payload-containment.yaml"
+  decisionBasis: "PR #245 merged at 34a6c84a17bc103eb5eb7387bdbb8c4546c38649. The maintainer authorized the next audit correction A-02. This candidate rejects unrepresented source data-operation payloads at shared validation and direct planning boundaries. Typed payload/value/effect lowering remains open; current-revision CI is required. A-03 global initializer preservation is next after containment validation. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
-  activeFinding: A-04
-  disposition: neutral-join-reduction-candidate
-  report: .flow-agent/reports/availability-neutral-joins.md
+  activeFinding: A-02
+  disposition: payload-containment-candidate
+  report: .flow-agent/reports/data-operation-payload-containment.md
   previousContainment:
     finding: A-01
     pullRequest: 243
@@ -44,11 +44,17 @@ systemAuditFollowup:
     pullRequest: 244
     mergedMain: 99fdaddb70aba4b0c42cdf821edd0687717a06a0
     status: merged
+  neutralJoinReduction:
+    finding: A-04
+    pullRequest: 245
+    mergedMain: 34a6c84a17bc103eb5eb7387bdbb8c4546c38649
+    status: merged
+  remainingDataOperationSupport: Typed source payload lowering and value/effect semantics remain unimplemented; this candidate only rejects unsupported payloads.
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05, A-06]
-  nextRecommendedFinding: A-02
-  nextScope: Preserve typed transform, aggregate and validate payloads in canonical planning or explicitly reject unsupported forms; prove behaviorally distinct source pairs.
-  closureRule: Resource containment and neutral-join reduction do not establish general symbolic scalability, handler implementation or closure of the other audit findings.
+  nextRecommendedFinding: A-03
+  nextScope: Preserve referenced global initializers in canonical planning or explicitly reject unsupported use; cover shadowing, order, cycles and workflow boundaries.
+  closureRule: Data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:
   roadmapMilestoneCount: 8

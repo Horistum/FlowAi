@@ -1,4 +1,5 @@
 // Projection-only fixture; not a semantic replacement for the authored example.
+// Empty data-operation payloads exercise review rendering only; no mapping or validation is claimed.
 version "1.0"
 
 use module "rest" version "1.0"
@@ -35,21 +36,9 @@ flow "sync-customers" {
       path: "/customers"
     } -> crmResponse
 
-    transform crmResponse.json.items -> customers {
-      where item.deleted != true
-      select {
-        id: item.id
-        name: item.name
-        email: item.email
-        active: item.status == "ACTIVE"
-      }
-    }
+    transform crmResponse.json.items -> customers {}
 
-    validate customers {
-      required item.id
-      required item.email
-      item.email matches email
-    }
+    validate customers {}
 
     for customer in customers {
       database.upsert warehouse {
@@ -59,10 +48,7 @@ flow "sync-customers" {
       } -> writeResult
     }
 
-    aggregate customers -> summary {
-      total: count()
-      active: count(where item.active == true)
-    }
+    aggregate customers -> summary {}
 
     notify.send mailer {
       subject: "Customer sync finished"

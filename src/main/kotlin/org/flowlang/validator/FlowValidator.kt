@@ -2,6 +2,7 @@ package org.flowlang.validator
 
 import org.flowlang.ast.*
 import org.flowlang.core.ActionResultHandlerSupport
+import org.flowlang.core.DataOperationPayloadSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityLimitException
 import org.flowlang.core.FlowAvailabilityAnalyzer
@@ -142,6 +143,9 @@ class FlowValidator(
         stmt: StatementNode, imported: Set<String>, systems: List<SystemNode>,
         scope: Scope, results: MutableSet<String>, issues: MutableList<ValidationIssue>
     ) {
+        DataOperationPayloadSupport.rejection(stmt)?.let { rejection ->
+            issues += err(DataOperationPayloadSupport.CODE, rejection.message)
+        }
         when (stmt) {
             is ActionNode -> validateAction(stmt, imported, systems, scope, results, issues)
             is IfNode -> {
