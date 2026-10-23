@@ -33,7 +33,7 @@ internal object InputApprovalValueSupport {
         }
         val value = input.default ?: return@buildList
         if (!isStaticValue(value)) {
-            reject("INPUT_DEFAULT_UNSUPPORTED", "Input '${input.name}' requires a finite literal default or secret reference; dynamic initialization is unsupported.")
+            reject("INPUT_DEFAULT_UNSUPPORTED", "Input '${input.name}' requires a representable static default; dynamic initialization and ambiguous text encoding are unsupported.")
             return@buildList
         }
         val matches = when (kind) {
@@ -61,8 +61,25 @@ internal object InputApprovalValueSupport {
         approval.params["message"]?.let {
             if ((it !is StringLiteralNode && it !is TemplateStringNode) || (it is StringLiteralNode && it.value.isBlank())) {
                 add(Rejection("APPROVAL_MESSAGE_TYPE_MISMATCH", "Approval message must be a non-blank string literal or string template.", approval.sourceLocation))
+            } else if (!messageIsRepresentable(it)) {
+                add(Rejection("APPROVAL_MESSAGE_UNSUPPORTED", "Approval message requires literal text and simple reference interpolation; ambiguous literal interpolation and computed expressions are unsupported.", approval.sourceLocation))
             }
         }
+    }
+
+    private fun identifier(value: String): Boolean = value.isNotEmpty() &&
+        (value.first().isLetter() || value.first() == '_') && value.all { it.isLetterOrDigit() || it == '_' }
+
+    private fun messageIsRepresentable(value: ExpressionNode): Boolean = when (value) {
+        is StringLiteralNode -> !value.value.contains("\${")
+        is TemplateStringNode -> value.parts.isNotEmpty() && value.parts.all { part ->
+            when (part) {
+                is StringLiteralNode -> !part.value.contains("\${")
+                is ReferenceNode -> part.path.isNotEmpty() && part.path.all(::identifier)
+                else -> false
+            }
+        }
+        else -> false
     }
 
     fun requireSupported(input: InputNode) = requireSupported(rejections(input))
@@ -74,7 +91,6 @@ internal object InputApprovalValueSupport {
     private fun isNumber(value: ExpressionNode): Boolean = when (value) {
         is NumberLiteralNode -> value.value.isFinite() && (!value.isInteger ||
             (value.value >= Long.MIN_VALUE.toDouble() && value.value < Long.MAX_VALUE.toDouble() && value.value % 1.0 == 0.0))
-        is UnaryExpressionNode -> value.operator in setOf("-", "+") && value.operand is NumberLiteralNode && isNumber(value.operand)
         else -> false
     }
 
@@ -87,13 +103,15 @@ internal object InputApprovalValueSupport {
             val (value, depth) = pending.removeLast()
             if (++visited > MAX_DEFAULT_VALUES || depth > MAX_DEFAULT_DEPTH) return false
             when (value) {
-                is StringLiteralNode, is BooleanLiteralNode, is NullLiteralNode, is SecretRefNode -> Unit
+                is StringLiteralNode, is BooleanLiteralNode, is NullLiteralNode -> Unit
+                is SecretRefNode -> if (!identifier(value.name)) return false
                 is NumberLiteralNode, is UnaryExpressionNode -> if (!isNumber(value)) return false
                 is ListLiteralNode -> {
                     if (value.items.size > MAX_DEFAULT_VALUES - visited - pending.size) return false
                     value.items.forEach { pending.add(it to depth + 1) }
                 }
                 is MapLiteralNode -> {
+                    if (value.entries.keys.any { !identifier(it) }) return false
                     if (value.entries.size > MAX_DEFAULT_VALUES - visited - pending.size) return false
                     value.entries.values.forEach { pending.add(it to depth + 1) }
                 }

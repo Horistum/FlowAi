@@ -26,11 +26,11 @@ internal class InputApprovalValueConformanceChecks(private val rootDir: File) {
         },
         check("architecture-recovery.language.approval-parameters-rejected-before-authorization") {
             withFrontend { frontend, file ->
-                for (params in listOf("unexpected: 1", "unexpected: 2", "timeout: 10", "message: false")) {
+                for (params in listOf("unexpected: 1", "unexpected: 2", "timeout: 10", "message: false", "message: \"Review \${not (true and false)}\"")) {
                     file.writeText(source("", "approve manual { $params }"))
                     val result = frontend.compile(file)
                     require(result is CompilationResult.Rejected)
-                    require(result.rejection.diagnostics.any { it.code in setOf("APPROVAL_PARAM_UNSUPPORTED", "APPROVAL_MESSAGE_TYPE_MISMATCH") })
+                    require(result.rejection.diagnostics.any { it.code in setOf("APPROVAL_PARAM_UNSUPPORTED", "APPROVAL_MESSAGE_TYPE_MISMATCH", "APPROVAL_MESSAGE_UNSUPPORTED") })
                 }
             }
         },
@@ -67,7 +67,8 @@ internal class InputApprovalValueConformanceChecks(private val rootDir: File) {
         "value: option [1, 2]" to "INPUT_OPTION_VALUE_UNSUPPORTED",
         "value: option [3, 4]" to "INPUT_OPTION_VALUE_UNSUPPORTED",
         "value: option [\"a\", \"b\"] default \"c\"" to "INPUT_DEFAULT_NOT_IN_OPTION",
-        "value: text default value" to "INPUT_DEFAULT_UNSUPPORTED"
+        "value: text default value" to "INPUT_DEFAULT_UNSUPPORTED",
+        "value: map default {\"a: 1, b\": 2}" to "INPUT_DEFAULT_UNSUPPORTED"
     )
     private fun source(inputs: String, body: String = "approve manual { message: \"Review\" }") =
         "version \"1.0\"\nflow \"value-admission\" { input { $inputs } steps { $body } }"

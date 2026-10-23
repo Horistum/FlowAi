@@ -168,6 +168,16 @@ class InputApprovalValueIntegrityTests {
         assertNotEquals(a.graphDigest, b.graphDigest)
     }
 
+    @Test fun ambiguousDefaultAndMessageEncodingsAreRejectedBeforeGraphIdentity() {
+        reject(source("""value: map default {"a: 1, b": 2}"""), "INPUT_DEFAULT_UNSUPPORTED")
+        reject(source("""value: map default {a: secret("TOKEN, b: 2")}"""), "INPUT_DEFAULT_UNSUPPORTED")
+        for (message in listOf(""""Review ${'$'}{not (true and false)}"""", """"Review ${'$'}{(not true) and false}"""",
+            """"Review \${'$'}{value}"""")) {
+            reject(source("value: text", "approve manual { message: $message }"), "APPROVAL_MESSAGE_UNSUPPORTED")
+        }
+        compile(source("value: map default {a: 1, b: 2}")).requireAccepted().authorization.requireIntegrity()
+    }
+
     @Test fun standaloneConformanceExercisesRejectionAndPreservation() {
         val checks = InputApprovalValueConformanceChecks(File(".")).checks()
         assertEquals(4, checks.size)

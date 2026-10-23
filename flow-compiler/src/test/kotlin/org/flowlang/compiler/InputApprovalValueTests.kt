@@ -66,6 +66,7 @@ class InputApprovalValueTests {
     @Test fun dynamicAndNonFiniteDefaultsAreRejectedIncludingNestedValues() {
         for (value in listOf(ReferenceNode(path = listOf("value")), CallExpressionNode(function = "unknown"),
             TemplateStringNode(parts = listOf(ReferenceNode(path = listOf("value")))),
+            UnaryExpressionNode(operator = "+", operand = NumberLiteralNode(value = 2.0)),
             NumberLiteralNode(value = Double.NaN), NumberLiteralNode(value = Double.POSITIVE_INFINITY),
             NumberLiteralNode(value = 1.5, isInteger = true), NumberLiteralNode(value = Double.MAX_VALUE, isInteger = true),
             ListLiteralNode(items = listOf(ReferenceNode(path = listOf("value")))),
@@ -80,7 +81,7 @@ class InputApprovalValueTests {
 
     @Test fun supportedTypesPreserveDefaultsAndCanonicalIdentity() {
         val values = listOf("text" to text("hello"), "number" to NumberLiteralNode(value = 1.5),
-            "number" to UnaryExpressionNode(operator = "-", operand = NumberLiteralNode(value = 2.0, isInteger = true)),
+            "number" to NumberLiteralNode(value = -2.0, isInteger = true),
             "boolean" to BooleanLiteralNode(value = false), "list" to ListLiteralNode(items = listOf(text("a"), NullLiteralNode())),
             "object" to MapLiteralNode(entries = mapOf("flag" to BooleanLiteralNode(value = true))),
             "secret" to SecretRefNode(name = "TOKEN"), "any" to NullLiteralNode())
@@ -131,4 +132,22 @@ class InputApprovalValueTests {
         assertNotEquals(first.graphDigest, second.graphDigest)
         assertEquals(first.graphDigest, compile(asts[0]).requireAccepted().graphDigest)
     }
+    @Test fun unrepresentableStaticValuesCannotAliasAcceptedGraphs() {
+        val ambiguous = MapLiteralNode(entries = mapOf("a: 1, b" to NumberLiteralNode(value = 2.0, isInteger = true)))
+        val ordinary = MapLiteralNode(entries = mapOf("a" to NumberLiteralNode(value = 1.0, isInteger = true),
+            "b" to NumberLiteralNode(value = 2.0, isInteger = true)))
+        reject(document(input("map", ambiguous)), "INPUT_DEFAULT_UNSUPPORTED")
+        compile(document(input("map", ordinary))).requireAccepted().authorization.requireIntegrity()
+        val ambiguousSecret = MapLiteralNode(entries = mapOf("a" to SecretRefNode(name = "TOKEN, b: 2")))
+        reject(document(input("map", ambiguousSecret)), "INPUT_DEFAULT_UNSUPPORTED")
+        val invalidMessages = listOf(text("Review \${value}"),
+            TemplateStringNode(parts = listOf(BinaryExpressionNode(operator = "+", left = NumberLiteralNode(value = 1.0), right = NumberLiteralNode(value = 2.0)))),
+            TemplateStringNode(parts = listOf(text("literal \${value}"), ReferenceNode(path = listOf("value")))))
+        invalidMessages.forEach { message ->
+            val ast = FlowDocument(flow = FlowNode(name = "messages", input = listOf(input("text")),
+                steps = listOf(ApproveNode(params = mapOf("message" to message), sourceLocation = location))))
+            reject(ast, "APPROVAL_MESSAGE_UNSUPPORTED")
+        }
+    }
+
 }

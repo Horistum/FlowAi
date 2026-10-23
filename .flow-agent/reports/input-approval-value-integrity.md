@@ -19,9 +19,11 @@ See [the public contract](../../docs/INPUT_APPROVAL_VALUE_INTEGRITY.md) for the 
 
 ## Validation at report creation
 
-The supported Kotlin 2.4.10 / Gradle 9.5.0 / JDK 25 toolchain passed all **7 new compiler tests** and **8 new frontend integration tests**. The integration suite also executed all **4 new standalone conformance checks** successfully. Tests cover audit mutations, direct/internal planning, unsupported nested or unreachable approval fields, input defaults, options with quoted commas, message templates and escaped quotes, graph serialization/digest differences, independent workflows and reviewed AI proposals.
+The supported Kotlin 2.4.10 / Gradle 9.5.0 / JDK 25 toolchain passed all **7 initial compiler tests** and **8 initial frontend integration tests**. The integration suite also executed all **4 new standalone conformance checks** successfully. Tests cover audit mutations, direct/internal planning, unsupported nested or unreachable approval fields, input defaults, options with quoted commas, message templates and escaped quotes, graph serialization/digest differences, independent workflows and reviewed AI proposals.
 
 The **257 Python tests** and Flow Agent validation passed. A stale local incremental compiler cache required a compiler-module clean; the clean compilation passed. Initial regression runs exposed test metadata expectations and the second option normalization path; the corrected targeted run passed.
+
+A subsequent adversarial probe reproduced a static-map collision: `{"a: 1, b": 2}` and `{a: 1, b: 2}` produced the same graph digest `6b60e3e197c0471a38181d229a90d3471cc4c75288091addace77e01792e94af`. The correction now rejects ambiguous map keys/default secret names and ambiguous/computed approval message interpolation. Two further regression tests bring the candidate to 8 compiler and 9 integration tests. The obsolete local full run was stopped before completion; it is not passing evidence. Final validation must cover this strengthened revision.
 
 The full JVM suite, installed standalone conformance, module isolation, exact-head CI, synthetic merge-candidate CI and adapter runtime certification must be verified for the final PR head. Final results and head/tree bindings belong in the PR validation record so that recording a passing run does not create another untested source revision. This report does not claim those pending checks have already passed.
 

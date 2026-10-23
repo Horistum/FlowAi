@@ -9,7 +9,7 @@ Input kinds are case-sensitive. The accepted vocabulary is:
 | Family | Authored kinds | Accepted default |
 | --- | --- | --- |
 | Text | `text`, `string` | String literal |
-| Number | `number`, `int`, `integer`, `float`, `double` | Finite numeric literal, including unary `+`/`-` |
+| Number | `number`, `int`, `integer`, `float`, `double` | Finite numeric literal, including negative literals |
 | Boolean | `boolean`, `bool` | Boolean literal |
 | List | `list`, `array` | Literal list |
 | Map | `map`, `object`, `json`, `yaml` | Literal map |
@@ -21,13 +21,13 @@ Aliases retain their authored spelling in the plan and use the existing availabi
 
 Every option domain must contain at least one non-blank literal string. Authored order is preserved; empty or whitespace-only labels are rejected because the canonical graph forbids them. Non-string members, expression members and choices attached to another input kind are errors. An out-of-domain default is now an error (`INPUT_DEFAULT_NOT_IN_OPTION`), previously a warning. No default is invented when absent; `required` is retained independently of the default.
 
-Lists and maps may contain nested static values, including null and secret references. References, calls, templates and other computed defaults are rejected with `INPUT_DEFAULT_UNSUPPORTED`, including inside collections. This boundary does not implement initialization order, dependent defaults or runtime type inference. Numeric values must be finite; integer-tagged AST numbers must be integral and renderable without saturation. Direct-AST static validation is bounded to 10,000 values and depth 128. Default values are not included in error messages.
+Lists and maps may contain nested static values, including null and secret references. Map keys and default secret-reference names must be plain Flow identifiers (letter/underscore followed by letters, digits or underscores); other spellings are rejected because the existing expression renderer cannot encode them unambiguously. References, calls, templates and other computed defaults are rejected with `INPUT_DEFAULT_UNSUPPORTED`, including inside collections. This boundary does not implement initialization order, dependent defaults or runtime type inference. Numeric values must be finite; integer-tagged AST numbers must be integral and renderable without saturation. Direct-AST static validation is bounded to 10,000 values and depth 128. Default values are not included in error messages.
 
 Other diagnostics are `INPUT_TYPE_UNSUPPORTED`, `INPUT_OPTIONS_UNEXPECTED`, `INPUT_OPTIONS_EMPTY`, `INPUT_OPTION_VALUE_UNSUPPORTED` and `INPUT_DEFAULT_TYPE_MISMATCH`. Direct planning raises `InvalidInputApprovalValueException` with the same diagnostic code and declaration location when available.
 
 ## Approval
 
-The existing approval contract admits only the optional `message` parameter. It must be a non-blank string literal or a string template. Unknown fields, including invented `timeout`, `approvers` or `unexpected` fields, produce `APPROVAL_PARAM_UNSUPPORTED`; incompatible message values produce `APPROVAL_MESSAGE_TYPE_MISMATCH`. No values are coerced into strings. Existing approval modes, results, dependencies and control evidence retain their existing contracts.
+The existing approval contract admits only the optional `message` parameter. It must be a non-blank string literal or a template containing literal text and simple reference paths. Computed interpolation and literal text containing `${` are rejected with `APPROVAL_MESSAGE_UNSUPPORTED`: the existing message representation cannot distinguish all of these authored forms. Unknown fields, including invented `timeout`, `approvers` or `unexpected` fields, produce `APPROVAL_PARAM_UNSUPPORTED`; incompatible message values produce `APPROVAL_MESSAGE_TYPE_MISMATCH`. No values are coerced into strings. Existing approval modes, results, dependencies and control evidence retain their existing contracts.
 
 The message retains the existing expression-rendered string representation. Removing the enclosing quotes removes exactly one pair, preserving escaped trailing quotes. Templates remain templates for downstream admission; accepting a canonical template does not establish that every adapter can execute it.
 
@@ -41,4 +41,4 @@ Intent option notation is parsed as a list expression. Existing bare labels such
 
 Accepted values are checked through execution plans, canonical graph digests, serialization and authorized projection. Four standalone conformance checks replay the audit counterexamples, direct planning and accepted value preservation. Compiler isolation and frontend integration tests cover all three frontends and independent workflows. The historical [system audit](audits/2026-10-20-system-roadmap/README.md) remains immutable.
 
-A-02 and A-03 still require separate typed data-operation and global-initialization designs. AR-06 remains active, AR-07 remains planned and EF-09 remains paused. This correction adds no adapter capability, signed scenario or support promotion.
+Full expression rendering, arbitrary map keys/default secret names and richer approval message expressions require a separate canonical representation change. A-02 and A-03 still require separate typed data-operation and global-initialization designs. AR-06 remains active, AR-07 remains planned and EF-09 remains paused. This correction adds no adapter capability, signed scenario or support promotion.
