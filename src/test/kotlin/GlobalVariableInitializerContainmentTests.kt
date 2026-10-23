@@ -149,6 +149,7 @@ class GlobalVariableInitializerContainmentTests {
             val codes = result.rejection.diagnostics.map { it.code }
             assertContains(codes, "ACTION_RESULT_HANDLER_UNSUPPORTED")
             assertContains(codes, "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED")
+            assertContains(codes, "APPROVAL_PARAM_UNSUPPORTED")
         }
         val fixture = FlowParser().parse(File("src/test/resources/flow/projection/deploy-with-approval.flow"))
         assertTrue(fixture.flow.vars.isEmpty())

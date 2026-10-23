@@ -23,7 +23,7 @@ fun descriptorRegistryParityTests() {
             val expectedCodes = if (file == "api-sync.flow") {
                 setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "DATA_OPERATION_PAYLOAD_UNSUPPORTED")
             } else if (file in setOf("complex-devops-flow.flow", "deploy-with-approval.flow")) {
-                setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED")
+                setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED", "APPROVAL_PARAM_UNSUPPORTED")
             } else setOf("ACTION_RESULT_HANDLER_UNSUPPORTED")
             H.ok("mod-parity/$file/unsupported-payload", !report.valid &&
                 report.issues.filter { it.level == "error" }.map { it.code }.toSet() == expectedCodes)

@@ -14,6 +14,7 @@ Production inspection confirmed the audit: option members were filtered to strin
 - Intent options and their preservation evidence use one parser-based lowering helper. Bare labels remain supported; quoted commas survive; typed literal members and blank labels fail admission. No filtered member can silently disappear.
 - Approval message rendering removes exactly one pair of enclosing quotes. Evidence records message rendering transformations while preserving the existing message wire representation.
 - The existing availability-merge conformance fixture now uses explicit string interpolation for its joined and partial values. This retains its availability invariant while removing its formerly accepted bare message reference.
+- The projection-only deployment fixture omits the previously dropped approval timeout. Original examples keep their authored timeout and registry-parity tests require the additional A-06 error. This fixture is not an equivalent migration or timeout implementation.
 - Four standalone checks, source ownership manifests and the independent compiler-entrypoint inventory are updated. The historical audit is unchanged.
 
 See [the public contract](../../docs/INPUT_APPROVAL_VALUE_INTEGRITY.md) for the type vocabulary, diagnostic codes and migration rules.

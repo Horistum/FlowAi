@@ -6,7 +6,9 @@ handler assertions. The API-sync fixture also uses empty transform, aggregate an
 validate payloads solely to inspect data-operation node kinds in review artifacts.
 It provides no evidence for filtering, mapping, aggregation or validation behavior.
 The deployment fixture uses inline expressions instead of global declarations; it
-provides no evidence for global initialization, order or lifetime semantics.
+provides no evidence for global initialization, order or lifetime semantics. It also
+omits the unsupported approval `timeout` parameter and provides no timeout-policy
+evidence. The authored examples retain that field and fail A-06 admission.
 
 These fixtures are not migrations or equivalent replacements for the examples
 under `examples/`. The original examples remain unchanged and are explicitly
@@ -17,3 +19,5 @@ payloads and global initializers must not disappear during planning. See
 [the A-02 admission boundary](../../../../../docs/DATA_OPERATION_PAYLOAD_CONTAINMENT.md).
 
 See also [the A-03 admission boundary](../../../../../docs/GLOBAL_VARIABLE_INITIALIZER_CONTAINMENT.md).
+
+See also [the A-06 input/approval boundary](../../../../../docs/INPUT_APPROVAL_VALUE_INTEGRITY.md).

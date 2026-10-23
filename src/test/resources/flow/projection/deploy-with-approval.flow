@@ -51,7 +51,6 @@ flow "deploy-with-approval" {
     if environment == "prod" {
       approve manual {
         message: "Deploy ${app} ${version} to production?"
-        timeout: "1h"
       } -> approval
     }
 
