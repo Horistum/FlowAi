@@ -1,0 +1,56 @@
+version: AR-A06
+name: Input and approval value integrity
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests the next roadmap correction after merging PR 247.
+  predecessorPullRequest: 247
+  mergedMain: 147521a68c06f04de944b6966cf76c48fc4593ce
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-06)
+invariant: Accepted inputs and approval parameters must have explicit admission contracts and cannot silently lose authored values before graph authorization.
+architecturePurpose: Close source type, default and approval admission gaps at the shared compiler boundary without introducing target-defined semantics.
+scope:
+- Define supported input kinds, literal default compatibility and string-only option domains.
+- Reject dynamic defaults whose initialization type and lifetime cannot be established.
+- Reject unrepresented approval parameters and unsupported message value kinds in validation and direct planning.
+- Preserve accepted input values and approval messages through plans, graphs and serialization.
+- Verify Flow Source, Intent YAML, reviewed AI proposals and direct typed AST callers.
+nonGoals:
+- No approval timeout, approver, quorum or new approval policy implementation.
+- No dynamic input initialization evaluator, adapter changes or target support promotion.
+- No closure of A-02 or A-03 full semantics, activation of AR-07 or resumption of EF-09.
+ownershipBoundary:
+  core: Owns input and approval admission and lossless canonical lowering.
+  adapters: Consume the existing graph contract without gaining support claims.
+  conformance: Replays rejected audit mutations and distinct accepted source values.
+architectureChecks:
+- One shared AST admission contract is used by validation and direct planning.
+- No raw AST escape hatch, runtime execution or target-specific type inference.
+- Original audit observations remain immutable; new evidence is recorded separately.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/core/InputApprovalValueSupport.kt
+- src/main/kotlin/org/flowlang/validator/FlowValidator.kt
+- src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
+- src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt
+- src/main/kotlin/org/flowlang/lowering/IntentInputTypeLowering.kt
+- src/main/kotlin/org/flowlang/lowering/IntentLoweringContracts.kt
+- flow-compiler/src/test/kotlin/org/flowlang/compiler/InputApprovalValueTests.kt
+- src/test/kotlin/InputApprovalValueIntegrityTests.kt
+- src/main/kotlin/org/flowlang/conformance/InputApprovalValueConformanceChecks.kt
+testsToAddOrUpdate:
+- Audit input type, default, option domain and unknown approval parameter mutations fail before authorization.
+- Direct planning and nested or failure-region approval nodes cannot bypass admission.
+- Supported scalar and structured defaults, string options and message changes remain distinct in canonical graphs.
+- All frontends reject invalid values and preserve valid values without request or workflow leakage.
+conformanceToAddOrUpdate:
+- Input admission, approval admission, direct planner rejection and accepted value preservation.
+documentationToUpdate:
+- docs/INPUT_APPROVAL_VALUE_INTEGRITY.md
+- .flow-agent/reports/input-approval-value-integrity.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: preliminary-local-validation-passed-current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  preservedChecks: Module isolation and adapter runtime certification.

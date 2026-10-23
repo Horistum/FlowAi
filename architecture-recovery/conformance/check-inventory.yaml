@@ -79,3 +79,7 @@ checks:
   - architecture-recovery.language.global-initializers-rejected-before-authorization
   - architecture-recovery.language.global-initializers-direct-planner-rejection
   - architecture-recovery.language.input-default-graph-preservation
+  - architecture-recovery.language.input-values-rejected-before-authorization
+  - architecture-recovery.language.approval-parameters-rejected-before-authorization
+  - architecture-recovery.language.input-approval-direct-planner-rejection
+  - architecture-recovery.language.accepted-input-approval-value-preservation

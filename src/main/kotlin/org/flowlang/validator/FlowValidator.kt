@@ -3,6 +3,7 @@ package org.flowlang.validator
 import org.flowlang.ast.*
 import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.DataOperationPayloadSupport
+import org.flowlang.core.InputApprovalValueSupport
 import org.flowlang.core.GlobalVariableInitializerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityLimitException
@@ -77,15 +78,8 @@ class FlowValidator(
         document.flow.vars.forEach { scope.declare(it.name) }
         document.flow.systems.forEach { scope.declare(it.name) }
 
-        // input defaults
-        document.flow.input.forEach { input ->
-            val d = input.default
-            if (d != null && input.valueType.kind == "option") {
-                val allowed = input.valueType.values.filterIsInstance<StringLiteralNode>().map { it.value }
-                val dv = (d as? StringLiteralNode)?.value
-                if (dv != null && dv !in allowed)
-                    issues += warn("INPUT_DEFAULT_NOT_IN_OPTION", "Default '$dv' for input '${input.name}' is not one of $allowed", input.sourceLocation)
-            }
+        document.flow.input.flatMap(InputApprovalValueSupport::rejections).forEach {
+            issues += err(it.code, it.message, it.sourceLocation)
         }
 
         // vars / systems expressions reference inputs+vars+systems
@@ -237,6 +231,9 @@ class FlowValidator(
             is FailNode -> checkExpr(stmt.message, scope, "auto", null, issues)
             is SkipNode -> checkExpr(stmt.message, scope, "auto", null, issues)
             is ApproveNode -> {
+                InputApprovalValueSupport.rejections(stmt).forEach {
+                    issues += err(it.code, it.message, it.sourceLocation)
+                }
                 stmt.params.values.forEach { checkExpr(it, scope, "auto", null, issues) }
                 stmt.result?.let { declareResult(it.name, scope, results, stmt.sourceLocation, issues) }
                 stmt.declaredOutputs.forEach { declareResult(it, scope, results, stmt.sourceLocation, issues) }

@@ -10,6 +10,7 @@ import org.flowlang.topology.ExecutionTopologyRequirementSource
 import org.flowlang.ast.*
 import org.flowlang.modules.ModuleCatalog
 import org.flowlang.modules.ModuleCatalogIndex
+import org.flowlang.lowering.IntentInputTypeLowering
 import org.flowlang.lowering.IntentExpressionParser
 import org.flowlang.lowering.IntentLoweringAuthority
 import org.flowlang.lowering.IntentValueExpressionLowering
@@ -211,15 +212,7 @@ class IntentToAstPlanner(
     )
 
     private fun IntentInput.toInputNode(): InputNode {
-        val vt = when {
-            type.startsWith("option[") && type.endsWith("]") -> {
-                val values = type.substringAfter("option[").substringBeforeLast("]")
-                    .split(',').map { it.trim().trim('"', '\'') }.filter { it.isNotEmpty() }
-                    .map { StringLiteralNode(value = it) }
-                ValueTypeNode(kind = "option", values = values)
-            }
-            else -> ValueTypeNode(kind = type)
-        }
+        val vt = IntentInputTypeLowering.lower(type, expressions)
         return InputNode(
             name = name,
             valueType = vt,
@@ -354,7 +347,9 @@ class IntentToAstPlanner(
     private fun approvalStatement(step: IntentStep, intent: IntentDocument, identity: IntentStepIdentity): StatementNode {
         val approval = ApproveNode(
             mode = "manual",
-            params = mapOf("message" to StringLiteralNode(value = paramText(step, "message") ?: approvalMessage(intent))),
+            params = step.params.mapValues { (_, value) -> value.toExpression() }.let { params ->
+                if ("message" in params) params else params + ("message" to StringLiteralNode(value = approvalMessage(intent)))
+            },
             result = ResultBindingNode(name = identity.resultName),
             sourceId = identity.semanticId.authored,
             sourceDescription = identity.displayName,

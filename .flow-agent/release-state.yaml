@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 120
+stateVersion: 121
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -733,5 +733,25 @@ recoveryGlobalVariableInitializerContainment:
   globalDeclarationContainment: true
   canonicalGlobalInitializationSupport: false
   nextAuditFinding: A-06
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryInputApprovalValueIntegrity:
+  candidate: AR-A06
+  status: candidate
+  workPackage: .flow-agent/work-packages/input-approval-value-integrity.yaml
+  report: .flow-agent/reports/input-approval-value-integrity.md
+  predecessorMain: 147521a68c06f04de944b6966cf76c48fc4593ce
+  auditFinding: A-06
+  validation: preliminary-local-validation-passed-current-revision-ci-required
+  localNewCompilerTests: 8
+  localNewIntegrationTests: 9
+  localPythonTests: 257
+  newStandaloneConformanceChecks: 4
+  fullSuiteEvidence: Required in the final pull request validation record.
+  inputApprovalAdmissionContract: true
+  dynamicDefaultInitialization: false
+  newApprovalPolicyFeatures: false
+  nextAuditFinding: A-05
   signedPortfolioExpanded: false
   supportPromotion: false

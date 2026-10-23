@@ -71,7 +71,7 @@ class FlowAvailabilityAnalyzer {
         fun analyze(): FlowAvailabilityAnalysis = budget.visit(FlowStatementPath("flow", workflow), null) {
             var base = FlowAvailabilityState()
             document.flow.input.forEach { input ->
-                base = base.withExternal(input.name, budget, FlowValueType.fromWire(input.valueType.kind))
+                base = base.withExternal(input.name, budget, input.valueType.kind.takeUnless(String::isBlank)?.let(FlowValueType::fromWire))
             }
             document.flow.vars.map { it.name }.distinct().forEach { name -> base = base.withExternal(name, budget) }
             document.flow.systems.map { it.name }.distinct().forEach { name -> base = base.withExternal(name, budget) }

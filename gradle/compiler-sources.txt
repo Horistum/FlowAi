@@ -20,6 +20,7 @@ org/flowlang/core/FlowAvailabilityBudget.kt
 org/flowlang/core/FlowAvailabilityJoins.kt
 org/flowlang/core/FlowAvailabilityModel.kt
 org/flowlang/core/GlobalVariableInitializerSupport.kt
+org/flowlang/core/InputApprovalValueSupport.kt
 org/flowlang/effects/CanonicalIntentEffectAuthority.kt
 org/flowlang/effects/ModuleEffectCanonicalizer.kt
 org/flowlang/identity/CollisionSafeIdentityAuthority.kt
@@ -38,6 +39,7 @@ org/flowlang/intent/LoweredIntentProgram.kt
 org/flowlang/intent/MandatorySafetyPolicy.kt
 org/flowlang/intent/PolicyCondition.kt
 org/flowlang/intent/SafetyPolicyValidator.kt
+org/flowlang/lowering/IntentInputTypeLowering.kt
 org/flowlang/lowering/IntentLoweringContracts.kt
 org/flowlang/lowering/IntentValueExpressionLowering.kt
 org/flowlang/modules/ModuleContractAnalyzer.kt

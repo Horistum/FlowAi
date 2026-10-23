@@ -6,6 +6,7 @@ import org.flowlang.ast.*
 import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.DataOperationPayloadSupport
+import org.flowlang.core.InputApprovalValueSupport
 import org.flowlang.core.GlobalVariableInitializerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
@@ -74,6 +75,7 @@ class FlowPlanner(registry: ModuleCatalog) {
         workflowIdentity: FlowWorkflowIdentity = FlowWorkflowIdentity.Main,
         nodeIdNamespace: String? = null
     ): FlowPlanningResult {
+        document.flow.input.forEach(InputApprovalValueSupport::requireSupported)
         GlobalVariableInitializerSupport.requireSupported(document)
         availability.requireDirectPlanningSafe()
         val ctx = Ctx(
@@ -166,7 +168,7 @@ class FlowPlanner(registry: ModuleCatalog) {
     }
 
     private fun InputNode.toPlanInput(): PlanInput {
-        val choices = valueType.values.filterIsInstance<StringLiteralNode>().map { it.value }
+        val choices = valueType.values.map { (it as StringLiteralNode).value }
         // Preserve authored boolean literals at the same concrete-default boundary
         // as strings. Retaining only defaultExpression makes adapters see no default.
         val defaultValue = when (val value = default) {
@@ -355,6 +357,7 @@ class FlowPlanner(registry: ModuleCatalog) {
         availability: FlowAvailabilityAnalysis,
         path: FlowStatementPath
     ): ApprovalNode {
+        InputApprovalValueSupport.requireSupported(approval)
         val explicitDependencies = approval.dependsOn.mapNotNull { binding ->
             ctx.resolveOrderingProducer(availability, path, binding)
         }.distinct()
@@ -377,7 +380,7 @@ class FlowPlanner(registry: ModuleCatalog) {
         return ApprovalNode(
             id = id,
             mode = approval.mode,
-            message = approval.params["message"]?.let(ExpressionRenderer::render)?.trim('"'),
+            message = approval.params["message"]?.let(ExpressionRenderer::render)?.removeSurrounding("\""),
             resultName = approval.result?.name,
             sourceId = approval.sourceId,
             sourceDescription = approval.sourceDescription,

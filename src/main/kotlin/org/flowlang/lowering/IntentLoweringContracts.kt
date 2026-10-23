@@ -174,7 +174,7 @@ object IntentLoweringAuthority {
             val inputId = segment(input.name)
             val source = "$.inputs[$index]"
             add(preserved("input/$inputId/name", "$source.name", "plan/input/$inputId/name", "string", input.name))
-            val projectedType = projectedInputType(input.type)
+            val projectedType = projectedInputType(input.type, expressions)
             add(transformed(
                 identity = "input/$inputId/type",
                 sourcePath = "$source.type",
@@ -408,8 +408,14 @@ object IntentLoweringAuthority {
             val targetField = if (key in bindingMetadataParams) "binding-metadata" else "param"
             val targetIdentity = "$targetRoot/$targetField/${segment(key)}"
             if (step.capability.name == "APPROVE" && key == "message") {
-                val message = value.asTextOrNull().orEmpty()
-                add(preserved("step/$stepId/param/${segment(key)}", "$sourcePath.params.$key", targetIdentity, value.kind, message))
+                val sourceMessage = value.asTextOrNull().orEmpty()
+                val message = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value, expressions)).removeSurrounding("\"")
+                if (sourceMessage == message) {
+                    add(preserved("step/$stepId/param/${segment(key)}", "$sourcePath.params.$key", targetIdentity, value.kind, message))
+                } else {
+                    add(transformed("step/$stepId/param/${segment(key)}", "$sourcePath.params.$key", targetIdentity,
+                        value.kind, sourceMessage, message, "intent-approval-message-rendering"))
+                }
             } else {
                 val expressionValue = ExpressionRenderer.render(IntentValueExpressionLowering.lower(value, expressions))
                 val projectedValue = RuntimeParamRenderer.render(IntentValueExpressionLowering.lower(value, expressions), inputNames)
@@ -687,18 +693,12 @@ object IntentLoweringAuthority {
         else -> emptyList()
     }
 
-    private fun projectedInputType(type: String): String {
-        val kind: String
-        val choices: List<String>
-        if (type.startsWith("option[") && type.endsWith("]")) {
-            kind = "option"
-            choices = type.substringAfter("option[").substringBeforeLast("]")
-                .split(',').map { it.trim().trim('"', '\'') }.filter { it.isNotEmpty() }
-        } else {
-            kind = type
-            choices = emptyList()
+    private fun projectedInputType(type: String, expressions: IntentExpressionParser): String {
+        val lowered = IntentInputTypeLowering.lower(type, expressions)
+        val choices = lowered.values.map {
+            if (it is org.flowlang.ast.StringLiteralNode) it.value else ExpressionRenderer.render(it)
         }
-        return canonicalRecord("kind" to kind, "choices" to canonicalList(choices))
+        return canonicalRecord("kind" to lowered.kind, "choices" to canonicalList(choices))
     }
 
     private fun projectedInputType(input: PlanInput): String =

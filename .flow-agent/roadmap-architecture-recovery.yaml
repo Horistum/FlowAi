@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 61
+revision: 62
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,14 +25,14 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/global-initializer-containment.yaml"
-  decisionBasis: "PR #246 merged at 73118d2479c72dc2ebd638912f07b5004161db2a. The maintainer authorized A-03. This candidate rejects all global variable declarations at shared validation and direct planning boundaries because initialization and lifetime are not represented canonically. Full global-variable semantics remain open; current-revision CI is required. A-06 input/approval value preservation is next. AR-06 remains active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  correctiveWorkPackage: ".flow-agent/work-packages/input-approval-value-integrity.yaml"
+  decisionBasis: "PR #247 merged at 147521a68c06f04de944b6966cf76c48fc4593ce. The maintainer authorized A-06. This candidate closes input type/default/option and approval parameter admission with shared validation/direct-planning guards and lossless Intent option parsing. Preliminary local tests passed; current-revision CI remains required. A-05 architecture-entry documentation reconciliation is next; facade retirement remains AR-07-owned. AR-06 stays active, AR-07 planned and EF-09 paused."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
-  activeFinding: A-03
-  disposition: initializer-containment-candidate
-  report: .flow-agent/reports/global-initializer-containment.md
+  activeFinding: A-06
+  disposition: input-approval-value-integrity-candidate
+  report: .flow-agent/reports/input-approval-value-integrity.md
   previousContainment:
     finding: A-01
     pullRequest: 243
@@ -55,13 +55,24 @@ systemAuditFollowup:
     mergedMain: 73118d2479c72dc2ebd638912f07b5004161db2a
     status: merged
     canonicalDataPayloadSupport: false
+  globalInitializerContainment:
+    finding: A-03
+    pullRequest: 247
+    mergedMain: 147521a68c06f04de944b6966cf76c48fc4593ce
+    status: merged
+    canonicalGlobalInitializationSupport: false
+  inputApprovalAdmission:
+    finding: A-06
+    status: candidate-current-revision-ci-required
+    dynamicDefaultInitialization: unsupported
+    newApprovalPolicyFeatures: false
   remainingGlobalVariableSupport: Typed initialization, ordering, shadowing and lifetime semantics remain unimplemented; every nonempty global declaration is rejected.
   remainingDataOperationSupport: Typed source payload lowering and value/effect semantics remain unimplemented; merged PR 246 only rejects unsupported payloads.
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05, A-06]
-  nextRecommendedFinding: A-06
-  nextScope: Preserve or explicitly reject source input option values and approval parameters; validate authored defaults without silently dropping meaning.
-  closureRule: Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
+  nextRecommendedFinding: A-05
+  nextScope: Reconcile the architecture entry page and active-roadmap route with verified code; retain facade retirement and AI confidence cleanup under AR-07.
+  closureRule: A-06 admission closure requires current-revision CI and does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:
   roadmapMilestoneCount: 8
