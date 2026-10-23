@@ -33,6 +33,8 @@ expectedFilesToChange:
 - src/main/kotlin/org/flowlang/validator/FlowValidator.kt
 - src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
 - src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt
+- src/main/kotlin/org/flowlang/lowering/IntentInputTypeLowering.kt
+- src/main/kotlin/org/flowlang/lowering/IntentLoweringContracts.kt
 - flow-compiler/src/test/kotlin/org/flowlang/compiler/InputApprovalValueTests.kt
 - src/test/kotlin/InputApprovalValueIntegrityTests.kt
 - src/main/kotlin/org/flowlang/conformance/InputApprovalValueConformanceChecks.kt
@@ -49,6 +51,6 @@ documentationToUpdate:
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml
 validation:
-  status: planned
+  status: preliminary-local-validation-passed-current-revision-ci-required
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
   preservedChecks: Module isolation and adapter runtime certification.

@@ -290,7 +290,7 @@ fun validatorTests() {
     H.ok("v/system-type-unknown", hasWarn(validateSrc("""
         flow "t" { systems { system "x" { type: nonsense } } steps { } }
     """), "SYSTEM_TYPE_UNKNOWN"))
-    H.ok("v/input-default-not-in-option", hasWarn(validateSrc("""
+    H.ok("v/input-default-not-in-option", hasError(validateSrc("""
         flow "t" { input { e: option ["a","b"] default "zzz" } steps { } }
     """), "INPUT_DEFAULT_NOT_IN_OPTION"))
     H.ok("v/retry-max-invalid", hasError(validateSrc("""
