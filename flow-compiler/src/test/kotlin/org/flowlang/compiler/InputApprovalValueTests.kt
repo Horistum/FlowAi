@@ -141,6 +141,7 @@ class InputApprovalValueTests {
         val ambiguousSecret = MapLiteralNode(entries = mapOf("a" to SecretRefNode(name = "TOKEN, b: 2")))
         reject(document(input("map", ambiguousSecret)), "INPUT_DEFAULT_UNSUPPORTED")
         val invalidMessages = listOf(text("Review \${value}"),
+            TemplateStringNode(parts = listOf(text("$"), text(""), text("{value}"))),
             TemplateStringNode(parts = listOf(BinaryExpressionNode(operator = "+", left = NumberLiteralNode(value = 1.0), right = NumberLiteralNode(value = 2.0)))),
             TemplateStringNode(parts = listOf(text("literal \${value}"), ReferenceNode(path = listOf("value")))))
         invalidMessages.forEach { message ->

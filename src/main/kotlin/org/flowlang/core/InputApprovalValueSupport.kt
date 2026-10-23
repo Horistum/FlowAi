@@ -72,11 +72,23 @@ internal object InputApprovalValueSupport {
 
     private fun messageIsRepresentable(value: ExpressionNode): Boolean = when (value) {
         is StringLiteralNode -> !value.value.contains("\${")
-        is TemplateStringNode -> value.parts.isNotEmpty() && value.parts.all { part ->
-            when (part) {
-                is StringLiteralNode -> !part.value.contains("\${")
-                is ReferenceNode -> part.path.isNotEmpty() && part.path.all(::identifier)
-                else -> false
+        is TemplateStringNode -> {
+            var literalEndsWithDollar = false
+            value.parts.isNotEmpty() && value.parts.all { part ->
+                when (part) {
+                    is StringLiteralNode -> {
+                        // Adjacent literal parts render as one string, including empty parts.
+                        val supported = !part.value.contains("\${") &&
+                            !(literalEndsWithDollar && part.value.startsWith("{"))
+                        if (part.value.isNotEmpty()) literalEndsWithDollar = part.value.endsWith("$")
+                        supported
+                    }
+                    is ReferenceNode -> {
+                        literalEndsWithDollar = false
+                        part.path.isNotEmpty() && part.path.all(::identifier)
+                    }
+                    else -> false
+                }
             }
         }
         else -> false
