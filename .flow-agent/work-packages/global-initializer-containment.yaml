@@ -49,6 +49,6 @@ documentationToUpdate:
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml
 validation:
-  status: pending
+  status: preliminary-local-validation-passed-current-revision-ci-required
   requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
   preservedChecks: Module isolation and adapter runtime certification.

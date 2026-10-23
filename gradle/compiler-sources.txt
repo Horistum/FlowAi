@@ -19,6 +19,7 @@ org/flowlang/core/FlowAvailabilityAnalyzer.kt
 org/flowlang/core/FlowAvailabilityBudget.kt
 org/flowlang/core/FlowAvailabilityJoins.kt
 org/flowlang/core/FlowAvailabilityModel.kt
+org/flowlang/core/GlobalVariableInitializerSupport.kt
 org/flowlang/effects/CanonicalIntentEffectAuthority.kt
 org/flowlang/effects/ModuleEffectCanonicalizer.kt
 org/flowlang/identity/CollisionSafeIdentityAuthority.kt

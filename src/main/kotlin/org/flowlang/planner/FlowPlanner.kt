@@ -6,6 +6,7 @@ import org.flowlang.ast.*
 import org.flowlang.controls.PlanningControlAuthority
 import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.DataOperationPayloadSupport
+import org.flowlang.core.GlobalVariableInitializerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityAnalyzer
 import org.flowlang.core.FlowAvailabilityState
@@ -73,6 +74,7 @@ class FlowPlanner(registry: ModuleCatalog) {
         workflowIdentity: FlowWorkflowIdentity = FlowWorkflowIdentity.Main,
         nodeIdNamespace: String? = null
     ): FlowPlanningResult {
+        GlobalVariableInitializerSupport.requireSupported(document)
         availability.requireDirectPlanningSafe()
         val ctx = Ctx(
             inputNames = document.flow.input.map { it.name }.toSet(),

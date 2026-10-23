@@ -3,6 +3,10 @@
 Action-local result handler rules currently fail compilation explicitly; see the
 [action result handler admission and migration contract](docs/ACTION_RESULT_HANDLER_CONTAINMENT.md).
 
+Global `vars` declarations also fail compilation until initialization and value
+lifetime have a canonical contract; see the
+[global initializer admission boundary](docs/GLOBAL_VARIABLE_INITIALIZER_CONTAINMENT.md).
+
 Availability analysis has deterministic compiler resource budgets; see
 [availability analysis limits and rejection behavior](docs/AVAILABILITY_ANALYSIS_LIMITS.md).
 

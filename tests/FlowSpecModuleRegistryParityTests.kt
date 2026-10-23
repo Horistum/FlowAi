@@ -22,13 +22,16 @@ fun descriptorRegistryParityTests() {
             val report = validator.validate(document)
             val expectedCodes = if (file == "api-sync.flow") {
                 setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "DATA_OPERATION_PAYLOAD_UNSUPPORTED")
+            } else if (file in setOf("complex-devops-flow.flow", "deploy-with-approval.flow")) {
+                setOf("ACTION_RESULT_HANDLER_UNSUPPORTED", "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED")
             } else setOf("ACTION_RESULT_HANDLER_UNSUPPORTED")
             H.ok("mod-parity/$file/unsupported-payload", !report.valid &&
                 report.issues.filter { it.level == "error" }.map { it.code }.toSet() == expectedCodes)
             H.eq("mod-parity/$file/rejection-parity", report,
                 FrontendCompilerComposition.flowValidator().validate(document))
             val failure = runCatching { planner.plan(document) }.exceptionOrNull()
-            H.ok("mod-parity/$file/no-plan", failure is org.flowlang.core.UnsupportedActionResultHandlerException)
+            H.ok("mod-parity/$file/no-plan", if (document.flow.vars.isNotEmpty()) failure is org.flowlang.core.UnsupportedGlobalVariableInitializerException
+                else failure is org.flowlang.core.UnsupportedActionResultHandlerException)
         } catch (error: Exception) {
             H.ok("mod-parity/$file :: ${error.message}", false)
         }

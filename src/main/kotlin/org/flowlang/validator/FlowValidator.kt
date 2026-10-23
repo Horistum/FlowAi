@@ -3,6 +3,7 @@ package org.flowlang.validator
 import org.flowlang.ast.*
 import org.flowlang.core.ActionResultHandlerSupport
 import org.flowlang.core.DataOperationPayloadSupport
+import org.flowlang.core.GlobalVariableInitializerSupport
 import org.flowlang.core.FlowAvailabilityAnalysis
 import org.flowlang.core.FlowAvailabilityLimitException
 import org.flowlang.core.FlowAvailabilityAnalyzer
@@ -88,6 +89,9 @@ class FlowValidator(
         }
 
         // vars / systems expressions reference inputs+vars+systems
+        GlobalVariableInitializerSupport.rejections(document).forEach {
+            issues += err(GlobalVariableInitializerSupport.CODE, it.message, it.sourceLocation)
+        }
         document.flow.vars.forEach { checkExpr(it.value, scope, "auto", null, issues) }
 
         val systemNames = mutableSetOf<String>()
