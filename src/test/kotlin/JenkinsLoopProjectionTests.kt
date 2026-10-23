@@ -69,7 +69,7 @@ class JenkinsLoopProjectionTests {
             .replace("} -> successorCheckout", "} -> successorCheckout }")
         assertEquals(SupportLevel.SUPPORTED, scoped(nested).features["loops.dynamic"])
         assertEquals(SupportLevel.UNSUPPORTED, scoped(nested).dynamicLoops)
-        val dynamic = source.replace("  systems {", "  vars { items: [\"selected\"] }\n  systems {")
+        val dynamic = source.replace("  systems {", "  input { items: list required }\n  systems {")
             .replace("[\"selected\", \"selected\", \"alternate\"]", "items")
         assertEquals(declared, scoped(dynamic))
         assertEquals(declared, scoped(File("flow-adapter-jenkins/src/runtimeTest/retry-success.flow").readText()))

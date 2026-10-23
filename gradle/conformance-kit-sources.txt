@@ -87,6 +87,7 @@ org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/GitHubActionsConditionRuntimeCertification.kt
 org/flowlang/conformance/GitHubConditionCompositionFixture.kt
 org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
+org/flowlang/conformance/GlobalVariableInitializerConformanceChecks.kt
 org/flowlang/conformance/HumanApprovalChangeControlBaseline.kt
 org/flowlang/conformance/HumanApprovalChangeControlFalsification.kt
 org/flowlang/conformance/IncidentRemediationBaseline.kt

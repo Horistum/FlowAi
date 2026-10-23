@@ -14,11 +14,6 @@ flow "deploy-with-approval" {
     version: text required
   }
 
-  vars {
-    imageName: "${app}:${version}"
-    namespace: "${app}-${environment}"
-  }
-
   systems {
     system "standard" {
       type: standard
@@ -49,7 +44,7 @@ flow "deploy-with-approval" {
     } -> tests
 
     docker.build registry {
-      image: imageName
+      image: "${app}:${version}"
       path: "."
     } -> image
 
@@ -62,7 +57,7 @@ flow "deploy-with-approval" {
 
     kubernetes.deploy cluster {
       app: app
-      namespace: namespace
+      namespace: "${app}-${environment}"
       image: image.tag
     } -> deployResult
 

@@ -1,0 +1,54 @@
+version: AR-A03
+name: Global variable initializer containment
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests the next roadmap correction after merging PR 246.
+  predecessorPullRequest: 246
+  mergedMain: 73118d2479c72dc2ebd638912f07b5004161db2a
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-03)
+invariant: A Flow document containing global variable initializers cannot produce an accepted compilation or execution plan while those definitions have no canonical representation.
+architecturePurpose: Prevent loss of authored initialization meaning before graph authorization without inventing evaluation order, cycle handling or value lifetime.
+scope:
+- Share one declaration admission rule between Flow validation and direct planning.
+- Reject every nonempty flow.vars list, including unused or shadowed definitions; an empty block remains accepted.
+- Preserve parsing, inspectable rejected ASTs and independent validation diagnostics.
+- Cover audit mutations, task parameters, declaration order, cycles, shadowing, failure regions and independent compilation boundaries.
+- Retain accepted input and local set behavior and verify their graph distinctions.
+nonGoals:
+- No initialization evaluation, constant substitution, dead-variable elimination or typed global value contract.
+- No adapter changes, support promotion, schema version change or signed portfolio expansion.
+- No claim that A-03 variable execution semantics are implemented; A-05 and A-06 remain separate.
+ownershipBoundary:
+  core: Owns the shared unsupported declaration boundary.
+  adapters: Consume accepted graphs and gain no new capability.
+  conformance: Proves rejection before authorization and preservation of supported alternatives.
+architectureChecks:
+- Neutral AST-only guard with no adapter dependencies or new expression walker.
+- Declaration-level rejection intentionally avoids guessing initialization or shadowing semantics.
+- Original audit and authored examples remain immutable evidence.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/core/GlobalVariableInitializerSupport.kt
+- src/main/kotlin/org/flowlang/validator/FlowValidator.kt
+- src/main/kotlin/org/flowlang/planner/FlowPlanner.kt
+- flow-compiler/src/test/kotlin/org/flowlang/compiler/GlobalVariableInitializerTests.kt
+- src/test/kotlin/GlobalVariableInitializerContainmentTests.kt
+- src/main/kotlin/org/flowlang/conformance/GlobalVariableInitializerConformanceChecks.kt
+testsToAddOrUpdate:
+- The original true/false initializer pair is rejected by compilation, validation and direct planning.
+- Unused, shadowed, cyclic, forward and backward initializers cannot bypass containment.
+- Task parameters, templates, nested and failure regions remain rejected without target assumptions.
+- Empty declarations, input references and existing local set distinctions remain accepted.
+- Sequential compilation does not leak declarations between workflows or requests.
+conformanceToAddOrUpdate:
+- Global declaration rejection, direct planner rejection and accepted input graph preservation.
+documentationToUpdate:
+- docs/GLOBAL_VARIABLE_INITIALIZER_CONTAINMENT.md
+- .flow-agent/reports/global-initializer-containment.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+validation:
+  status: preliminary-local-validation-passed-current-revision-ci-required
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance]
+  preservedChecks: Module isolation and adapter runtime certification.

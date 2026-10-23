@@ -76,3 +76,6 @@ checks:
   - architecture-recovery.language.data-payloads-rejected-before-authorization
   - architecture-recovery.language.data-payloads-direct-planner-rejection
   - architecture-recovery.language.empty-data-payload-graph-preservation
+  - architecture-recovery.language.global-initializers-rejected-before-authorization
+  - architecture-recovery.language.global-initializers-direct-planner-rejection
+  - architecture-recovery.language.input-default-graph-preservation

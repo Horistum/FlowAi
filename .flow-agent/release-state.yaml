@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 119
+stateVersion: 120
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -715,5 +715,23 @@ recoveryDataOperationPayloadContainment:
   dataPayloadContainment: true
   canonicalDataPayloadSupport: false
   nextAuditFinding: A-03
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryGlobalVariableInitializerContainment:
+  candidate: AR-A03
+  status: candidate
+  workPackage: .flow-agent/work-packages/global-initializer-containment.yaml
+  report: .flow-agent/reports/global-initializer-containment.md
+  predecessorMain: 73118d2479c72dc2ebd638912f07b5004161db2a
+  auditFinding: A-03
+  validation: preliminary-local-validation-passed-current-revision-ci-required
+  localPythonTests: 257
+  localNewCompilerTests: 7
+  localNewIntegrationTests: 8
+  fullSuiteEvidence: Required in the final pull request validation record.
+  globalDeclarationContainment: true
+  canonicalGlobalInitializationSupport: false
+  nextAuditFinding: A-06
   signedPortfolioExpanded: false
   supportPromotion: false

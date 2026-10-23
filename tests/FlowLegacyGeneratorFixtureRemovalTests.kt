@@ -73,8 +73,15 @@ class FlowLegacyGeneratorFixtureRemovalTests {
             val ast = FlowParser().parse(File(migrationDir, example))
             val validation = org.flowlang.frontend.FrontendCompilerComposition.flowValidator().validate(ast)
             assertTrue(validation.issues.any { it.code == "ACTION_RESULT_HANDLER_UNSUPPORTED" })
-            assertFailsWith<org.flowlang.core.UnsupportedActionResultHandlerException> {
-                FlowPlanner(ModuleRegistry()).plan(ast)
+            if (ast.flow.vars.isNotEmpty()) {
+                assertTrue(validation.issues.any { it.code == "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED" })
+                assertFailsWith<org.flowlang.core.UnsupportedGlobalVariableInitializerException> {
+                    FlowPlanner(ModuleRegistry()).plan(ast)
+                }
+            } else {
+                assertFailsWith<org.flowlang.core.UnsupportedActionResultHandlerException> {
+                    FlowPlanner(ModuleRegistry()).plan(ast)
+                }
             }
         }
     }

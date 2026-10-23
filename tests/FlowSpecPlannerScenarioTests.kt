@@ -93,7 +93,7 @@ fun endToEndTests() {
             H.ok("e2e/$file/handler-rejected", !rep.valid && rep.issues.any {
                 it.level == "error" && it.code == "ACTION_RESULT_HANDLER_UNSUPPORTED"
             })
-            assertHandlerPlanningRejected("e2e/$file", d)
+            assertUnsupportedSourcePlanningRejected("e2e/$file", d)
         } catch (e: Exception) {
             H.ok("e2e/$file :: ${e.message}", false)
         }
@@ -103,7 +103,7 @@ fun endToEndTests() {
         H.ok("e2e/complex/has-parallel", d.flow.steps.any { it is ParallelNode })
         H.ok("e2e/complex/has-if", d.flow.steps.any { it is IfNode })
         H.ok("e2e/complex/on-error", d.flow.errorHandler != null)
-        assertHandlerPlanningRejected("e2e/complex", d)
+        assertUnsupportedSourcePlanningRejected("e2e/complex", d)
     }
     run {
         val d = FlowParser().parse(exampleFile("api-sync.flow"))
@@ -179,15 +179,20 @@ fun roundTripTests() {
 
 fun legacyProjectionBoundaryTests() {
     for (file in listOf("build-test.flow", "complex-devops-flow.flow")) {
-        assertHandlerPlanningRejected("legacy/$file", FlowParser().parse(exampleFile(file)))
+        assertUnsupportedSourcePlanningRejected("legacy/$file", FlowParser().parse(exampleFile(file)))
     }
 }
 
-private fun assertHandlerPlanningRejected(name: String, document: FlowDocument) {
+private fun assertUnsupportedSourcePlanningRejected(name: String, document: FlowDocument) {
     val failure = runCatching { FlowPlanner(ModuleRegistry()).plan(document) }.exceptionOrNull()
-    H.ok("$name/unsupported-handler-blocks-plan",
-        failure is org.flowlang.core.UnsupportedActionResultHandlerException &&
-            failure.code == "ACTION_RESULT_HANDLER_UNSUPPORTED")
+    H.ok("$name/unsupported-source-blocks-plan",
+        if (document.flow.vars.isNotEmpty()) {
+            failure is org.flowlang.core.UnsupportedGlobalVariableInitializerException &&
+                failure.code == "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED"
+        } else {
+            failure is org.flowlang.core.UnsupportedActionResultHandlerException &&
+                failure.code == "ACTION_RESULT_HANDLER_UNSUPPORTED"
+        })
 }
 
 /* ============================ stress: many generated cases ============================ */
@@ -213,7 +218,8 @@ fun stressTests() {
     }
     for (n in 1..40) {
         val rep = validateSrc("flow \"t\" { input { base$n: text } vars { v$n: base$n } steps { } }")
-        H.ok("stress/var-scope/$n", rep.issues.none { it.level == "error" })
+        H.ok("stress/var-scope/$n", !rep.valid && rep.issues.filter { it.level == "error" }
+            .all { it.code == "GLOBAL_VARIABLE_INITIALIZER_UNSUPPORTED" })
     }
     for (n in 1..40) {
         val mid = (1..n).joinToString("-") { "§{a$it}" }
