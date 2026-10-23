@@ -45,13 +45,13 @@ internal class AvailabilityBudgetConformanceChecks(private val rootDir: File) {
                 val neutral = List(20) { "if enabled {} else {}" }.joinToString("\n")
                 file.writeText(source("if enabled { set left = \"selected\" } else { set right = \"other\" }\n" + neutral + "\n" + """
                     set joined = merge(left, right)
-                    approve manual { message: joined }
+                    approve manual { message: "${'$'}{joined}" }
                 """.trimIndent()))
                 val unit = frontend.compile(file).requireAccepted()
                 require(unit.graph.valueMerges.single().resultBinding == "joined")
                 require(unit.graph.valueMerges.single().paths.size == 2)
                 unit.authorization.requireIntegrity()
-                file.writeText(source("if enabled { set partial = \"selected\" }\n$neutral\napprove manual { message: partial }"))
+                file.writeText(source("if enabled { set partial = \"selected\" }\n$neutral\napprove manual { message: \"\${partial}\" }"))
                 val unsafe = frontend.compile(file)
                 require(unsafe is CompilationResult.Rejected)
                 require(unsafe.rejection.diagnostics.any { it.code == "VALUE_MAY_BE_UNDEFINED" })

@@ -744,10 +744,8 @@ recoveryInputApprovalValueIntegrity:
   predecessorMain: 147521a68c06f04de944b6966cf76c48fc4593ce
   auditFinding: A-06
   validation: preliminary-local-validation-passed-current-revision-ci-required
-  preliminaryLocalCompilerTests: 7
-  preliminaryLocalIntegrationTests: 8
-  candidateCompilerTests: 8
-  candidateIntegrationTests: 9
+  localNewCompilerTests: 8
+  localNewIntegrationTests: 9
   localPythonTests: 257
   newStandaloneConformanceChecks: 4
   fullSuiteEvidence: Required in the final pull request validation record.
