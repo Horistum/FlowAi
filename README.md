@@ -1,5 +1,8 @@
 # Horistum
 
+Start with the [current architecture](docs/ARCHITECTURE.md) and the
+[active-roadmap route](.flow-agent/README.md#active-roadmap-route).
+
 Action-local result handler rules currently fail compilation explicitly; see the
 [action result handler admission and migration contract](docs/ACTION_RESULT_HANDLER_CONTAINMENT.md).
 
@@ -25,7 +28,7 @@ Horistum is not a runtime executor, SDK-first platform, plugin lifecycle framewo
 
 Horistum is the current product name; the project was previously presented as **Flow AI**. This is the same project, not a fork, a new standard, or a runtime product.
 
-Existing technical names are retained deliberately: the repository remains `milank78git/FlowAi`, Kotlin packages remain `org.flowlang`, and the Flow language, Flow AST, `flow-*` modules, CLI commands and artifact formats keep their current identities. The commands below continue to use the existing toolchain. No `horistum` executable or new repository URL is introduced by this branding change.
+Existing technical names are retained deliberately: the repository retains the technical name `FlowAi`, Kotlin packages remain `org.flowlang`, and the Flow language, Flow AST, `flow-*` modules, CLI commands and artifact formats keep their current identities. The commands below continue to use the existing toolchain. No `horistum` executable or new repository URL is introduced by this branding change.
 
 Use **Horistum** for product-facing prose and keep the exact technical identifier when discussing code, formats or tooling. There is no planned requirement to rename every function, type or package. See [Product identity and retained technical names](docs/PRODUCT_IDENTITY.md) and [Responsibility-based code names](docs/CODE_NAMING.md).
 
@@ -33,21 +36,7 @@ Use **Horistum** for product-facing prose and keep the exact technical identifie
 
 Modern automation is fragmented across CI/CD systems, Kubernetes tools, workflow engines, scripts, platform-specific YAML files and internal conventions. AI can help users express automation intent, but raw AI output is unsafe unless it is normalized, validated and checked against a deterministic standard.
 
-Horistum separates the automation problem into stable layers:
-
-```text
-Human or AI intent
-  -> Standard Intent Model
-  -> Capability and safety validation
-  -> Flow AST
-  -> Flow validation
-  -> Execution Plan
-  -> Target compatibility analysis
-  -> Target manifest
-  -> Optional vendor renderer
-```
-
-The important point is that the AI does not directly generate arbitrary Jenkinsfiles, GitHub Actions workflows, Tekton pipelines or shell scripts. AI proposes intent. Horistum validates and plans. Target generators only project an already validated execution plan.
+Flow Source, Intent YAML and reviewed AI proposals enter one deterministic compiler. It validates and plans accepted meaning, constructs an authorized canonical execution graph, and exposes derived plan views. Explicitly selected adapters then pass materialization gates before producing target artifacts. AI proposals cannot bypass that boundary or define target syntax directly.
 
 <a id="what-flow-is"></a>
 
@@ -81,71 +70,20 @@ If a future change moves the project toward one of those directions, that change
 
 ## Main architecture
 
-### 1. Intent
+The [architecture guide](docs/ARCHITECTURE.md) is the current implementation narrative and module map.
 
-Intent is the user's automation goal expressed as structured data or normalized from natural language.
+- Frontends own source parsing and provenance. The shared compiler owns Intent/Flow validation, availability analysis, planning and canonical authorization.
+- The typed canonical execution graph owns represented meaning. Execution plans and public artifact views are derived from it; graph integrity does not replace source-preservation checks.
+- Canonical capabilities, effects and controls remain separate from module implementation bindings and the selected orchestration target.
+- Reference composition supplies Jenkins, GitHub Actions and Tekton providers. Materialization checks capability, control, continuity, topology and readiness for the particular plan before a provider renders.
+- Registry declarations, provider scopes, executable readiness, authenticated runtime assessments and CI composition observations are distinct claims. No target is generally supported because an example renders.
+- Scenario normalization remains heuristic. Reviewed AI proposals retain provider/request/response provenance and pass deterministic review; confidence cleanup and compatibility facade retirement remain AR-07-owned.
 
-Examples:
-
-- deploy an application,
-- run a database migration with backup and rollback,
-- renew a certificate,
-- rotate a secret,
-- run Kubernetes maintenance,
-- perform cleanup with safety constraints,
-- generate a runbook or incident workflow.
-
-Intent is not target syntax. It should not contain Jenkins-specific, GitHub-specific or Tekton-specific implementation details unless they are explicitly modeled as target constraints.
-
-### 2. Scenario packs
-
-Scenario packs are deterministic normalization guides. They help classify common automation requests, extract entities, ask clarification questions and produce a standard intent proposal.
-
-Scenario packs must remain quality-controlled. Each pack should have metadata, examples, declared capabilities and negative coverage for risky capabilities.
-
-### 3. Capability validation
-
-Capability validation checks whether the intent is safe and complete enough to lower.
-
-Examples of blocking cases:
-
-- production deployment without explicit approval,
-- database migration without backup or rollback strategy,
-- cleanup without retention or scope,
-- certificate renewal without certificate identity,
-- Kubernetes maintenance without maintenance window or dry-run expectations.
-
-### 4. Flow AST
-
-The Flow AST is a platform-neutral syntax tree. It represents the automation structure without owning execution.
-
-The AST is not the runtime. It is the standard's structured representation of the automation definition.
-
-### 5. Execution Plan
-
-The Execution Plan is the public contract between validated Flow and target projection.
-
-It preserves tasks, approvals, dependencies, conditions, loops, safety metadata, inputs, outputs and required capabilities. Target generators should consume the Execution Plan instead of reinterpreting the original intent.
-
-### 6. Target compatibility
-
-Target compatibility reports explain what each target can or cannot support.
-
-A target may be:
-
-- ready,
-- degraded,
-- blocked.
-
-For example, Jenkins may support a workflow fully, GitHub Actions may need workarounds for manual approval, and Tekton may be blocked for a feature it cannot safely express.
-
-### 7. Target manifest
-
-The target manifest is a platform-neutral projection artifact. It is the auditable bridge between the Execution Plan and optional vendor output.
-
-Renderers may emit Jenkinsfile, GitHub Actions YAML or Tekton YAML, but renderers must not re-plan intent or invent semantics.
+Unsupported authored meaning is rejected explicitly. The admission contracts linked above and the [data-operation payload boundary](docs/DATA_OPERATION_PAYLOAD_CONTAINMENT.md) describe current limits; they do not implement the rejected features.
 
 ## Repository structure
+
+Fourteen Gradle modules compile the implementation independently; see the [module ownership table](docs/ARCHITECTURE.md#actual-build-boundaries). The directories below are retained source and resource locations, not module boundaries. Sorted source manifests under `gradle/` determine each file's owner, and the root build aggregates verification and distributions.
 
 ```text
 src/main/kotlin/org/flowlang/
@@ -320,20 +258,20 @@ Every meaningful change should preserve these rules:
 - Keep source text, tests, examples, documentation and generated artifacts in English.
 - Add tests for behavior changes.
 - Add conformance vectors for public standard gates.
-- Keep the project aligned with the roadmap in `.flow-agent/roadmap.yaml`.
+- Select work through the [active-roadmap route](.flow-agent/README.md#active-roadmap-route) and preserve its existing authority boundaries.
 
 ## Development workflow
 
 Recommended workflow:
 
-1. Read `.flow-agent/release-state.yaml` and `.flow-agent/roadmap.yaml`.
-2. Select the next roadmap item.
+1. Read the agent contract, constitution and release state; follow the [active-roadmap route](.flow-agent/README.md#active-roadmap-route).
+2. Select the authorized item and create its bounded work package before implementation.
 3. Create a small branch with a clear scope.
 4. Change the smallest safe surface.
 5. Add tests before claiming behavior is fixed.
 6. Run `./gradlew clean test`.
 7. Run `./gradlew run --args="conformance"`.
-8. Update `CHANGELOG.md`.
+8. Record the bounded report and validation evidence; update release state after validation. Update release notes when release behavior changes.
 9. Open a pull request.
 10. Merge only after CI passes.
 

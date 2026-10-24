@@ -1,3 +1,8 @@
+# Navigation: this index preserves the completed pre-recovery stream handoff.
+# Follow its existing postToolchainRoadmap pointer, then that roadmap's
+# currentDecision.nextItemRoadmap, for active recovery selection.
+# Human entry: .flow-agent/README.md#active-roadmap-route.
+# Historical decisionBasis receipts below are not current implementation claims.
 project: Flow
 roadmapVersion: 30
 currentTrack: ""
