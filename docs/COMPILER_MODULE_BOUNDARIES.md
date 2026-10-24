@@ -1,5 +1,7 @@
 # Compiler-enforced module boundaries
 
+This is the **AR-03D implementation record**. File counts, validation receipts and lifecycle statements below describe that revision. For current module ownership and development navigation, use [Horistum architecture](ARCHITECTURE.md) and the [active-roadmap route](../.flow-agent/README.md#active-roadmap-route).
+
 ## Current composition (AR-03D)
 
 The build root is an aggregate, not a residual implementation module. Fourteen

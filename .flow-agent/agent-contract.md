@@ -21,7 +21,7 @@ Flow is not:
 The agent must:
 
 1. Read `.flow-agent/architecture-constitution.md` before proposing any change.
-2. Read `.flow-agent/roadmap.yaml` before selecting a development step.
+2. Read `.flow-agent/roadmap.yaml` and follow the [active-roadmap route](README.md#active-roadmap-route) through its post-toolchain handoff before selecting a development step.
 3. Read `.flow-agent/release-state.yaml` before modifying the project.
 4. Implement only the next approved roadmap item unless the user explicitly overrides it.
 5. Create a work package before changing code.

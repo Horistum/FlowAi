@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 62
+revision: 63
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,14 +25,14 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/input-approval-value-integrity.yaml"
-  decisionBasis: "PR #247 merged at 147521a68c06f04de944b6966cf76c48fc4593ce. The maintainer authorized A-06. This candidate closes input type/default/option and approval parameter admission with shared validation/direct-planning guards and lossless Intent option parsing. Preliminary local tests passed; current-revision CI remains required. A-05 architecture-entry documentation reconciliation is next; facade retirement remains AR-07-owned. AR-06 stays active, AR-07 planned and EF-09 paused."
+  correctiveWorkPackage: ".flow-agent/work-packages/architecture-entry-roadmap-reconciliation.yaml"
+  decisionBasis: "PR #248 merged at 6f8d6cefecc999be519cafc9455cdf4dbe63c5c0 with the same tree as validated head 27cfb2e3251e5b10622f7eed6f053766b00a436a. Flow CI 39965942968 and runtime CI 39965943091 passed for that head. A-06 input/approval admission is merged. The maintainer authorized the next bounded A-05 documentation correction: reconcile the architecture entry page and active-roadmap navigation with existing code and selectors. Local documentation/tooling validation passed; current-revision CI remains required. Facade retirement and AI confidence cleanup remain AR-07-owned. AR-06 stays active, AR-07 planned and EF-09 paused."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
-  activeFinding: A-06
-  disposition: input-approval-value-integrity-candidate
-  report: .flow-agent/reports/input-approval-value-integrity.md
+  activeFinding: A-05
+  disposition: architecture-entry-roadmap-reconciliation-candidate
+  report: .flow-agent/reports/architecture-entry-roadmap-reconciliation.md
   previousContainment:
     finding: A-01
     pullRequest: 243
@@ -63,16 +63,24 @@ systemAuditFollowup:
     canonicalGlobalInitializationSupport: false
   inputApprovalAdmission:
     finding: A-06
-    status: candidate-current-revision-ci-required
+    pullRequest: 248
+    mergedMain: 6f8d6cefecc999be519cafc9455cdf4dbe63c5c0
+    validatedHead: 27cfb2e3251e5b10622f7eed6f053766b00a436a
+    status: merged
     dynamicDefaultInitialization: unsupported
     newApprovalPolicyFeatures: false
+  architectureEntryDocumentation:
+    finding: A-05
+    status: candidate-current-revision-ci-required
+    remainingMigrationOwner: AR-07
+    facadeRetirement: false
   remainingGlobalVariableSupport: Typed initialization, ordering, shadowing and lifetime semantics remain unimplemented; every nonempty global declaration is rejected.
   remainingDataOperationSupport: Typed source payload lowering and value/effect semantics remain unimplemented; merged PR 246 only rejects unsupported payloads.
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
-  remainingFindings: [A-02, A-03, A-05, A-06]
-  nextRecommendedFinding: A-05
-  nextScope: Reconcile the architecture entry page and active-roadmap route with verified code; retain facade retirement and AI confidence cleanup under AR-07.
-  closureRule: A-06 admission closure requires current-revision CI and does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
+  remainingFindings: [A-02, A-03, A-05]
+  nextRecommendedFinding: null
+  nextScope: After this documentation correction is merged, select the next bounded AR-06 composition gap from current coverage. Independent GitHub workspace composition admission remains open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
+  closureRule: A-05 documentation completion does not retire facades or close AR-07 migration work. Merged A-06 admission does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:
   roadmapMilestoneCount: 8

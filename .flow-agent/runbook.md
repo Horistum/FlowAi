@@ -15,9 +15,11 @@ Read:
 - `.flow-agent/quality-gates.yaml`
 - `.flow-agent/forbidden-directions.yaml`
 
+Follow the [active-roadmap route](README.md#active-roadmap-route) into the post-toolchain and recovery documents named by their existing pointers. The root index and generated context preserve a completed earlier stream; read the selected recovery work package separately.
+
 ### 2. Select Roadmap Item
 
-Use the roadmap item with `status: next` unless explicitly instructed otherwise.
+Use the selected authority's current decision and activation gates. A `status: next` item is relevant only within the selected stream; a completed root-stream handoff must not override an active recovery decision. Read the current bounded correction before continuing the broader milestone. Do not activate AR-07 or resume EF-09 from a documentation change.
 
 ### 3. Create Work Package
 

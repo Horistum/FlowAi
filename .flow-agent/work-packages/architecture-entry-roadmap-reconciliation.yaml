@@ -43,6 +43,7 @@ expectedFilesToInspect:
 - tools/composition_coverage.py
 expectedFilesToChange:
 - docs/ARCHITECTURE.md
+- docs/COMPILER_MODULE_BOUNDARIES.md
 - README.md
 - .flow-agent/README.md
 - .flow-agent/agent-contract.md
