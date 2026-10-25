@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 122
+stateVersion: 123
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -766,19 +766,46 @@ recoveryInputApprovalValueIntegrity:
 
 recoveryArchitectureEntryDocumentation:
   candidate: AR-A05-DOCS
-  status: candidate
+  status: merged
   workPackage: .flow-agent/work-packages/architecture-entry-roadmap-reconciliation.yaml
   report: .flow-agent/reports/architecture-entry-roadmap-reconciliation.md
   predecessorMain: 6f8d6cefecc999be519cafc9455cdf4dbe63c5c0
   auditFinding: A-05
-  validation: local-documentation-and-tooling-passed-current-revision-ci-required
+  pullRequest: 249
+  mergedMain: c3f44dceae48c7cbc423e15c461e9c72548fa4bd
+  validatedHead: 017d901ce0a02ab96498bbcfa4cd2e153deca8a8
+  validatedTree: 065abbcd880f7820b21db9844cb2c201c2445fe6
+  flowCiRun: 40045474454
+  runtimeCiRun: 40045474482
+  validation: final-pr-head-and-merge-candidate-ci-passed
   localPythonTests: 257
   verifiedGradleModuleRows: 14
   rootRoadmapParsedDataUnchanged: true
   productionBehaviorChanged: false
   compatibilityFacadeRetirement: false
   remainingMigrationOwner: AR-07
-  fullSuiteEvidence: Required in the final pull request validation record.
-  nextWorkScope: Select the next bounded AR-06 composition gap from current coverage; independent GitHub workspace admission remains open.
+  fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/249
+  jvmTestsPerRevision: 2362
+  standaloneConformanceChecksPerRevision: 291
+  nextWorkScope: AR-06AE-C14 independently admits the existing GitHub workspace composition.
   signedPortfolioExpanded: false
   supportPromotion: false
+
+recoveryGitHubWorkspaceCompositionAdmission:
+  candidate: AR-06AE-C14
+  status: candidate
+  workPackage: .flow-agent/work-packages/github-workspace-composition-admission.yaml
+  report: .flow-agent/reports/github-workspace-composition-admission.md
+  predecessorMain: c3f44dceae48c7cbc423e15c461e9c72548fa4bd
+  validation: local-tooling-and-replay-regressions-passed-current-revision-ci-required
+  localPythonTests: 270
+  newPythonTests: 13
+  independentCompositionAdmission: true
+  compositionProducers: 6
+  totalCoverageProducers: 7
+  workspaceConstruct: ARTIFACTS_WORKSPACES
+  workspaceRuntimeIdentity: github-actions-jobs
+  generalValueStateContinuity: false
+  signedPortfolioExpanded: false
+  supportPromotion: false
+  fullSuiteEvidence: Required in the final pull request validation record.

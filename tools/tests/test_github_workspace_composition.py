@@ -2,13 +2,16 @@ import copy
 import json
 import pathlib
 import sys
+import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 import verify_github_workspace_composition as oracle
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 REVISION = "a" * 40
+CURRENT = dict(sourceRevision=REVISION, workflowRevision="b" * 40, runId="123", attempt="1")
 
 
 def fixture():
@@ -56,6 +59,61 @@ def fixture():
               {"id": "inner", "kind": "CONDITION", "condition": "false", "thenNodeIds": ["consumer3"], "otherwiseNodeIds": ["consumer4"]}]
     return {"flow": {"steps": tasks[:3] + [outer, tasks[-1]]}}, {"nodes": nodes, "dependencyEdges": edges,
             "workflows": [{"rootNodeIds": ["snapshot", "consumer1", "consumer2", "outer", "independent"]}]}, {"jobs": jobs}
+
+
+def native_results():
+    expected = oracle.inventory(ROOT)
+    model = oracle.bind(*fixture(), REVISION)
+    results = {name: {"result": "success", "outputs": {"inventory": json.dumps(expected)}} if name in model["selectedJobs"] else
+               {"result": "skipped", "outputs": {}} for name in oracle.BASELINES}
+    results |= {name: {"result": "success", "outputs": {}} for name in oracle.TRANSFER_MUTANTS}
+    results["guard-omission-mutant"] = {"result": "success", "outputs": {"inventory": json.dumps(expected)}}
+    results["prepare"] = {"result": "success", "outputs": {"revision": REVISION}}
+    return expected, results
+
+
+def api_jobs():
+    # Completed native job API rows, including continue-on-error builds whose
+    # original failure is asserted by the following successful falsification step.
+    steps = {"prepare": ["Bind generated transfers to executed envelope"],
+             "git_checkout_1": ["git_checkout_1", "Upload Flow workspace source", "Observe workspace bytes", "Prepare hidden-file mutant"],
+             "git_checkout_2": ["git_checkout_2", "Observe workspace bytes"],
+             "guard-omission-mutant": ["Restore Flow workspace source", "docker_build_3", "Observe workspace bytes"],
+             "missing-transfer-mutant": ["docker_build_1", "Require falsification"],
+             "hidden-file-mutant": ["Restore Flow workspace source", "Verify selective loss", "docker_build_1", "Require falsification"],
+             "docker_build_3": [], "docker_build_5": []}
+    for name in ("docker_build_1", "docker_build_2", "docker_build_4"):
+        steps[name] = ["Restore Flow workspace source", name, "Observe workspace bytes"]
+    results = native_results()[1]
+    jobs = []
+    for index, name in enumerate(sorted(steps)):
+        start = 0 if name == "prepare" else 2 if name.startswith("git_checkout_") else 4
+        jobs.append({"id": index + 1, "name": oracle.JOB_PREFIX + name, "head_sha": REVISION, "run_id": 123, "run_attempt": 1,
+                     "status": "completed", "conclusion": results[name]["result"],
+                     "started_at": f"2026-10-25T00:00:0{start}Z", "completed_at": f"2026-10-25T00:00:0{start + 1}Z",
+                     "steps": [{"name": step, "status": "completed", "conclusion": "success"} for step in steps[name]]})
+    return jobs
+
+
+def compiled_files():
+    from composition_coverage import encode
+    source, graph, manifest = fixture()
+    return {"fixture.ast.json": encode(source), "canonical-graph.json": encode(graph),
+            "github-actions.manifest.json": encode(manifest), "github-actions.yml": b"generated native projection",
+            "execution-envelope.yml": b"compiler-checked executed envelope"}
+
+
+def workspace_files():
+    from composition_coverage import encode, sha
+    expected, results = native_results()
+    model = oracle.bind(*fixture(), REVISION)
+    files = compiled_files() | {"expected.json": encode(model | {"inventory": expected, "provenance": CURRENT}),
+                                "observations.json": encode(results)}
+    assessment, authenticated = oracle.assess(files, expected, CURRENT, api_jobs())
+    files["github-jobs.json"] = encode(authenticated)
+    proof = CURRENT | assessment | {"formatVersion": 1, "status": "passed", "publicSupportPromoted": False, "portableExecution": False,
+        "files": {name: {"sha256": sha(data), "bytes": len(data)} for name, data in files.items()}}
+    return files | {"proof.json": encode(proof)}
 
 
 class WorkspaceCompositionTests(unittest.TestCase):
@@ -128,14 +186,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
             oracle.verify_observations(results, expected, REVISION, oracle.bind(*fixture(), REVISION))
 
     def results(self):
-        expected = oracle.inventory(ROOT)
-        model = oracle.bind(*fixture(), REVISION)
-        results = {name: {"result": "success", "outputs": {"inventory": json.dumps(expected)}} if name in model["selectedJobs"] else
-                   {"result": "skipped", "outputs": {}} for name in oracle.BASELINES}
-        results |= {name: {"result": "success", "outputs": {}} for name in oracle.TRANSFER_MUTANTS}
-        results["guard-omission-mutant"] = {"result": "success", "outputs": {"inventory": json.dumps(expected)}}
-        results["prepare"] = {"result": "success", "outputs": {"revision": REVISION}}
-        return expected, results
+        return native_results()
 
     def test_regular_hidden_and_binary_inventory_is_compared_in_every_baseline(self):
         expected, results = self.results()
@@ -165,6 +216,89 @@ class WorkspaceCompositionTests(unittest.TestCase):
         expected, results = self.results()
         del results["docker_build_2"]["outputs"]["inventory"]
         with self.assertRaises(ValueError): oracle.verify_observations(results, expected, REVISION, oracle.bind(*fixture(), REVISION))
+
+    def test_native_api_authenticates_all_baselines_mutants_and_preparation(self):
+        assessment, records = oracle.assess(workspace_files(), oracle.inventory(ROOT), CURRENT, api_jobs())
+        self.assertEqual(11, len(records))
+        self.assertEqual(7, sum("job" in case for case in assessment["cases"]))
+        self.assertEqual(3, sum(case.get("rejected", False) for case in assessment["cases"]))
+        self.assertEqual(2, sum(case.get("selected") is False for case in assessment["cases"]))
+
+    def authenticate(self, jobs):
+        return oracle.authenticate_jobs(jobs, native_results()[1], CURRENT, oracle.bind(*fixture(), REVISION))
+
+    def test_native_api_rejects_old_source_run_attempt_or_duplicated_identity(self):
+        for field, value in (("head_sha", "c" * 40), ("run_id", 124), ("run_attempt", 2), ("run_attempt", True), ("id", 0)):
+            for index in range(len(api_jobs())):
+                jobs = api_jobs(); jobs[index][field] = value
+                with self.subTest(field=field, index=index), self.assertRaisesRegex(ValueError, "provenance"):
+                    self.authenticate(jobs)
+        for mutation in ("omit", "duplicate", "rename", "extra", "duplicate-id"):
+            jobs = api_jobs()
+            if mutation == "omit": jobs.pop()
+            elif mutation == "duplicate": jobs.append(copy.deepcopy(jobs[0]))
+            elif mutation == "rename": jobs[0]["name"] += "-other"
+            elif mutation == "extra": jobs.append(dict(jobs[0], id=999, name=oracle.JOB_PREFIX + "unexpected"))
+            else: jobs[0]["id"] = jobs[1]["id"]
+            with self.subTest(mutation=mutation), self.assertRaisesRegex(ValueError, "inventory"):
+                self.authenticate(jobs)
+
+    def test_claimed_outputs_cannot_mask_api_failures_or_incomplete_jobs(self):
+        for name in oracle.BASELINES | oracle.MUTANTS | {"prepare"}:
+            for field, value in (("status", "in_progress"), ("conclusion", "failure"), ("conclusion", "cancelled"), ("conclusion", None)):
+                jobs = api_jobs(); next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)[field] = value
+                with self.subTest(name=name, field=field, value=value), self.assertRaisesRegex(ValueError, "outcome"):
+                    self.authenticate(jobs)
+
+    def test_native_dependency_timing_is_verified_for_consumers_and_mutants(self):
+        for name in ("docker_build_1", "docker_build_4", "missing-transfer-mutant", "guard-omission-mutant", "git_checkout_2"):
+            jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
+            job["started_at"] = "2026-10-25T00:00:00Z" if name == "git_checkout_2" else "2026-10-25T00:00:02Z"
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "ordering|preceded"):
+                self.authenticate(jobs)
+        for timestamp in ("2026-10-25T00:00:09Z", "2026-10-25T00:00:00", "invalid"):
+            jobs = api_jobs(); jobs[0]["started_at"] = timestamp
+            with self.subTest(timestamp=timestamp), self.assertRaises(ValueError): self.authenticate(jobs)
+
+    def test_successful_job_requires_observer_and_mutant_assertion_steps(self):
+        for name, step in (("prepare", "Bind generated transfers to executed envelope"),
+                           ("docker_build_1", "Observe workspace bytes"),
+                           ("hidden-file-mutant", "Require falsification"),
+                           ("missing-transfer-mutant", "Require falsification"),
+                           ("guard-omission-mutant", "docker_build_3")):
+            for mutation in ("omit", "duplicate", "failure", "skipped"):
+                jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
+                selected = next(s for s in job["steps"] if s["name"] == step)
+                if mutation == "omit": job["steps"].remove(selected)
+                elif mutation == "duplicate": job["steps"].append(copy.deepcopy(selected))
+                else: selected["conclusion"] = mutation
+                with self.subTest(name=name, mutation=mutation), self.assertRaisesRegex(ValueError, "step differs"):
+                    self.authenticate(jobs)
+        jobs = api_jobs(); next(j for j in jobs if j["name"].endswith(" / docker_build_3"))["steps"] = [{"name": "unexpected"}]
+        with self.assertRaisesRegex(ValueError, "Skipped"): self.authenticate(jobs)
+
+    def test_duplicate_nested_inventory_fields_cannot_hide_byte_loss(self):
+        expected, results = native_results()
+        results["docker_build_1"]["outputs"]["inventory"] = '{"lost":1,"lost":2}'
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            oracle.verify_observations(results, expected, REVISION, oracle.bind(*fixture(), REVISION))
+
+    def test_collector_publishes_receipted_api_bound_proof(self):
+        import composition_coverage as coverage
+        env = dict(EXPECTED_SHA=REVISION, WORKFLOW_REVISION=CURRENT["workflowRevision"], GITHUB_RUN_ID="123",
+                   GITHUB_RUN_ATTEMPT="1", GITHUB_REPOSITORY="Horistum/FlowAi", GH_TOKEN="test-token",
+                   FLOW_JOB_RESULTS=json.dumps(native_results()[1]))
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = pathlib.Path(temporary) / "evidence"
+            coverage.write_tree(directory, compiled_files())
+            with patch.dict(oracle.os.environ, env), patch.object(oracle.sys, "argv", ["oracle", "prepare", str(directory)]):
+                oracle.main()
+            with patch.dict(oracle.os.environ, env), patch.object(oracle.sys, "argv", ["oracle", "verify", str(directory)]), \
+                 patch("cross_runtime_condition_composition.api_jobs", return_value=api_jobs()):
+                oracle.main()
+            files = coverage.snapshot(directory)
+            self.assertEqual("github-workspace-composition", coverage.receipt("github-workspace-composition", files, CURRENT)["artifact"])
+            self.assertEqual(workspace_files(), files)
 
 
 if __name__ == "__main__":

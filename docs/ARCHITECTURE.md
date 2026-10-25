@@ -75,7 +75,7 @@ The `targets` command reports declarations, provider scopes and repository refer
 
 Jenkins control support is bounded by provider scopes, including finite literal loops, supported literal matches, fixed zero-delay retries and specified parallel behavior. GitHub Actions Boolean conditions and workspace transport have their own endpoint and context restrictions. Tekton has a provider without a certified native runtime portfolio. These facts do not establish general platform support or portable execution.
 
-Signed assessments and CI composition observations are separate evidence classes. The GitHub workspace experiment is not yet independently admitted into composition coverage; conditional producers, repeated-control transport and general value/state continuity remain gaps. Green examples or scenario counts cannot close AR-06.
+Signed assessments and CI composition observations are separate evidence classes. Composition coverage independently admits and replays the bounded GitHub workspace experiment against current compiler output, file bytes and same-attempt native job identities. Conditional producers, repeated-control transport and general value/state continuity remain gaps. Green examples or scenario counts cannot close AR-06.
 
 ## Admission limits and migration ownership
 
