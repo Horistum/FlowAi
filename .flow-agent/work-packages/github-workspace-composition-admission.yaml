@@ -1,0 +1,63 @@
+version: AR-06AE-C14
+name: GitHub Workspace Composition Admission
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap PR after merging PR 249.
+  predecessorPullRequest: 249
+  mergedMain: c3f44dceae48c7cbc423e15c461e9c72548fa4bd
+invariant: Workspace composition coverage requires successful same-attempt producer receipts, exact regenerated compiler inputs, source-derived byte and branch observations, and independently authenticated native job outcomes and ordering.
+architecturePurpose: Admit the existing workspace composition into the shared coverage consumer while preserving the separation between CI observations, signed certification and target support.
+scope:
+- Pin the existing workspace archive through reusable-workflow outputs and the common receipt contract.
+- Regenerate the parsed AST, canonical graph, manifest and executed envelope from the current source revision.
+- Replay regular, hidden and binary file inventories, selected/skipped consumers and all three existing native mutants.
+- Authenticate preparation, baseline and mutant jobs against the same-run/attempt GitHub API, including source identity, completion and ordering.
+- Reconcile the bounded GitHub observation on ARTIFACTS_WORKSPACES without changing signed portfolio bytes.
+nonGoals:
+- No Core or adapter semantics, target-specific language, new runtime family or new native scenario.
+- No general VALUE/STATE transport, conditional producers, repeated-control workspace transfer or filesystem metadata fidelity.
+- No signed portfolio expansion, support promotion, portability claim, AR-06 closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  core: Existing canonical meaning and availability remain unchanged.
+  adapters: Existing workspace projection and native envelope remain authoritative.
+  conformance: Admit and independently replay bounded CI observations with explicit provenance and remaining limits.
+architectureChecks:
+- No product dependency on GitHub API or CI harnesses.
+- Native GitHub job identity must not be represented by a fictitious container image.
+- A published PASS, changed hash manifest or successful job alone cannot replace independent replay.
+- Preserve every existing composition producer and runtime certification gate.
+expectedFilesToInspect:
+- src/main/kotlin/org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
+- src/test/kotlin/GitHubWorkspaceCompositionTests.kt
+- tools/cross_runtime_condition_composition.py
+- tools/condition_composition_oracle.py
+expectedFilesToChange:
+- tools/composition_coverage.py
+- tools/verify_github_workspace_composition.py
+- tools/tests/test_composition_coverage.py
+- tools/tests/test_github_workspace_composition.py
+- .github/workflows/github-workspace-composition.yml
+- .github/workflows/adapter-runtime-check.yml
+- docs/validation/composition-coverage.md
+- docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md
+- docs/ARCHITECTURE.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+expectedFilesToAdd:
+- .flow-agent/reports/github-workspace-composition-admission.md
+testsToAddOrUpdate:
+- Exact workspace receipt admission rejects changed bytes, extra files, stale revisions/attempts and absent producer outputs.
+- Fresh compiler input mismatch and forged source, graph, manifest, observations or asserted proof cases fail replay.
+- Native API failures, missing/duplicate jobs, incorrect selection, stale identity and reversed producer-consumer timing are rejected.
+- Existing transfer mutants and guard-omission execution must remain independently falsifiable.
+- Reconciliation adds only bounded GitHub ARTIFACTS_WORKSPACES evidence and retains all missing VALUE/STATE and other-target rows.
+conformanceToAddOrUpdate:
+- Extend the existing CI composition replay consumer with the existing workspace producer and current compiler entrypoint.
+- Preserve all standalone checks and signed portfolio assessments; no public standard contract changes.
+validation:
+  local: Existing Python suite, targeted negative replay tests, Flow Agent structure/context, YAML and diff checks.
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, adapter-composition-coverage, adapter-certification-portfolio, github-workspace-composition]
+  preservedChecks: All module-isolation and native runtime gates.
+  finalEvidence: Record immutable final-head and merge-candidate CI results in the PR without a subsequent source commit.
