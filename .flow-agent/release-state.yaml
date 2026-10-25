@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 121
+stateVersion: 122
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -738,20 +738,47 @@ recoveryGlobalVariableInitializerContainment:
 
 recoveryInputApprovalValueIntegrity:
   candidate: AR-A06
-  status: candidate
+  status: merged
   workPackage: .flow-agent/work-packages/input-approval-value-integrity.yaml
   report: .flow-agent/reports/input-approval-value-integrity.md
   predecessorMain: 147521a68c06f04de944b6966cf76c48fc4593ce
+  pullRequest: 248
+  mergedMain: 6f8d6cefecc999be519cafc9455cdf4dbe63c5c0
+  validatedHead: 27cfb2e3251e5b10622f7eed6f053766b00a436a
+  validatedTree: 0a6b83e2f74c6a6885da8e75c9e48532d959d630
+  flowCiRun: 39965942968
+  runtimeCiRun: 39965943091
   auditFinding: A-06
-  validation: preliminary-local-validation-passed-current-revision-ci-required
+  validation: final-pr-head-and-merge-candidate-ci-passed
   localNewCompilerTests: 8
   localNewIntegrationTests: 9
   localPythonTests: 257
   newStandaloneConformanceChecks: 4
-  fullSuiteEvidence: Required in the final pull request validation record.
+  fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/248
+  jvmTestsPerRevision: 2362
+  standaloneConformanceChecksPerRevision: 291
   inputApprovalAdmissionContract: true
   dynamicDefaultInitialization: false
   newApprovalPolicyFeatures: false
   nextAuditFinding: A-05
+  signedPortfolioExpanded: false
+  supportPromotion: false
+
+recoveryArchitectureEntryDocumentation:
+  candidate: AR-A05-DOCS
+  status: candidate
+  workPackage: .flow-agent/work-packages/architecture-entry-roadmap-reconciliation.yaml
+  report: .flow-agent/reports/architecture-entry-roadmap-reconciliation.md
+  predecessorMain: 6f8d6cefecc999be519cafc9455cdf4dbe63c5c0
+  auditFinding: A-05
+  validation: local-documentation-and-tooling-passed-current-revision-ci-required
+  localPythonTests: 257
+  verifiedGradleModuleRows: 14
+  rootRoadmapParsedDataUnchanged: true
+  productionBehaviorChanged: false
+  compatibilityFacadeRetirement: false
+  remainingMigrationOwner: AR-07
+  fullSuiteEvidence: Required in the final pull request validation record.
+  nextWorkScope: Select the next bounded AR-06 composition gap from current coverage; independent GitHub workspace admission remains open.
   signedPortfolioExpanded: false
   supportPromotion: false

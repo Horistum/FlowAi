@@ -1,0 +1,71 @@
+version: AR-A05-DOCS
+name: Architecture entry and active-roadmap reconciliation
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml
+authorization:
+  source: Maintainer requests the next roadmap step after merging PR 248.
+  predecessorPullRequest: 248
+  mergedMain: 6f8d6cefecc999be519cafc9455cdf4dbe63c5c0
+  finding: docs/audits/2026-10-20-system-roadmap/README.md (A-05)
+objective: Make the architecture entry page and development navigation describe verified production owners and the existing active recovery route.
+architecturePurpose: Remove conflicting architectural guidance without changing compiler semantics, adapter claims or roadmap authority.
+universalInvariant: Current documentation must distinguish canonical meaning, derived plan views, adapter implementation and bounded evidence; the active work item is selected through existing roadmap authorities.
+scope:
+  include:
+  - Rewrite the stale architecture entry page against Gradle ownership, compiler and materialization code.
+  - Align the README architecture summary and development instructions with that entry page.
+  - Document one navigation route through the historical root index, post-toolchain selection and recovery roadmap.
+  - Reconcile merged A-06 admission evidence and record the bounded A-05 documentation candidate.
+  exclude:
+  - Production code, build dependencies, public schemas, language semantics and adapter support changes.
+  - AI confidence changes, compatibility facade retirement, AR-07 activation and EF-09 resumption.
+  - Rewriting historical audit observations or completed milestone receipts.
+ownershipBoundary:
+  coreMayChange: []
+  adapterMayChange: []
+  conformanceMayChange: []
+  documentation: Describes existing source and evidence owners; cannot authorize execution or activate a stream.
+architectureChecks:
+- No new roadmap parser, selector or independent current-state authority.
+- Actual Gradle modules and source manifests take precedence over conceptual future module names.
+- Public target claims remain bounded by provider and authenticated evidence scope.
+- Current AI review/provenance is acknowledged while heuristic confidence and migration debt remain AR-07-owned.
+expectedFilesToInspect:
+- settings.gradle.kts
+- gradle/production-module.gradle.kts
+- gradle/*-sources.txt
+- src/main/kotlin/org/flowlang/compiler/
+- src/main/kotlin/org/flowlang/frontend/
+- src/main/kotlin/org/flowlang/materialization/
+- src/main/kotlin/org/flowlang/distribution/reference/
+- tools/flow_agent_lifecycle.py
+- tools/composition_coverage.py
+expectedFilesToChange:
+- docs/ARCHITECTURE.md
+- docs/COMPILER_MODULE_BOUNDARIES.md
+- README.md
+- .flow-agent/README.md
+- .flow-agent/agent-contract.md
+- .flow-agent/runbook.md
+- .flow-agent/roadmap.yaml
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+expectedFilesToAdd:
+- .flow-agent/reports/architecture-entry-roadmap-reconciliation.md
+testsToAddOrUpdate: []
+conformanceToAddOrUpdate: []
+testRationale: Documentation and navigation only; run existing behavioral and roadmap checks rather than add tests of prose.
+validationPlan:
+- Run existing Python tests, Flow Agent validation and context generation before updating release state.
+- Check changed Markdown links and source anchors, module inventory and roadmap-route consistency against the checkout.
+- Confirm production, tests, schemas, build inputs and historical audit bytes remain unchanged.
+- Require exact-head and synthetic merge-candidate CI and preserve runtime certification checks.
+- Record final immutable-head CI evidence in the PR rather than create an untested metadata-only follow-up commit.
+riskAssessment:
+  risks:
+  - Turning historical state or bounded adapter observations into an unsupported current capability claim.
+  - Presenting source package directories as independently compiled modules.
+  mitigations:
+  - Link directly to production owners and distinguish module manifests from source layout.
+  - Preserve existing roadmap selectors, historical receipts and all remaining semantic/migration gaps.
