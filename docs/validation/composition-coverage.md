@@ -39,7 +39,7 @@ signatures or additions to the signed portfolio.
 | `loop-composition-runtime` | Jenkins | Loops | Finite literal string iteration, lexical item bindings and fixed zero-delay retry in both nesting directions |
 | `match-composition-runtime` | Jenkins | Match | Inert literal string sources and exclusive literal Boolean cases, composed with fixed zero-delay retry and finite string iteration |
 | `parallel-composition-runtime` | Jenkins | Parallelism | Top-level groups, branch-local sequences, workspace routing and authored failure policy |
-| `github-workspace-composition` | GitHub Actions | Artifacts/workspaces | Unconditional producer, single-source fan-out, literal nested consumer guards and regular-file bytes; no general VALUE/STATE transfer |
+| `github-workspace-composition` | GitHub Actions | Artifacts/workspaces | Unconditional and condition-scoped producers, single-source fan-out, literal nested guards and regular-file bytes; no branch escape or general VALUE/STATE transfer |
 
 AR-06AE-C10 extends the existing loop producer to distinguish retry around a loop
 from retry inside each iteration. The first replays completed iterations on a new
@@ -90,6 +90,16 @@ composition archives retain their mandatory image digests. Older workspace
 archives with nested provenance and uppercase `PASS` are not admitted; regenerate
 the complete workflow on the current revision. This is a CI evidence format, not
 a product artifact or signed portfolio schema change.
+
+AR-06AE-C15 extends that same producer with selected and skipped conditional
+producers. Source-derived branch paths must establish producer availability for
+each consumer; equal predicate text in separate branches is insufficient. The
+oracle checks three distinct producer artifacts, thirteen baseline jobs and four
+mutants. The new mutant removes a skipped producer's guard and must actually
+checkout, upload and observe bytes before replay rejects the extra execution.
+Same-attempt API authentication now covers eighteen jobs including preparation.
+All earlier baseline jobs and mutants remain required. The primary matrix row,
+archive format, seven-producer receipt inventory and signed portfolio stay unchanged.
 
 The complete per-producer claims and limitations accompany the published report.
 Every other target/construct cell remains `NO_COMPOSITION_EVIDENCE`, including

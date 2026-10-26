@@ -45,6 +45,7 @@ expectedFilesToChange:
 - .github/workflows/github-workspace-composition.yml
 - docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md
 - docs/validation/composition-coverage.md
+- docs/ARCHITECTURE.md
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml
 expectedFilesToAdd:
