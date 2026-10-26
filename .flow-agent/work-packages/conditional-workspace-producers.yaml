@@ -1,0 +1,65 @@
+version: AR-06AE-C15
+name: Conditional Workspace Producers
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap PR after merging PR 250.
+  predecessorPullRequest: 250
+  mergedMain: 5b78609dd11c7538d296511c5d0f973b84368399
+invariant: A workspace consumer can execute only within its producer's lexical condition branch, after that producer succeeds, with one explicit source and an intact native transfer.
+architecturePurpose: Compose existing Core availability, Boolean condition and workspace endpoint contracts without fixture-shaped applicability or new universal semantics.
+scope:
+- Admit condition-scoped producers when their branch ancestry is a prefix of the consumer's branch ancestry.
+- Keep one upload per producer/channel, guarded checkout/upload and guarded download/build jobs.
+- Recheck native endpoint guards, consumer implication and ordering at the direct renderer boundary.
+- Extend the existing native experiment with selected and skipped conditional producers and nested consumers.
+- Require an independently observed producer-guard omission mutant in addition to every existing mutant.
+- Regenerate and independently replay the extended archive through the existing common coverage consumer.
+nonGoals:
+- No Core semantics, public syntax/schema, new runtime or signed portfolio expansion.
+- No sibling-branch escape, logical implication across separately authored branches, merged workspace sources or repeated-control transport.
+- No producer-failure experiment, general VALUE/STATE transport or filesystem metadata fidelity claim.
+- No target-wide support promotion, portable execution, AR-06 closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  core: Existing canonical availability and explicit dependency relations stay authoritative.
+  adapters: Own conditional endpoint applicability, native job guards and artifact transfer.
+  conformance: Independently derive selection, bytes, native identities and falsification from current source and runtime observations.
+architectureChecks:
+- Applicability is a lexical producer/consumer contract independent of fixture names or task counts.
+- Native scheduling must not equate skipped workspace production with available data.
+- Existing unconditional reference bytes, signed portfolio files and all prior native gates remain intact.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedSupportContracts.kt
+- src/main/kotlin/org/flowlang/adapters/continuity/BuiltInAdapterContinuityScopedSupport.kt
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubConditionProjectionScope.kt
+- src/main/kotlin/org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
+- src/test/kotlin/GitHubWorkspaceCompositionTests.kt
+- src/test/kotlin/GitHubActionsWorkspaceContinuityTests.kt
+- src/test/kotlin/AdapterExecutableReferencePromotionTests.kt
+- adapters/portfolio/executable-reference-promotions.yaml
+- tools/verify_github_workspace_composition.py
+- tools/tests/test_github_workspace_composition.py
+- tools/tests/test_composition_coverage.py
+- .github/workflows/github-workspace-composition.yml
+- docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md
+- docs/validation/composition-coverage.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+expectedFilesToAdd:
+- .flow-agent/reports/conditional-workspace-producers.md
+testsToAddOrUpdate:
+- Same-branch and nested consumers with literal/Boolean input producers, alternate cardinalities and independent paths.
+- Reject branch escape, sibling branches, unsupported controls, unavailable inputs and missing source/ordering.
+- Direct-manifest guard deletion/substitution and weakened consumer guards fail closed.
+- Source, graph, transfer, native outcome, timing and rehashed archive mutations cannot forge conditional-producer evidence.
+- Selected producer/consumers execute; unselected producer/consumers skip; omitted producer guard is observed and rejected.
+conformanceToAddOrUpdate:
+- Extend the current workspace native fixture and its independent composition replay without expanding signed certification.
+- Preserve standalone conformance and both materially different existing runtime families.
+validation:
+  local: Full Python suite, focused negative regressions, Flow Agent structure/context, YAML and diff checks; JVM tests when the required toolchain is available.
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, adapter-composition-coverage, adapter-certification-portfolio, github-workspace-composition]
+  preservedChecks: All module-isolation and native runtime gates.
+  finalEvidence: Record final immutable-head and merge-candidate CI results in the PR without a later source commit.
