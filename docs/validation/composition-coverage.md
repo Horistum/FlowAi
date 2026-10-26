@@ -8,10 +8,10 @@ The `targets` CLI remains a repository reference/declaration report.
 
 ## Admission and replay
 
-All six producers must succeed in the same workflow run and attempt. Their job
+All seven producers (six composition archives and the signed portfolio) must succeed in the same workflow run and attempt. Their job
 outputs pin the source revision, workflow revision, run, attempt and SHA-256 of
 the archive entrypoint. The consumer checks the exact producer inventory, every
-file hash/size, runtime image identity and scope flags before freezing the input
+file hash/size, runtime identity and scope flags before freezing the input
 bytes. It rejects missing/extra files, stale evidence, ambiguous JSON, symbolic
 or special files and exceeded file/inventory budgets.
 
@@ -22,7 +22,7 @@ source contents and their changes remain part of the evidence. Native observatio
 envelopes and deliberate mutants are regenerated using the existing independent
 oracles. Those oracles replay the archived runtime observations and compare their
 derived cases with the published cases. An authored `passed` field cannot replace
-this replay. Cross-runtime conditions also recheck native GitHub job results
+this replay. Cross-runtime conditions and workspace transfer also recheck native GitHub job results
 against the same-attempt GitHub API.
 
 This consumer starts no runtime. The existing producer jobs still execute every
@@ -39,6 +39,7 @@ signatures or additions to the signed portfolio.
 | `loop-composition-runtime` | Jenkins | Loops | Finite literal string iteration, lexical item bindings and fixed zero-delay retry in both nesting directions |
 | `match-composition-runtime` | Jenkins | Match | Inert literal string sources and exclusive literal Boolean cases, composed with fixed zero-delay retry and finite string iteration |
 | `parallel-composition-runtime` | Jenkins | Parallelism | Top-level groups, branch-local sequences, workspace routing and authored failure policy |
+| `github-workspace-composition` | GitHub Actions | Artifacts/workspaces | Unconditional producer, single-source fan-out, literal nested consumer guards and regular-file bytes; no general VALUE/STATE transfer |
 
 AR-06AE-C10 extends the existing loop producer to distinguish retry around a loop
 from retry inside each iteration. The first replays completed iterations on a new
@@ -63,6 +64,32 @@ Mutants substitute the default, flatten retry, repeat successful bodies, alter
 iteration order/multiplicity or swallow failure. All previous match observations
 remain required. The same admission/replay consumer publishes the additional
 cases on the primary `MATCH` row; no new producer or signed assessment is added.
+
+AR-06AE-C14 admits the existing GitHub workspace experiment. Its reusable workflow
+exposes the collector's receipt; the consumer requires that receipt alongside all
+previous producers. The current compiler regenerates the parsed AST, graph,
+manifest, projection and compiler-checked execution envelope with the exact source
+revision. The expected text, binary and hidden-file inventory comes from that
+checkout, not from an assertion in the archive.
+
+The independent replay verifies selected and skipped consumers, file hashes and
+sizes, the missing-transfer and hidden-file failures, and execution of the
+guard-omission mutant. It queries the same-attempt GitHub API again and checks the
+exact native job inventory, source/run/attempt identities, final outcomes,
+required observer/falsification steps and preparation/producer-before-consumer
+timing. Rehashed archives, claimed `passed` values and changed case lists cannot
+replace these checks. GitHub runners and job-output observations remain trusted;
+the successful falsification step asserts the original failed build even though
+GitHub reports its `continue-on-error` step as successful.
+
+Workspace proof format v1 uses flat source/workflow/run/attempt provenance and
+`runtimeKind: github-actions-jobs`, with five compiler inputs, `expected.json`,
+`observations.json`, `github-jobs.json` and `proof.json`. Its native job identities
+replace a container-image identity for this producer only. Existing Jenkins
+composition archives retain their mandatory image digests. Older workspace
+archives with nested provenance and uppercase `PASS` are not admitted; regenerate
+the complete workflow on the current revision. This is a CI evidence format, not
+a product artifact or signed portfolio schema change.
 
 The complete per-producer claims and limitations accompany the published report.
 Every other target/construct cell remains `NO_COMPOSITION_EVIDENCE`, including

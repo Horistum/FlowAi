@@ -1,6 +1,10 @@
 name: GitHub workspace composition
 on:
   workflow_call:
+    outputs:
+      receipt:
+        description: Same-attempt workspace archive receipt
+        value: ${{ jobs.collect.outputs.receipt }}
 permissions:
   contents: read
 jobs:
@@ -310,6 +314,11 @@ jobs:
           test "$OUTCOME" = failure
 
   collect:
+    outputs:
+      receipt: ${{ steps.receipt.outputs.receipt }}
+    permissions:
+      contents: read
+      actions: read
     needs: [prepare, git_checkout_1, docker_build_1, docker_build_2, docker_build_3, docker_build_4, docker_build_5, git_checkout_2, missing-transfer-mutant, hidden-file-mutant, guard-omission-mutant]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
@@ -328,10 +337,17 @@ jobs:
           FLOW_JOB_RESULTS: ${{ toJSON(needs) }}
           EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           WORKFLOW_REVISION: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
           python3 -m unittest discover -s tools/tests -p 'test_github_workspace_composition.py' -v
           python3 tools/verify_github_workspace_composition.py verify "$RUNNER_TEMP/workspace-evidence"
+      - name: Pin Workspace Composition Proof
+        id: receipt
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+        run: python3 tools/composition_coverage.py receipt github-workspace-composition "$RUNNER_TEMP/workspace-evidence"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

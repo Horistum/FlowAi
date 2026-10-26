@@ -19,6 +19,9 @@ concurrency:
 jobs:
   github-workspace-composition:
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    permissions:
+      contents: read
+      actions: read
     uses: ./.github/workflows/github-workspace-composition.yml
 
   parallel-composition-runtime:
@@ -1425,7 +1428,7 @@ jobs:
           overwrite: true
 
   adapter-composition-coverage:
-    needs: [adapter-certification-portfolio, cross-runtime-condition-composition, retry-composition-runtime, loop-composition-runtime, match-composition-runtime, parallel-composition-runtime]
+    needs: [adapter-certification-portfolio, cross-runtime-condition-composition, retry-composition-runtime, loop-composition-runtime, match-composition-runtime, parallel-composition-runtime, github-workspace-composition]
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -1460,6 +1463,11 @@ jobs:
         with:
           name: adapter-certification-portfolio
           path: build/composition-inputs/adapter-certification-portfolio
+      - name: Download Same-Run Workspace Composition
+        uses: actions/download-artifact@v4
+        with:
+          name: github-workspace-composition
+          path: build/composition-inputs/github-workspace-composition
       - name: Replay Native Observations And Reconcile Coverage
         env:
           EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}

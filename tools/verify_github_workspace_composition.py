@@ -2,8 +2,9 @@
 
 Source dependencies determine expected producers. Graph and manifest are checked
 against that input before native runner observations are admitted. This CI-bound
-proof is not a signed certification bundle or a composition-coverage admission.
+proof is not a signed certification bundle. Coverage independently replays it.
 """
+from datetime import datetime
 import json
 import os
 import pathlib
@@ -15,6 +16,16 @@ CONTEXT = pathlib.Path("conformance/fixtures/workspace-bytes")
 BASELINES = {"git_checkout_1", "git_checkout_2", "docker_build_1", "docker_build_2", "docker_build_3", "docker_build_4", "docker_build_5"}
 TRANSFER_MUTANTS = {"missing-transfer-mutant", "hidden-file-mutant"}
 MUTANTS = TRANSFER_MUTANTS | {"guard-omission-mutant"}
+JOB_PREFIX = "github-workspace-composition / "
+INPUT_FILES = {"fixture.ast.json", "canonical-graph.json", "github-actions.manifest.json",
+               "github-actions.yml", "execution-envelope.yml"}
+RUNTIME_KIND = "github-actions-jobs"
+CLAIM = "Bounded conditional regular-file fan-out through native artifact upload/download and local-context image builds."
+LIMITS = ["One parsed-AST composition with an unconditional producer and literal nested consumer predicates",
+          "Regular, hidden and binary file bytes only; filesystem metadata, symbolic links and credentials are not certified",
+          "Conditional producers, repeated-control transport, producer-failure experiments and general VALUE/STATE continuity remain open",
+          "Same-attempt GitHub API authenticates job identity, results and ordering; CI runners, native observers and job outputs remain trusted",
+          "Existing missing-transfer, hidden-file and guard-omission mutants; no signed portfolio or target-wide support promotion"]
 
 
 def inventory(root):
@@ -139,16 +150,18 @@ def bind(document, graph, manifest, revision):
             require(download["metadata"]["continuitySourceJob"] == producer["id"] and
                     download["metadata"]["continuityTargetJob"] == job["id"], "Transfer endpoints differ")
     return {"baselineJobs": sorted(BASELINES), "workspaceEdges": sorted([list(e) for e in workspaces]),
+            "nativeOrdering": sorted([[by_name[p]["id"], by_name[c]["id"]] for p, c in ordering]),
             "mutants": sorted(MUTANTS), "selectedJobs": sorted(by_name[name]["id"] for name in selected),
             "guardMutantSource": by_name["consumer3"]["id"]}
 
 
 def verify_job(name, result, expected, selected):
+    from composition_coverage import decode
     require(result["result"] == ("success" if selected else "skipped"), f"Native selection differs in {name}")
     output = result["outputs"]
     if selected:
         require(set(output) == {"inventory"}, "Missing native byte observation")
-        require(json.loads(output["inventory"]) == expected, f"Workspace bytes differ in {name}")
+        require(decode(output["inventory"]) == expected, f"Workspace bytes differ in {name}")
     else:
         require(not output, "Unselected consumer produced output")
 
@@ -176,13 +189,85 @@ def verify_observations(results, expected, revision, model):
         raise ValueError("Guard-omission mutant escaped source-derived selection")
 
 
+def authenticate_jobs(jobs, results, current, model):
+    """Bind observations to final same-attempt jobs and actual producer-before-consumer timing."""
+    names = BASELINES | MUTANTS | {"prepare"}
+    native = [job for job in jobs if job["name"].startswith(JOB_PREFIX) and job["name"] != JOB_PREFIX + "collect"]
+    require(len(native) == len(names) and {j["name"] for j in native} == {JOB_PREFIX + n for n in names} and
+            len({j["id"] for j in native}) == len(native), "Native GitHub job inventory differs")
+    records, times = {}, {}
+    for job in native:
+        name = job["name"][len(JOB_PREFIX):]
+        require(type(job["id"]) is int and job["id"] > 0 and type(job["run_id"]) is int and type(job["run_attempt"]) is int and
+                job["head_sha"] == current["sourceRevision"] and job["run_id"] == int(current["runId"]) and
+                job["run_attempt"] == int(current["attempt"]), "Native GitHub job provenance differs")
+        require(job["status"] == "completed" and job["conclusion"] == results[name]["result"],
+                f"Native GitHub outcome differs in {name}")
+        start, end = (datetime.fromisoformat(job[key]) for key in ("started_at", "completed_at"))
+        require(start.utcoffset() is not None and end.utcoffset() is not None and start <= end,
+                "Invalid native job timing")
+        times[name] = (start, end)
+        if job["conclusion"] == "skipped":
+            require(not job["steps"], "Skipped native job executed steps")
+        else:
+            required = {"Observe workspace bytes"}
+            if name == "prepare":
+                required = {"Bind generated transfers to executed envelope"}
+            elif name in TRANSFER_MUTANTS:
+                required = {"docker_build_1", "Require falsification"}
+                if name == "hidden-file-mutant":
+                    required |= {"Restore Flow workspace source", "Verify selective loss"}
+            elif name == "guard-omission-mutant":
+                required |= {"Restore Flow workspace source", "docker_build_3"}
+            elif name.startswith("docker_build_"):
+                required |= {"Restore Flow workspace source", name}
+            else:
+                required.add(name)
+                if name == "git_checkout_1":
+                    required |= {"Upload Flow workspace source", "Prepare hidden-file mutant"}
+            for step_name in required:
+                steps = [s for s in job["steps"] if s["name"] == step_name]
+                require(len(steps) == 1 and steps[0]["status"] == "completed" and steps[0]["conclusion"] == "success",
+                        f"Native observation or falsification step differs: {name}/{step_name}")
+        records[name] = {key: job[key] for key in ("id", "name", "head_sha", "run_id", "run_attempt",
+                                                  "status", "conclusion", "started_at", "completed_at")}
+    selected = set(model["selectedJobs"])
+    for name in selected | MUTANTS:
+        require(times["prepare"][1] <= times[name][0], "Native job preceded preparation")
+    for producer, consumer in model["nativeOrdering"]:
+        if consumer in selected:
+            require(producer in selected and times[producer][1] <= times[consumer][0], "Native workspace ordering differs")
+    for name in MUTANTS:
+        require(times["git_checkout_1"][1] <= times[name][0], "Native mutant preceded workspace producer")
+    return [records[name] for name in sorted(records)]
+
+
+def assess(files, expected, current, jobs):
+    from composition_coverage import decode
+    read = lambda name: decode(files[name])
+    model = bind(read("fixture.ast.json"), read("canonical-graph.json"), read("github-actions.manifest.json"),
+                 current["sourceRevision"])
+    require(read("expected.json") == model | {"inventory": expected, "provenance": current},
+            "Prepared evidence or revision differs")
+    results = read("observations.json")
+    verify_observations(results, expected, current["sourceRevision"], model)
+    authenticated = authenticate_jobs(jobs, results, current, model)
+    by_name = {j["name"][len(JOB_PREFIX):]: j for j in authenticated}
+    cases = [{"job": name, "selected": name in model["selectedJobs"], "nativeJob": by_name[name],
+              "inventory": decode(results[name]["outputs"]["inventory"]) if name in model["selectedJobs"] else None}
+             for name in sorted(BASELINES)]
+    cases += [{"mutant": name, "rejected": True, "nativeJob": by_name[name]} for name in sorted(MUTANTS)]
+    return {"scope": model, "runtimeKind": RUNTIME_KIND, "claim": CLAIM, "limits": LIMITS, "cases": cases}, authenticated
+
+
 def write(path, value):
-    path.write_text(json.dumps(value, indent=2, sort_keys=True) + "\n")
+    from composition_coverage import encode
+    path.write_bytes(encode(value))
 
 
 def provenance():
-    return {"sourceRevision": os.environ["EXPECTED_SHA"], "workflowRevision": os.environ["WORKFLOW_REVISION"],
-            "runId": os.environ["GITHUB_RUN_ID"], "runAttempt": os.environ["GITHUB_RUN_ATTEMPT"]}
+    from composition_coverage import context
+    return context(os.environ)
 
 
 def main():
@@ -195,7 +280,8 @@ def main():
         return
     directory = pathlib.Path(sys.argv[2])
     require(mode in {"prepare", "verify"}, "Unknown command")
-    read = lambda name: json.loads((directory / name).read_text())
+    from composition_coverage import decode, snapshot
+    read = lambda name: decode((directory / name).read_bytes())
     current = provenance()
     model = bind(read("fixture.ast.json"), read("canonical-graph.json"), read("github-actions.manifest.json"), current["sourceRevision"])
     expected = inventory(root)
@@ -203,12 +289,15 @@ def main():
         write(directory / "expected.json", model | {"inventory": expected, "provenance": current})
     else:
         require(read("expected.json") == model | {"inventory": expected, "provenance": current}, "Prepared evidence or revision differs")
-        results = json.loads(os.environ["FLOW_JOB_RESULTS"])
-        verify_observations(results, expected, current["sourceRevision"], model)
+        from cross_runtime_condition_composition import api_jobs, completed_jobs
+        results = decode(os.environ["FLOW_JOB_RESULTS"])
         write(directory / "observations.json", results)
-        write(directory / "proof.json", {"status": "PASS", "provenance": current, "scope": model,
-            "claim": "CI-bound conditional regular-file fan-out through native artifact upload/download and local-context image builds; three required falsifications. No signed portfolio promotion.",
-            "files": receipts(directory)})
+        fetch = lambda: api_jobs(os.environ["GITHUB_REPOSITORY"], current["runId"], current["attempt"], os.environ["GH_TOKEN"])
+        jobs = completed_jobs(fetch, {JOB_PREFIX + name for name in BASELINES | MUTANTS | {"prepare"}})
+        assessment, authenticated = assess(snapshot(directory.absolute()), expected, current, jobs)
+        write(directory / "github-jobs.json", authenticated)
+        write(directory / "proof.json", current | assessment | {"formatVersion": 1, "status": "passed",
+            "publicSupportPromoted": False, "portableExecution": False, "files": receipts(directory)})
         print("PASS: native conditional fan-out preserves selection and bytes; all three mutants are detected.")
 
 
