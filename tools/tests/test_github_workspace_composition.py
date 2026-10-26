@@ -386,6 +386,23 @@ class WorkspaceCompositionTests(unittest.TestCase):
         mutant["started_at"] = "2026-10-25T00:00:00Z"
         with self.assertRaisesRegex(ValueError, "preparation"): self.authenticate(jobs)
 
+    def test_skipped_job_scheduler_timestamps_are_not_execution_intervals(self):
+        jobs = api_jobs()
+        for job in jobs:
+            if job["conclusion"] == "skipped":
+                job["started_at"], job["completed_at"] = "2026-10-26T00:27:51Z", "2026-10-26T00:27:50Z"
+        records = self.authenticate(jobs)
+        skipped = [j for j in records if j["conclusion"] == "skipped"]
+        self.assertEqual(5, len(skipped))
+        self.assertTrue(all(j["started_at"] > j["completed_at"] for j in skipped))
+        # Neither real execution nor fake steps may borrow the skipped-job exception.
+        for name in ("git_checkout_3", "docker_build_7", "producer-guard-omission-mutant"):
+            changed = copy.deepcopy(jobs); job = next(j for j in changed if j["name"] == oracle.JOB_PREFIX + name)
+            job["started_at"], job["completed_at"] = "2026-10-26T00:27:51Z", "2026-10-26T00:27:50Z"
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "timing"): self.authenticate(changed)
+        changed = copy.deepcopy(jobs); next(j for j in changed if j["conclusion"] == "skipped")["steps"] = [{"name": "unexpected"}]
+        with self.assertRaisesRegex(ValueError, "Skipped"): self.authenticate(changed)
+
 
 if __name__ == "__main__":
     unittest.main()

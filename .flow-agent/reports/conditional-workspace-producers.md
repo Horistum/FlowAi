@@ -19,10 +19,12 @@ The source-derived oracle binds branch ancestry, graph relations, native guards,
 ## Validation
 
 - Baseline: 270 Python tests and Flow Agent structure/context checks passed.
-- Candidate: all 276 Python tests passed, including six new oracle/replay tests. The focused composition suite passed 110 tests. Existing inventory, API, timing, byte and selection regressions now also cover the added jobs.
+- Candidate: all 277 Python tests passed, including seven new oracle/replay tests. The focused composition suite passed 111 tests. Existing inventory, API, timing, byte and selection regressions now also cover the added jobs.
 - Seven new JVM tests cover lexical ancestry, same/nested/otherwise branches, alternate consumer counts, unavailable inputs, scope escape, unsupported controls, guard tampering and Boolean expression grouping. The native envelope regression now requires all four mutants.
 - YAML parsing, work-package scope, unchanged native baseline bodies and roadmap milestone-state checks passed. Core, build configuration, schemas, historical evidence and unconditional reference snapshots are unchanged.
 - Local JDK is 17; this repository requires JDK 25. No local JVM execution is claimed. Final exact-head and merge-candidate JVM/conformance, all isolation proofs and current-revision runtime/composition workflows remain required. Their immutable-head results will be recorded in the PR without a later source commit.
+
+The first current-revision native experiment passed all baseline and mutant jobs and 38 focused JVM tests, but collection rejected two skipped jobs whose GitHub scheduler completion timestamps precede their start by one second. Skipped jobs have no executed steps or observations and do not establish an execution interval. The collector now retains those raw API timestamps without using them for execution-order proof; real jobs still require valid intervals and dependency ordering. A regression covers reversed skipped timestamps, preservation of those facts and rejection of executed jobs or fake skipped steps using the same exception. Independent replay of the downloaded first-run archive against its eighteen actual API records passed after this correction: eight selected jobs, five skipped jobs and four mutants. That validates the correction against real input; the complete final-head workflow remains required.
 
 ## Limits and next work
 

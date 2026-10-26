@@ -98,6 +98,10 @@ oracle checks three distinct producer artifacts, thirteen baseline jobs and four
 mutants. The new mutant removes a skipped producer's guard and must actually
 checkout, upload and observe bytes before replay rejects the extra execution.
 Same-attempt API authentication now covers eighteen jobs including preparation.
+Skipped jobs must have no steps or observations. Their API timestamps are retained
+as scheduler metadata, not execution intervals: GitHub may report completion
+before start for a skipped job. Executed jobs still require valid intervals and
+preparation/producer-before-consumer ordering; skipped timestamps cannot prove it.
 All earlier baseline jobs and mutants remain required. The primary matrix row,
 archive format, seven-producer receipt inventory and signed portfolio stay unchanged.
 

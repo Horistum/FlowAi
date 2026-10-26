@@ -215,12 +215,16 @@ def authenticate_jobs(jobs, results, current, model):
         require(job["status"] == "completed" and job["conclusion"] == results[name]["result"],
                 f"Native GitHub outcome differs in {name}")
         start, end = (datetime.fromisoformat(job[key]) for key in ("started_at", "completed_at"))
-        require(start.utcoffset() is not None and end.utcoffset() is not None and start <= end,
+        require(start.utcoffset() is not None and end.utcoffset() is not None,
                 "Invalid native job timing")
-        times[name] = (start, end)
         if job["conclusion"] == "skipped":
+            # Skipped jobs have no execution interval. GitHub's scheduler can
+            # report their completion before their start; retain those API facts
+            # without using them as evidence that any work or ordering occurred.
             require(not job["steps"], "Skipped native job executed steps")
         else:
+            require(start <= end, "Invalid native job timing")
+            times[name] = (start, end)
             required = {"Observe workspace bytes"}
             if name == "prepare":
                 required = {"Bind generated transfers to executed envelope"}

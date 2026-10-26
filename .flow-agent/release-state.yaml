@@ -825,8 +825,8 @@ recoveryConditionalWorkspaceProducers:
   report: .flow-agent/reports/conditional-workspace-producers.md
   predecessorMain: 5b78609dd11c7538d296511c5d0f973b84368399
   validation: local-tooling-and-replay-regressions-passed-current-revision-ci-required
-  localPythonTests: 276
-  newPythonTests: 6
+  localPythonTests: 277
+  newPythonTests: 7
   newJvmTests: 7
   endpointScope: CONDITION_SCOPED_SINGLE_SOURCE_WORKSPACE
   conditionalProducerSupport: same-or-nested-lexical-branch
