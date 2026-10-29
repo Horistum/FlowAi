@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 124
+stateVersion: 125
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -787,7 +787,7 @@ recoveryArchitectureEntryDocumentation:
   fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/249
   jvmTestsPerRevision: 2362
   standaloneConformanceChecksPerRevision: 291
-  nextWorkScope: AR-06AE-C14 admission is merged; C15 composes condition-scoped workspace producers and consumers.
+  nextWorkScope: C15 conditional workspace producers are merged; C16 separates workspace success from ordering skip semantics.
   signedPortfolioExpanded: false
   supportPromotion: false
 
@@ -820,11 +820,11 @@ recoveryGitHubWorkspaceCompositionAdmission:
 
 recoveryConditionalWorkspaceProducers:
   candidate: AR-06AE-C15
-  status: candidate
+  status: merged
   workPackage: .flow-agent/work-packages/conditional-workspace-producers.yaml
   report: .flow-agent/reports/conditional-workspace-producers.md
   predecessorMain: 5b78609dd11c7538d296511c5d0f973b84368399
-  validation: local-tooling-and-replay-regressions-passed-current-revision-ci-required
+  validation: exact-head-and-merge-candidate-ci-passed
   localPythonTests: 277
   newPythonTests: 7
   newJvmTests: 7
@@ -835,6 +835,30 @@ recoveryConditionalWorkspaceProducers:
   independentCompositionAdmission: true
   generalValueStateContinuity: false
   producerFailureExperiments: false
+  signedPortfolioExpanded: false
+  supportPromotion: false
+  pullRequest: 251
+  mergedMain: e7a9824ce7add45f5d58b25737a6581a3c3747d5
+  validatedHead: ca16f0399422dccdbe9074d8a382ab36e653e1f9
+  validatedTree: c5520bc38fb295552f22ee4425b57984c421866a
+  flowCiRun: 40249779687
+  runtimeCiRun: 40249779695
+  fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/251
+
+recoveryWorkspaceProducerSuccess:
+  candidate: AR-06AE-C16
+  status: candidate
+  workPackage: .flow-agent/work-packages/workspace-producer-success.yaml
+  report: .flow-agent/reports/workspace-producer-success.md
+  predecessorMain: e7a9824ce7add45f5d58b25737a6581a3c3747d5
+  validation: local-python-and-structure-passed-current-revision-jvm-and-native-ci-required
+  localPythonTests: 277
+  newJvmTests: 6
+  workspaceScheduling: success-only-producer-dependencies
+  nativeBaselineJobs: 13
+  requiredNativeMutants: 4
+  producerFailureExperiments: false
+  generalValueStateContinuity: false
   signedPortfolioExpanded: false
   supportPromotion: false
   fullSuiteEvidence: Required in the final pull request validation record.

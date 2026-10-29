@@ -22,6 +22,10 @@ Image builds now explicitly select the restored local directory (`context: .` or
 
 A checkout that exports its workspace uses `persist-credentials: false`, because the archive includes hidden `.git` files. This prevents checkout authentication from being retained in the exported Git configuration.
 
+AR-06AE-C16 distinguishes successful workspace production from an ordering predecessor's skipped branch. When native scheduling needs an explicit guard, every workspace source requires `needs.<producer>.result == 'success'`; neither conditional nor approval skip alternatives apply to that source. Unrelated ordering predecessors retain their own skip rules. Cancellation remains blocked. Unconditional jobs keep GitHub's implicit success check, preserving existing reference artifacts.
+
+The scheduling rule is derived from the existing download endpoint, after transfer topology validation. It does not invent canonical edges or depend on a fixture name. Regression tests exercise producer success, failure, skip and cancellation under both predicate values and workflow cancellation. These are guard evaluations, not a claim that a failed-producer native workflow has been executed.
+
 The renderer rechecks transfer placement, inventories, identities, endpoints, ordering, both endpoints' job/action guard consistency and Boolean input availability, including caller-supplied manifests. Every producer guard conjunct must occur structurally in the consumer's guard. Comparison preserves expression grouping and ignores source locations; it does not infer arbitrary logical implication. It cannot repair an omitted download or substitute a different artifact. Unmatched planning relations retain diagnostic blockers and cannot become executable.
 
 ## Fidelity and evidence

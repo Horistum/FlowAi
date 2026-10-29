@@ -142,6 +142,8 @@ class GitHubWorkspaceCompositionTests {
             envelope.replace("needs: [prepare, git_checkout_1]", "needs: [prepare]"),
             envelope.replace("path: \".\"", "path: \"subdirectory\""),
             envelope.replace("flow-workspace-git_checkout_1-source", "wrong-artifact"),
+            envelope.replace("needs.git_checkout_3.result == 'success'",
+                "(needs.git_checkout_3.result == 'success' || needs.git_checkout_3.result == 'skipped')"),
             envelope.replace("if: \${{ ((true && false)) }}", "if: \${{ true }}"),
             envelope.replace("test \"\$OUTCOME\" = failure", "true"))) {
             assertNotEquals(envelope, changed)
@@ -227,7 +229,9 @@ class GitHubWorkspaceCompositionTests {
         }
         val rendered = provider.render(m)
         assertTrue(rendered.contains("needs.git_checkout_3.result == 'success'"))
-        assertTrue(rendered.contains("needs.git_checkout_4.result == 'skipped' && !(!(true))"))
+        assertTrue(rendered.contains("needs.git_checkout_4.result == 'success'"))
+        assertFalse(rendered.contains("needs.git_checkout_3.result == 'skipped'"))
+        assertFalse(rendered.contains("needs.git_checkout_4.result == 'skipped'"))
     }
 
     @Test fun endpointEligibilityUsesLexicalAncestryInsteadOfPredicateEquality() {

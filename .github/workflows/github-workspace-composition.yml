@@ -375,7 +375,7 @@ jobs:
     name: "docker_build_6"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_3]
-    if: ${{ !cancelled() && ((true && false)) && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(true))) }}
+    if: ${{ !cancelled() && ((true && false)) && needs.git_checkout_3.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -401,7 +401,7 @@ jobs:
     name: "docker_build_7"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_3]
-    if: ${{ !cancelled() && ((true && !(false))) && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(true))) }}
+    if: ${{ !cancelled() && ((true && !(false))) && needs.git_checkout_3.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -427,7 +427,7 @@ jobs:
     name: "docker_build_8"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_3]
-    if: ${{ !cancelled() && (true) && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(true))) }}
+    if: ${{ !cancelled() && (true) && needs.git_checkout_3.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -453,7 +453,7 @@ jobs:
     name: "docker_build_9"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_4]
-    if: ${{ !cancelled() && (!(true)) && (needs.git_checkout_4.result == 'success' || (needs.git_checkout_4.result == 'skipped' && !(!(true)))) }}
+    if: ${{ !cancelled() && (!(true)) && needs.git_checkout_4.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
