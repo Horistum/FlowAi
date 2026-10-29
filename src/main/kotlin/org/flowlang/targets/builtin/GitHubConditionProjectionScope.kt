@@ -48,6 +48,28 @@ class GitHubConditionProjectionScope(private val catalog: TargetNativeProjection
 
 /** Avoid GitHub's implicit value coercions and ambient contexts at the job guard boundary. */
 internal object GitHubBooleanCondition {
+    /** Recheck the compiler's enclosing guards, without inferring arbitrary logical implication. */
+    fun retainsGuard(consumer: String?, producer: String?): Boolean {
+        if (producer == null) return true
+        if (consumer == null) return false
+        fun conjuncts(node: ExpressionNode): Set<ExpressionNode> =
+            if (node is LogicalExpressionNode && node.operator == "and") node.operands.flatMap { conjuncts(it) }.toSet()
+            else setOf(guardShape(node))
+        return runCatching {
+            conjuncts(ExpressionParser.parseSource(consumer)).containsAll(conjuncts(ExpressionParser.parseSource(producer)))
+        }.getOrDefault(false)
+    }
+
+    // Compare expression structure, including parentheses/precedence, without source locations.
+    private fun guardShape(node: ExpressionNode): ExpressionNode = when (node) {
+        is BooleanLiteralNode -> node
+        is ReferenceNode -> node.copy(location = null)
+        is UnaryExpressionNode -> node.copy(operand = guardShape(node.operand))
+        is BinaryExpressionNode -> node.copy(left = guardShape(node.left), right = guardShape(node.right), location = null)
+        is LogicalExpressionNode -> node.copy(operands = node.operands.map(::guardShape), location = null)
+        else -> error("Unsupported Boolean guard node.")
+    }
+
     fun supports(source: String, inputs: Set<String>): Boolean = runCatching {
         supports(ExpressionParser.parseSource(source), inputs)
     }.getOrDefault(false)

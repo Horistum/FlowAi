@@ -31,7 +31,7 @@ class GitHubActionsWorkspaceContinuityTests {
         assertEquals("git.checkout", scope.sourceAction)
         assertEquals("docker.build", scope.targetAction)
         assertEquals("source", scope.channel)
-        assertEquals(org.flowlang.adapters.continuity.AdapterContinuityEndpointScope.UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE, scope.endpointScope)
+        assertEquals(org.flowlang.adapters.continuity.AdapterContinuityEndpointScope.CONDITION_SCOPED_SINGLE_SOURCE_WORKSPACE, scope.endpointScope)
         assertTrue(scope.limitations.any { it.contains("regular-file bytes") })
         assertTrue(scope.limitations.any { it.contains("Unix mode bits") })
         assertTrue(scope.limitations.any { it.contains("Symbolic-link identity") })

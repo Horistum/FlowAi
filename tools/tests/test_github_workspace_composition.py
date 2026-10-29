@@ -21,14 +21,22 @@ def fixture():
              ("consumer3", "docker_build_3", "docker", "build"),
              ("consumer4", "docker_build_4", "docker", "build"),
              ("consumer5", "docker_build_5", "docker", "build"),
-             ("independent", "git_checkout_2", "git", "checkout")]
+             ("independent", "git_checkout_2", "git", "checkout"),
+             ("selectedSnapshot", "git_checkout_3", "git", "checkout"),
+             ("consumer6", "docker_build_6", "docker", "build"),
+             ("consumer7", "docker_build_7", "docker", "build"),
+             ("consumer8", "docker_build_8", "docker", "build"),
+             ("unselectedSnapshot", "git_checkout_4", "git", "checkout"),
+             ("consumer9", "docker_build_9", "docker", "build")]
     tasks, nodes, edges, jobs = [], [], [], []
-    artifact = {"kind": "ARTIFACT", "name": "producer-owned"}
-    def transfer(kind, consumer):
-        return {"type": kind, "rendererPayload": {"bindings": {"name": copy.deepcopy(artifact)}},
-                "metadata": {"continuitySourceJob": "git_checkout_1", "continuityTargetJob": consumer}}
+    identities = {name: identity for name, identity, _, _ in names}
+    producers = {f"consumer{n}": "snapshot" if n <= 5 else "selectedSnapshot" if n <= 8 else "unselectedSnapshot"
+                 for n in range(1, 10)}
+    def transfer(kind, consumer, source):
+        return {"type": kind, "rendererPayload": {"bindings": {"name": {"kind": "ARTIFACT", "name": source + "-owned"}}},
+                "metadata": {"continuitySourceJob": source, "continuityTargetJob": consumer}}
     for name, identity, module, action in names:
-        deps = ["snapshot"] if module == "docker" else []
+        deps = [producers[name]] if module == "docker" else []
         params = {"branch": REVISION} if module == "git" else {"push": False}
         tasks.append({"type": "Action", "module": module, "action": action, "result": {"name": name},
                       "dependsOn": deps, "params": {k: {"type": "BooleanLiteral" if type(v) is bool else "StringLiteral", "value": v} for k, v in params.items()}})
@@ -40,11 +48,14 @@ def fixture():
                               "channel": channel, "resolution": "RESOLVED"})
         native = {"type": "action", "module": module, "action": action, "metadata": {"resultName": name},
                   "params": {k: str(v).lower() if type(v) is bool else v for k, v in params.items()}}
-        steps = ([transfer("adapter-continuity-download", identity)] if deps else []) + [native]
-        if name == "snapshot":
-            steps += [transfer("adapter-continuity-upload", "docker_build_1")]
-        jobs.append({"id": identity, "dependsOn": ["git_checkout_1"] if deps else [], "steps": steps})
-    guards = {"consumer3": "(true) and (false)", "consumer4": "(true) and (not (false))", "consumer5": "not (true)"}
+        steps = ([transfer("adapter-continuity-download", identity, identities[deps[0]])] if deps else []) + [native]
+        if name in producers.values():
+            first_consumer = next(c for c, p in producers.items() if p == name)
+            steps += [transfer("adapter-continuity-upload", identities[first_consumer], identity)]
+        jobs.append({"id": identity, "dependsOn": [identities[p] for p in deps], "steps": steps})
+    guards = {"consumer3": "(true) and (false)", "consumer4": "(true) and (not (false))", "consumer5": "not (true)",
+              "selectedSnapshot": "true", "consumer6": "(true) and (false)", "consumer7": "(true) and (not (false))",
+              "consumer8": "true", "unselectedSnapshot": "not (true)", "consumer9": "not (true)"}
     for job in jobs:
         leaf = next(step for step in job["steps"] if step["type"] == "action")
         name = leaf["metadata"]["resultName"]
@@ -55,10 +66,17 @@ def fixture():
     outer = {"type": "If", "condition": {"type": "BooleanLiteral", "value": True},
              "then": [{"type": "If", "condition": {"type": "BooleanLiteral", "value": False},
                        "then": [tasks[3]], "otherwise": [tasks[4]]}], "otherwise": [tasks[5]]}
+    producer_branch = {"type": "If", "condition": {"type": "BooleanLiteral", "value": True},
+                       "then": [tasks[7], {"type": "If", "condition": {"type": "BooleanLiteral", "value": False},
+                                          "then": [tasks[8]], "otherwise": [tasks[9]]}, tasks[10]],
+                       "otherwise": [tasks[11], tasks[12]]}
     nodes += [{"id": "outer", "kind": "CONDITION", "condition": "true", "thenNodeIds": ["inner"], "otherwiseNodeIds": ["consumer5"]},
-              {"id": "inner", "kind": "CONDITION", "condition": "false", "thenNodeIds": ["consumer3"], "otherwiseNodeIds": ["consumer4"]}]
-    return {"flow": {"steps": tasks[:3] + [outer, tasks[-1]]}}, {"nodes": nodes, "dependencyEdges": edges,
-            "workflows": [{"rootNodeIds": ["snapshot", "consumer1", "consumer2", "outer", "independent"]}]}, {"jobs": jobs}
+              {"id": "inner", "kind": "CONDITION", "condition": "false", "thenNodeIds": ["consumer3"], "otherwiseNodeIds": ["consumer4"]},
+              {"id": "producerBranch", "kind": "CONDITION", "condition": "true", "thenNodeIds": ["selectedSnapshot", "producerInner", "consumer8"],
+               "otherwiseNodeIds": ["unselectedSnapshot", "consumer9"]},
+              {"id": "producerInner", "kind": "CONDITION", "condition": "false", "thenNodeIds": ["consumer6"], "otherwiseNodeIds": ["consumer7"]}]
+    return {"flow": {"steps": tasks[:3] + [outer, tasks[6], producer_branch]}}, {"nodes": nodes, "dependencyEdges": edges,
+            "workflows": [{"rootNodeIds": ["snapshot", "consumer1", "consumer2", "outer", "independent", "producerBranch"]}]}, {"jobs": jobs}
 
 
 def native_results():
@@ -67,7 +85,7 @@ def native_results():
     results = {name: {"result": "success", "outputs": {"inventory": json.dumps(expected)}} if name in model["selectedJobs"] else
                {"result": "skipped", "outputs": {}} for name in oracle.BASELINES}
     results |= {name: {"result": "success", "outputs": {}} for name in oracle.TRANSFER_MUTANTS}
-    results["guard-omission-mutant"] = {"result": "success", "outputs": {"inventory": json.dumps(expected)}}
+    results |= {name: {"result": "success", "outputs": {"inventory": json.dumps(expected)}} for name in oracle.GUARD_MUTANTS}
     results["prepare"] = {"result": "success", "outputs": {"revision": REVISION}}
     return expected, results
 
@@ -78,11 +96,14 @@ def api_jobs():
     steps = {"prepare": ["Bind generated transfers to executed envelope"],
              "git_checkout_1": ["git_checkout_1", "Upload Flow workspace source", "Observe workspace bytes", "Prepare hidden-file mutant"],
              "git_checkout_2": ["git_checkout_2", "Observe workspace bytes"],
+             "git_checkout_3": ["git_checkout_3", "Upload Flow workspace source", "Observe workspace bytes"],
+             "git_checkout_4": [],
              "guard-omission-mutant": ["Restore Flow workspace source", "docker_build_3", "Observe workspace bytes"],
+             "producer-guard-omission-mutant": ["git_checkout_4", "Upload Flow workspace source", "Observe workspace bytes"],
              "missing-transfer-mutant": ["docker_build_1", "Require falsification"],
              "hidden-file-mutant": ["Restore Flow workspace source", "Verify selective loss", "docker_build_1", "Require falsification"],
-             "docker_build_3": [], "docker_build_5": []}
-    for name in ("docker_build_1", "docker_build_2", "docker_build_4"):
+             "docker_build_3": [], "docker_build_5": [], "docker_build_6": [], "docker_build_9": []}
+    for name in ("docker_build_1", "docker_build_2", "docker_build_4", "docker_build_7", "docker_build_8"):
         steps[name] = ["Restore Flow workspace source", name, "Observe workspace bytes"]
     results = native_results()[1]
     jobs = []
@@ -119,7 +140,8 @@ def workspace_files():
 class WorkspaceCompositionTests(unittest.TestCase):
     def test_source_graph_and_manifest_bind_independently(self):
         model = oracle.bind(*fixture(), REVISION)
-        self.assertEqual(model["workspaceEdges"], [["snapshot", f"consumer{i}"] for i in range(1, 6)])
+        self.assertEqual(model["workspaceEdges"], sorted([["snapshot", f"consumer{i}"] for i in range(1, 6)] +
+                         [["selectedSnapshot", f"consumer{i}"] for i in range(6, 9)] + [["unselectedSnapshot", "consumer9"]]))
 
     def test_ordering_does_not_substitute_for_workspace(self):
         source, graph, manifest = fixture()
@@ -154,7 +176,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
     def test_source_branch_ownership_and_predicates_are_preserved(self):
         for mutation in ("predicate", "swap", "omit", "duplicate"):
             source, graph, manifest = fixture()
-            inner = graph["nodes"][-1]
+            inner = next(n for n in graph["nodes"] if n["id"] == "inner")
             if mutation == "predicate": inner["condition"] = "true"
             elif mutation == "swap": inner["thenNodeIds"], inner["otherwiseNodeIds"] = inner["otherwiseNodeIds"], inner["thenNodeIds"]
             elif mutation == "omit": graph["workflows"][0]["rootNodeIds"].remove("outer")
@@ -172,7 +194,8 @@ class WorkspaceCompositionTests(unittest.TestCase):
 
     def test_native_selection_is_derived_from_nested_source_conditions(self):
         model = oracle.bind(*fixture(), REVISION)
-        self.assertEqual(set(model["selectedJobs"]), {"git_checkout_1", "git_checkout_2", "docker_build_1", "docker_build_2", "docker_build_4"})
+        self.assertEqual(set(model["selectedJobs"]), {"git_checkout_1", "git_checkout_2", "git_checkout_3", "docker_build_1",
+                         "docker_build_2", "docker_build_4", "docker_build_7", "docker_build_8"})
         for name in oracle.BASELINES:
             expected, results = self.results()
             results[name]["result"] = "skipped" if name in model["selectedJobs"] else "success"
@@ -219,10 +242,10 @@ class WorkspaceCompositionTests(unittest.TestCase):
 
     def test_native_api_authenticates_all_baselines_mutants_and_preparation(self):
         assessment, records = oracle.assess(workspace_files(), oracle.inventory(ROOT), CURRENT, api_jobs())
-        self.assertEqual(11, len(records))
-        self.assertEqual(7, sum("job" in case for case in assessment["cases"]))
-        self.assertEqual(3, sum(case.get("rejected", False) for case in assessment["cases"]))
-        self.assertEqual(2, sum(case.get("selected") is False for case in assessment["cases"]))
+        self.assertEqual(18, len(records))
+        self.assertEqual(13, sum("job" in case for case in assessment["cases"]))
+        self.assertEqual(4, sum(case.get("rejected", False) for case in assessment["cases"]))
+        self.assertEqual(5, sum(case.get("selected") is False for case in assessment["cases"]))
 
     def authenticate(self, jobs):
         return oracle.authenticate_jobs(jobs, native_results()[1], CURRENT, oracle.bind(*fixture(), REVISION))
@@ -251,7 +274,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
                     self.authenticate(jobs)
 
     def test_native_dependency_timing_is_verified_for_consumers_and_mutants(self):
-        for name in ("docker_build_1", "docker_build_4", "missing-transfer-mutant", "guard-omission-mutant", "git_checkout_2"):
+        for name in ("docker_build_1", "docker_build_4", "docker_build_7", "docker_build_8", "missing-transfer-mutant", "guard-omission-mutant", "git_checkout_2"):
             jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
             job["started_at"] = "2026-10-25T00:00:00Z" if name == "git_checkout_2" else "2026-10-25T00:00:02Z"
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "ordering|preceded"):
@@ -265,7 +288,10 @@ class WorkspaceCompositionTests(unittest.TestCase):
                            ("docker_build_1", "Observe workspace bytes"),
                            ("hidden-file-mutant", "Require falsification"),
                            ("missing-transfer-mutant", "Require falsification"),
-                           ("guard-omission-mutant", "docker_build_3")):
+                           ("guard-omission-mutant", "docker_build_3"),
+                           ("git_checkout_3", "Upload Flow workspace source"),
+                           ("producer-guard-omission-mutant", "git_checkout_4"),
+                           ("producer-guard-omission-mutant", "Upload Flow workspace source")):
             for mutation in ("omit", "duplicate", "failure", "skipped"):
                 jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
                 selected = next(s for s in job["steps"] if s["name"] == step)
@@ -299,6 +325,83 @@ class WorkspaceCompositionTests(unittest.TestCase):
             files = coverage.snapshot(directory)
             self.assertEqual("github-workspace-composition", coverage.receipt("github-workspace-composition", files, CURRENT)["artifact"])
             self.assertEqual(workspace_files(), files)
+
+    def test_consumer_cannot_escape_or_cross_its_conditional_producer_branch(self):
+        for destination in ("outside", "sibling", "separate-condition"):
+            source, graph, manifest = fixture()
+            branch = source["flow"]["steps"][-1]
+            consumer = branch["then"].pop()
+            canonical = next(n for n in graph["nodes"] if n["id"] == "producerBranch")
+            canonical["thenNodeIds"].remove("consumer8")
+            if destination == "outside":
+                source["flow"]["steps"].append(consumer)
+                graph["workflows"][0]["rootNodeIds"].append("consumer8")
+            elif destination == "sibling":
+                branch["otherwise"].append(consumer)
+                canonical["otherwiseNodeIds"].append("consumer8")
+            else:
+                source["flow"]["steps"].append({"type": "If", "condition": {"type": "BooleanLiteral", "value": True},
+                                               "then": [consumer], "otherwise": []})
+                graph["nodes"].append({"id": "separate", "kind": "CONDITION", "condition": "true",
+                                       "thenNodeIds": ["consumer8"], "otherwiseNodeIds": []})
+                graph["workflows"][0]["rootNodeIds"].append("separate")
+            with self.subTest(destination=destination), self.assertRaisesRegex(ValueError, "escapes"):
+                oracle.bind(source, graph, manifest, REVISION)
+
+    def test_conditional_producer_job_and_action_guards_must_match_source(self):
+        for identity in ("git_checkout_3", "git_checkout_4"):
+            for owner in ("job", "action", "both"):
+                source, graph, manifest = fixture()
+                job = next(j for j in manifest["jobs"] if j["id"] == identity)
+                if owner in ("job", "both"): job["metadata"].pop("condition")
+                if owner in ("action", "both"): job["steps"][0]["metadata"].pop("condition")
+                with self.subTest(identity=identity, owner=owner), self.assertRaisesRegex(ValueError, "guard"):
+                    oracle.bind(source, graph, manifest, REVISION)
+
+    def test_conditional_producers_cannot_alias_the_same_native_artifact(self):
+        source, graph, manifest = fixture()
+        for job in manifest["jobs"]:
+            for step in job["steps"]:
+                if step["type"].startswith("adapter-continuity-"):
+                    step["rendererPayload"]["bindings"]["name"]["name"] = "same-artifact"
+        with self.assertRaisesRegex(ValueError, "artifact identity"):
+            oracle.bind(source, graph, manifest, REVISION)
+
+    def test_unselected_producer_cannot_publish_or_replace_the_guard_mutant(self):
+        expected, results = native_results()
+        model = oracle.bind(*fixture(), REVISION)
+        for mutation in ("output", "selected-mutant-source", "original-as-mutant"):
+            changed, altered_model = copy.deepcopy(results), copy.deepcopy(model)
+            if mutation == "output": changed["git_checkout_4"]["outputs"] = changed["git_checkout_3"]["outputs"]
+            elif mutation == "selected-mutant-source": altered_model["guardMutantSources"]["producer-guard-omission-mutant"] = "git_checkout_3"
+            else: changed["producer-guard-omission-mutant"] = changed["git_checkout_4"]
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError):
+                oracle.verify_observations(changed, expected, REVISION, altered_model)
+
+    def test_producer_guard_mutant_requires_preparation_but_not_an_unrelated_producer(self):
+        jobs = api_jobs()
+        mutant = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + "producer-guard-omission-mutant")
+        mutant["started_at"], mutant["completed_at"] = "2026-10-25T00:00:01Z", "2026-10-25T00:00:02Z"
+        self.authenticate(jobs)
+        mutant["started_at"] = "2026-10-25T00:00:00Z"
+        with self.assertRaisesRegex(ValueError, "preparation"): self.authenticate(jobs)
+
+    def test_skipped_job_scheduler_timestamps_are_not_execution_intervals(self):
+        jobs = api_jobs()
+        for job in jobs:
+            if job["conclusion"] == "skipped":
+                job["started_at"], job["completed_at"] = "2026-10-26T00:27:51Z", "2026-10-26T00:27:50Z"
+        records = self.authenticate(jobs)
+        skipped = [j for j in records if j["conclusion"] == "skipped"]
+        self.assertEqual(5, len(skipped))
+        self.assertTrue(all(j["started_at"] > j["completed_at"] for j in skipped))
+        # Neither real execution nor fake steps may borrow the skipped-job exception.
+        for name in ("git_checkout_3", "docker_build_7", "producer-guard-omission-mutant"):
+            changed = copy.deepcopy(jobs); job = next(j for j in changed if j["name"] == oracle.JOB_PREFIX + name)
+            job["started_at"], job["completed_at"] = "2026-10-26T00:27:51Z", "2026-10-26T00:27:50Z"
+            with self.subTest(name=name), self.assertRaisesRegex(ValueError, "timing"): self.authenticate(changed)
+        changed = copy.deepcopy(jobs); next(j for j in changed if j["conclusion"] == "skipped")["steps"] = [{"name": "unexpected"}]
+        with self.assertRaisesRegex(ValueError, "Skipped"): self.authenticate(changed)
 
 
 if __name__ == "__main__":

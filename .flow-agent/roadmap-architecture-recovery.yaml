@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 64
+revision: 65
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -25,8 +25,8 @@ currentDecision:
   nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/github-workspace-composition-admission.yaml"
-  decisionBasis: "PR #249 merged at c3f44dceae48c7cbc423e15c461e9c72548fa4bd with the same tree as validated head 017d901ce0a02ab96498bbcfa4cd2e153deca8a8. Flow CI 40045474454 and runtime CI 40045474482 passed for that head. A-05 architecture documentation is merged; migration and AI cleanup remain AR-07-owned. The maintainer authorized the next bounded AR-06 gap: C14 independently admits and replays the existing GitHub workspace composition with same-attempt native API authentication. All 270 local Python tests and Flow Agent checks passed; current-revision CI remains required. No signed portfolio, support or semantic scope is promoted. AR-06 stays active, AR-07 planned and EF-09 paused."
+  correctiveWorkPackage: ".flow-agent/work-packages/conditional-workspace-producers.yaml"
+  decisionBasis: "PR #250 merged at 5b78609dd11c7538d296511c5d0f973b84368399 with the same tree as validated head 5ad6dd2e36882e8721102884786cd91cb506b116. Flow CI 40148866140 and runtime CI 40148866139 passed: 2362 JVM tests, 291 conformance checks and 270 Python tests per required revision; six composition archives were independently replayed. The maintainer authorized the next bounded AR-06 gap: C15 composes condition-scoped workspace producers and consumers through lexical branch ancestry, explicit ordering and native transfer evidence. Current-revision CI remains required. No signed portfolio or target-wide support is promoted. AR-06 stays active, AR-07 planned and EF-09 paused."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
@@ -82,7 +82,7 @@ systemAuditFollowup:
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05]
   nextRecommendedFinding: null
-  nextScope: C14 is the current AR-06 candidate for independent workspace composition admission. Further work must select a reusable control/continuity gap from current coverage; conditional producers, repeated-control workspace transport and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
+  nextScope: C15 is the current AR-06 candidate for condition-scoped workspace producers and consumers. C14 independent admission is merged. Repeated-control workspace transport, producer-failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
   closureRule: A-05 documentation completion does not retire facades or close AR-07 migration work. Merged A-06 admission does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:
@@ -318,6 +318,7 @@ milestones:
       - "C12 candidate removes the exact task-sequence workspace exception in favor of unconditional single-source endpoints, explicit ordering and unique consumer workspace requirements. GitHub image builds use the restored local context; exported checkouts do not persist credentials. Native fan-out observes regular, binary and hidden file bytes and requires missing-transfer and hidden-file mutants to fail. Independent producer paths and direct-manifest transfer tampering have JVM coverage. The current GitHub reference is corrected; historical Jenkins evidence and signed portfolio admission stay unchanged."
       - "AR-06AE-C13: compose unconditional workspace producers with condition-scoped single-source consumers. Preserve complete job guards, ordering and one producer upload; independently observe selected and skipped nested branches and reject a native guard-omission mutant. No conditional producer or repeated-control transport is admitted."
       - "AR-06AE-C14: independently admit the existing GitHub workspace archive through successful same-attempt producer receipts, regenerated compiler inputs, current fixture bytes and native API identity/outcome/ordering checks. Replay all existing transfer and guard mutants; add only bounded GitHub ARTIFACTS_WORKSPACES observations, preserving signed portfolio bytes and general VALUE/STATE gaps."
+      - "AR-06AE-C15: compose workspace producers and consumers in the same or nested condition branch. Preserve guarded checkout/upload and download/build, reject branch escape and malformed native guards, and independently replay selected/skipped producer observations plus a producer-guard omission mutant. Existing evidence classes and portfolio scope stay unchanged."
       - "Next: address remaining control interactions, value/state continuity and provider coverage with independent evidence, using reconciled gaps to select the next bounded invariant. CI-bound observations, repository declarations and reference snapshots cannot close target-wide certification or portability outcomes."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 

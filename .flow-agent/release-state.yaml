@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 123
+stateVersion: 124
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -787,17 +787,17 @@ recoveryArchitectureEntryDocumentation:
   fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/249
   jvmTestsPerRevision: 2362
   standaloneConformanceChecksPerRevision: 291
-  nextWorkScope: AR-06AE-C14 independently admits the existing GitHub workspace composition.
+  nextWorkScope: AR-06AE-C14 admission is merged; C15 composes condition-scoped workspace producers and consumers.
   signedPortfolioExpanded: false
   supportPromotion: false
 
 recoveryGitHubWorkspaceCompositionAdmission:
   candidate: AR-06AE-C14
-  status: candidate
+  status: merged
   workPackage: .flow-agent/work-packages/github-workspace-composition-admission.yaml
   report: .flow-agent/reports/github-workspace-composition-admission.md
   predecessorMain: c3f44dceae48c7cbc423e15c461e9c72548fa4bd
-  validation: local-tooling-and-replay-regressions-passed-current-revision-ci-required
+  validation: final-pr-head-and-merge-candidate-ci-passed
   localPythonTests: 270
   newPythonTests: 13
   independentCompositionAdmission: true
@@ -806,6 +806,35 @@ recoveryGitHubWorkspaceCompositionAdmission:
   workspaceConstruct: ARTIFACTS_WORKSPACES
   workspaceRuntimeIdentity: github-actions-jobs
   generalValueStateContinuity: false
+  signedPortfolioExpanded: false
+  supportPromotion: false
+  pullRequest: 250
+  mergedMain: 5b78609dd11c7538d296511c5d0f973b84368399
+  validatedHead: 5ad6dd2e36882e8721102884786cd91cb506b116
+  validatedTree: 02f8bfc52fea315b4600b45a6d2ef4158f7237fe
+  flowCiRun: 40148866140
+  runtimeCiRun: 40148866139
+  jvmTestsPerRevision: 2362
+  standaloneConformanceChecksPerRevision: 291
+  fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/250
+
+recoveryConditionalWorkspaceProducers:
+  candidate: AR-06AE-C15
+  status: candidate
+  workPackage: .flow-agent/work-packages/conditional-workspace-producers.yaml
+  report: .flow-agent/reports/conditional-workspace-producers.md
+  predecessorMain: 5b78609dd11c7538d296511c5d0f973b84368399
+  validation: local-tooling-and-replay-regressions-passed-current-revision-ci-required
+  localPythonTests: 277
+  newPythonTests: 7
+  newJvmTests: 7
+  endpointScope: CONDITION_SCOPED_SINGLE_SOURCE_WORKSPACE
+  conditionalProducerSupport: same-or-nested-lexical-branch
+  nativeBaselineJobs: 13
+  requiredNativeMutants: 4
+  independentCompositionAdmission: true
+  generalValueStateContinuity: false
+  producerFailureExperiments: false
   signedPortfolioExpanded: false
   supportPromotion: false
   fullSuiteEvidence: Required in the final pull request validation record.

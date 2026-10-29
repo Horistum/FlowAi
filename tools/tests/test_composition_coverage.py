@@ -282,7 +282,7 @@ class CompositionCoverageTests(unittest.TestCase):
         self.assertEqual("github-actions-jobs", result["runtimeKind"])
         self.assertNotIn("imageId", result)
         self.assertEqual(5, len(result["compilerInputDigests"]))
-        self.assertEqual(10, len(result["cases"]))
+        self.assertEqual(17, len(result["cases"]))
 
     def test_workspace_replay_rejects_rehashed_compiler_and_envelope_drift(self):
         for name in compiled_files():
@@ -315,6 +315,16 @@ class CompositionCoverageTests(unittest.TestCase):
                 self.replay_workspace(change)
         jobs = api_jobs(); jobs[0]["run_attempt"] = 2
         with self.assertRaisesRegex(ValueError, "provenance"): self.replay_workspace(jobs=jobs)
+
+    def test_workspace_replay_rejects_rehashed_conditional_producer_observations(self):
+        for mutation in ("producer-selection", "producer-bytes", "producer-mutant"):
+            def change(files):
+                results = coverage.decode(files["observations.json"])
+                if mutation == "producer-selection": results["git_checkout_4"] = copy.deepcopy(results["git_checkout_3"])
+                elif mutation == "producer-bytes": results["git_checkout_3"]["outputs"]["inventory"] = "{}"
+                else: results["producer-guard-omission-mutant"]["result"] = "skipped"
+                files["observations.json"] = coverage.encode(results)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.replay_workspace(change)
 
     def test_workspace_replay_rejects_rewritten_expected_inventory(self):
         def change(files):

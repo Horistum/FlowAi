@@ -134,8 +134,8 @@ class GitHubWorkspaceCompositionTests {
         assertFalse(rendered.contains("{{defaultContext}}"))
     }
 
-    @Test fun executedEnvelopePreservesEveryGeneratedTransferAndFalsifiesThreeMutants() {
-        val rendered = provider.render(manifest(fixture.conditionalDocument(revision)))
+    @Test fun executedEnvelopePreservesEveryGeneratedTransferAndFalsifiesFourMutants() {
+        val rendered = provider.render(manifest(fixture.conditionalProducerDocument(revision)))
         val envelope = File(root, fixture.WORKFLOW).readText()
         fixture.validateEnvelope(rendered, envelope, revision)
         for (changed in listOf(envelope.replace("include-hidden-files: \"true\"", "include-hidden-files: \"false\""),
@@ -205,6 +205,133 @@ class GitHubWorkspaceCompositionTests {
             assertFails { provider.renderer.render(m.copy(jobs = listOf(producer.copy(
                 metadata = producer.metadata + guard)) + m.jobs.drop(1))) }
         }
+    }
+
+    @Test fun conditionalProducersComposeWithSameBranchAndNestedConsumers() {
+        val document = fixture.conditionalProducerDocument(revision)
+        assertTrue(matched(compile(document).authorization.executionPlan))
+        val m = manifest(document)
+        assertEquals(TargetRenderMode.EXECUTABLE, TargetRenderPolicy.evaluate(m).mode)
+        assertEquals("9", m.metadata["workspaceContinuityTransferCount"])
+        assertEquals(3, m.jobs.flatMap { it.steps }.count { it.type == "adapter-continuity-upload" })
+        for ((producer, consumers) in mapOf("git_checkout_3" to listOf(6, 7, 8), "git_checkout_4" to listOf(9))) {
+            val source = m.jobs.single { it.id == producer }
+            assertNotNull(source.metadata["condition"])
+            assertEquals(source.metadata["condition"], source.steps.first().metadata["condition"])
+            val artifact = source.steps.last().rendererPayload!!.bindings.getValue("name")
+            consumers.forEach { number ->
+                val consumer = m.jobs.single { it.id == "docker_build_$number" }
+                assertEquals(listOf(producer), consumer.dependsOn)
+                assertEquals(artifact, consumer.steps.first().rendererPayload!!.bindings.getValue("name"))
+            }
+        }
+        val rendered = provider.render(m)
+        assertTrue(rendered.contains("needs.git_checkout_3.result == 'success'"))
+        assertTrue(rendered.contains("needs.git_checkout_4.result == 'skipped' && !(!(true))"))
+    }
+
+    @Test fun endpointEligibilityUsesLexicalAncestryInsteadOfPredicateEquality() {
+        val plan = compile(fixture.document(revision, 1)).authorization.executionPlan
+        val source = plan.nodes[0] as TaskNode
+        val consumer = plan.nodes[1] as TaskNode
+        fun condition(id: String, yes: List<PlanNode>, no: List<PlanNode> = emptyList()) =
+            ConditionNode(id, condition = "true", then = yes, otherwise = no)
+        for (nodes in listOf(
+            listOf(condition("outer", listOf(source, consumer))),
+            listOf(condition("outer", listOf(source, condition("inner", listOf(consumer))))),
+            listOf(condition("outer", emptyList(), listOf(source, consumer))))) {
+            assertTrue(matched(plan.copy(nodes = nodes)), nodes.toString())
+        }
+        for (nodes in listOf(
+            listOf(condition("outer", listOf(source)), consumer),
+            listOf(condition("outer", listOf(source), listOf(consumer))),
+            listOf(condition("one", listOf(source)), condition("two", listOf(consumer))),
+            listOf(condition("outer", listOf(condition("inner", listOf(source)), consumer))),
+            listOf(RetryGroupNode("retry", max = 2, delay = "0s", backoff = "fixed", body = listOf(source, consumer))),
+            listOf(LoopNode("loop", item = "item", source = "[\"one\"]", body = listOf(source, consumer))),
+            listOf(ParallelGroupNode("parallel", branches = listOf(PlanBranch("branch", listOf(source, consumer))))),
+            listOf(TryPlanNode("recovery", body = listOf(source, consumer))))) {
+            assertFalse(matched(plan.copy(nodes = nodes)), nodes.toString())
+        }
+    }
+
+    @Test fun conditionalEndpointCompositionDoesNotDependOnConsumerCardinality() {
+        for (count in listOf(1, 3, 6)) {
+            val base = fixture.document(revision, count)
+            for (selected in listOf(false, true)) {
+                val document = base.copy(flow = base.flow.copy(steps = listOf(
+                    IfNode(condition = BooleanLiteralNode(value = selected), then = base.flow.steps.dropLast(1)),
+                    base.flow.steps.last())))
+                val m = manifest(document)
+                assertEquals(count.toString(), m.metadata["workspaceContinuityTransferCount"])
+                assertEquals(1, m.jobs.flatMap { it.steps }.count { it.type == "adapter-continuity-upload" })
+                provider.render(m)
+            }
+        }
+    }
+
+    @Test fun compilerRejectsWorkspaceUseOutsideTheProducerBranch() {
+        val base = fixture.document(revision, 1)
+        for (selected in listOf(false, true)) {
+            val producer = IfNode(condition = BooleanLiteralNode(value = selected), then = listOf(base.flow.steps[0]))
+            val escaped = base.copy(flow = base.flow.copy(steps = listOf(producer) + base.flow.steps.drop(1)))
+            assertFails { provider.render(manifest(escaped)) }
+        }
+    }
+
+    @Test fun producerPredicatesRetainBooleanInputAndEventAvailabilityChecks() {
+        val base = fixture.conditionalProducerDocument(revision)
+        val branch = base.flow.steps.last() as IfNode
+        for (value in listOf(false, true)) {
+            val document = base.copy(flow = base.flow.copy(
+                input = base.flow.input + InputNode(name = "enabled", valueType = ValueTypeNode("boolean"),
+                    default = BooleanLiteralNode(value = value)),
+                steps = base.flow.steps.dropLast(1) + branch.copy(condition = ReferenceNode(path = listOf("enabled")))))
+            val m = manifest(document)
+            assertEquals("9", m.metadata["workspaceContinuityTransferCount"])
+            assertTrue(provider.render(m).contains("inputs.enabled"))
+            val event = document.copy(flow = document.flow.copy(triggers = listOf(
+                TriggerNode(id = "push", triggerType = "EVENT", event = "push"))))
+            assertFails { provider.render(manifest(event)) }
+        }
+    }
+
+    private fun withGuard(job: TargetJob, guard: String?): TargetJob = job.copy(
+        metadata = if (guard == null) job.metadata - "condition" else job.metadata + ("condition" to guard),
+        steps = job.steps.map { step -> if (step.type != "action") step else step.copy(
+            metadata = if (guard == null) step.metadata - "condition" else step.metadata + ("condition" to guard)) })
+
+    @Test fun directRendererRejectsProducerGuardDriftAndConsumerBranchEscape() {
+        val m = manifest(fixture.conditionalProducerDocument(revision))
+        val producer = m.jobs.single { it.id == "git_checkout_3" }
+        val consumer = m.jobs.single { it.id == "docker_build_7" }
+        val invalid = listOf(
+            producer.copy(metadata = producer.metadata - "condition"),
+            producer.copy(steps = listOf(producer.steps.first().copy(metadata = producer.steps.first().metadata - "condition")) + producer.steps.drop(1)),
+            withGuard(producer, "false"),
+            withGuard(producer, "missing"),
+            producer.copy(metadata = producer.metadata + ("errorHandler" to "true")),
+            withGuard(consumer, null),
+            withGuard(consumer, "not (false)"),
+            withGuard(consumer, "true or false"),
+            consumer.copy(dependsOn = emptyList()))
+        invalid.forEach { changed -> assertFails {
+            provider.renderer.render(m.copy(jobs = m.jobs.map { if (it.id == changed.id) changed else it }))
+        } }
+    }
+
+    @Test fun guardRetentionPreservesBooleanStructureAndDoesNotFlattenParentheses() {
+        val m = manifest(fixture.conditionalProducerDocument(revision))
+        val source = "git_checkout_4"
+        val target = "docker_build_9"
+        fun render(producer: String, consumer: String) = provider.renderer.render(m.copy(jobs = m.jobs.map {
+            when (it.id) { source -> withGuard(it, producer); target -> withGuard(it, consumer); else -> it }
+        }))
+        render("not (true or false)", "(not (true or false)) and true")
+        render("true == false", "(true == false) and (false != true)")
+        assertFails { render("not (true or false)", "not true or false") }
+        assertFails { render("true == (false == true)", "(true == false) == true") }
+        assertFails { render("true or false", "true") }
     }
 
 }

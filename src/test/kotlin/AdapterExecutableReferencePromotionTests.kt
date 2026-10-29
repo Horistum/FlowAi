@@ -32,12 +32,14 @@ class AdapterExecutableReferencePromotionTests {
     @Test
     fun obsoleteTaskSequenceScopeCannotPromoteTheEndpointContract() {
         val document = AdapterExecutableReferencePromotionLoader.load(root)
-        val stale = document.copy(promotions = document.promotions.map {
-            it.copy(scopeIdentity = "github-actions|ARTIFACT|artifact.shared-workspace|git.checkout|docker.build|source|git.checkout,docker.build")
-        })
-        val report = authority.evaluate(stale)
-        assertEquals("FAIL", report.status)
-        assertTrue(report.findings.any { it.code == "ADAPTER_PROMOTION_SCOPE_UNKNOWN" })
+        for (scope in listOf("git.checkout,docker.build", "UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE")) {
+            val stale = document.copy(promotions = document.promotions.map {
+                it.copy(scopeIdentity = "github-actions|ARTIFACT|artifact.shared-workspace|git.checkout|docker.build|source|$scope")
+            })
+            val report = authority.evaluate(stale)
+            assertEquals("FAIL", report.status)
+            assertTrue(report.findings.any { it.code == "ADAPTER_PROMOTION_SCOPE_UNKNOWN" })
+        }
         // The active overlay still certifies the original reference scenario only.
         assertEquals(listOf("checkout-build-image"), document.promotions.map { it.scenarioId })
     }

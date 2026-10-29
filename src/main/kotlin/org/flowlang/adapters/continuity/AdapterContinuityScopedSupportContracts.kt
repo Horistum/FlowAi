@@ -16,8 +16,8 @@ import org.flowlang.planner.TryPlanNode
 
 /** Adapter-owned applicability, not an alternative definition of Core continuity. */
 enum class AdapterContinuityEndpointScope {
-    /** Unconditional producer; isolated consumer at top level or under conditions only. */
-    UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE
+    /** Producer and consumer occur once; the consumer retains every producer branch. */
+    CONDITION_SCOPED_SINGLE_SOURCE_WORKSPACE
 }
 
 /** Bounded continuity evidence supplied explicitly by a concrete adapter. */
@@ -82,6 +82,9 @@ object AdapterContinuityScopedSupportAuthority {
         val consumer = nodes[requirement.targetNodeId] ?: return null
         val sourceAction = "${source.module}.${source.action}"
         val targetAction = "${consumer.module}.${consumer.action}"
+        val branches = plan.nodes.conditionScopedTaskBranches()
+        val sourceBranches = branches[source.id]
+        val consumerBranches = branches[consumer.id]
         return declarations.singleOrNull { declaration ->
             declaration.target == target &&
                 declaration.family == requirement.family &&
@@ -90,9 +93,10 @@ object AdapterContinuityScopedSupportAuthority {
                 declaration.targetAction == targetAction &&
                 declaration.channel == requirement.channel &&
                 when (declaration.endpointScope) {
-                    AdapterContinuityEndpointScope.UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE ->
+                    AdapterContinuityEndpointScope.CONDITION_SCOPED_SINGLE_SOURCE_WORKSPACE ->
                         requirement.relationKind == PlanDependencyKind.WORKSPACE &&
-                            source in plan.nodes && consumer in plan.nodes.conditionScopedTasks() && source.id != consumer.id &&
+                            sourceBranches != null && consumerBranches != null &&
+                            consumerBranches.take(sourceBranches.size) == sourceBranches && source.id != consumer.id &&
                             source.id in consumer.dependsOn &&
                             plan.dependencyRelations.count {
                                 it.kind == PlanDependencyKind.WORKSPACE && it.targetNodeId == consumer.id
@@ -115,13 +119,19 @@ private fun List<PlanNode>.flattenPlanNodes(): List<PlanNode> = flatMap { node -
     }
 }
 
-/** Conditions select jobs without repeating them or changing the producer's availability.
- * Other controls need their own lifetime and transport contract; do not flatten them here.
+/** Structural branch positions distinguish separate conditions even with identical predicates.
+ * Only a producer in the same or an enclosing branch is available to a consumer.
+ * Other controls need their own lifetime and transport contract; never flatten them here.
  */
-private fun List<PlanNode>.conditionScopedTasks(): List<TaskNode> = flatMap { node ->
-    when (node) {
-        is TaskNode -> listOf(node)
-        is ConditionNode -> node.then.conditionScopedTasks() + node.otherwise.conditionScopedTasks()
-        else -> emptyList()
+private fun List<PlanNode>.conditionScopedTaskBranches(path: List<Int> = emptyList()): Map<String, List<Int>> = buildMap {
+    this@conditionScopedTaskBranches.forEachIndexed { index, node ->
+        when (node) {
+            is TaskNode -> put(node.id, path)
+            is ConditionNode -> {
+                putAll(node.then.conditionScopedTaskBranches(path + (index * 2)))
+                putAll(node.otherwise.conditionScopedTaskBranches(path + (index * 2 + 1)))
+            }
+            else -> Unit
+        }
     }
 }

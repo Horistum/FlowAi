@@ -5,7 +5,7 @@ promotions:
     supportClass: executable_reference
     scenarioId: checkout-build-image
     snapshotReference: "conformance/snapshots/github-actions-checkout-build-image/snapshot-index.json"
-    scopeIdentity: "github-actions|ARTIFACT|artifact.shared-workspace|git.checkout|docker.build|source|UNCONDITIONAL_PRODUCER_SINGLE_SOURCE_WORKSPACE"
+    scopeIdentity: "github-actions|ARTIFACT|artifact.shared-workspace|git.checkout|docker.build|source|CONDITION_SCOPED_SINGLE_SOURCE_WORKSPACE"
     evidenceReferences:
       - "src/main/kotlin/org/flowlang/targets/builtin/GitHubActionsWorkspaceContinuityPlanner.kt"
       - "src/main/kotlin/org/flowlang/adapters/continuity/AdapterContinuityScopedCapabilityResolver.kt"

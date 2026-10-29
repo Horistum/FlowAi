@@ -13,19 +13,20 @@ import sys
 from condition_composition_oracle import require, sha, receipts, boolean
 
 CONTEXT = pathlib.Path("conformance/fixtures/workspace-bytes")
-BASELINES = {"git_checkout_1", "git_checkout_2", "docker_build_1", "docker_build_2", "docker_build_3", "docker_build_4", "docker_build_5"}
+BASELINES = {f"git_checkout_{n}" for n in range(1, 5)} | {f"docker_build_{n}" for n in range(1, 10)}
 TRANSFER_MUTANTS = {"missing-transfer-mutant", "hidden-file-mutant"}
-MUTANTS = TRANSFER_MUTANTS | {"guard-omission-mutant"}
+GUARD_MUTANTS = {"guard-omission-mutant", "producer-guard-omission-mutant"}
+MUTANTS = TRANSFER_MUTANTS | GUARD_MUTANTS
 JOB_PREFIX = "github-workspace-composition / "
 INPUT_FILES = {"fixture.ast.json", "canonical-graph.json", "github-actions.manifest.json",
                "github-actions.yml", "execution-envelope.yml"}
 RUNTIME_KIND = "github-actions-jobs"
-CLAIM = "Bounded conditional regular-file fan-out through native artifact upload/download and local-context image builds."
-LIMITS = ["One parsed-AST composition with an unconditional producer and literal nested consumer predicates",
+CLAIM = "Bounded condition-scoped producer and consumer fan-out through native artifact transfer and local-context image builds."
+LIMITS = ["One parsed-AST composition with unconditional and conditional producers, single-source consumers and literal nested predicates",
           "Regular, hidden and binary file bytes only; filesystem metadata, symbolic links and credentials are not certified",
-          "Conditional producers, repeated-control transport, producer-failure experiments and general VALUE/STATE continuity remain open",
+          "Branch escape, repeated-control transport, producer-failure experiments and general VALUE/STATE continuity remain open",
           "Same-attempt GitHub API authenticates job identity, results and ordering; CI runners, native observers and job outputs remain trusted",
-          "Existing missing-transfer, hidden-file and guard-omission mutants; no signed portfolio or target-wide support promotion"]
+          "Missing-transfer, hidden-file and consumer/producer guard-omission mutants; no signed portfolio or target-wide support promotion"]
 
 
 def inventory(root):
@@ -46,11 +47,11 @@ def inventory(root):
 def bind(document, graph, manifest, revision):
     flow = document["flow"]
     require(not flow.get("errorHandler") and not flow.get("vars"), "Unsupported source semantics")
-    tasks, selected, source_guards = {}, set(), {}
+    tasks, selected, source_guards, source_paths = {}, set(), {}, {}
 
-    def source_shape(steps, active=True, guard=None):
+    def source_shape(steps, active=True, guard=None, path=()):
         shape = []
-        for step in steps:
+        for index, step in enumerate(steps):
             if step["type"] == "If":
                 require(step["condition"]["type"] == "BooleanLiteral", "Native workspace proof requires literal predicates")
                 value = boolean(step["condition"], {})
@@ -58,15 +59,15 @@ def bind(document, graph, manifest, revision):
                 def combine(condition):
                     return condition if guard is None else f"({guard}) and ({condition})"
                 shape.append(("if", literal,
-                    source_shape(step["then"], active and value, combine(literal)),
-                    source_shape(step.get("otherwise", []), active and not value, combine(f"not ({literal})"))))
+                    source_shape(step["then"], active and value, combine(literal), path + ((index, True),)),
+                    source_shape(step.get("otherwise", []), active and not value, combine(f"not ({literal})"), path + ((index, False),))))
             else:
                 require(step["type"] == "Action" and not step.get("handler"), "Unsupported source control")
                 name = step["result"]["name"]
                 require(name not in tasks, "Duplicate source task")
                 require((step["module"], step["action"]) in {("git", "checkout"), ("docker", "build")}, "Unexpected leaf")
-                require(step["module"] != "git" or guard is None, "Conditional producer is outside this proof")
                 tasks[name], source_guards[name] = step, guard
+                source_paths[name] = path
                 if active:
                     selected.add(name)
                 shape.append(("task", name))
@@ -110,8 +111,12 @@ def bind(document, graph, manifest, revision):
         if step["module"] == "docker":
             deps = step.get("dependsOn", [])
             require(len(deps) == 1 and tasks[deps[0]]["module"] == "git", "Consumer requires one checkout producer")
+            producer_path = source_paths[deps[0]]
+            require(source_paths[name][:len(producer_path)] == producer_path,
+                    "Workspace consumer escapes its producer branch")
+            require(name not in selected or deps[0] in selected, "Selected consumer has no selected producer")
             workspaces.add((deps[0], name))
-    require(len(workspaces) == 5 and len({p for p, _ in workspaces}) == 1, "Native proof requires fan-out")
+    require(len(workspaces) == 9 and len({p for p, _ in workspaces}) == 3, "Native proof requires conditional producer fan-out")
     expected = {(p, c, "ORDERING", None, "DECLARED_ORDERING") for p, c in ordering} | {
         (p, c, "WORKSPACE", "source", "MODULE_CONTRACT") for p, c in workspaces}
     actual = []
@@ -135,6 +140,9 @@ def bind(document, graph, manifest, revision):
                 action["metadata"].get("condition") == source_guards[name], "Native guard differs from source")
         by_name[name] = job
     require(set(by_name) == set(tasks) and {j["id"] for j in jobs} == BASELINES, "Native job inventory differs")
+    artifact_names = [by_name[p]["steps"][-1]["rendererPayload"]["bindings"]["name"]["name"]
+                      for p in sorted({producer for producer, _ in workspaces})]
+    require(len(artifact_names) == len(set(artifact_names)), "Independent workspace producers share an artifact identity")
     for name, job in by_name.items():
         require(job["dependsOn"] == [by_name[p]["id"] for p in tasks[name].get("dependsOn", [])], "Native ordering differs")
         incoming = [(p, c) for p, c in workspaces if c == name]
@@ -151,8 +159,10 @@ def bind(document, graph, manifest, revision):
                     download["metadata"]["continuityTargetJob"] == job["id"], "Transfer endpoints differ")
     return {"baselineJobs": sorted(BASELINES), "workspaceEdges": sorted([list(e) for e in workspaces]),
             "nativeOrdering": sorted([[by_name[p]["id"], by_name[c]["id"]] for p, c in ordering]),
+            "workspaceProducers": sorted({by_name[p]["id"] for p, _ in workspaces}),
             "mutants": sorted(MUTANTS), "selectedJobs": sorted(by_name[name]["id"] for name in selected),
-            "guardMutantSource": by_name["consumer3"]["id"]}
+            "guardMutantSources": {"guard-omission-mutant": by_name["consumer3"]["id"],
+                                   "producer-guard-omission-mutant": by_name["unselectedSnapshot"]["id"]}}
 
 
 def verify_job(name, result, expected, selected):
@@ -163,7 +173,7 @@ def verify_job(name, result, expected, selected):
         require(set(output) == {"inventory"}, "Missing native byte observation")
         require(decode(output["inventory"]) == expected, f"Workspace bytes differ in {name}")
     else:
-        require(not output, "Unselected consumer produced output")
+        require(not output, "Unselected workspace job produced output")
 
 
 def verify_observations(results, expected, revision, model):
@@ -175,18 +185,19 @@ def verify_observations(results, expected, revision, model):
         verify_job(name, results[name], expected, name in selected)
     require(all(results[name] == {"result": "success", "outputs": {}} for name in TRANSFER_MUTANTS),
             "A required transfer falsification failed")
-    # The altered workflow must really build from the restored bytes. Replaying that
-    # observation against the source's unselected branch must reject the extra work.
-    mutant = results["guard-omission-mutant"]
-    verify_job("guard-omission-mutant", mutant, expected, True)
-    source = model["guardMutantSource"]
-    require(source in BASELINES - selected, "Guard mutant must originate in an unselected branch")
-    try:
-        verify_job(source, mutant, expected, False)
-    except ValueError:
-        pass
-    else:
-        raise ValueError("Guard-omission mutant escaped source-derived selection")
+    # The altered jobs must really produce or consume the expected bytes. Replaying
+    # each observation against its unselected source branch must reject extra work.
+    require(set(model["guardMutantSources"]) == GUARD_MUTANTS, "Guard mutant inventory differs")
+    for name, source in model["guardMutantSources"].items():
+        mutant = results[name]
+        verify_job(name, mutant, expected, True)
+        require(source in BASELINES - selected, "Guard mutant must originate in an unselected branch")
+        try:
+            verify_job(source, mutant, expected, False)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("Guard-omission mutant escaped source-derived selection")
 
 
 def authenticate_jobs(jobs, results, current, model):
@@ -204,12 +215,16 @@ def authenticate_jobs(jobs, results, current, model):
         require(job["status"] == "completed" and job["conclusion"] == results[name]["result"],
                 f"Native GitHub outcome differs in {name}")
         start, end = (datetime.fromisoformat(job[key]) for key in ("started_at", "completed_at"))
-        require(start.utcoffset() is not None and end.utcoffset() is not None and start <= end,
+        require(start.utcoffset() is not None and end.utcoffset() is not None,
                 "Invalid native job timing")
-        times[name] = (start, end)
         if job["conclusion"] == "skipped":
+            # Skipped jobs have no execution interval. GitHub's scheduler can
+            # report their completion before their start; retain those API facts
+            # without using them as evidence that any work or ordering occurred.
             require(not job["steps"], "Skipped native job executed steps")
         else:
+            require(start <= end, "Invalid native job timing")
+            times[name] = (start, end)
             required = {"Observe workspace bytes"}
             if name == "prepare":
                 required = {"Bind generated transfers to executed envelope"}
@@ -219,12 +234,16 @@ def authenticate_jobs(jobs, results, current, model):
                     required |= {"Restore Flow workspace source", "Verify selective loss"}
             elif name == "guard-omission-mutant":
                 required |= {"Restore Flow workspace source", "docker_build_3"}
+            elif name == "producer-guard-omission-mutant":
+                required |= {"git_checkout_4", "Upload Flow workspace source"}
             elif name.startswith("docker_build_"):
                 required |= {"Restore Flow workspace source", name}
             else:
                 required.add(name)
+                if name in model["workspaceProducers"]:
+                    required.add("Upload Flow workspace source")
                 if name == "git_checkout_1":
-                    required |= {"Upload Flow workspace source", "Prepare hidden-file mutant"}
+                    required.add("Prepare hidden-file mutant")
             for step_name in required:
                 steps = [s for s in job["steps"] if s["name"] == step_name]
                 require(len(steps) == 1 and steps[0]["status"] == "completed" and steps[0]["conclusion"] == "success",
@@ -237,7 +256,7 @@ def authenticate_jobs(jobs, results, current, model):
     for producer, consumer in model["nativeOrdering"]:
         if consumer in selected:
             require(producer in selected and times[producer][1] <= times[consumer][0], "Native workspace ordering differs")
-    for name in MUTANTS:
+    for name in TRANSFER_MUTANTS | {"guard-omission-mutant"}:
         require(times["git_checkout_1"][1] <= times[name][0], "Native mutant preceded workspace producer")
     return [records[name] for name in sorted(records)]
 
@@ -298,7 +317,7 @@ def main():
         write(directory / "github-jobs.json", authenticated)
         write(directory / "proof.json", current | assessment | {"formatVersion": 1, "status": "passed",
             "publicSupportPromoted": False, "portableExecution": False, "files": receipts(directory)})
-        print("PASS: native conditional fan-out preserves selection and bytes; all three mutants are detected.")
+        print("PASS: native conditional producers and consumers preserve selection and bytes; all four mutants are detected.")
 
 
 if __name__ == "__main__":
