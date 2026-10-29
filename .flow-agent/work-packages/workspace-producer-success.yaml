@@ -1,0 +1,43 @@
+version: AR-06AE-C16
+name: Explicit Workspace Producer Success
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
+authorization:
+  source: Maintainer requests the next roadmap PR after merging PR 251.
+  predecessorPullRequest: 251
+invariant: Workspace consumption requires successful production; a skipped ordering predecessor does not establish data availability.
+architecturePurpose: Preserve the existing distinction between ORDERING and WORKSPACE at the native scheduling boundary instead of relying on Boolean guard conjunction to make a generic skip path unreachable.
+scope:
+- Derive strict producer dependencies from existing validated workspace download endpoints.
+- Require producer success even when conditional or approval scheduling enables explicit native guards.
+- Preserve ordinary conditional ordering and approval skip semantics for unrelated dependencies.
+- Bind the generated native envelope to the stricter conditions and retain every baseline and mutant.
+nonGoals:
+- No new Core semantics, public syntax, schemas or target support promotion.
+- No claim of a native failed-producer experiment; failure and cancellation guard regressions are distinct from native execution evidence.
+- No repeated-control workspace transport, general VALUE/STATE continuity, AR-06 closure, AR-07 activation or EF-09 resumption.
+ownershipBoundary:
+  core: Existing canonical continuity and ordering contracts remain unchanged.
+  adapters: Own success-only scheduling derived from validated transfer endpoints.
+  conformance: Own regression coverage and unchanged independent native selection/bytes admission.
+expectedFilesToChange:
+- src/main/kotlin/org/flowlang/targets/builtin/GitHubJobConditionAuthority.kt
+- src/test/kotlin/GitHubJobConditionAuthorityTests.kt
+- src/test/kotlin/GitHubWorkspaceCompositionTests.kt
+- .github/workflows/github-workspace-composition.yml
+- docs/GITHUB_ACTIONS_ARTIFACT_WORKSPACE_CONTINUITY.md
+- .flow-agent/roadmap-architecture-recovery.yaml
+- .flow-agent/release-state.yaml
+expectedFilesToAdd:
+- .flow-agent/reports/workspace-producer-success.md
+testsToAddOrUpdate:
+- Conditional workspace producers require success without an ordering-only skip escape.
+- Mixed workspace, approval and ordinary conditional dependencies retain distinct semantics.
+- Unconditional workspace consumers preserve default native success and cancellation semantics.
+- Missing source/order endpoint identities fail closed before scheduling.
+- Native envelope regression rejects reintroduction of conditional producer skip alternatives.
+validation:
+  local: Full Python suite, Flow Agent validation/context, YAML and diff checks.
+  requiredChecks: [compile-test-conformance, merge-candidate-compile-test-conformance, adapter-composition-coverage, adapter-certification-portfolio, github-workspace-composition]
+  finalEvidence: Verify immutable-head GitHub checks and record results without a subsequent source commit.
