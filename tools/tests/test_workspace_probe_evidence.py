@@ -1,7 +1,7 @@
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import workspace_probe_evidence as probe
@@ -53,7 +53,7 @@ class ProbeTests(unittest.TestCase):
             now[0] += delay
         return probe.locate(lambda: runs if runs is not None else [run()],
                             artifacts or (lambda _: [self.artifact()]),
-                            attempts or (lambda rid, attempt: run() | {'id': rid, 'run_attempt': attempt}),
+                            attempts or (lambda rid, attempt: run() | {'id': int(rid), 'run_attempt': int(attempt)}),
                             CONTEXT['sourceRevision'], 'd' * 64, 'pull_request', explicit=explicit,
                             pause=pause, clock=lambda: now[0], timeout=timeout)
 
@@ -135,3 +135,41 @@ class ProbeTests(unittest.TestCase):
         with patch.object(probe, 'get', return_value={'total_count': 2, 'artifacts': [{'id': 1}, {'id': 1}]}):
             with self.assertRaisesRegex(ValueError, 'Duplicate'):
                 probe.listing(REPOSITORY, 'runs/123/artifacts', 'artifacts', 'test')
+
+    def test_manual_wrong_or_unfinished_attempt_fails_before_artifact_polling(self):
+        for change in ({'head_sha': 'c' * 40}, {'path': 'other.yml'}, {'id': 124},
+                       {'run_attempt': True}, {'status': 'in_progress'}, {'conclusion': 'success'}):
+            artifacts = Mock(return_value=[])
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                self.locate(explicit=('123', '1'), artifacts=artifacts,
+                            attempts=lambda *_: run() | change)
+            artifacts.assert_not_called()
+            self.assertEqual([], self.waits)
+
+    def test_manual_missing_or_expired_archive_fails_without_waiting_or_falling_back(self):
+        for archives in ([], [self.artifact() | {'expired': True}], [self.artifact(attempt=2)]):
+            with self.subTest(archives=archives), self.assertRaisesRegex(ValueError, 'no available evidence'):
+                self.locate(explicit=('123', '1'), artifacts=lambda _: archives)
+            self.assertEqual([], self.waits)
+
+    def test_slow_api_response_cannot_admit_evidence_after_deadline(self):
+        for delayed in ('runs', 'artifacts', 'attempt'):
+            now = [0]
+            def response(name, value):
+                if delayed == name:
+                    now[0] = 31
+                return value
+            with self.subTest(delayed=delayed), self.assertRaisesRegex(ValueError, 'budget'):
+                probe.locate(lambda: response('runs', [run()]),
+                             lambda _: response('artifacts', [self.artifact()]),
+                             lambda *_: response('attempt', run()),
+                             CONTEXT['sourceRevision'], 'd' * 64, 'pull_request',
+                             clock=lambda: now[0], pause=lambda _: self.fail('Must not wait'), timeout=30)
+
+    def test_expired_deadline_does_not_start_another_api_observation(self):
+        now = [0]
+        fetch = Mock(return_value=[])
+        with self.assertRaisesRegex(ValueError, 'budget'):
+            probe.locate(fetch, lambda _: [], lambda *_: run(), CONTEXT['sourceRevision'], 'd' * 64,
+                         'pull_request', clock=lambda: now[0], pause=lambda delay: now.__setitem__(0, delay), timeout=1)
+        fetch.assert_called_once_with()

@@ -94,17 +94,44 @@ def locate(fetch_runs, fetch_artifacts, fetch_attempt, revision, digest, event_n
     if explicit:
         attempt_path(*explicit)
     deadline = clock() + timeout
+
+    def remaining():
+        seconds = deadline - clock()
+        require(seconds > 0, 'Workspace probe did not complete within the observation budget')
+        return seconds
+
+    def query(fetch, *arguments):
+        remaining()
+        value = fetch(*arguments)
+        remaining()
+        return value
+
+    def observe(run_id, attempt):
+        run = query(fetch_attempt, run_id, attempt)
+        require(type(run['id']) is int and str(run['id']) == str(run_id) and
+                type(run['run_attempt']) is int and str(run['run_attempt']) == str(attempt) and
+                run['head_sha'] == revision and run['path'] == WORKFLOW,
+                'Pinned probe provenance differs')
+        return run
+
+    # Manual selection is a reference to completed evidence, not a request to
+    # wait for an unrelated or unfinished run to produce an archive.
+    explicit_run = observe(*explicit) if explicit else None
+    if explicit_run is not None:
+        require(explicit_run['status'] == 'completed', 'Selected manual probe attempt is not completed')
+        require(explicit_run['conclusion'] == 'failure', 'Workspace probe has an unexpected final verdict')
     pinned = None
     observations = 0
     while True:
+        remaining()
         if pinned is None:
             candidates = []
-            runs = ([{'id': explicit[0]}] if explicit else fetch_runs())
+            runs = ([{'id': explicit[0]}] if explicit else query(fetch_runs))
             for run in runs:
                 if not explicit and (run['head_sha'] != revision or run['path'] != WORKFLOW or
                                      run['event'] != event_name):
                     continue
-                for artifact in fetch_artifacts(run['id']):
+                for artifact in query(fetch_artifacts, run['id']):
                     match = re.fullmatch(re.escape(ARTIFACT) + r'([0-9a-f]{64})-([1-9][0-9]*)', artifact['name'])
                     if not match or artifact['expired']:
                         continue
@@ -114,6 +141,7 @@ def locate(fetch_runs, fetch_artifacts, fetch_attempt, revision, digest, event_n
                     elif match[1] != digest:
                         continue
                     candidates.append((run['id'], int(match[2]), artifact['id'], artifact['name']))
+            require(not explicit or candidates, 'Selected manual probe attempt has no available evidence artifact')
             require(len({row[0] for row in candidates}) <= 1, 'Ambiguous event-bound probe runs')
             if candidates:
                 # Earlier attempts remain immutable and usable after a later rerun.
@@ -123,21 +151,18 @@ def locate(fetch_runs, fetch_artifacts, fetch_attempt, revision, digest, event_n
                 pinned = candidates[0]
         if pinned is not None:
             run_id, attempt, artifact_id, name = pinned
-            run = fetch_attempt(run_id, attempt)
-            require(str(run['id']) == str(run_id) and run['run_attempt'] == attempt and
-                    run['head_sha'] == revision and run['path'] == WORKFLOW,
-                    'Pinned probe provenance differs')
+            run = explicit_run if explicit_run is not None else observe(run_id, attempt)
             if run['status'] == 'completed':
                 require(run['conclusion'] == 'failure', 'Workspace probe has an unexpected final verdict')
+                remaining()
                 return {'run_id': str(run_id), 'attempt': str(attempt),
                         'artifact_id': str(artifact_id), 'artifact_name': name}
-        remaining = deadline - clock()
-        require(remaining > 0, 'Workspace probe did not complete within the observation budget')
+        seconds = remaining()
         observations += 1
         if observations % 4 == 1:
             print(f'Waiting for event-bound probe: pinned={pinned[:2] if pinned else None}; '
-                  f'{int(remaining)} seconds remaining', flush=True)
-        pause(min(15, remaining))
+                  f'{int(seconds)} seconds remaining', flush=True)
+        pause(min(15, seconds))
 
 
 def main():
