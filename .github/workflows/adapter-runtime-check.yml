@@ -6,6 +6,15 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
+    inputs:
+      workspace_probe_run_id:
+        description: Completed native workspace probe run for this exact revision
+        required: true
+        type: string
+      workspace_probe_attempt:
+        description: Complete native probe attempt (use Re-run all jobs)
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -23,7 +32,7 @@ jobs:
       contents: read
       actions: read
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 75
     outputs:
       receipt: ${{ steps.admit.outputs.receipt }}
     env:
@@ -40,7 +49,8 @@ jobs:
         run: python3 tools/workspace_probe_evidence.py locate
       - uses: actions/download-artifact@v4
         with:
-          name: github-workspace-composition
+          artifact-ids: ${{ steps.probe.outputs.artifact_id }}
+          merge-multiple: true
           path: ${{ runner.temp }}/workspace-evidence
           github-token: ${{ github.token }}
           run-id: ${{ steps.probe.outputs.run_id }}

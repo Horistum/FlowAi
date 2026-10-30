@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 
 import workspace_probe_evidence as probe
 
@@ -41,14 +42,93 @@ class ProbeTests(unittest.TestCase):
             with self.subTest(jobs=jobs), self.assertRaises(ValueError):
                 probe.authenticate(run(), jobs, CONTEXT, REPOSITORY)
 
-    def test_locator_waits_for_newest_run_and_never_retries_final_verdict(self):
-        calls = iter([{'workflow_runs': []}, {'workflow_runs': [run() | {'status': 'in_progress'}]},
-                      {'workflow_runs': [run()]}])
-        self.assertEqual(run(), probe.locate(lambda: next(calls), CONTEXT['sourceRevision'], lambda _: None, 3))
+    def locate(self, runs=None, artifacts=None, attempts=None, explicit=None, timeout=30):
+        now = [0]
+        self.waits = []
+        def pause(delay):
+            self.waits.append(delay)
+            now[0] += delay
+        return probe.locate(lambda: runs if runs is not None else [run()],
+                            artifacts or (lambda _: [self.artifact()]),
+                            attempts or (lambda rid, attempt: run() | {'id': rid, 'run_attempt': attempt}),
+                            CONTEXT['sourceRevision'], 'd' * 64, 'pull_request', explicit=explicit,
+                            pause=pause, clock=lambda: now[0], timeout=timeout)
+
+    def artifact(self, digest='d' * 64, attempt=1, identity=10):
+        return dict(id=identity, name=probe.artifact_name(digest, attempt), expired=False)
+
+    def test_concurrent_dispatch_and_other_pr_events_cannot_displace_matching_probe(self):
+        runs = [run(), run() | {'id': 124, 'event': 'workflow_dispatch'}, run() | {'id': 125}]
+        result = self.locate(runs=runs, artifacts=lambda rid: [self.artifact('d' * 64 if rid == 123 else 'e' * 64)])
+        self.assertEqual('123', result['run_id'])
+        self.assertEqual('10', result['artifact_id'])
+
+    def test_same_event_multiple_runs_fail_closed_instead_of_selecting_latest(self):
+        with self.assertRaisesRegex(ValueError, 'Ambiguous'):
+            self.locate(runs=[run(), run() | {'id': 124}])
+
+    def test_pinned_attempt_does_not_follow_concurrent_rerun(self):
+        calls = []
+        def attempts(rid, attempt):
+            calls.append((rid, attempt))
+            return run() | {'status': 'in_progress' if len(calls) == 1 else 'completed'}
+        artifacts = lambda _: [self.artifact()] if not calls else [self.artifact(attempt=2, identity=11)]
+        result = self.locate(artifacts=artifacts, attempts=attempts)
+        self.assertEqual('1', result['attempt'])
+        self.assertEqual([(123, 1), (123, 1)], calls)
+
+    def test_latest_complete_artifact_is_pinned_without_replacing_older_artifacts(self):
+        result = self.locate(artifacts=lambda _: [self.artifact(), self.artifact(attempt=2, identity=11)])
+        self.assertEqual('2', result['attempt'])
+        self.assertEqual('11', result['artifact_id'])
+
+    def test_manual_certification_uses_explicit_run_and_attempt(self):
+        result = self.locate(explicit=('123', '1'), artifacts=lambda _: [self.artifact('e' * 64)])
+        self.assertEqual('123', result['run_id'])
+        self.assertEqual('1', result['attempt'])
+        with self.assertRaisesRegex(ValueError, 'provenance'):
+            self.locate(explicit=('123', '1'), attempts=lambda *_: run() | {'head_sha': 'c' * 40})
+
+    def test_failed_final_verdict_is_required_without_retrying_it(self):
         for conclusion in ('success', 'cancelled'):
-            with self.assertRaisesRegex(ValueError, 'final verdict'):
-                probe.locate(lambda: {'workflow_runs': [run(), run() | {'id': 124, 'conclusion': conclusion}]},
-                             CONTEXT['sourceRevision'], lambda _: self.fail('Must not retry'), 3)
+            with self.subTest(conclusion=conclusion), self.assertRaisesRegex(ValueError, 'final verdict'):
+                self.locate(attempts=lambda *_: run() | {'conclusion': conclusion})
+            self.assertEqual([], self.waits)
+
+    def test_deadline_uses_elapsed_time_and_allows_native_critical_path(self):
+        self.assertGreater(probe.WAIT_SECONDS, 50 * 60)
         with self.assertRaisesRegex(ValueError, 'budget'):
-            probe.locate(lambda: {'workflow_runs': [run() | {'head_sha': 'c' * 40}]},
-                         CONTEXT['sourceRevision'], lambda _: None, 1)
+            self.locate(runs=[], timeout=31)
+        self.assertEqual([15, 15, 1], self.waits)
+
+    def test_expired_duplicate_and_wrong_trigger_artifacts_are_not_admitted(self):
+        for artifacts in ([self.artifact() | {'expired': True}], [self.artifact('e' * 64)]):
+            with self.assertRaisesRegex(ValueError, 'budget'):
+                self.locate(artifacts=lambda _: artifacts, timeout=1)
+        with self.assertRaisesRegex(ValueError, 'Duplicate'):
+            self.locate(artifacts=lambda _: [self.artifact(), self.artifact(identity=11)])
+
+    def test_trigger_digest_is_order_independent_and_binds_event_and_workflow_revision(self):
+        environment = dict(GITHUB_REPOSITORY=REPOSITORY, GITHUB_EVENT_NAME='pull_request',
+                           EXPECTED_SHA=CONTEXT['sourceRevision'], WORKFLOW_REVISION=CONTEXT['workflowRevision'])
+        event = {'number': 252, 'action': 'synchronize'}
+        digest = probe.trigger_digest(environment, event)
+        self.assertEqual(digest, probe.trigger_digest(environment, dict(reversed(list(event.items())))))
+        for changed in (event | {'number': 253}, event | {'action': 'reopened'}):
+            self.assertNotEqual(digest, probe.trigger_digest(environment, changed))
+        self.assertNotEqual(digest, probe.trigger_digest(environment | {'WORKFLOW_REVISION': 'c' * 40}, event))
+
+    def test_attempt_endpoint_is_immutable_and_rejects_path_injection(self):
+        self.assertEqual('runs/123/attempts/1', probe.attempt_path('123', '1'))
+        for invalid in ('0', '../1', True):
+            with self.assertRaises(ValueError):
+                probe.attempt_path('123', invalid)
+
+    def test_paginated_artifacts_include_later_pages_and_reject_duplicate_ids(self):
+        with patch.object(probe, 'get', side_effect=[{'total_count': 2, 'artifacts': [{'id': 1}]},
+                                                    {'total_count': 2, 'artifacts': [{'id': 2}]}]) as fetch:
+            self.assertEqual([{'id': 1}, {'id': 2}], probe.listing(REPOSITORY, 'runs/123/artifacts', 'artifacts', 'test'))
+            self.assertIn('page=2', fetch.call_args.args[1])
+        with patch.object(probe, 'get', return_value={'total_count': 2, 'artifacts': [{'id': 1}, {'id': 1}]}):
+            with self.assertRaisesRegex(ValueError, 'Duplicate'):
+                probe.listing(REPOSITORY, 'runs/123/artifacts', 'artifacts', 'test')

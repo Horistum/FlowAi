@@ -9,6 +9,8 @@ authorization:
 invariant: Workspace consumption requires successful production; a skipped ordering predecessor does not establish data availability.
 architecturePurpose: Independently prove that native workspace failures cannot authorize consumer execution; retain the success-only scheduling refinement as a supporting implementation detail.
 scope:
+- Pair automatic native probes by triggering-event identity, preserve immutable attempt artifacts, and explicitly pin manual probes.
+- Align observer deadlines with the native critical path and authenticate historical attempt metadata during replay.
 - Execute a failed native checkout and a failed native artifact upload in compiler-bound conditional producer paths.
 - Authenticate raw failed-step/job evidence and skipped consumers through the same-attempt GitHub API.
 - Force consumer execution in two named mutants, require actual missing-artifact and build failures, and reject their execution against the baseline contract.

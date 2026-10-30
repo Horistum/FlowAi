@@ -334,11 +334,11 @@ def main():
             subprocess.run(["java", "-cp", str(root / "flow-conformance-kit/build/install/flow-conformance/lib/*"),
                             f"org.flowlang.conformance.{prefix}CompositionCli", *arguments], cwd=root, check=True, timeout=180)
             if prefix == "GitHubWorkspace":
-                from workspace_probe_evidence import native_context, get
+                from workspace_probe_evidence import native_context, get, attempt_path
                 native = native_context(decode(admitted[artifact]["proof.json"]), expected)
                 repository, token = os.environ["GITHUB_REPOSITORY"], os.environ["GH_TOKEN"]
                 native_jobs = lambda: api_jobs(repository, native["runId"], native["attempt"], token)
-                native_run = lambda: get(repository, f'runs/{native["runId"]}', token)
+                native_run = lambda: get(repository, attempt_path(native['runId'], native['attempt']), token)
                 results.append(replay(artifact, admitted[artifact], snapshot(compiled), workspace, expected,
                                       native_jobs, root, native_run, repository))
             else:
