@@ -787,7 +787,7 @@ recoveryArchitectureEntryDocumentation:
   fullSuiteEvidence: https://github.com/Horistum/FlowAi/pull/249
   jvmTestsPerRevision: 2362
   standaloneConformanceChecksPerRevision: 291
-  nextWorkScope: C15 conditional workspace producers are merged; C16 separates workspace success from ordering skip semantics.
+  nextWorkScope: C15 conditional workspace producers are merged; C16 verifies native checkout/upload failure containment and independent replay.
   signedPortfolioExpanded: false
   supportPromotion: false
 
@@ -852,12 +852,15 @@ recoveryWorkspaceProducerSuccess:
   report: .flow-agent/reports/workspace-producer-success.md
   predecessorMain: e7a9824ce7add45f5d58b25737a6581a3c3747d5
   validation: local-python-and-structure-passed-current-revision-jvm-and-native-ci-required
-  localPythonTests: 277
-  newJvmTests: 6
+  localPythonTests: 282
+  newJvmTests: 7
+  newPythonTests: 5
   workspaceScheduling: success-only-producer-dependencies
-  nativeBaselineJobs: 13
-  requiredNativeMutants: 4
-  producerFailureExperiments: false
+  nativeBaselineJobs: 17
+  requiredNativeMutants: 6
+  producerFailureExperiments: pending-current-revision-native-ci
+  candidateFailureModes: [missing-checkout-ref, missing-upload-path]
+  blockedNativeConsumers: 2
   generalValueStateContinuity: false
   signedPortfolioExpanded: false
   supportPromotion: false

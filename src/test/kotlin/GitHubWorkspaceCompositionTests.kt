@@ -134,14 +134,18 @@ class GitHubWorkspaceCompositionTests {
         assertFalse(rendered.contains("{{defaultContext}}"))
     }
 
-    @Test fun executedEnvelopePreservesEveryGeneratedTransferAndFalsifiesFourMutants() {
-        val rendered = provider.render(manifest(fixture.conditionalProducerDocument(revision)))
+    @Test fun executedEnvelopePreservesTransfersAndBindsNativeFailureExperiments() {
+        val rendered = provider.render(manifest(fixture.failureDocument(revision)))
         val envelope = File(root, fixture.WORKFLOW).readText()
         fixture.validateEnvelope(rendered, envelope, revision)
         for (changed in listOf(envelope.replace("include-hidden-files: \"true\"", "include-hidden-files: \"false\""),
             envelope.replace("needs: [prepare, git_checkout_1]", "needs: [prepare]"),
             envelope.replace("path: \".\"", "path: \"subdirectory\""),
             envelope.replace("flow-workspace-git_checkout_1-source", "wrong-artifact"),
+            envelope.replace("flow-workspace-missing-", "other-missing-"),
+            envelope.replace(".flow-workspace-missing-", ".other-missing-"),
+            envelope.replace("continue-on-error: true", "continue-on-error: false"),
+            envelope.replace("Require unavailable workspace", "Skip failure assertion"),
             envelope.replace("needs.git_checkout_3.result == 'success'",
                 "(needs.git_checkout_3.result == 'success' || needs.git_checkout_3.result == 'skipped')"),
             envelope.replace("if: \${{ ((true && false)) }}", "if: \${{ true }}"),
@@ -150,6 +154,31 @@ class GitHubWorkspaceCompositionTests {
             assertFails { fixture.validateEnvelope(rendered, changed, revision) }
         }
     }
+    @Test fun failureExperimentsUseProductionTransfersWithoutProductionErrorSuppression() {
+        val m = manifest(fixture.failureDocument(revision))
+        assertEquals(17, m.jobs.size)
+        assertEquals("11", m.metadata["workspaceContinuityTransferCount"])
+        val rendered = provider.render(m)
+        assertFalse(rendered.contains("continue-on-error"))
+        assertFalse(rendered.contains("flow-workspace-missing"))
+        for ((source, consumer) in listOf("git_checkout_5" to "docker_build_10", "git_checkout_6" to "docker_build_11")) {
+            val job = m.jobs.single { it.id == consumer }
+            assertEquals(listOf(source), job.dependsOn)
+            assertEquals(source, job.steps.first().metadata["continuitySourceJob"])
+            assertTrue(rendered.contains("needs.$source.result == 'success'"))
+            assertFalse(rendered.contains("needs.$source.result == 'skipped'"))
+        }
+        val envelope = File(root, fixture.WORKFLOW).readText()
+        fixture.validateEnvelope(rendered, envelope, revision)
+        for (altered in listOf(envelope.replace("test \"${'$'}DOWNLOAD\" = failure", "true"),
+            envelope.replace("test \"${'$'}BUILD\" = failure", "true"),
+            envelope.replace("needs.git_checkout_5.result == 'success'", "true"),
+            envelope.replace("needs.git_checkout_6.result == 'success'", "true"))) {
+            assertNotEquals(envelope, altered)
+            assertFails { fixture.validateEnvelope(rendered, altered, revision) }
+        }
+    }
+
     @Test fun nestedConditionConsumersRetainSelectionAndOneSharedUpload() {
         val document = fixture.conditionalDocument(revision)
         val unit = compile(document)

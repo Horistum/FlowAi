@@ -282,7 +282,7 @@ class CompositionCoverageTests(unittest.TestCase):
         self.assertEqual("github-actions-jobs", result["runtimeKind"])
         self.assertNotIn("imageId", result)
         self.assertEqual(5, len(result["compilerInputDigests"]))
-        self.assertEqual(17, len(result["cases"]))
+        self.assertEqual(23, len(result["cases"]))
 
     def test_workspace_replay_rejects_rehashed_compiler_and_envelope_drift(self):
         for name in compiled_files():
@@ -333,6 +333,23 @@ class CompositionCoverageTests(unittest.TestCase):
             files["expected.json"] = coverage.encode(prepared)
         with self.assertRaisesRegex(ValueError, "Prepared evidence"):
             self.replay_workspace(change)
+
+
+    def test_workspace_replay_rejects_rehashed_failure_and_consumer_forgery(self):
+        for mutation in ("producer-success", "producer-skipped", "consumer-ran", "mutant-did-not-fail"):
+            def change(files):
+                results = coverage.decode(files["observations.json"])
+                if mutation == "producer-success": results["git_checkout_5"]["result"] = "success"
+                elif mutation == "producer-skipped": results["git_checkout_6"]["result"] = "skipped"
+                elif mutation == "consumer-ran": results["docker_build_10"] = copy.deepcopy(results["docker_build_1"])
+                else: results["failure-upload-consumer-mutant"]["outputs"]["downloadOutcome"] = "success"
+                files["observations.json"] = coverage.encode(results)
+            with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.replay_workspace(change)
+        jobs = api_jobs()
+        failed = next(j for j in jobs if j["name"].endswith(" / git_checkout_6"))
+        failed["steps"][1]["conclusion"] = "skipped"
+        with self.assertRaisesRegex(ValueError, "failure step"):
+            self.replay_workspace(jobs=jobs)
 
 
 if __name__ == "__main__":

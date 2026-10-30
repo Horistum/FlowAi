@@ -27,11 +27,16 @@ def fixture():
              ("consumer7", "docker_build_7", "docker", "build"),
              ("consumer8", "docker_build_8", "docker", "build"),
              ("unselectedSnapshot", "git_checkout_4", "git", "checkout"),
-             ("consumer9", "docker_build_9", "docker", "build")]
+             ("consumer9", "docker_build_9", "docker", "build"),
+             ("checkoutFailureSnapshot", "git_checkout_5", "git", "checkout"),
+             ("consumer10", "docker_build_10", "docker", "build"),
+             ("uploadFailureSnapshot", "git_checkout_6", "git", "checkout"),
+             ("consumer11", "docker_build_11", "docker", "build")]
     tasks, nodes, edges, jobs = [], [], [], []
     identities = {name: identity for name, identity, _, _ in names}
     producers = {f"consumer{n}": "snapshot" if n <= 5 else "selectedSnapshot" if n <= 8 else "unselectedSnapshot"
                  for n in range(1, 10)}
+    producers |= {"consumer10": "checkoutFailureSnapshot", "consumer11": "uploadFailureSnapshot"}
     def transfer(kind, consumer, source):
         return {"type": kind, "rendererPayload": {"bindings": {"name": {"kind": "ARTIFACT", "name": source + "-owned"}}},
                 "metadata": {"continuitySourceJob": source, "continuityTargetJob": consumer}}
@@ -55,7 +60,8 @@ def fixture():
         jobs.append({"id": identity, "dependsOn": [identities[p] for p in deps], "steps": steps})
     guards = {"consumer3": "(true) and (false)", "consumer4": "(true) and (not (false))", "consumer5": "not (true)",
               "selectedSnapshot": "true", "consumer6": "(true) and (false)", "consumer7": "(true) and (not (false))",
-              "consumer8": "true", "unselectedSnapshot": "not (true)", "consumer9": "not (true)"}
+              "consumer8": "true", "unselectedSnapshot": "not (true)", "consumer9": "not (true)",
+              "checkoutFailureSnapshot": "true", "consumer10": "true", "uploadFailureSnapshot": "true", "consumer11": "true"}
     for job in jobs:
         leaf = next(step for step in job["steps"] if step["type"] == "action")
         name = leaf["metadata"]["resultName"]
@@ -75,15 +81,20 @@ def fixture():
               {"id": "producerBranch", "kind": "CONDITION", "condition": "true", "thenNodeIds": ["selectedSnapshot", "producerInner", "consumer8"],
                "otherwiseNodeIds": ["unselectedSnapshot", "consumer9"]},
               {"id": "producerInner", "kind": "CONDITION", "condition": "false", "thenNodeIds": ["consumer6"], "otherwiseNodeIds": ["consumer7"]}]
-    return {"flow": {"steps": tasks[:3] + [outer, tasks[6], producer_branch]}}, {"nodes": nodes, "dependencyEdges": edges,
-            "workflows": [{"rootNodeIds": ["snapshot", "consumer1", "consumer2", "outer", "independent", "producerBranch"]}]}, {"jobs": jobs}
+    failure_branch = {"type": "If", "condition": {"type": "BooleanLiteral", "value": True}, "then": tasks[13:], "otherwise": []}
+    nodes.append({"id": "failureBranch", "kind": "CONDITION", "condition": "true",
+                  "thenNodeIds": ["checkoutFailureSnapshot", "consumer10", "uploadFailureSnapshot", "consumer11"], "otherwiseNodeIds": []})
+    return {"flow": {"steps": tasks[:3] + [outer, tasks[6], producer_branch, failure_branch]}}, {"nodes": nodes, "dependencyEdges": edges,
+            "workflows": [{"rootNodeIds": ["snapshot", "consumer1", "consumer2", "outer", "independent", "producerBranch", "failureBranch"]}]}, {"jobs": jobs}
 
 
 def native_results():
     expected = oracle.inventory(ROOT)
     model = oracle.bind(*fixture(), REVISION)
-    results = {name: {"result": "success", "outputs": {"inventory": json.dumps(expected)}} if name in model["selectedJobs"] else
-               {"result": "skipped", "outputs": {}} for name in oracle.BASELINES}
+    results = {name: {"result": outcome, "outputs": {"inventory": json.dumps(expected)} if outcome == "success" else {}}
+               for name, outcome in model["expectedResults"].items()}
+    results |= {name: {"result": "success", "outputs": {"downloadOutcome": "failure", "buildOutcome": "failure"}}
+                for name in oracle.FAILURE_MUTANTS}
     results |= {name: {"result": "success", "outputs": {}} for name in oracle.TRANSFER_MUTANTS}
     results |= {name: {"result": "success", "outputs": {"inventory": json.dumps(expected)}} for name in oracle.GUARD_MUTANTS}
     results["prepare"] = {"result": "success", "outputs": {"revision": REVISION}}
@@ -98,6 +109,11 @@ def api_jobs():
              "git_checkout_2": ["git_checkout_2", "Observe workspace bytes"],
              "git_checkout_3": ["git_checkout_3", "Upload Flow workspace source", "Observe workspace bytes"],
              "git_checkout_4": [],
+             "git_checkout_5": ["git_checkout_5", "Upload Flow workspace source", "Observe workspace bytes"],
+             "git_checkout_6": ["git_checkout_6", "Upload Flow workspace source", "Observe workspace bytes"],
+             "docker_build_10": [], "docker_build_11": [],
+             "failure-checkout-consumer-mutant": ["Restore Flow workspace source", "docker_build_10", "Require unavailable workspace"],
+             "failure-upload-consumer-mutant": ["Restore Flow workspace source", "docker_build_11", "Require unavailable workspace"],
              "guard-omission-mutant": ["Restore Flow workspace source", "docker_build_3", "Observe workspace bytes"],
              "producer-guard-omission-mutant": ["git_checkout_4", "Upload Flow workspace source", "Observe workspace bytes"],
              "missing-transfer-mutant": ["docker_build_1", "Require falsification"],
@@ -113,6 +129,11 @@ def api_jobs():
                      "status": "completed", "conclusion": results[name]["result"],
                      "started_at": f"2026-10-25T00:00:0{start}Z", "completed_at": f"2026-10-25T00:00:0{start + 1}Z",
                      "steps": [{"name": step, "status": "completed", "conclusion": "success"} for step in steps[name]]})
+    for job in jobs:
+        name = job["name"][len(oracle.JOB_PREFIX):]
+        if name in ("git_checkout_5", "git_checkout_6"):
+            for step, outcome in zip(job["steps"], ["failure", "skipped", "skipped"] if name == "git_checkout_5" else ["success", "failure", "skipped"]):
+                step["conclusion"] = outcome
     return jobs
 
 
@@ -141,7 +162,8 @@ class WorkspaceCompositionTests(unittest.TestCase):
     def test_source_graph_and_manifest_bind_independently(self):
         model = oracle.bind(*fixture(), REVISION)
         self.assertEqual(model["workspaceEdges"], sorted([["snapshot", f"consumer{i}"] for i in range(1, 6)] +
-                         [["selectedSnapshot", f"consumer{i}"] for i in range(6, 9)] + [["unselectedSnapshot", "consumer9"]]))
+                         [["selectedSnapshot", f"consumer{i}"] for i in range(6, 9)] + [["unselectedSnapshot", "consumer9"],
+                         ["checkoutFailureSnapshot", "consumer10"], ["uploadFailureSnapshot", "consumer11"]]))
 
     def test_ordering_does_not_substitute_for_workspace(self):
         source, graph, manifest = fixture()
@@ -195,11 +217,12 @@ class WorkspaceCompositionTests(unittest.TestCase):
     def test_native_selection_is_derived_from_nested_source_conditions(self):
         model = oracle.bind(*fixture(), REVISION)
         self.assertEqual(set(model["selectedJobs"]), {"git_checkout_1", "git_checkout_2", "git_checkout_3", "docker_build_1",
-                         "docker_build_2", "docker_build_4", "docker_build_7", "docker_build_8"})
+                         "docker_build_2", "docker_build_4", "docker_build_7", "docker_build_8",
+                         "git_checkout_5", "git_checkout_6", "docker_build_10", "docker_build_11"})
         for name in oracle.BASELINES:
             expected, results = self.results()
-            results[name]["result"] = "skipped" if name in model["selectedJobs"] else "success"
-            with self.assertRaisesRegex(ValueError, "selection"):
+            results[name]["result"] = "skipped" if model["expectedResults"][name] != "skipped" else "success"
+            with self.assertRaisesRegex(ValueError, "selection|producer failure"):
                 oracle.verify_observations(results, expected, REVISION, model)
 
     def test_unselected_consumer_cannot_publish_observation(self):
@@ -216,7 +239,8 @@ class WorkspaceCompositionTests(unittest.TestCase):
         oracle.verify_observations(results, expected, REVISION, oracle.bind(*fixture(), REVISION))
         self.assertIn(".hidden", expected)
         self.assertEqual(expected["nested/bytes.bin"]["size"], 10)
-        for job in oracle.bind(*fixture(), REVISION)["selectedJobs"]:
+        for job, outcome in oracle.bind(*fixture(), REVISION)["expectedResults"].items():
+            if outcome != "success": continue
             changed = copy.deepcopy(results)
             observed = json.loads(changed[job]["outputs"]["inventory"])
             observed["nested/bytes.bin"]["sha256"] = "0" * 64
@@ -242,9 +266,9 @@ class WorkspaceCompositionTests(unittest.TestCase):
 
     def test_native_api_authenticates_all_baselines_mutants_and_preparation(self):
         assessment, records = oracle.assess(workspace_files(), oracle.inventory(ROOT), CURRENT, api_jobs())
-        self.assertEqual(18, len(records))
-        self.assertEqual(13, sum("job" in case for case in assessment["cases"]))
-        self.assertEqual(4, sum(case.get("rejected", False) for case in assessment["cases"]))
+        self.assertEqual(24, len(records))
+        self.assertEqual(17, sum("job" in case for case in assessment["cases"]))
+        self.assertEqual(6, sum(case.get("rejected", False) for case in assessment["cases"]))
         self.assertEqual(5, sum(case.get("selected") is False for case in assessment["cases"]))
 
     def authenticate(self, jobs):
@@ -269,7 +293,8 @@ class WorkspaceCompositionTests(unittest.TestCase):
     def test_claimed_outputs_cannot_mask_api_failures_or_incomplete_jobs(self):
         for name in oracle.BASELINES | oracle.MUTANTS | {"prepare"}:
             for field, value in (("status", "in_progress"), ("conclusion", "failure"), ("conclusion", "cancelled"), ("conclusion", None)):
-                jobs = api_jobs(); next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)[field] = value
+                jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
+                job[field] = "success" if field == "conclusion" and job[field] == value else value
                 with self.subTest(name=name, field=field, value=value), self.assertRaisesRegex(ValueError, "outcome"):
                     self.authenticate(jobs)
 
@@ -329,7 +354,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
     def test_consumer_cannot_escape_or_cross_its_conditional_producer_branch(self):
         for destination in ("outside", "sibling", "separate-condition"):
             source, graph, manifest = fixture()
-            branch = source["flow"]["steps"][-1]
+            branch = source["flow"]["steps"][-2]
             consumer = branch["then"].pop()
             canonical = next(n for n in graph["nodes"] if n["id"] == "producerBranch")
             canonical["thenNodeIds"].remove("consumer8")
@@ -393,7 +418,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
                 job["started_at"], job["completed_at"] = "2026-10-26T00:27:51Z", "2026-10-26T00:27:50Z"
         records = self.authenticate(jobs)
         skipped = [j for j in records if j["conclusion"] == "skipped"]
-        self.assertEqual(5, len(skipped))
+        self.assertEqual(7, len(skipped))
         self.assertTrue(all(j["started_at"] > j["completed_at"] for j in skipped))
         # Neither real execution nor fake steps may borrow the skipped-job exception.
         for name in ("git_checkout_3", "docker_build_7", "producer-guard-omission-mutant"):
@@ -402,6 +427,66 @@ class WorkspaceCompositionTests(unittest.TestCase):
             with self.subTest(name=name), self.assertRaisesRegex(ValueError, "timing"): self.authenticate(changed)
         changed = copy.deepcopy(jobs); next(j for j in changed if j["conclusion"] == "skipped")["steps"] = [{"name": "unexpected"}]
         with self.assertRaisesRegex(ValueError, "Skipped"): self.authenticate(changed)
+
+
+    def test_native_producer_failures_and_blocked_consumers_are_required(self):
+        model = oracle.bind(*fixture(), REVISION)
+        self.assertEqual({"git_checkout_5": "checkout", "git_checkout_6": "upload"}, model["producerFailures"])
+        self.assertEqual(["docker_build_10", "docker_build_11"], model["blockedConsumers"])
+        for name in model["producerFailures"]:
+            for outcome in ("success", "skipped", "cancelled"):
+                expected, results = native_results(); results[name]["result"] = outcome
+                with self.subTest(name=name, outcome=outcome), self.assertRaisesRegex(ValueError, "producer failure"):
+                    oracle.verify_observations(results, expected, REVISION, model)
+            expected, results = native_results(); results[name]["outputs"] = {"inventory": json.dumps(expected)}
+            with self.assertRaisesRegex(ValueError, "producer failure"):
+                oracle.verify_observations(results, expected, REVISION, model)
+        for name in model["blockedConsumers"]:
+            expected, results = native_results(); results[name] = copy.deepcopy(results["docker_build_1"])
+            with self.assertRaisesRegex(ValueError, "selection"):
+                oracle.verify_observations(results, expected, REVISION, model)
+
+    def test_api_must_prove_the_specific_failure_phase_and_no_later_steps(self):
+        for name in ("git_checkout_5", "git_checkout_6"):
+            for index in range(3):
+                for mutation in ("omit", "duplicate", "success", "failure", "skipped", "running"):
+                    jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
+                    step = job["steps"][index]
+                    if mutation == step["conclusion"]: continue
+                    if mutation == "omit": job["steps"].pop(index)
+                    elif mutation == "duplicate": job["steps"].append(copy.deepcopy(step))
+                    elif mutation == "running": step["status"] = "in_progress"
+                    else: step["conclusion"] = mutation
+                    with self.subTest(name=name, index=index, mutation=mutation), self.assertRaisesRegex(ValueError, "failure step"):
+                        self.authenticate(jobs)
+            jobs = api_jobs(); next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)["steps"].reverse()
+            with self.assertRaisesRegex(ValueError, "step order"): self.authenticate(jobs)
+
+    def test_failed_producer_mutants_require_actual_unavailable_download_and_build(self):
+        model = oracle.bind(*fixture(), REVISION)
+        for name in oracle.FAILURE_MUTANTS:
+            for field in ("downloadOutcome", "buildOutcome"):
+                for outcome in ("success", "skipped", "cancelled", ""):
+                    expected, results = native_results(); results[name]["outputs"][field] = outcome
+                    with self.subTest(name=name, field=field, outcome=outcome), self.assertRaisesRegex(ValueError, "Forced consumer"):
+                        oracle.verify_observations(results, expected, REVISION, model)
+            jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
+            job["steps"] = [step for step in job["steps"] if step["name"] != "Require unavailable workspace"]
+            with self.assertRaisesRegex(ValueError, "step differs"): self.authenticate(jobs)
+            jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
+            job["started_at"] = "2026-10-25T00:00:02Z"
+            with self.assertRaisesRegex(ValueError, "preceded failed"): self.authenticate(jobs)
+
+    def test_source_skipping_cannot_replace_failure_experiment_execution(self):
+        source, graph, manifest = fixture()
+        source["flow"]["steps"][-1]["condition"]["value"] = False
+        next(node for node in graph["nodes"] if node["id"] == "failureBranch")["condition"] = "false"
+        for job in manifest["jobs"]:
+            if job["id"] in {"git_checkout_5", "git_checkout_6", "docker_build_10", "docker_build_11"}:
+                job["metadata"]["condition"] = "false"
+                next(step for step in job["steps"] if step["type"] == "action")["metadata"]["condition"] = "false"
+        with self.assertRaisesRegex(ValueError, "selected producers"):
+            oracle.bind(source, graph, manifest, REVISION)
 
 
 if __name__ == "__main__":

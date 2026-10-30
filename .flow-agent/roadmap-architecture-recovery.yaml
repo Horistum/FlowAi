@@ -26,7 +26,7 @@ currentDecision:
   activationState: "active"
   workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
   correctiveWorkPackage: ".flow-agent/work-packages/workspace-producer-success.yaml"
-  decisionBasis: "PR #251 merged at e7a9824 with the same tree c5520bc38fb295552f22ee4425b57984c421866a as validated head ca16f0399422dccdbe9074d8a382ab36e653e1f9. Flow CI 40249779687 and runtime CI 40249779695 succeeded. C16 makes workspace producer success explicit in native scheduling, independently of conditional ordering skip rules. Current-revision CI remains required. No target-wide promotion, AR-06 closure, AR-07 activation or EF-09 resumption."
+  decisionBasis: "PR #251 merged at e7a9824 with the same tree c5520bc38fb295552f22ee4425b57984c421866a as validated head ca16f0399422dccdbe9074d8a382ab36e653e1f9. Flow CI 40249779687 and runtime CI 40249779695 succeeded. C16 now requires compiler-bound native checkout/upload failures, blocked consumers, forced-consumer mutants and independent API replay; success-only scheduling is a supporting detail. Current-revision CI remains required. No target-wide promotion, AR-06 closure, AR-07 activation or EF-09 resumption."
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
@@ -82,7 +82,7 @@ systemAuditFollowup:
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05]
   nextRecommendedFinding: null
-  nextScope: C16 is the current AR-06 candidate for explicit workspace producer success. C15 conditional producers are merged. Repeated-control workspace transport, producer-failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
+  nextScope: C16 is the current AR-06 candidate for native checkout/upload failure containment. C15 conditional producers are merged. Repeated-control workspace transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
   closureRule: A-05 documentation completion does not retire facades or close AR-07 migration work. Merged A-06 admission does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:
@@ -319,7 +319,7 @@ milestones:
       - "AR-06AE-C13: compose unconditional workspace producers with condition-scoped single-source consumers. Preserve complete job guards, ordering and one producer upload; independently observe selected and skipped nested branches and reject a native guard-omission mutant. No conditional producer or repeated-control transport is admitted."
       - "AR-06AE-C14: independently admit the existing GitHub workspace archive through successful same-attempt producer receipts, regenerated compiler inputs, current fixture bytes and native API identity/outcome/ordering checks. Replay all existing transfer and guard mutants; add only bounded GitHub ARTIFACTS_WORKSPACES observations, preserving signed portfolio bytes and general VALUE/STATE gaps."
       - "AR-06AE-C15: compose workspace producers and consumers in the same or nested condition branch. Preserve guarded checkout/upload and download/build, reject branch escape and malformed native guards, and independently replay selected/skipped producer observations plus a producer-guard omission mutant. Existing evidence classes and portfolio scope stay unchanged."
-      - "AR-06AE-C16: distinguish success-only workspace dependencies from conditional ordering skip semantics at the native scheduling boundary; preserve existing native observations and explicitly leave failed-producer runtime experiments open."
+      - "AR-06AE-C16: prove native checkout/upload failure containment through compiler-bound faults, skipped consumers and forced-execution mutants; independently replay same-attempt job/step evidence while retaining success-only scheduling and all earlier native observations."
       - "Next: address remaining control interactions, value/state continuity and provider coverage with independent evidence, using reconciled gaps to select the next bounded invariant. CI-bound observations, repository declarations and reference snapshots cannot close target-wide certification or portability outcomes."
       - "Close AR-06 only against its complete architecture outcomes; scenario counts and green CI alone do not establish closure."
 

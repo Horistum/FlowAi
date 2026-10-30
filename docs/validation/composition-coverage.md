@@ -136,3 +136,7 @@ The native composition archives now have their evidence files at the archive
 root, allowing exact inventory checks without path guessing. Artifacts retain
 the existing seven-day retention. All existing certification jobs and signed
 assessments remain required.
+
+### Workspace producer-failure observations
+
+C16 extends the same GitHub workspace archive with two selected producer failures (native checkout and native upload), their two blocked consumers and two forced-consumer mutants. The source-bound oracle requires the exact failed/skipped native steps, absence of baseline consumer execution, and actual download/build failures in each mutant. Failed-job tolerance exists only in the verified test envelope. The proof carries the failed producer and mutant API step records; independent replay checks them against the current same-attempt API and regenerated compiler inputs. All previous baselines and mutants remain required. This does not promote the signed portfolio or establish arbitrary failure/cancellation/recovery support.
