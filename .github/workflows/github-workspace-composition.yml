@@ -1,14 +1,18 @@
-name: GitHub workspace composition
+name: Workspace composition tests
 on:
-  workflow_call:
-    outputs:
-      receipt:
-        description: Same-attempt workspace archive receipt
-        value: ${{ jobs.collect.outputs.receipt }}
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   prepare:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -40,18 +44,16 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: github-workspace-tests
+          name: github-workspace-tests-${{ github.run_attempt }}
           path: flow-conformance-kit/build/test-results/test/*.xml
           if-no-files-found: error
           retention-days: 7
-          overwrite: true
       - uses: actions/upload-artifact@v4
         with:
-          name: github-workspace-prepared
+          name: github-workspace-prepared-${{ github.run_attempt }}
           path: ${{ runner.temp }}/workspace-evidence/
           if-no-files-found: error
           retention-days: 7
-          overwrite: true
 
   git_checkout_1:
     name: "git_checkout_1"
@@ -375,7 +377,7 @@ jobs:
     name: "docker_build_6"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_3]
-    if: ${{ !cancelled() && ((true && false)) && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(true))) }}
+    if: ${{ !cancelled() && ((true && false)) && needs.git_checkout_3.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -401,7 +403,7 @@ jobs:
     name: "docker_build_7"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_3]
-    if: ${{ !cancelled() && ((true && !(false))) && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(true))) }}
+    if: ${{ !cancelled() && ((true && !(false))) && needs.git_checkout_3.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -427,7 +429,7 @@ jobs:
     name: "docker_build_8"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_3]
-    if: ${{ !cancelled() && (true) && (needs.git_checkout_3.result == 'success' || (needs.git_checkout_3.result == 'skipped' && !(true))) }}
+    if: ${{ !cancelled() && (true) && needs.git_checkout_3.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -453,7 +455,7 @@ jobs:
     name: "docker_build_9"
     runs-on: ubuntu-latest
     needs: [prepare, git_checkout_4]
-    if: ${{ !cancelled() && (!(true)) && (needs.git_checkout_4.result == 'success' || (needs.git_checkout_4.result == 'skipped' && !(!(true)))) }}
+    if: ${{ !cancelled() && (!(true)) && needs.git_checkout_4.result == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -503,13 +505,217 @@ jobs:
         run: |
           python3 tools/verify_github_workspace_composition.py observe
 
+  git_checkout_5:
+    name: git_checkout_5
+    runs-on: ubuntu-latest
+    needs:
+    - prepare
+    if: ${{ (true) }}
+    timeout-minutes: 10
+    outputs:
+      productionResult: ${{ steps.fault.outcome }}
+    steps:
+    - name: git_checkout_5
+      id: fault
+      continue-on-error: true
+      uses: actions/checkout@v4
+      with:
+        repository: Horistum/FlowAi
+        ref: flow-workspace-missing-${{ needs.prepare.outputs.revision }}
+        fetch-depth: '0'
+        persist-credentials: false
+    - name: Upload Flow workspace source
+      if: ${{ steps.fault.outcome == 'success' }}
+      uses: actions/upload-artifact@v7
+      with:
+        name: flow-workspace-git_checkout_5-source
+        path: .
+        if-no-files-found: error
+        include-hidden-files: 'true'
+    - name: Observe workspace bytes
+      if: ${{ steps.fault.outcome == 'success' }}
+      id: observe
+      shell: bash
+      run: |
+        python3 tools/verify_github_workspace_composition.py observe
+    - name: Assert producer fault
+      if: ${{ always() }}
+      shell: bash
+      env:
+        OUTCOME: ${{ steps.fault.outcome }}
+      run: |
+        test "$OUTCOME" = failure
+  docker_build_10:
+    name: docker_build_10
+    runs-on: ubuntu-latest
+    needs:
+    - prepare
+    - git_checkout_5
+    if: ${{ !cancelled() && (true) && needs.git_checkout_5.outputs.productionResult == 'success' }}
+    timeout-minutes: 10
+    outputs:
+      inventory: ${{ steps.observe.outputs.inventory }}
+    steps:
+    - name: Restore Flow workspace source
+      uses: actions/download-artifact@v8
+      with:
+        name: flow-workspace-git_checkout_5-source
+        path: .
+    - name: docker_build_10
+      uses: docker/build-push-action@v7
+      with:
+        context: conformance/fixtures/workspace-bytes
+        tags: flow-workspace:consumer10
+        push: false
+    - name: Observe workspace bytes
+      id: observe
+      shell: bash
+      run: |
+        python3 tools/verify_github_workspace_composition.py observe
+  failure-checkout-consumer-mutant:
+    name: failure-checkout-consumer-mutant
+    runs-on: ubuntu-latest
+    needs:
+    - prepare
+    - git_checkout_5
+    if: ${{ !cancelled() }}
+    timeout-minutes: 10
+    outputs:
+      downloadOutcome: ${{ steps.download.outcome }}
+      buildOutcome: ${{ steps.build.outcome }}
+    steps:
+    - name: Restore Flow workspace source
+      uses: actions/download-artifact@v8
+      with:
+        name: flow-workspace-git_checkout_5-source
+        path: .
+      id: download
+      continue-on-error: true
+    - name: docker_build_10
+      uses: docker/build-push-action@v7
+      with:
+        context: conformance/fixtures/workspace-bytes
+        tags: flow-workspace:consumer10
+        push: false
+      id: build
+      continue-on-error: true
+    - name: Require unavailable workspace
+      shell: bash
+      env:
+        DOWNLOAD: ${{ steps.download.outcome }}
+        BUILD: ${{ steps.build.outcome }}
+      run: |
+        test "$DOWNLOAD" = failure
+        test "$BUILD" = failure
+  git_checkout_6:
+    name: git_checkout_6
+    runs-on: ubuntu-latest
+    needs:
+    - prepare
+    if: ${{ (true) }}
+    timeout-minutes: 10
+    outputs:
+      productionResult: ${{ steps.fault.outcome }}
+    steps:
+    - name: git_checkout_6
+      uses: actions/checkout@v4
+      with:
+        repository: Horistum/FlowAi
+        ref: ${{ needs.prepare.outputs.revision }}
+        fetch-depth: '0'
+        persist-credentials: false
+    - name: Upload Flow workspace source
+      id: fault
+      continue-on-error: true
+      uses: actions/upload-artifact@v7
+      with:
+        name: flow-workspace-git_checkout_6-source
+        path: .flow-workspace-missing-${{ needs.prepare.outputs.revision }}
+        if-no-files-found: error
+        include-hidden-files: 'true'
+    - name: Observe workspace bytes
+      if: ${{ steps.fault.outcome == 'success' }}
+      id: observe
+      shell: bash
+      run: |
+        python3 tools/verify_github_workspace_composition.py observe
+    - name: Assert producer fault
+      if: ${{ always() }}
+      shell: bash
+      env:
+        OUTCOME: ${{ steps.fault.outcome }}
+      run: |
+        test "$OUTCOME" = failure
+  docker_build_11:
+    name: docker_build_11
+    runs-on: ubuntu-latest
+    needs:
+    - prepare
+    - git_checkout_6
+    if: ${{ !cancelled() && (true) && needs.git_checkout_6.outputs.productionResult == 'success' }}
+    timeout-minutes: 10
+    outputs:
+      inventory: ${{ steps.observe.outputs.inventory }}
+    steps:
+    - name: Restore Flow workspace source
+      uses: actions/download-artifact@v8
+      with:
+        name: flow-workspace-git_checkout_6-source
+        path: .
+    - name: docker_build_11
+      uses: docker/build-push-action@v7
+      with:
+        context: conformance/fixtures/workspace-bytes
+        tags: flow-workspace:consumer11
+        push: false
+    - name: Observe workspace bytes
+      id: observe
+      shell: bash
+      run: |
+        python3 tools/verify_github_workspace_composition.py observe
+  failure-upload-consumer-mutant:
+    name: failure-upload-consumer-mutant
+    runs-on: ubuntu-latest
+    needs:
+    - prepare
+    - git_checkout_6
+    if: ${{ !cancelled() }}
+    timeout-minutes: 10
+    outputs:
+      downloadOutcome: ${{ steps.download.outcome }}
+      buildOutcome: ${{ steps.build.outcome }}
+    steps:
+    - name: Restore Flow workspace source
+      uses: actions/download-artifact@v8
+      with:
+        name: flow-workspace-git_checkout_6-source
+        path: .
+      id: download
+      continue-on-error: true
+    - name: docker_build_11
+      uses: docker/build-push-action@v7
+      with:
+        context: conformance/fixtures/workspace-bytes
+        tags: flow-workspace:consumer11
+        push: false
+      id: build
+      continue-on-error: true
+    - name: Require unavailable workspace
+      shell: bash
+      env:
+        DOWNLOAD: ${{ steps.download.outcome }}
+        BUILD: ${{ steps.build.outcome }}
+      run: |
+        test "$DOWNLOAD" = failure
+        test "$BUILD" = failure
+
   collect:
     outputs:
       receipt: ${{ steps.receipt.outputs.receipt }}
     permissions:
       contents: read
       actions: read
-    needs: [prepare, git_checkout_1, docker_build_1, docker_build_2, docker_build_3, docker_build_4, docker_build_5, git_checkout_2, missing-transfer-mutant, hidden-file-mutant, guard-omission-mutant, git_checkout_3, git_checkout_4, docker_build_6, docker_build_7, docker_build_8, docker_build_9, producer-guard-omission-mutant]
+    needs: [prepare, git_checkout_1, docker_build_1, docker_build_2, docker_build_3, docker_build_4, docker_build_5, git_checkout_2, missing-transfer-mutant, hidden-file-mutant, guard-omission-mutant, git_checkout_3, git_checkout_4, docker_build_6, docker_build_7, docker_build_8, docker_build_9, producer-guard-omission-mutant, git_checkout_5, docker_build_10, failure-checkout-consumer-mutant, git_checkout_6, docker_build_11, failure-upload-consumer-mutant]
     if: ${{ always() && !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -520,7 +726,7 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: github-workspace-prepared
+          name: github-workspace-prepared-${{ github.run_attempt }}
           path: ${{ runner.temp }}/workspace-evidence
       - name: Verify native file observations and required mutant failures
         env:
@@ -538,11 +744,17 @@ jobs:
           EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           WORKFLOW_REVISION: ${{ github.sha }}
         run: python3 tools/composition_coverage.py receipt github-workspace-composition "$RUNNER_TEMP/workspace-evidence"
+      - name: Bind archive to triggering event and immutable attempt
+        id: identity
+        env:
+          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          WORKFLOW_REVISION: ${{ github.sha }}
+          GH_TOKEN: ${{ github.token }}
+        run: python3 tools/workspace_probe_evidence.py identity
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: github-workspace-composition
+          name: ${{ steps.identity.outputs.artifact_name }}
           path: ${{ runner.temp }}/workspace-evidence/
           if-no-files-found: error
           retention-days: 7
-          overwrite: true

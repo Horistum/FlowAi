@@ -136,3 +136,11 @@ The native composition archives now have their evidence files at the archive
 root, allowing exact inventory checks without path guessing. Artifacts retain
 the existing seven-day retention. All existing certification jobs and signed
 assessments remain required.
+
+### Workspace action-error observations
+
+C16 extends the GitHub workspace archive with two injected action errors (checkout and upload), two output-bound consumer guards and two forced-consumer mutants. Only injected action steps use tolerance; always-running assertions require their original outcomes to be failure. Later production steps are explicitly gated. Exactly two consumer guards use those original outcomes instead of native job results; the compiler validator pins this adaptation. The original generated production guards remain unchanged.
+
+The standalone test workflow and collector must succeed. Independent replay requires successful assertion steps, original failure outputs, skipped consumers and actual download/build failures in the mutants. GitHub reports tolerated action conclusions as success: these API records authenticate action/assertion execution, while pinned assertions and outputs prove the original error. The observer authenticates repository, workflow path, source/workflow revisions and immutable run attempt, and independent replay regenerates compiler inputs before accepting evidence.
+
+All earlier baselines and mutants remain required. This verifies action errors and output-bound guard evaluation, not scheduler propagation from an untolerated failed job. The latter remains an explicit gap. There is no signed portfolio promotion or claim of arbitrary failure, cancellation or recovery support.
