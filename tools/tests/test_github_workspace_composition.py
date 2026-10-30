@@ -93,6 +93,8 @@ def native_results():
     model = oracle.bind(*fixture(), REVISION)
     results = {name: {"result": outcome, "outputs": {"inventory": json.dumps(expected)} if outcome == "success" else {}}
                for name, outcome in model["expectedResults"].items()}
+    results |= {name: {"result": "success", "outputs": {"productionResult": "failure"}}
+                for name in model["producerFailures"]}
     results |= {name: {"result": "success", "outputs": {"downloadOutcome": "failure", "buildOutcome": "failure"}}
                 for name in oracle.FAILURE_MUTANTS}
     results |= {name: {"result": "success", "outputs": {}} for name in oracle.TRANSFER_MUTANTS}
@@ -109,8 +111,8 @@ def api_jobs():
              "git_checkout_2": ["git_checkout_2", "Observe workspace bytes"],
              "git_checkout_3": ["git_checkout_3", "Upload Flow workspace source", "Observe workspace bytes"],
              "git_checkout_4": [],
-             "git_checkout_5": ["git_checkout_5", "Upload Flow workspace source", "Observe workspace bytes"],
-             "git_checkout_6": ["git_checkout_6", "Upload Flow workspace source", "Observe workspace bytes"],
+             "git_checkout_5": ["git_checkout_5", "Upload Flow workspace source", "Observe workspace bytes", "Assert producer fault"],
+             "git_checkout_6": ["git_checkout_6", "Upload Flow workspace source", "Observe workspace bytes", "Assert producer fault"],
              "docker_build_10": [], "docker_build_11": [],
              "failure-checkout-consumer-mutant": ["Restore Flow workspace source", "docker_build_10", "Require unavailable workspace"],
              "failure-upload-consumer-mutant": ["Restore Flow workspace source", "docker_build_11", "Require unavailable workspace"],
@@ -132,7 +134,7 @@ def api_jobs():
     for job in jobs:
         name = job["name"][len(oracle.JOB_PREFIX):]
         if name in ("git_checkout_5", "git_checkout_6"):
-            for step, outcome in zip(job["steps"], ["failure", "skipped", "skipped"] if name == "git_checkout_5" else ["success", "failure", "skipped"]):
+            for step, outcome in zip(job["steps"], ["success", "skipped", "skipped", "success"] if name == "git_checkout_5" else ["success", "success", "skipped", "success"]):
                 step["conclusion"] = outcome
     return jobs
 
@@ -434,7 +436,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
         self.assertEqual({"git_checkout_5": "checkout", "git_checkout_6": "upload"}, model["producerFailures"])
         self.assertEqual(["docker_build_10", "docker_build_11"], model["blockedConsumers"])
         for name in model["producerFailures"]:
-            for outcome in ("success", "skipped", "cancelled"):
+            for outcome in ("failure", "skipped", "cancelled"):
                 expected, results = native_results(); results[name]["result"] = outcome
                 with self.subTest(name=name, outcome=outcome), self.assertRaisesRegex(ValueError, "producer failure"):
                     oracle.verify_observations(results, expected, REVISION, model)
@@ -446,9 +448,18 @@ class WorkspaceCompositionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "selection"):
                 oracle.verify_observations(results, expected, REVISION, model)
 
+    def test_tolerated_fault_requires_original_failure_output(self):
+        model = oracle.bind(*fixture(), REVISION)
+        for name in model["producerFailures"]:
+            for outcome in ("success", "skipped", "cancelled", "", None):
+                expected, results = native_results()
+                results[name]["outputs"]["productionResult"] = outcome
+                with self.subTest(name=name, outcome=outcome), self.assertRaisesRegex(ValueError, "producer failure"):
+                    oracle.verify_observations(results, expected, REVISION, model)
+
     def test_api_must_prove_the_specific_failure_phase_and_no_later_steps(self):
         for name in ("git_checkout_5", "git_checkout_6"):
-            for index in range(3):
+            for index in range(4):
                 for mutation in ("omit", "duplicate", "success", "failure", "skipped", "running"):
                     jobs = api_jobs(); job = next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + name)
                     step = job["steps"][index]

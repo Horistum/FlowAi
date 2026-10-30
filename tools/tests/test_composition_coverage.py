@@ -351,7 +351,7 @@ class CompositionCoverageTests(unittest.TestCase):
         for mutation in ("producer-success", "producer-skipped", "consumer-ran", "mutant-did-not-fail"):
             def change(files):
                 results = coverage.decode(files["observations.json"])
-                if mutation == "producer-success": results["git_checkout_5"]["result"] = "success"
+                if mutation == "producer-success": results["git_checkout_5"]["outputs"]["productionResult"] = "success"
                 elif mutation == "producer-skipped": results["git_checkout_6"]["result"] = "skipped"
                 elif mutation == "consumer-ran": results["docker_build_10"] = copy.deepcopy(results["docker_build_1"])
                 else: results["failure-upload-consumer-mutant"]["outputs"]["downloadOutcome"] = "success"

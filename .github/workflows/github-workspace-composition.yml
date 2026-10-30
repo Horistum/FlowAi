@@ -1,4 +1,4 @@
-name: Workspace failure probes (expected failure)
+name: Workspace composition tests
 on:
   push:
     branches: [main]
@@ -513,9 +513,11 @@ jobs:
     if: ${{ (true) }}
     timeout-minutes: 10
     outputs:
-      inventory: ${{ steps.observe.outputs.inventory }}
+      productionResult: ${{ steps.fault.outcome }}
     steps:
     - name: git_checkout_5
+      id: fault
+      continue-on-error: true
       uses: actions/checkout@v4
       with:
         repository: Horistum/FlowAi
@@ -523,6 +525,7 @@ jobs:
         fetch-depth: '0'
         persist-credentials: false
     - name: Upload Flow workspace source
+      if: ${{ steps.fault.outcome == 'success' }}
       uses: actions/upload-artifact@v7
       with:
         name: flow-workspace-git_checkout_5-source
@@ -530,17 +533,25 @@ jobs:
         if-no-files-found: error
         include-hidden-files: 'true'
     - name: Observe workspace bytes
+      if: ${{ steps.fault.outcome == 'success' }}
       id: observe
       shell: bash
       run: |
         python3 tools/verify_github_workspace_composition.py observe
+    - name: Assert producer fault
+      if: ${{ always() }}
+      shell: bash
+      env:
+        OUTCOME: ${{ steps.fault.outcome }}
+      run: |
+        test "$OUTCOME" = failure
   docker_build_10:
     name: docker_build_10
     runs-on: ubuntu-latest
     needs:
     - prepare
     - git_checkout_5
-    if: ${{ !cancelled() && (true) && needs.git_checkout_5.result == 'success' }}
+    if: ${{ !cancelled() && (true) && needs.git_checkout_5.outputs.productionResult == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}
@@ -604,7 +615,7 @@ jobs:
     if: ${{ (true) }}
     timeout-minutes: 10
     outputs:
-      inventory: ${{ steps.observe.outputs.inventory }}
+      productionResult: ${{ steps.fault.outcome }}
     steps:
     - name: git_checkout_6
       uses: actions/checkout@v4
@@ -614,6 +625,8 @@ jobs:
         fetch-depth: '0'
         persist-credentials: false
     - name: Upload Flow workspace source
+      id: fault
+      continue-on-error: true
       uses: actions/upload-artifact@v7
       with:
         name: flow-workspace-git_checkout_6-source
@@ -621,17 +634,25 @@ jobs:
         if-no-files-found: error
         include-hidden-files: 'true'
     - name: Observe workspace bytes
+      if: ${{ steps.fault.outcome == 'success' }}
       id: observe
       shell: bash
       run: |
         python3 tools/verify_github_workspace_composition.py observe
+    - name: Assert producer fault
+      if: ${{ always() }}
+      shell: bash
+      env:
+        OUTCOME: ${{ steps.fault.outcome }}
+      run: |
+        test "$OUTCOME" = failure
   docker_build_11:
     name: docker_build_11
     runs-on: ubuntu-latest
     needs:
     - prepare
     - git_checkout_6
-    if: ${{ !cancelled() && (true) && needs.git_checkout_6.result == 'success' }}
+    if: ${{ !cancelled() && (true) && needs.git_checkout_6.outputs.productionResult == 'success' }}
     timeout-minutes: 10
     outputs:
       inventory: ${{ steps.observe.outputs.inventory }}

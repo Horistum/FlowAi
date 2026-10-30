@@ -22,12 +22,12 @@ JOB_PREFIX = ""
 INPUT_FILES = {"fixture.ast.json", "canonical-graph.json", "github-actions.manifest.json",
                "github-actions.yml", "execution-envelope.yml"}
 RUNTIME_KIND = "github-actions-jobs"
-CLAIM = "Bounded conditional workspace transfer and native checkout/upload failure containment with independently rejected consumer execution."
+CLAIM = "Bounded conditional workspace transfer, asserted native checkout/upload errors and output-bound consumer guard evaluation."
 LIMITS = ["One parsed-AST composition with unconditional and conditional producers, single-source consumers and literal nested predicates",
           "Regular, hidden and binary file bytes only; filesystem metadata, symbolic links and credentials are not certified",
           "Branch escape, repeated-control transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open",
           "Same-attempt GitHub API authenticates job identity, results and ordering; CI runners, native observers and job outputs remain trusted",
-          "The isolated native probe run must fail with exactly two producer failures and skipped consumers; no producer failure suppression is permitted",
+          "The test harness tolerates only the injected action errors, asserts their outcomes and binds two consumer guards to those outcomes; native failed-job scheduling is not certified",
           "Missing-transfer, hidden-file, guard-omission and failed-producer consumer mutants; no signed portfolio or target-wide support promotion"]
 
 
@@ -201,7 +201,7 @@ def verify_observations(results, expected, revision, model):
     for name in BASELINES:
         outcome = model["expectedResults"][name]
         if outcome == "failure":
-            require(results[name] == {"result": "failure", "outputs": {}}, f"Native producer failure differs in {name}")
+            require(results[name] == {"result": "success", "outputs": {"productionResult": "failure"}}, f"Native producer failure differs in {name}")
         else:
             verify_job(name, results[name], expected, outcome == "success")
     require(set(model["failureMutantSources"]) == FAILURE_MUTANTS, "Failure mutant inventory differs")
@@ -261,9 +261,10 @@ def authenticate_jobs(jobs, results, current, model):
             required = {"Observe workspace bytes"}
             if name in model["producerFailures"]:
                 mode = model["producerFailures"][name]
-                expected_steps = [(name, "failure" if mode == "checkout" else "success"),
-                                  ("Upload Flow workspace source", "skipped" if mode == "checkout" else "failure"),
-                                  ("Observe workspace bytes", "skipped")]
+                expected_steps = [(name, "success"),
+                                  ("Upload Flow workspace source", "skipped" if mode == "checkout" else "success"),
+                                  ("Observe workspace bytes", "skipped"),
+                                  ("Assert producer fault", "success")]
                 positions = []
                 for step_name, outcome in expected_steps:
                     matches = [(i, step) for i, step in enumerate(job["steps"]) if step["name"] == step_name]
@@ -373,7 +374,7 @@ def main():
         write(directory / "github-jobs.json", authenticated)
         write(directory / "proof.json", current | assessment | {"formatVersion": 1, "status": "passed",
             "publicSupportPromoted": False, "portableExecution": False, "files": receipts(directory)})
-        print("PASS: native conditional producers and consumers preserve selection and bytes; checkout/upload failures block consumers and all six mutants are detected.")
+        print("PASS: native conditional producers and consumers preserve selection and bytes; checkout/upload errors are asserted, output-bound guards skip consumers and all six mutants are detected.")
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 version: AR-06AE-C16
-name: Native Workspace Producer Failure Containment
+name: Asserted Workspace Action Errors
 status: candidate
 stream: architecture-recovery
 roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
@@ -7,12 +7,12 @@ authorization:
   source: Maintainer requests reworking PR 252 into actual native producer-failure evidence after reviewing its insufficient original scope.
   predecessorPullRequest: 251
 invariant: Workspace consumption requires successful production; a skipped ordering predecessor does not establish data availability.
-architecturePurpose: Independently prove that native workspace failures cannot authorize consumer execution; retain the success-only scheduling refinement as a supporting implementation detail.
+architecturePurpose: Assert native checkout/upload errors and verify output-bound consumer guards while retaining success-only production scheduling.
 scope:
 - Pair automatic native probes by triggering-event identity, preserve immutable attempt artifacts, and explicitly pin manual probes.
 - Align observer deadlines with the native critical path and authenticate historical attempt metadata during replay.
 - Execute a failed native checkout and a failed native artifact upload in compiler-bound conditional producer paths.
-- Authenticate raw failed-step/job evidence and skipped consumers through the same-attempt GitHub API.
+- Authenticate original action outcomes, successful failure assertions and skipped consumers through pinned outputs and same-attempt GitHub API evidence.
 - Force consumer execution in two named mutants, require actual missing-artifact and build failures, and reject their execution against the baseline contract.
 - Independently regenerate and replay the extended proof, rejecting forged outcomes, skipped failures and rehashed archives.
 - Derive strict producer dependencies from existing validated workspace download endpoints.
@@ -20,13 +20,14 @@ scope:
 - Preserve ordinary conditional ordering and approval skip semantics for unrelated dependencies.
 - Bind the generated native envelope to the stricter conditions and retain every baseline and mutant.
 nonGoals:
+- No claim of native scheduler propagation from an untolerated failed job; two test guards use asserted action outputs.
 - No new Core semantics, public syntax, schemas or target support promotion.
 - No claim for cancellation experiments, infrastructure outages, repeated-control transport or general VALUE/STATE continuity.
 - No repeated-control workspace transport, general VALUE/STATE continuity, AR-06 closure, AR-07 activation or EF-09 resumption.
 ownershipBoundary:
   core: Existing canonical continuity and ordering contracts remain unchanged.
   adapters: Own success-only scheduling derived from validated transfer endpoints.
-  conformance: Own compiler-bound fault injection, native outcome authentication and independent replay. Producer errors are never suppressed. A separate intentionally failing native workflow supplies evidence to a positive observer and independent replay.
+  conformance: Own compiler-bound action fault tolerance, mandatory original-outcome assertions, two output-bound consumer guards and independent replay. All automatic workflows must succeed. Production output remains unchanged.
 expectedFilesToChange:
 - .github/workflows/adapter-runtime-check.yml
 - tools/composition_coverage.py

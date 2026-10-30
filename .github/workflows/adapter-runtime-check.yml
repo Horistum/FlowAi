@@ -44,7 +44,7 @@ jobs:
         with:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - name: Locate completed native fault run
+      - name: Locate successful workspace test run
         id: probe
         run: python3 tools/workspace_probe_evidence.py locate
       - uses: actions/download-artifact@v4
@@ -54,7 +54,7 @@ jobs:
           path: ${{ runner.temp }}/workspace-evidence
           github-token: ${{ github.token }}
           run-id: ${{ steps.probe.outputs.run_id }}
-      - name: Authenticate native producer failures and consumer containment
+      - name: Authenticate asserted action errors and consumer guards
         id: admit
         env:
           PROBE_RUN_ID: ${{ steps.probe.outputs.run_id }}

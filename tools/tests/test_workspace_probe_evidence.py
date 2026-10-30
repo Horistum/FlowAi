@@ -12,7 +12,7 @@ REPOSITORY = 'Horistum/FlowAi'
 
 def run():
     return dict(id=123, run_attempt=1, repository={'full_name': REPOSITORY}, path=probe.WORKFLOW,
-                head_sha=CONTEXT['sourceRevision'], event='pull_request', status='completed', conclusion='failure')
+                head_sha=CONTEXT['sourceRevision'], event='pull_request', status='completed', conclusion='success')
 
 
 def collector():
@@ -29,11 +29,11 @@ class ProbeTests(unittest.TestCase):
             with self.subTest(key=key), self.assertRaises(ValueError):
                 probe.native_context(CONTEXT | {key: value}, parent)
 
-    def test_authentication_requires_exact_workflow_head_attempt_and_expected_failure(self):
+    def test_authentication_requires_exact_workflow_head_attempt_and_successful_test_run(self):
         probe.authenticate(run(), [collector()], CONTEXT, REPOSITORY)
         for key, value in [('id', 124), ('run_attempt', 2), ('run_attempt', True), ('path', 'other.yml'),
                            ('head_sha', 'c' * 40), ('repository', {'full_name': 'other/repo'}),
-                           ('status', 'in_progress'), ('conclusion', 'success'), ('conclusion', 'cancelled'),
+                           ('status', 'in_progress'), ('conclusion', 'failure'), ('conclusion', 'cancelled'),
                            ('event', 'pull_request_target')]:
             with self.subTest(key=key), self.assertRaises(ValueError):
                 probe.authenticate(run() | {key: value}, [collector()], CONTEXT, REPOSITORY)
@@ -92,8 +92,8 @@ class ProbeTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'provenance'):
             self.locate(explicit=('123', '1'), attempts=lambda *_: run() | {'head_sha': 'c' * 40})
 
-    def test_failed_final_verdict_is_required_without_retrying_it(self):
-        for conclusion in ('success', 'cancelled'):
+    def test_successful_final_verdict_is_required_without_retrying_it(self):
+        for conclusion in ('failure', 'cancelled'):
             with self.subTest(conclusion=conclusion), self.assertRaisesRegex(ValueError, 'final verdict'):
                 self.locate(attempts=lambda *_: run() | {'conclusion': conclusion})
             self.assertEqual([], self.waits)
@@ -138,7 +138,7 @@ class ProbeTests(unittest.TestCase):
 
     def test_manual_wrong_or_unfinished_attempt_fails_before_artifact_polling(self):
         for change in ({'head_sha': 'c' * 40}, {'path': 'other.yml'}, {'id': 124},
-                       {'run_attempt': True}, {'status': 'in_progress'}, {'conclusion': 'success'}):
+                       {'run_attempt': True}, {'status': 'in_progress'}, {'conclusion': 'failure'}):
             artifacts = Mock(return_value=[])
             with self.subTest(change=change), self.assertRaises(ValueError):
                 self.locate(explicit=('123', '1'), artifacts=artifacts,

@@ -146,6 +146,10 @@ class GitHubWorkspaceCompositionTests {
             envelope.replace(".flow-workspace-missing-", ".other-missing-"),
             envelope.replace("continue-on-error: true", "continue-on-error: false"),
             envelope.replace("Require unavailable workspace", "Skip failure assertion"),
+            envelope.replace("Assert producer fault", "Skip producer assertion"),
+            envelope.replace("steps.fault.outcome", "steps.fault.conclusion"),
+            envelope.replace("if: \${{ always() }}", "if: \${{ success() }}"),
+            envelope.replace("id: fault", "id: fault\n      unexpected: true"),
             envelope.replace("needs.git_checkout_3.result == 'success'",
                 "(needs.git_checkout_3.result == 'success' || needs.git_checkout_3.result == 'skipped')"),
             envelope.replace("if: \${{ ((true && false)) }}", "if: \${{ true }}"),
@@ -172,8 +176,8 @@ class GitHubWorkspaceCompositionTests {
         fixture.validateEnvelope(rendered, envelope, revision)
         for (altered in listOf(envelope.replace("test \"${'$'}DOWNLOAD\" = failure", "true"),
             envelope.replace("test \"${'$'}BUILD\" = failure", "true"),
-            envelope.replace("needs.git_checkout_5.result == 'success'", "true"),
-            envelope.replace("needs.git_checkout_6.result == 'success'", "true"))) {
+            envelope.replace("needs.git_checkout_5.outputs.productionResult == 'success'", "true"),
+            envelope.replace("needs.git_checkout_6.outputs.productionResult == 'success'", "true"))) {
             assertNotEquals(envelope, altered)
             assertFails { fixture.validateEnvelope(rendered, altered, revision) }
         }

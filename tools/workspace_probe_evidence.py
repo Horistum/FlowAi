@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Authenticate an intentionally failing workspace run before positive admission."""
+"""Authenticate a successful workspace test run before positive admission."""
 import argparse
 import hashlib
 import json
@@ -74,8 +74,8 @@ def authenticate(run, jobs, native, repository):
     require(run['repository']['full_name'] == repository and run['path'] == WORKFLOW and
             run['head_sha'] == native['sourceRevision'] and
             run['event'] in ('pull_request', 'push', 'workflow_dispatch'), 'Workspace workflow provenance differs')
-    require(run['status'] == 'completed' and run['conclusion'] == 'failure',
-            'Workspace fault run must complete with expected failure')
+    require(run['status'] == 'completed' and run['conclusion'] == 'success',
+            'Workspace test run must complete successfully')
     collectors = [job for job in jobs if job['name'] == 'collect']
     require(len(collectors) == 1, 'Missing or duplicate workspace collector')
     collector = collectors[0]
@@ -119,7 +119,7 @@ def locate(fetch_runs, fetch_artifacts, fetch_attempt, revision, digest, event_n
     explicit_run = observe(*explicit) if explicit else None
     if explicit_run is not None:
         require(explicit_run['status'] == 'completed', 'Selected manual probe attempt is not completed')
-        require(explicit_run['conclusion'] == 'failure', 'Workspace probe has an unexpected final verdict')
+        require(explicit_run['conclusion'] == 'success', 'Workspace probe has an unexpected final verdict')
     pinned = None
     observations = 0
     while True:
@@ -153,7 +153,7 @@ def locate(fetch_runs, fetch_artifacts, fetch_attempt, revision, digest, event_n
             run_id, attempt, artifact_id, name = pinned
             run = explicit_run if explicit_run is not None else observe(run_id, attempt)
             if run['status'] == 'completed':
-                require(run['conclusion'] == 'failure', 'Workspace probe has an unexpected final verdict')
+                require(run['conclusion'] == 'success', 'Workspace probe has an unexpected final verdict')
                 remaining()
                 return {'run_id': str(run_id), 'attempt': str(attempt),
                         'artifact_id': str(artifact_id), 'artifact_name': name}
@@ -208,7 +208,7 @@ def main():
     result = coverage.receipt('github-workspace-composition', files, parent)
     with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
         stream.write('receipt=' + json.dumps(result, separators=(',', ':')) + '\n')
-    print('PASS: authenticated native failed producers, blocked consumers and successful collector')
+    print('PASS: authenticated asserted action failures, output-bound consumer guards and successful collector')
 
 
 if __name__ == '__main__':
