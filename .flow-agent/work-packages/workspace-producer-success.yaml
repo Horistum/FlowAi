@@ -1,27 +1,36 @@
 version: AR-06AE-C16
-name: Explicit Workspace Producer Success
+name: Native Workspace Producer Failure Containment
 status: candidate
 stream: architecture-recovery
 roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-06
 authorization:
-  source: Maintainer requests the next roadmap PR after merging PR 251.
+  source: Maintainer requests reworking PR 252 into actual native producer-failure evidence after reviewing its insufficient original scope.
   predecessorPullRequest: 251
 invariant: Workspace consumption requires successful production; a skipped ordering predecessor does not establish data availability.
-architecturePurpose: Preserve the existing distinction between ORDERING and WORKSPACE at the native scheduling boundary instead of relying on Boolean guard conjunction to make a generic skip path unreachable.
+architecturePurpose: Independently prove that native workspace failures cannot authorize consumer execution; retain the success-only scheduling refinement as a supporting implementation detail.
 scope:
+- Execute a failed native checkout and a failed native artifact upload in compiler-bound conditional producer paths.
+- Authenticate raw failed-step/job evidence and skipped consumers through the same-attempt GitHub API.
+- Force consumer execution in two named mutants, require actual missing-artifact and build failures, and reject their execution against the baseline contract.
+- Independently regenerate and replay the extended proof, rejecting forged outcomes, skipped failures and rehashed archives.
 - Derive strict producer dependencies from existing validated workspace download endpoints.
 - Require producer success even when conditional or approval scheduling enables explicit native guards.
 - Preserve ordinary conditional ordering and approval skip semantics for unrelated dependencies.
 - Bind the generated native envelope to the stricter conditions and retain every baseline and mutant.
 nonGoals:
 - No new Core semantics, public syntax, schemas or target support promotion.
-- No claim of a native failed-producer experiment; failure and cancellation guard regressions are distinct from native execution evidence.
+- No claim for cancellation experiments, infrastructure outages, repeated-control transport or general VALUE/STATE continuity.
 - No repeated-control workspace transport, general VALUE/STATE continuity, AR-06 closure, AR-07 activation or EF-09 resumption.
 ownershipBoundary:
   core: Existing canonical continuity and ordering contracts remain unchanged.
   adapters: Own success-only scheduling derived from validated transfer endpoints.
-  conformance: Own regression coverage and unchanged independent native selection/bytes admission.
+  conformance: Own compiler-bound fault injection, native outcome authentication and independent replay. Fault tolerance exists only in the verification envelope; generated production workflows never tolerate failed producers.
 expectedFilesToChange:
+- src/main/kotlin/org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
+- tools/verify_github_workspace_composition.py
+- tools/tests/test_github_workspace_composition.py
+- tools/tests/test_composition_coverage.py
+- docs/validation/composition-coverage.md
 - src/main/kotlin/org/flowlang/targets/builtin/GitHubJobConditionAuthority.kt
 - src/test/kotlin/GitHubJobConditionAuthorityTests.kt
 - src/test/kotlin/GitHubWorkspaceCompositionTests.kt
