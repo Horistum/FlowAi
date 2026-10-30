@@ -325,7 +325,7 @@ class WorkspaceCompositionTests(unittest.TestCase):
                 else: selected["conclusion"] = mutation
                 with self.subTest(name=name, mutation=mutation), self.assertRaisesRegex(ValueError, "step differs"):
                     self.authenticate(jobs)
-        jobs = api_jobs(); next(j for j in jobs if j["name"].endswith(" / docker_build_3"))["steps"] = [{"name": "unexpected"}]
+        jobs = api_jobs(); next(j for j in jobs if j["name"] == oracle.JOB_PREFIX + "docker_build_3")["steps"] = [{"name": "unexpected"}]
         with self.assertRaisesRegex(ValueError, "Skipped"): self.authenticate(jobs)
 
     def test_duplicate_nested_inventory_fields_cannot_hide_byte_loss(self):

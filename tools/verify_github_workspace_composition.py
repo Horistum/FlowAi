@@ -18,7 +18,7 @@ TRANSFER_MUTANTS = {"missing-transfer-mutant", "hidden-file-mutant"}
 GUARD_MUTANTS = {"guard-omission-mutant", "producer-guard-omission-mutant"}
 FAILURE_MUTANTS = {"failure-checkout-consumer-mutant", "failure-upload-consumer-mutant"}
 MUTANTS = TRANSFER_MUTANTS | GUARD_MUTANTS | FAILURE_MUTANTS
-JOB_PREFIX = "github-workspace-composition / "
+JOB_PREFIX = ""
 INPUT_FILES = {"fixture.ast.json", "canonical-graph.json", "github-actions.manifest.json",
                "github-actions.yml", "execution-envelope.yml"}
 RUNTIME_KIND = "github-actions-jobs"
@@ -27,7 +27,7 @@ LIMITS = ["One parsed-AST composition with unconditional and conditional produce
           "Regular, hidden and binary file bytes only; filesystem metadata, symbolic links and credentials are not certified",
           "Branch escape, repeated-control transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open",
           "Same-attempt GitHub API authenticates job identity, results and ordering; CI runners, native observers and job outputs remain trusted",
-          "Two job-tolerated native producer failures must retain failed steps and skipped consumers; step-level suppression is forbidden for producers",
+          "The isolated native probe run must fail with exactly two producer failures and skipped consumers; no producer failure suppression is permitted",
           "Missing-transfer, hidden-file, guard-omission and failed-producer consumer mutants; no signed portfolio or target-wide support promotion"]
 
 

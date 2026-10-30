@@ -1,14 +1,18 @@
-name: GitHub workspace composition
+name: Workspace failure probes (expected failure)
 on:
-  workflow_call:
-    outputs:
-      receipt:
-        description: Same-attempt workspace archive receipt
-        value: ${{ jobs.collect.outputs.receipt }}
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
+  workflow_dispatch:
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   prepare:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -532,7 +536,6 @@ jobs:
       shell: bash
       run: |
         python3 tools/verify_github_workspace_composition.py observe
-    continue-on-error: true
   docker_build_10:
     name: docker_build_10
     runs-on: ubuntu-latest
@@ -624,7 +627,6 @@ jobs:
       shell: bash
       run: |
         python3 tools/verify_github_workspace_composition.py observe
-    continue-on-error: true
   docker_build_11:
     name: docker_build_11
     runs-on: ubuntu-latest

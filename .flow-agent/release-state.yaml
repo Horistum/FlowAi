@@ -852,9 +852,9 @@ recoveryWorkspaceProducerSuccess:
   report: .flow-agent/reports/workspace-producer-success.md
   predecessorMain: e7a9824ce7add45f5d58b25737a6581a3c3747d5
   validation: local-python-and-structure-passed-current-revision-jvm-and-native-ci-required
-  localPythonTests: 282
+  localPythonTests: 287
   newJvmTests: 7
-  newPythonTests: 5
+  newPythonTests: 10
   workspaceScheduling: success-only-producer-dependencies
   nativeBaselineJobs: 17
   requiredNativeMutants: 6

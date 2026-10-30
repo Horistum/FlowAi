@@ -24,8 +24,10 @@ nonGoals:
 ownershipBoundary:
   core: Existing canonical continuity and ordering contracts remain unchanged.
   adapters: Own success-only scheduling derived from validated transfer endpoints.
-  conformance: Own compiler-bound fault injection, native outcome authentication and independent replay. Fault tolerance exists only in the verification envelope; generated production workflows never tolerate failed producers.
+  conformance: Own compiler-bound fault injection, native outcome authentication and independent replay. Producer errors are never suppressed. A separate intentionally failing native workflow supplies evidence to a positive observer and independent replay.
 expectedFilesToChange:
+- .github/workflows/adapter-runtime-check.yml
+- tools/composition_coverage.py
 - src/main/kotlin/org/flowlang/conformance/GitHubWorkspaceCompositionFixture.kt
 - tools/verify_github_workspace_composition.py
 - tools/tests/test_github_workspace_composition.py
@@ -39,6 +41,8 @@ expectedFilesToChange:
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml
 expectedFilesToAdd:
+- tools/workspace_probe_evidence.py
+- tools/tests/test_workspace_probe_evidence.py
 - .flow-agent/reports/workspace-producer-success.md
 testsToAddOrUpdate:
 - Conditional workspace producers require success without an ordering-only skip escape.

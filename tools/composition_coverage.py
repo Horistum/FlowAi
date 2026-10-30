@@ -101,7 +101,11 @@ def receipt(artifact, files, expected):
                 "Portfolio file inventory differs")
         verify_inventory(files, document, entrypoint, "sizeBytes")
     else:
-        require(all(document[key] == expected[key] for key in PROVENANCE), "Composition provenance differs")
+        if artifact == "github-workspace-composition":
+            from workspace_probe_evidence import native_context
+            native_context(document, expected)
+        else:
+            require(all(document[key] == expected[key] for key in PROVENANCE), "Composition provenance differs")
         require(document["status"] == "passed" and document["publicSupportPromoted"] is False and
                 document["portableExecution"] is False, "Composition claim exceeds its scope")
         if artifact == "github-workspace-composition":
@@ -116,7 +120,9 @@ def receipt(artifact, files, expected):
             require(re.fullmatch("sha256:[0-9a-f]{64}", document["imageId"]) and
                     files["image-identity.log"].decode().strip() == document["imageId"], "Runtime image identity differs")
         verify_inventory(files, document, entrypoint, "bytes")
-    return expected | {"artifact": artifact, "entrypoint": entrypoint, "sha256": sha(files[entrypoint])}
+    native_receipt = ({"nativeRunId": document["runId"], "nativeAttempt": document["attempt"]}
+                      if artifact == "github-workspace-composition" else {})
+    return expected | native_receipt | {"artifact": artifact, "entrypoint": entrypoint, "sha256": sha(files[entrypoint])}
 
 
 def admit(inputs, needs, expected):
@@ -151,7 +157,7 @@ def same_inputs(archived, compiled):
     require(archived == compiled, "Archived inputs differ from current compiler output")
 
 
-def replay(artifact, files, compiled, workspace, expected, fetch_jobs, source_root=None):
+def replay(artifact, files, compiled, workspace, expected, fetch_jobs, source_root=None, fetch_probe_run=None, repository=None):
     """Rebuild envelopes/mutants and derive cases from native records, never PASS flags."""
     import cross_runtime_condition_composition as condition
     import retry_composition_runtime as retry
@@ -165,7 +171,12 @@ def replay(artifact, files, compiled, workspace, expected, fetch_jobs, source_ro
         require(source_root is not None, "Workspace replay requires current source bytes")
         require(set(compiled) == github_workspace.INPUT_FILES, "Workspace compiler input inventory differs")
         same_inputs({name: files[name] for name in compiled}, compiled)
-        assessment, authenticated = github_workspace.assess(files, github_workspace.inventory(source_root), expected, fetch_jobs())
+        from workspace_probe_evidence import native_context, authenticate
+        native = native_context(proof, expected)
+        require(fetch_probe_run is not None and repository is not None, "Workspace replay requires authenticated probe run")
+        jobs = fetch_jobs()
+        authenticate(fetch_probe_run(), jobs, native, repository)
+        assessment, authenticated = github_workspace.assess(files, github_workspace.inventory(source_root), native, jobs)
         require(decode(files["github-jobs.json"]) == authenticated, "Archived GitHub jobs differ from same-attempt API")
         require(all(proof[key] == value for key, value in assessment.items()), "Published workspace claim differs from independent replay")
         return {"artifact": artifact, "construct": COMPOSITIONS[artifact][1], "targets": list(COMPOSITIONS[artifact][2]),
@@ -322,7 +333,16 @@ def main():
                 arguments.append(expected["sourceRevision"])
             subprocess.run(["java", "-cp", str(root / "flow-conformance-kit/build/install/flow-conformance/lib/*"),
                             f"org.flowlang.conformance.{prefix}CompositionCli", *arguments], cwd=root, check=True, timeout=180)
-            results.append(replay(artifact, admitted[artifact], snapshot(compiled), workspace, expected, fetch_jobs, root))
+            if prefix == "GitHubWorkspace":
+                from workspace_probe_evidence import native_context, get
+                native = native_context(decode(admitted[artifact]["proof.json"]), expected)
+                repository, token = os.environ["GITHUB_REPOSITORY"], os.environ["GH_TOKEN"]
+                native_jobs = lambda: api_jobs(repository, native["runId"], native["attempt"], token)
+                native_run = lambda: get(repository, f'runs/{native["runId"]}', token)
+                results.append(replay(artifact, admitted[artifact], snapshot(compiled), workspace, expected,
+                                      native_jobs, root, native_run, repository))
+            else:
+                results.append(replay(artifact, admitted[artifact], snapshot(compiled), workspace, expected, fetch_jobs, root))
         report = derive(admitted[PORTFOLIO], results, pinned, expected)
         publish(args.output.absolute(), report, admitted[PORTFOLIO])
     print(f"PASS: replayed {len(results)} composition archives; reconciled {len(report['rows'])} coverage rows without support promotion")

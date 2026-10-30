@@ -11,6 +11,7 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 import composition_coverage as coverage
 from retry_composition_oracle import expectation
 from test_github_workspace_composition import workspace_files, compiled_files, api_jobs, ROOT
+from test_workspace_probe_evidence import run as probe_run, collector, REPOSITORY
 
 
 CONTEXT = dict(sourceRevision="a" * 40, workflowRevision="b" * 40, runId="123", attempt="1")
@@ -250,7 +251,7 @@ class CompositionCoverageTests(unittest.TestCase):
         pinned = coverage.receipt("github-workspace-composition", files, CONTEXT)
         self.assertEqual(coverage.sha(files["proof.json"]), pinned["sha256"])
         for field, value in (("formatVersion", 0), ("formatVersion", True), ("runtimeKind", "container"), ("imageId", IMAGE),
-                             ("status", "PASS"), ("publicSupportPromoted", True), ("attempt", "2")):
+                             ("status", "PASS"), ("publicSupportPromoted", True), ("attempt", "0")):
             proof = coverage.decode(files["proof.json"]) | {field: value}
             with self.subTest(field=field), self.assertRaises(ValueError):
                 coverage.receipt("github-workspace-composition", files | {"proof.json": coverage.encode(proof)}, CONTEXT)
@@ -263,7 +264,7 @@ class CompositionCoverageTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "inventory"):
             coverage.receipt("github-workspace-composition", files | {"extra": b""}, CONTEXT)
 
-    def replay_workspace(self, mutate=None, jobs=None):
+    def replay_workspace(self, mutate=None, jobs=None, parent=CONTEXT):
         files = workspace_files()
         if mutate: mutate(files)
         # Rehash and repin even forged archives: replay must still detect semantic drift.
@@ -272,8 +273,8 @@ class CompositionCoverageTests(unittest.TestCase):
         files["proof.json"] = coverage.encode(proof)
         coverage.receipt("github-workspace-composition", files, CONTEXT)
         with tempfile.TemporaryDirectory() as temporary:
-            return coverage.replay("github-workspace-composition", files, compiled_files(), Path(temporary), CONTEXT,
-                                   lambda: api_jobs() if jobs is None else jobs, ROOT)
+            return coverage.replay("github-workspace-composition", files, compiled_files(), Path(temporary), parent,
+                                   lambda: (api_jobs() if jobs is None else jobs) + [collector()], ROOT, probe_run, REPOSITORY)
 
     def test_workspace_replay_uses_current_compiler_and_same_attempt_api(self):
         result = self.replay_workspace()
@@ -283,6 +284,17 @@ class CompositionCoverageTests(unittest.TestCase):
         self.assertNotIn("imageId", result)
         self.assertEqual(5, len(result["compilerInputDigests"]))
         self.assertEqual(23, len(result["cases"]))
+
+    def test_workspace_cross_run_replay_preserves_native_provenance(self):
+        parent = CONTEXT | {"runId": "456", "attempt": "2"}
+        result = self.replay_workspace(parent=parent)
+        self.assertEqual(23, len(result["cases"]))
+        pinned = coverage.receipt("github-workspace-composition", workspace_files(), parent)
+        self.assertEqual("456", pinned["runId"])
+        self.assertEqual("123", pinned["nativeRunId"])
+        self.assertEqual("1", pinned["nativeAttempt"])
+        with self.assertRaisesRegex(ValueError, "revision differs"):
+            self.replay_workspace(parent=parent | {"workflowRevision": "c" * 40})
 
     def test_workspace_replay_rejects_rehashed_compiler_and_envelope_drift(self):
         for name in compiled_files():
@@ -346,7 +358,7 @@ class CompositionCoverageTests(unittest.TestCase):
                 files["observations.json"] = coverage.encode(results)
             with self.subTest(mutation=mutation), self.assertRaises(ValueError): self.replay_workspace(change)
         jobs = api_jobs()
-        failed = next(j for j in jobs if j["name"].endswith(" / git_checkout_6"))
+        failed = next(j for j in jobs if j["name"] == "git_checkout_6")
         failed["steps"][1]["conclusion"] = "skipped"
         with self.assertRaisesRegex(ValueError, "failure step"):
             self.replay_workspace(jobs=jobs)

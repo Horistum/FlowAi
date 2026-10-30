@@ -83,12 +83,8 @@ internal object GitHubWorkspaceCompositionFixture {
             "failure-checkout-consumer-mutant", "failure-upload-consumer-mutant", "collect"))
         for ((id, job) in expected) {
             val native = actual.getValue(id)
-            val failedProducer = id in setOf("git_checkout_5", "git_checkout_6")
             require(native.keys == setOf("name", "runs-on", "needs", "timeout-minutes", "outputs", "steps") +
-                (if (job["if"] == null) emptySet() else setOf("if")) +
-                (if (failedProducer) setOf("continue-on-error") else emptySet()))
-            // Only workflow-level tolerance: never continue a failed producer step.
-            if (failedProducer) require(native["continue-on-error"] == true)
+                (if (job["if"] == null) emptySet() else setOf("if")))
             require(native["if"] == job["if"]) { "Changed generated guard in $id" }
             require(native["name"] == job["name"] && native["runs-on"] == job["runs-on"])
             require(native["needs"] == listOf("prepare") + (job["needs"] as? List<String>).orEmpty())
