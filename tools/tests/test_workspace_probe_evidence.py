@@ -1,6 +1,9 @@
+import sys
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import workspace_probe_evidence as probe
 
 CONTEXT = dict(sourceRevision='a' * 40, workflowRevision='b' * 40, runId='123', attempt='1')
