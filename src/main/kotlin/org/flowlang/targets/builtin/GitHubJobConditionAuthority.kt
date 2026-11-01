@@ -43,6 +43,17 @@ internal object GitHubJobConditionAuthority {
             return parts.joinToString(" && ")
         }
 
+        // Ordering can complete through an unselected branch; workspace availability cannot.
+        // The renderer validates transfer topology before reaching this scheduling boundary.
+        val workspaceProducers = job.steps.flatMap { it.flatten() }
+            .filter { it.type == "adapter-continuity-download" }
+            .map { step -> requireNotNull(step.metadata["continuitySourceJob"]) {
+                "GitHub workspace download '${step.id}' has no producer identity."
+            } }.toSet()
+        require(job.dependsOn.containsAll(workspaceProducers)) {
+            "GitHub workspace consumers must retain their producer dependencies."
+        }
+        val strictDependencies = workspaceProducers.map(::sanitizeId).toSet()
         val dependencyKinds = job.dependsOn.map { dependency ->
             val safeDependency = sanitizeId(dependency)
             val predecessor = manifest.jobs.firstOrNull {
@@ -57,7 +68,9 @@ internal object GitHubJobConditionAuthority {
         val needsExplicitScheduling = dependencyKinds.any { (_, isApproval, guard) -> isApproval || guard != null }
         val dependencyConditions = if (needsExplicitScheduling) {
             dependencyKinds.map { (safeDependency, isApproval, guard) ->
-                if (guard != null) {
+                if (safeDependency in strictDependencies) {
+                    "needs.$safeDependency.result == 'success'"
+                } else if (guard != null) {
                     val translated = GitHubActionsTargetExpressionTranslator.github(guard, manifest.inputs, manifest.compatibility.expressionSupport)
                     "(needs.$safeDependency.result == 'success' || (needs.$safeDependency.result == 'skipped' && !($translated)))"
                 } else if (isApproval) {
