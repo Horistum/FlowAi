@@ -1,18 +1,14 @@
-name: Workspace composition tests
+name: GitHub workspace composition
 on:
-  push:
-    branches: [main]
-  pull_request:
-    types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
-  workflow_dispatch:
-concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+    outputs:
+      receipt:
+        description: Same-attempt workspace archive receipt
+        value: ${{ jobs.collect.outputs.receipt }}
 permissions:
   contents: read
 jobs:
   prepare:
-    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 20
     outputs:
@@ -744,17 +740,9 @@ jobs:
           EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           WORKFLOW_REVISION: ${{ github.sha }}
         run: python3 tools/composition_coverage.py receipt github-workspace-composition "$RUNNER_TEMP/workspace-evidence"
-      - name: Bind archive to triggering event and immutable attempt
-        id: identity
-        env:
-          EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          WORKFLOW_REVISION: ${{ github.sha }}
-          GH_TOKEN: ${{ github.token }}
-        run: python3 tools/workspace_probe_evidence.py identity
       - uses: actions/upload-artifact@v4
-        if: always()
         with:
-          name: ${{ steps.identity.outputs.artifact_name }}
+          name: github-workspace-composition-${{ github.run_attempt }}
           path: ${{ runner.temp }}/workspace-evidence/
           if-no-files-found: error
           retention-days: 7

@@ -18,7 +18,7 @@ TRANSFER_MUTANTS = {"missing-transfer-mutant", "hidden-file-mutant"}
 GUARD_MUTANTS = {"guard-omission-mutant", "producer-guard-omission-mutant"}
 FAILURE_MUTANTS = {"failure-checkout-consumer-mutant", "failure-upload-consumer-mutant"}
 MUTANTS = TRANSFER_MUTANTS | GUARD_MUTANTS | FAILURE_MUTANTS
-JOB_PREFIX = ""
+JOB_PREFIX = "github-workspace-composition / "
 INPUT_FILES = {"fixture.ast.json", "canonical-graph.json", "github-actions.manifest.json",
                "github-actions.yml", "execution-envelope.yml"}
 RUNTIME_KIND = "github-actions-jobs"
