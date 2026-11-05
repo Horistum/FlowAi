@@ -14,11 +14,11 @@ The scope is deliberately narrower: actual action errors, unavailable bytes and 
 
 ## Independent validation
 
-Both native producer harnesses and the standalone workflow must succeed. Original producer outcomes must be failure; baseline consumers must be skipped. Forced-consumer mutants must encounter and assert actual download and build failures. Missing, skipped, cancelled or unexpectedly successful faults fail the test. Independent replay regenerates all compiler inputs and authenticates same-attempt API jobs, assertion execution, outputs, guards and artifact identities.
+Both native producer harnesses and the called workflow must succeed. Original producer outcomes must be failure; baseline consumers must be skipped. Forced-consumer mutants must encounter and assert actual download and build failures. Missing, skipped, cancelled or unexpectedly successful faults fail the test. Independent replay regenerates all compiler inputs and authenticates same-attempt API jobs, assertion execution, outputs, guards and artifact identities.
 
-Event-digest pairing, immutable attempt endpoints, artifact-ID pinning, attempt-specific archives, bounded polling and fail-fast manual selection remain intact. Both automatic and manual admission require successful workflow completion. No error is hidden at job or workflow level, and no write-enabled dispatcher is introduced.
+The certification job calls the workspace workflow and receives the collector receipt directly. The archive name includes the attempt. Admission requires matching run and attempt provenance, and independent replay checks the successful called collector in the same attempt.
 
-Local validation runs 302 Python tests, including 18 independently runnable lifecycle tests, plus Flow Agent structure/context and diff checks. Existing JVM envelope mutation tests cover the new adaptations; production scheduling regressions are retained. Required JDK 25, exact-head, merge-candidate, native composition and independent replay checks must finish successfully for the final immutable head; results are recorded in the PR without a subsequent source commit.
+Existing JVM envelope mutation tests cover the new adaptations; production scheduling regressions are retained. Required JDK 25, exact-head, merge-candidate, native composition and independent replay checks must finish successfully for the final immutable head; results are recorded in the PR without a subsequent source commit.
 
 ## Limits
 

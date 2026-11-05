@@ -6,15 +6,6 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, converted_to_draft]
   workflow_dispatch:
-    inputs:
-      workspace_probe_run_id:
-        description: Completed native workspace probe run for this exact revision
-        required: true
-        type: string
-      workspace_probe_attempt:
-        description: Complete native probe attempt (use Re-run all jobs)
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -31,44 +22,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-    runs-on: ubuntu-latest
-    timeout-minutes: 75
-    outputs:
-      receipt: ${{ steps.admit.outputs.receipt }}
-    env:
-      EXPECTED_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-      WORKFLOW_REVISION: ${{ github.sha }}
-      GH_TOKEN: ${{ github.token }}
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
-          persist-credentials: false
-      - name: Locate successful workspace test run
-        id: probe
-        run: python3 tools/workspace_probe_evidence.py locate
-      - uses: actions/download-artifact@v4
-        with:
-          artifact-ids: ${{ steps.probe.outputs.artifact_id }}
-          merge-multiple: true
-          path: ${{ runner.temp }}/workspace-evidence
-          github-token: ${{ github.token }}
-          run-id: ${{ steps.probe.outputs.run_id }}
-      - name: Authenticate asserted action errors and consumer guards
-        id: admit
-        env:
-          PROBE_RUN_ID: ${{ steps.probe.outputs.run_id }}
-          PROBE_ATTEMPT: ${{ steps.probe.outputs.attempt }}
-        run: |
-          test "$(git rev-parse HEAD)" = "$EXPECTED_SHA"
-          python3 tools/workspace_probe_evidence.py admit "$RUNNER_TEMP/workspace-evidence"
-      - uses: actions/upload-artifact@v4
-        with:
-          name: github-workspace-composition
-          path: ${{ runner.temp }}/workspace-evidence/
-          if-no-files-found: error
-          retention-days: 7
-          overwrite: true
+    uses: ./.github/workflows/github-workspace-composition.yml
 
   parallel-composition-runtime:
     outputs:
@@ -1512,7 +1466,7 @@ jobs:
       - name: Download Same-Run Workspace Composition
         uses: actions/download-artifact@v4
         with:
-          name: github-workspace-composition
+          name: github-workspace-composition-${{ github.run_attempt }}
           path: build/composition-inputs/github-workspace-composition
       - name: Replay Native Observations And Reconcile Coverage
         env:

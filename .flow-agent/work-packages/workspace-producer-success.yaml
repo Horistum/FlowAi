@@ -9,8 +9,7 @@ authorization:
 invariant: Workspace consumption requires successful production; a skipped ordering predecessor does not establish data availability.
 architecturePurpose: Assert native checkout/upload errors and verify output-bound consumer guards while retaining success-only production scheduling.
 scope:
-- Pair automatic native probes by triggering-event identity, preserve immutable attempt artifacts, and explicitly pin manual probes.
-- Align observer deadlines with the native critical path and authenticate historical attempt metadata during replay.
+- Return the collector receipt via workflow_call and replay the workspace archive in the same run and attempt.
 - Execute a failed native checkout and a failed native artifact upload in compiler-bound conditional producer paths.
 - Authenticate original action outcomes, successful failure assertions and skipped consumers through pinned outputs and same-attempt GitHub API evidence.
 - Force consumer execution in two named mutants, require actual missing-artifact and build failures, and reject their execution against the baseline contract.
@@ -44,8 +43,6 @@ expectedFilesToChange:
 - .flow-agent/roadmap-architecture-recovery.yaml
 - .flow-agent/release-state.yaml
 expectedFilesToAdd:
-- tools/workspace_probe_evidence.py
-- tools/tests/test_workspace_probe_evidence.py
 - .flow-agent/reports/workspace-producer-success.md
 testsToAddOrUpdate:
 - Conditional workspace producers require success without an ordering-only skip escape.
