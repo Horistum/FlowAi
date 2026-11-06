@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 40
+revision: 41
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -10,12 +10,12 @@ currentDecision:
   pausedItemName: "Human Approval and Change-Control Falsification"
   pausedItemState: "active-after-evidence-admission"
   pausedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AR-06"
-  nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
+  nextItem: "AI-A1"
+  nextItemName: "External AI proposal import and compiler feedback"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  decisionBasis: "PR #222 is merged into main b54b9eb954437b7e6fd7a17d605f78461a0d5961 with the same tree as its validated PR revisions. Flow CI 38672571596 passed 2153 tests and 274 ordered checks per revision; runtime CI 38672571583 passed 30 assessments with 104 independently verified signatures. AR-06Z adds shared literal conditional checkout certification on Jenkins and GitHub Actions. Historical acceptance and generic support remain unchanged. AR-06 stays active, AR-07 planned, EF-09 paused and F-20 AR-07-owned."
+  workPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
+  decisionBasis: "AI-A1 is selected from the merged authoring proposal using completed compiler and CLI prerequisites. This bounded AR-07 slice does not close AR-06 or AR-07 and does not resume EF-09."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
@@ -23,9 +23,9 @@ recoveryRoadmap:
   findingCount: 22
   groupedMilestoneCount: 8
   completedItem: "AR-05"
-  activeItem: "AR-06"
-  activeWorkPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  nextItem: "AR-06"
+  activeItem: "AI-A1"
+  activeWorkPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
+  nextItem: "AI-A1"
   activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
@@ -109,10 +109,10 @@ sequence:
     interrupts: "EF-09"
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
     completedItem: "AR-05"
-    activeItem: "AR-06"
-    nextItem: "AR-06"
+    activeItem: "AI-A1"
+    nextItem: "AI-A1"
     activationState: "active"
-    workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+    workPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."

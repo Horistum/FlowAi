@@ -38,6 +38,8 @@ org/flowlang/conformance/AdapterProfileEvidenceContracts.kt
 org/flowlang/conformance/AdapterProfileEvidenceRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/AdapterTopologyConformanceChecks.kt
 org/flowlang/conformance/AdapterTriggerConformanceChecks.kt
+org/flowlang/conformance/AiAuthoringActivation.kt
+org/flowlang/conformance/AiProposalImportChecks.kt
 org/flowlang/conformance/ArchitectureCoherenceChecks.kt
 org/flowlang/conformance/ArchitectureRecoveryConformanceChecks.kt
 org/flowlang/conformance/ArtifactIntegrityCompletion.kt

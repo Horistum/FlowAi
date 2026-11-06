@@ -4,6 +4,7 @@ org/flowlang/ai/normalization/TargetPortabilityDisposition.kt
 org/flowlang/cli/Json.kt
 org/flowlang/frontend/CompilationSourceCapture.kt
 org/flowlang/frontend/FrontendCompilerComposition.kt
+org/flowlang/frontend/ai/ExternalAiProposalReader.kt
 org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt
 org/flowlang/frontend/intent/FlowIntentExpressionParser.kt
 org/flowlang/frontend/intent/IntentYamlFrontend.kt

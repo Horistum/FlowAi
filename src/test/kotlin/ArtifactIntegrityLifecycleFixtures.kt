@@ -33,4 +33,5 @@ private fun records(value: Any?): List<Map<String, Any?>> = (value as? List<*>).
 
 /** Historical AR-05 assertions keep their pre-activation semantics. */
 internal fun artifactIntegrityCompletedSnapshot(): WorkflowSemanticsRecoveryLifecycleSnapshot =
-    AdapterCertificationLifecycle.predecessorSnapshot(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
+    AdapterCertificationLifecycle.predecessorSnapshot(
+        AiAuthoringActivation.predecessor(WorkflowSemanticsRecoveryLifecycle.load(File("."))))

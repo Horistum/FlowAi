@@ -1,0 +1,94 @@
+{
+  "formatVersion": 1,
+  "providerId": "example-external-author",
+  "request": {
+    "userText": "Check out the public Hello-World repository on main and build the reference image using the required version input. Do not push it.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "2.0",
+      "kind": "FlowIntentDocument",
+      "name": "checkout-build-image",
+      "description": "Target-scoped reference intent proving ordered native checkout and image build projection.",
+      "inputs": [
+        {
+          "name": "version",
+          "type": "text",
+          "required": true
+        }
+      ],
+      "systems": [
+        {
+          "name": "source",
+          "type": "git",
+          "purpose": "Public application source repository"
+        },
+        {
+          "name": "registry",
+          "type": "dockerRegistry",
+          "purpose": "Local image build target without registry push"
+        }
+      ],
+      "workflows": [
+        {
+          "name": "build-reference-image",
+          "kind": "BUILD",
+          "steps": [
+            {
+              "id": "checkout",
+              "capability": "CHECKOUT",
+              "uses": "git.checkout",
+              "params": {
+                "system": "source",
+                "url": "https://github.com/octocat/Hello-World.git",
+                "branch": "main"
+              }
+            },
+            {
+              "id": "build-image",
+              "capability": "BUILD_IMAGE",
+              "uses": "docker.build",
+              "requires": [
+                "missing-checkout"
+              ],
+              "params": {
+                "system": "registry",
+                "image": "ghcr.io/flowlang/reference:${version}",
+                "path": ".",
+                "push": false
+              }
+            }
+          ]
+        }
+      ],
+      "failure": {
+        "notify": false,
+        "rollback": false,
+        "stopOnError": true
+      }
+    },
+    "report": {
+      "standardVersion": "0.8.0",
+      "mode": "DRAFT",
+      "classification": {
+        "type": "build",
+        "confidence": 0.0
+      },
+      "confidence": {
+        "overall": 0.0,
+        "intentType": 0.0,
+        "entities": 0.0,
+        "dependencies": 0.0,
+        "safety": 0.0
+      },
+      "explanation": [
+        "Manually authored integration fixture. No model was called. Confidence is not calibrated."
+      ],
+      "guardrails": [
+        "Shared compiler validation remains authoritative."
+      ]
+    }
+  }
+}

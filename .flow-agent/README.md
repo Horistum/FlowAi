@@ -30,13 +30,13 @@ Use this navigation route to select work; it introduces no new roadmap authority
 3. Read the [recovery roadmap](roadmap-architecture-recovery.yaml): `currentDecision` owns milestone selection, and `correctiveWorkPackage` / `systemAuditFollowup` identify the current bounded correction. Read that work package and its report before editing.
 4. Cross-check the release state's recovery fields and the actual merged revision. Completed items and historical `decisionBasis` receipts are evidence of their recorded boundaries, not new activation decisions.
 
-Recovery currently keeps AR-06 active, AR-07 planned and EF-09 paused. A-05's documentation correction does not activate migration cleanup or resume the paused stream. After this correction, select further AR-06 work from its remaining evidence gaps.
+Recovery selects AI-A1 as a bounded authoring slice under AR-07, using completed AR-01 and AR-05 prerequisites. AR-06 remains open; full AR-07 closure still depends on AR-06, and EF-09 remains paused. The selected work package is [external proposal import](work-packages/external-ai-proposal-import.yaml). This activation does not close F-16/F-20 or authorize migration cleanup.
 
 The existing Python context generator reports the completed root-stream lifecycle and embeds its indexed documents; it does not independently select the post-toolchain recovery correction. Follow the route above even when that generated summary says `completed`. Keep historical selectors and acceptance receipts intact.
 
 For implemented module and compiler boundaries, see the [current architecture](../docs/ARCHITECTURE.md).
 
-For the maintainer-requested continuation proposal, see [AI-assisted automation authoring](../docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md). It defines AI-A1 through AI-A4 and the bounded roadmap activation to perform in the first implementation PR.
+For the maintainer-requested continuation proposal, see [AI-assisted automation authoring](../docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md). It defines AI-A1 through AI-A4. AI-A1 is now the selected implementation slice; subsequent slices need their own implementation evidence.
 
 ## Mandatory Process
 

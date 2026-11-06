@@ -83,3 +83,6 @@ checks:
   - architecture-recovery.language.approval-parameters-rejected-before-authorization
   - architecture-recovery.language.input-approval-direct-planner-rejection
   - architecture-recovery.language.accepted-input-approval-value-preservation
+  - ai.proposal.import-convergence
+  - ai.proposal.compiler-rejection
+  - ai.proposal.existing-image-blocker

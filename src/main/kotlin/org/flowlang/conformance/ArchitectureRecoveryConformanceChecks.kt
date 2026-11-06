@@ -287,7 +287,7 @@ class ArchitectureRecoveryConformanceRunner(
             AtomicPublicationConformanceChecks().checks() + IntegratedProductIntegrityChecks().checks() +
             ActionResultHandlerConformanceChecks(rootDir).checks() + AvailabilityBudgetConformanceChecks(rootDir).checks() +
             DataOperationPayloadConformanceChecks(rootDir).checks() + GlobalVariableInitializerConformanceChecks(rootDir).checks() +
-            InputApprovalValueConformanceChecks(rootDir).checks()
+            InputApprovalValueConformanceChecks(rootDir).checks() + AiProposalImportChecks(rootDir).checks()
         val inventoryResult = runCatching { ArchitectureRecoveryConformanceInventory.load(rootDir) }
         val inventory = inventoryResult.getOrNull()
         val observed = produced.map { it.name }

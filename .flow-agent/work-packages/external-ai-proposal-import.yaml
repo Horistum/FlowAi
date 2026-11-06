@@ -1,0 +1,32 @@
+version: AI-A1
+name: External AI proposal import and compiler feedback
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AI-A1
+authorization:
+  source: Maintainer requested implementation of the first slice in the merged AI-assisted authoring proposal.
+  baseline: 803bd7d20bf4302799c76d2ddffa9f5fa11d4650
+  proposal: docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
+objective: Accept externally authored proposals through the installed product CLI and publish actionable compiler feedback.
+architecturePurpose: Expose the existing reviewed proposal frontend and shared compiler without adding model orchestration or semantic shortcuts.
+universalInvariant: Every imported revision is independently compiled; semantic acceptance never claims natural-language fidelity or authentic model attribution.
+scope:
+- Strict versioned proposal envelope decoding, existing Intent compatibility and captured byte provenance.
+- Product proposal command, typed outcomes and atomic machine-readable results.
+- Explicit target selection, required clarification gates and existing target materialization authority.
+- Bounded AI-A1 roadmap activation using completed AR-01 and AR-05 prerequisites.
+forbiddenScope:
+- Model calls, workflow execution and inferred target selection.
+- Changes to canonical meaning or target support claims.
+- Closure of AR-06, AR-07, F-16 or F-20.
+completionEvidence:
+- Equivalent direct and imported Intent produce equal canonical graphs with distinct source provenance.
+- Invalid inputs, compiler rejection, unresolved questions and unsupported rendering retain bounded diagnostics.
+- Installed CLI processes accepted and rejected examples from outside the checkout.
+- Output publication is atomic and respects existing overwrite and path policies.
+validationPlan:
+- Frontend parsing and compiler convergence regressions.
+- CLI outcomes, target conflicts, diagnostics, input limits and publication regressions.
+- Public schema examples and standalone conformance checks.
+- Roadmap activation and retained closure-gate mutation tests.
+- GitHub exact-head and merge-candidate tests, module isolation and conformance.
