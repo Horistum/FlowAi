@@ -26,6 +26,8 @@ def compiler():
         code, fidelity, stage = 4, "violated", "REQUEST_FIDELITY"
     elif marker == "false-success":
         fidelity = "unassessed"
+    elif marker == "input-error":
+        code, semantic, fidelity, stage = 2, "not-evaluated", "unassessed", "INPUT"
     elif any(i["check"]["kind"] == "unsupported" for i in requirements["requirements"]):
         code, fidelity, stage = 4, "unsupported", "REQUEST_FIDELITY"
     elif requirements["confirmation"] != "CONFIRMED":
@@ -37,6 +39,9 @@ def compiler():
               "reviewItems": [], "diagnostics": [] if code != 4 else [
                   {"code": "TEST_COMPILER_REJECTION", "field": "$.response.normalizedIntent", "message": "Invalid test intent"}],
               "renderAuthorized": False, "targetDisposition": "review_only" if "--render" in args else "not-requested"}
+    if marker == "input-error":
+        report["diagnostics"] = [{"code": "TEST_INPUT_ERROR", "field": response["normalizedIntent"]["field"],
+                                  "message": "Invalid input"}]
     (out / "proposal-review.json").write_text(json.dumps(report))
     return code
 

@@ -125,6 +125,13 @@ blockers, unchanged repeated proposals, exhausted budgets and absent user decisi
 also stop. Target materialization failure is `target-blocked`, not a request to
 guess a user decision. Compiler error remains distinct from successful acceptance.
 
+Compiler input diagnostics under `$.request` stop with `caller-input-error`.
+The original request and selected target are frozen by the caller, so replacing the
+model response cannot resolve an unknown/conflicting target or invalid request field.
+The first attempted call remains charged against the reservation; no repair call is
+dispatched, and corpus evaluation stops. Correct the caller input and explicitly start
+a new run. Candidate response input errors remain eligible for bounded repair.
+
 ## Explicit clarification
 
 An `awaiting-user` state publishes pending decision IDs and questions in `state.json`.
@@ -214,7 +221,16 @@ natural-language accuracy.
 The implementation has no configured live provider credentials in its development
 environment. Deterministic peer tests and `tools/verify_authoring_host.py` prove host
 behavior and installed compiler integration only. They do not measure model quality.
-The held-out certificate-renewal fixture is canonically accepted and faithful, but
-its Jenkins materialization currently produces review-only evidence. The required
-executable held-out render therefore remains open; no adapter or semantic workaround
-is introduced to force this milestone to pass.
+The unchanged held-out certificate-renewal fixture is canonically accepted and
+satisfies its confirmed requirements. Installed-product assessment covers all six
+declared target profiles:
+
+| Selected targets | Current result for this fixture |
+| --- | --- |
+| `jenkins`, `github-actions`, `tekton` | Review-only projection; concrete integration payload/task binding is absent; rendering is not authorized. |
+| `local`, `argo-workflows`, `azure-devops` | No installed projection provider; `PROPOSAL_TARGET_PROJECTION_UNAVAILABLE`, exit 4, accepted canonical and fidelity evidence retained. |
+
+The required executable held-out render therefore remains open. A different target
+selection alone cannot resolve it. Concrete certificate integration needs an explicit
+architecture and binding decision that preserves the original request; the corpus,
+requirements and executable-readiness policy are unchanged.

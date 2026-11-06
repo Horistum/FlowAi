@@ -119,6 +119,7 @@ object StandardDiagnosticCatalog {
         code("PROPOSAL_REQUIRED_FIELD", "ai-proposal", "error", "proposal-review.json", "Supply a nonblank string for this required field."),
         code("PROPOSAL_TARGET_CONFLICT", "ai-proposal", "error", "proposal-review.json", "The CLI target must match the target in the supplied request."),
         code("PROPOSAL_TARGET_UNKNOWN", "ai-proposal", "error", "proposal-review.json", "Select a target present in the explicit contract registry."),
+        code("PROPOSAL_TARGET_PROJECTION_UNAVAILABLE", "ai-proposal", "error", "proposal-review.json", "The selected target has a declared profile but no installed projection provider; the complete canonical plan remains available."),
         code("PROPOSAL_MULTI_WORKFLOW_TARGET_UNSUPPORTED", "ai-proposal", "error", "proposal-review.json", "Current target contracts cannot materialize multiple workflows; the complete plan remains available."),
         code("CLI_INTEGRITY_BLOCKED", "cli", "error", "cli-target-outcome.json", "CLI rejected a command because an integrity authority blocked the requested operation."),
         code("CLI_LIMIT_EXCEEDED", "cli", "error", "cli-target-outcome.json", "A product input or output exceeded its bounded I/O budget; no output batch was started."),

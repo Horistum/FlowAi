@@ -164,7 +164,12 @@ internal object ProposalCommand {
         ), values, directory, output)
         val strict = args.has(CliFlagOption.STRICT) || args.has(CliFlagOption.FAIL_ON_UNSUPPORTED)
         val explicit = TargetSelectionAuthority.requireSelected(selection, "Proposal target materialization")
-        val evidence = CliTargetEvidenceAuthority(targets, ReferenceTargetProjections.fromContracts(contractRoot), contractRoot)
+        val projections = ReferenceTargetProjections.fromContracts(contractRoot)
+        if (explicit.target !in projections.targetIds) return publish(accepted.copy(
+            outcome = CliProcessExit.BLOCKED, stage = "MATERIALIZATION", targetDisposition = "blocked",
+            diagnostics = accepted.diagnostics + diagnostic("PROPOSAL_TARGET_PROJECTION_UNAVAILABLE", "$.request.context.target")
+        ), values, directory, output)
+        val evidence = CliTargetEvidenceAuthority(targets, projections, contractRoot)
             .evaluate(unit, explicit, strict, render)
         values["target-manifest.json"] = evidence.manifest
         values["target-selection-evidence.json"] = evidence.targetSelection

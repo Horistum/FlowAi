@@ -292,6 +292,11 @@ def _advance(root, state, config, environment, kind):
             attempt["status"] = "reviewed"
             if review["exitCode"] == 70 or any(d.get("field") == "$.requirements" for d in review["diagnostics"]):
                 return _finish(root, state, "compiler-error")
+            if review["stage"] == "INPUT" and any(
+                    d.get("field") == "$.request" or d.get("field", "").startswith("$.request.")
+                    for d in review["diagnostics"]):
+                # The host freezes the original request and target; candidate replacement cannot fix them.
+                return _finish(root, state, "caller-input-error")
             fidelity = review["requestFidelity"]
             if fidelity in ("unsupported", "violated"):
                 return _finish(root, state, "unsupported" if fidelity == "unsupported" else "fidelity-violation")

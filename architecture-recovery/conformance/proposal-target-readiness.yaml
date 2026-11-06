@@ -1,0 +1,19 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: architecture-recovery.proposal-target-readiness
+description: A declared target without an installed projection provider preserves accepted canonical and fidelity evidence while withholding target artifacts.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.proposal.unavailable-target-preserves-plan
+  targetProfiles:
+    - local
+    - argo-workflows
+    - azure-devops
+  exitCode: 4
+  stage: MATERIALIZATION
+  semanticAcceptance: accepted
+  requestFidelity: requirements-satisfied
+  targetDisposition: blocked
+  renderAuthorized: false
+  diagnostic: PROPOSAL_TARGET_PROJECTION_UNAVAILABLE

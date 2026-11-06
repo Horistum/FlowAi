@@ -111,6 +111,37 @@ class ProposalCommandTests {
         assertEquals("PROPOSAL_TARGET_CONFLICT", run(root, text, "--target", "github-actions").review.diagnostics.single().code)
     }
 
+    @Test fun declaredProfilesWithoutProvidersRetainVersionOnePlansAndDiagnosticReceipts() = workspace { root ->
+        for (target in listOf("local", "argo-workflows", "azure-devops")) {
+            val out = File(root, target)
+            val result = run(root, valid, "--target", target, "--render", "--out", out.path)
+            assertEquals(4, result.exitCode)
+            assertEquals(1, result.review.formatVersion)
+            assertEquals("MATERIALIZATION", result.review.stage)
+            assertEquals("accepted", result.review.semanticAcceptance)
+            assertEquals("unassessed", result.review.requestFidelity)
+            assertEquals("blocked", result.review.targetDisposition)
+            assertEquals(target, result.review.target)
+            assertFalse(result.review.renderAuthorized)
+            assertEquals("PROPOSAL_TARGET_PROJECTION_UNAVAILABLE", result.review.diagnostics.last().code)
+            assertNotNull(result.review.graphDigest)
+            assertTrue(File(out, "canonical-execution-plan.json").isFile)
+            assertTrue(result.artifacts.none { it.role in setOf(CliArtifactRole.TARGET_MANIFEST, CliArtifactRole.RENDERED_TARGET, CliArtifactRole.REVIEW_DOCUMENT) })
+            assertNotNull(ArtifactPublicationVerifier().verify(out).publication)
+        }
+    }
+
+    @Test fun unavailableTargetCannotOverrideCompilerRejectionOrProviderReview() = workspace { root ->
+        val rejected = run(root, fixture("rejected"), "--target", "local", "--render")
+        assertEquals("rejected", rejected.review.semanticAcceptance)
+        assertEquals(listOf("proposal-review.json"), rejected.review.artifacts)
+        assertFalse(rejected.review.diagnostics.any { it.code == "PROPOSAL_TARGET_PROJECTION_UNAVAILABLE" })
+        val undecided = valid.replace("\"guardrails\":", "\"missingDecisions\":[\"Choose environment\"],\"guardrails\":")
+        val reviewed = run(root, undecided, "--target", "local", "--render")
+        assertEquals(3, reviewed.exitCode)
+        assertEquals("withheld-for-review", reviewed.review.targetDisposition)
+    }
+
     @Test fun renderingUsesTheExistingAuthorityAndItsReceipt() = workspace { root ->
         val result = run(root, valid, "--target", "jenkins", "--render", "--out", File(root, "review").path)
         assertEquals(0, result.exitCode)

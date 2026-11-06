@@ -1,0 +1,32 @@
+version: AI-A3
+name: Preserve authoring feedback for unavailable target implementations
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AI-A3
+parentWorkPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
+authorization:
+  source: Maintainer requested continuation and completion after merging the bounded authoring host.
+  baseline: 29c5dc8eb6d5c2b277ab5eda74fb9766454bed75
+  predecessorPullRequest: 257
+objective: Make target and caller-owned input blockers actionable without losing accepted canonical evidence or spending automatic repair calls on immutable inputs.
+architecturePurpose: Distinguish a declared target profile from an installed projection implementation at the existing proposal boundary.
+universalInvariant: Missing implementation support never becomes executable readiness, and candidate repair cannot change host-owned request or target decisions.
+scope:
+- Retain proposal and request-fidelity reports plus canonical plans when a selected declared target has no projection provider.
+- Publish one stable diagnostic without inventing an adapter, manifest or executable artifact.
+- Stop model correction when compiler feedback identifies immutable caller-owned input errors.
+- Exercise all declared targets through the installed product and record the certificate case's concrete blockers.
+forbiddenScope:
+- New target adapters, certificate provider assumptions, changed corpus expectations or relaxed fidelity checks.
+- Live model claims without configured access and actual captured calls.
+- Closing AI-A3, AR-06, AR-07, F-16 or F-20, or resuming EF-09.
+completionEvidence:
+- Profile-only targets retain accepted canonical and fidelity evidence with blocked target disposition.
+- Rejected or provisional proposals still stop before target materialization.
+- Unknown targets and request conflicts stop automatic repair while response errors remain repairable.
+- Installed CLI regressions and exact-head and merge-candidate GitHub checks pass.
+validationPlan:
+- Focused proposal CLI, schema, provenance and artifact-publication regressions.
+- Host process tests distinguishing immutable request errors from candidate response errors.
+- Installed-product verification of declared profile-only targets and retained reports.
+- Full CI Python/JVM suites, conformance and physical product isolation.

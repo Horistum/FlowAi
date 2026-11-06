@@ -131,4 +131,39 @@ class RequestFidelityCommandTests {
         assertEquals("unassessed", result.review.requestFidelity)
         assertFalse(result.review.artifacts.contains("request-fidelity-review.json"))
     }
+
+    @Test fun missingTargetProviderPreservesVersionTwoFidelityAndAtomicPlansWithoutRendering() = workspace { root ->
+        for (render in listOf(false, true)) {
+            val out = File(root, "review-$render")
+            val options = listOf("--target", "local", "--out", out.path) + if (render) listOf("--render") else emptyList()
+            val result = run(root, options = options.toTypedArray())
+            assertEquals(4, result.exitCode)
+            assertEquals(2, result.review.formatVersion)
+            assertEquals("MATERIALIZATION", result.review.stage)
+            assertEquals("requirements-satisfied", result.review.requestFidelity)
+            assertEquals("blocked", result.review.targetDisposition)
+            assertEquals(render, result.review.renderRequested)
+            assertFalse(result.review.renderAuthorized)
+            assertNotNull(result.review.graphDigest)
+            assertEquals("PROPOSAL_TARGET_PROJECTION_UNAVAILABLE", result.review.diagnostics.last().code)
+            val expected = setOf("proposal-review.json", "request-fidelity-review.json", "workflow-execution-plan-set.json",
+                "execution-plan.json", "canonical-execution-plan.json")
+            assertEquals(expected, result.review.artifacts.toSet())
+            val receipt = assertNotNull(ArtifactPublicationVerifier().verify(out).publication)
+            assertEquals(expected, receipt.coveredFiles.map { it.path }.toSet())
+            val schemaReceipts = receipt.coveredFiles.associateBy { it.path }
+            for ((name, schema) in mapOf("proposal-review.json" to "schemas/proposal-review-v2.schema.json",
+                    "request-fidelity-review.json" to "schemas/request-fidelity-review.schema.json")) {
+                assertEquals("JSON_SCHEMA", schemaReceipts.getValue(name).validation)
+                assertEquals(schema, schemaReceipts.getValue(name).schema)
+            }
+            val input = File(root, "input.json").readBytes()
+            val digest = java.security.MessageDigest.getInstance("SHA-256").digest(input).joinToString("") { "%02x".format(it) }
+            assertEquals(digest, result.review.inputSource!!.sha256)
+        }
+        val provisional = run(root, requirements = fixture("reviewed-requirements").replace("CONFIRMED", "PROVISIONAL"),
+            options = arrayOf("--target", "local", "--render"))
+        assertEquals(3, provisional.exitCode)
+        assertEquals("withheld-for-fidelity", provisional.review.targetDisposition)
+    }
 }

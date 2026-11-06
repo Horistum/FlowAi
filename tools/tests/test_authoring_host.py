@@ -68,6 +68,28 @@ class AuthoringHostTests(unittest.TestCase):
         self.assertEqual(2, len(state["attempts"]))
         self.assertTrue((self.out / "attempt-001/proposal.json").is_file())
 
+    def test_caller_owned_request_errors_stop_without_spending_a_repair(self):
+        for index, field in enumerate(("$.request", "$.request.mode", "$.request.context.target")):
+            with self.subTest(field=field):
+                self.out = self.root / str(index)
+                self.counter.unlink(missing_ok=True)
+                state = self.run_host([{"marker": "input-error", "field": field}, {"marker": "accept"}])
+                self.assertEqual("caller-input-error", state["status"])
+                self.assertEqual(0, state["repairCount"])
+                self.assertEqual(1, len(state["attempts"]))
+                self.assertEqual("1", self.counter.read_text())
+                verify_inventory(self.out, state)
+
+    def test_candidate_input_errors_remain_repairable(self):
+        for index, field in enumerate(("$.response.normalizedIntent", "$.requestSomething")):
+            with self.subTest(field=field):
+                self.out = self.root / str(index)
+                self.counter.unlink(missing_ok=True)
+                state = self.run_host([{"marker": "input-error", "field": field}, {"marker": "accept"}])
+                self.assertEqual("accepted", state["status"])
+                self.assertEqual(1, state["repairCount"])
+                self.assertEqual("2", self.counter.read_text())
+
     def test_repair_limit_is_independent_of_total_call_limit(self):
         self.config["budget"].update(maxRepairs=1, maxCalls=10, maxTotalTokens=1_000_000)
         state = self.run_host([{"marker": "reject"}, {"marker": "reject-again"}, {"marker": "accept"}])
@@ -309,6 +331,15 @@ class AuthoringHostTests(unittest.TestCase):
         self.assertEqual("1", self.counter.read_text())
         manifest = loads(read(self.root / "suite/state.json"))
         self.assertEqual(1, len(manifest["runs"]))
+
+    def test_evaluation_stops_after_caller_input_error(self):
+        self.responses.write_text(json.dumps([{"marker": "input-error", "field": "$.request.context.target"}]))
+        value = evaluate(self.config, ROOT / "conformance/authoring/corpus.json", self.root / "suite",
+                         target="unknown", max_cost_microusd=36_000_000)
+        self.assertEqual(1, value["completedRuns"])
+        self.assertEqual("caller-input-error", value["runs"][0]["status"])
+        self.assertEqual("1", self.counter.read_text())
+        self.assertFalse(value["milestoneComplete"])
 
 
 if __name__ == "__main__":
