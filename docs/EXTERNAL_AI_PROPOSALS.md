@@ -7,7 +7,7 @@ flow-core proposal request.json --out review-001
 flow-core proposal request.json --target github-actions --render --out review-002
 ```
 
-Use a new or empty output directory for each revision. Existing nonempty output and symbolic destinations are rejected by the atomic publication policy. Without `--out`, the command presents the review and complete workflow plan (plus target manifest when assessed) without persisting them. `--contracts <root>` replaces the entire contract resource set. The command uses packaged contracts when that option is absent and works outside a repository checkout.
+Use a new or empty output directory for each revision. Existing nonempty output and symbolic destinations are rejected by the atomic publication policy. Without `--out`, the command presents the review and complete workflow plan, plus assessed target evidence and any rendered artifact, without persisting them. `--contracts <root>` replaces the entire contract resource set. The command uses packaged contracts when that option is absent and works outside a repository checkout.
 
 ## Version 1 input
 

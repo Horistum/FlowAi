@@ -183,6 +183,18 @@ internal object ProposalCommand {
         output.section("AI PROPOSAL REVIEW", report)
         values["workflow-execution-plan-set.json"]?.let { output.section("WORKFLOW EXECUTION PLAN SET", it) }
         values["target-manifest.json"]?.let { output.section("TARGET MANIFEST", it) }
+        values["target-selection-evidence.json"]?.let { output.section("TARGET SELECTION EVIDENCE", it) }
+        values["target-render-readiness.json"]?.let { output.section("TARGET RENDER READINESS", it) }
+        roles.forEach { (name, role) ->
+            val title = when (role) {
+                CliArtifactRole.RENDERED_TARGET -> "RENDERED EXECUTABLE TARGET OUTPUT"
+                CliArtifactRole.REVIEW_DOCUMENT -> "RENDERED NON-EXECUTABLE REVIEW EVIDENCE"
+                else -> return@forEach
+            }
+            output.text("===== $title: $name =====")
+            output.text(values.getValue(name) as String)
+        }
+        values["target-artifact-evidence.json"]?.let { output.section("TARGET ARTIFACT EVIDENCE RECEIPT", it) }
         directory?.let { CliArtifactOutput.write(it, values) }
         return ProposalCliResult(report, output.snapshot(), artifacts(values.keys, roles, directory != null))
     }

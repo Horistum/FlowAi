@@ -118,6 +118,9 @@ class ProposalCommandTests {
         assertTrue(result.artifacts.any { it.role == CliArtifactRole.RENDERED_TARGET })
         assertTrue(result.artifacts.any { it.name == "target-artifact-evidence.json" })
         assertNotNull(ArtifactPublicationVerifier().verify(File(root, "review")).publication)
+        assertTrue(result.presentation.items.filterIsInstance<CliPresentationItem.Text>().any {
+            it.value == File(root, "review/Jenkinsfile").readText()
+        })
     }
 
     @Test fun declaredTargetCanBeUsedWithoutRewritingSourceProvenance() = workspace { root ->
@@ -126,6 +129,9 @@ class ProposalCommandTests {
         assertEquals(0, result.exitCode)
         assertTrue(result.review.renderAuthorized)
         assertEquals("jenkins", result.review.target)
+        assertTrue(result.artifacts.none { it.persisted })
+        assertTrue(result.presentation.items.filterIsInstance<CliPresentationItem.Section>().any { it.title == "TARGET ARTIFACT EVIDENCE RECEIPT" })
+        assertTrue(result.presentation.items.filterIsInstance<CliPresentationItem.Text>().any { it.value.contains("pipeline {") })
     }
 
     @Test fun multiWorkflowPlanningPreservesAllWorkflowsAndTargetingRemainsBlocked() = workspace { root ->
