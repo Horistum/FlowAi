@@ -86,6 +86,7 @@ checks:
   - ai.proposal.import-convergence
   - ai.proposal.compiler-rejection
   - ai.proposal.existing-image-blocker
+  - ai.proposal.unavailable-target-preserves-plan
   - ai.fidelity.independent-corpus
   - ai.fidelity.bounded-outcomes
   - ai.fidelity.constraint-mutations
