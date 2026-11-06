@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 127
+stateVersion: 128
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -50,10 +50,10 @@ roadmapState:
   completedRecoveryItem: "AR-05"
   completedRecoveryItemName: "Artifact, Distribution, CLI and I/O Integrity"
   completedRecoveryWorkPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  nextRecoveryItem: "AI-A2"
-  nextRecoveryItemName: "Independent request requirements and bounded fidelity review"
+  nextRecoveryItem: "AI-A3"
+  nextRecoveryItemName: "Bounded external authoring host and reproducible evaluation"
   nextRecoveryActivationState: "active"
-  activeRecoveryWorkPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
+  activeRecoveryWorkPackage: ".flow-agent/work-packages/bounded-authoring-host.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -896,5 +896,20 @@ recoveryRequestFidelity:
   requestFidelity: confirmed-requirements-only
   naturalLanguageCompleteness: unassessed
   reviewerAttribution: caller-declared
+  supportPromotion: false
+  recoveryClosure: false
+
+recoveryBoundedAuthoring:
+  candidate: AI-A3
+  status: candidate
+  workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
+  report: .flow-agent/reports/bounded-authoring-host.md
+  predecessorMain: 81180222b0cf14867f468e8ff3dfffb0ca75aaa7
+  predecessorPullRequest: 256
+  validation: current-revision-ci-required
+  liveModelEvaluated: false
+  milestoneComplete: false
+  liveEvaluationGate: pending-configured-provider-and-budget
+  heldOutRenderGate: pending-target-evidence
   supportPromotion: false
   recoveryClosure: false

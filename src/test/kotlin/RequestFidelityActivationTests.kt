@@ -4,8 +4,9 @@ import java.io.File
 import kotlin.test.*
 
 class RequestFidelityActivationTests {
+    private fun live() = BoundedAuthoringActivation.predecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     @Test fun fidelitySelectionRetainsTheAcceptedImportAndEarlierRecoveryGates() {
-        val live = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val live = live()
         assertTrue(RequestFidelityActivation.selected(live))
         assertEquals(emptyList(), WorkflowSemanticsRecoveryLifecycle.errors(live))
         val prior = RequestFidelityActivation.predecessor(live)
@@ -14,7 +15,7 @@ class RequestFidelityActivationTests {
         assertEquals(live.release["recoveryAiAuthoring"], prior.release["recoveryAiAuthoring"])
     }
     @Test fun driftFalseClaimsAndMissingPriorEvidenceRemainBlocking() {
-        val live = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+        val live = live()
         @Suppress("UNCHECKED_CAST") val state = live.release["recoveryRequestFidelity"] as Map<String, Any?>
         for ((field, value) in listOf("predecessorMain" to "wrong", "heldOutCases" to 5, "liveModelEvaluated" to true,
                 "naturalLanguageCompleteness" to "verified", "recoveryClosure" to true)) {

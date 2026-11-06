@@ -93,7 +93,8 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val certificationCheckoutResultWorkPackage: Map<String, Any?> = emptyMap(),
     val certificationCheckoutResultBaseline: String? = null,
     val aiAuthoringWorkPackage: Map<String, Any?> = emptyMap(),
-    val requestFidelityWorkPackage: Map<String, Any?> = emptyMap()
+    val requestFidelityWorkPackage: Map<String, Any?> = emptyMap(),
+    val boundedAuthoringWorkPackage: Map<String, Any?> = emptyMap()
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -233,7 +234,8 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             optionalMap(root, AdapterObservationAuthenticationLifecycle.CHECKOUT_RESULT_WORK_PACKAGE),
             File(root, AdapterObservationAuthenticationLifecycle.CHECKOUT_RESULT_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             optionalMap(root, AiAuthoringActivation.WORK_PACKAGE),
-            optionalMap(root, RequestFidelityActivation.WORK_PACKAGE)
+            optionalMap(root, RequestFidelityActivation.WORK_PACKAGE),
+            optionalMap(root, BoundedAuthoringActivation.WORK_PACKAGE)
         )
     }
 
@@ -241,6 +243,10 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         File(root, path).let { if (it.isFile) FlowYaml.readMap(it) else emptyMap() }
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (BoundedAuthoringActivation.selected(snapshot)) {
+            addAll(BoundedAuthoringActivation.errors(snapshot))
+            return@buildList
+        }
         if (RequestFidelityActivation.selected(snapshot)) {
             addAll(RequestFidelityActivation.errors(snapshot))
             return@buildList

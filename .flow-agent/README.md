@@ -30,13 +30,13 @@ Use this navigation route to select work; it introduces no new roadmap authority
 3. Read the [recovery roadmap](roadmap-architecture-recovery.yaml): `currentDecision` owns milestone selection, and `correctiveWorkPackage` / `systemAuditFollowup` identify the current bounded correction. Read that work package and its report before editing.
 4. Cross-check the release state's recovery fields and the actual merged revision. Completed items and historical `decisionBasis` receipts are evidence of their recorded boundaries, not new activation decisions.
 
-Recovery selects AI-A2 as a bounded authoring slice under AR-07, following merged AI-A1 PR #255 and passing main CI. AR-06 remains open; full AR-07 closure still depends on AR-06, and EF-09 remains paused. The selected work package is [independent request requirements](work-packages/request-fidelity-review.yaml). This activation does not close F-16/F-20 or authorize migration cleanup.
+Recovery selects AI-A3 as a bounded authoring slice under AR-07, following merged AI-A2 PR #256. Live evaluation and held-out rendering remain explicit open gates. AR-06 remains open; full AR-07 closure still depends on AR-06, and EF-09 remains paused. The selected work package is [bounded external authoring host](work-packages/bounded-authoring-host.yaml). This activation does not close F-16/F-20 or authorize migration cleanup.
 
 The existing Python context generator reports the completed root-stream lifecycle and embeds its indexed documents; it does not independently select the post-toolchain recovery correction. Follow the route above even when that generated summary says `completed`. Keep historical selectors and acceptance receipts intact.
 
 For implemented module and compiler boundaries, see the [current architecture](../docs/ARCHITECTURE.md).
 
-For the maintainer-requested continuation proposal, see [AI-assisted automation authoring](../docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md). It defines AI-A1 through AI-A4. AI-A2 is now the selected implementation slice; AI-A3 and AI-A4 need their own implementation evidence. See [request-fidelity review](../docs/REQUEST_FIDELITY_REVIEW.md).
+For the maintainer-requested continuation proposal, see [AI-assisted automation authoring](../docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md). It defines AI-A1 through AI-A4. AI-A3 is now selected; its host preparation does not establish real-model completion. AI-A4 still needs separately authorized implementation evidence. See [bounded authoring](../docs/BOUNDED_AUTHORING_HOST.md) and [request-fidelity review](../docs/REQUEST_FIDELITY_REVIEW.md).
 
 ## Mandatory Process
 
