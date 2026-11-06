@@ -408,6 +408,7 @@ authorities:
     outputs: "Target-facing decision, diagnostic, or rendered/materialization evidence."
     callers:
       - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+      - "src/main/kotlin/org/flowlang/cli/honest/ProposalCommand.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/CliReleaseHonestyChecks.kt"
@@ -719,6 +720,7 @@ authorities:
     outputs: "Composed planning/materialization decision preserving upstream ownership."
     callers:
       - "src/main/kotlin/org/flowlang/cli/honest/HonestFlowCli.kt"
+      - "src/main/kotlin/org/flowlang/cli/honest/ProposalCommand.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterArtifactRenderingConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/AdapterTriggerConformanceChecks.kt"
       - "src/main/kotlin/org/flowlang/conformance/ConformanceCheckSupport.kt"

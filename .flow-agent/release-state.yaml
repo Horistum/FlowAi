@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 125
+stateVersion: 126
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -50,10 +50,10 @@ roadmapState:
   completedRecoveryItem: "AR-05"
   completedRecoveryItemName: "Artifact, Distribution, CLI and I/O Integrity"
   completedRecoveryWorkPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  nextRecoveryItem: "AR-06"
-  nextRecoveryItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
+  nextRecoveryItem: "AI-A1"
+  nextRecoveryItemName: "External AI proposal import and compiler feedback"
   nextRecoveryActivationState: "active"
-  activeRecoveryWorkPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
+  activeRecoveryWorkPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -865,3 +865,15 @@ recoveryWorkspaceProducerSuccess:
   signedPortfolioExpanded: false
   supportPromotion: false
   fullSuiteEvidence: Required in the final pull request validation record.
+
+recoveryAiAuthoring:
+  candidate: AI-A1
+  status: candidate
+  workPackage: .flow-agent/work-packages/ai-a1-external-proposal.yaml
+  report: .flow-agent/reports/ai-a1-external-proposal.md
+  predecessorMain: 803bd7d20bf4302799c76d2ddffa9f5fa11d4650
+  validation: current-revision-ci-required
+  liveModelEvaluated: false
+  requestFidelity: unassessed
+  supportPromotion: false
+  recoveryClosure: false

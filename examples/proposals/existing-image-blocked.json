@@ -1,0 +1,57 @@
+{
+  "formatVersion": 1,
+  "providerId": "example-external-author",
+  "request": {
+    "userText": "The image is already in the registry. After approval, deploy this exact digest to production. If the health check fails, notify the team. Do not build another image and do not roll back.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "2.0",
+      "kind": "FlowIntentDocument",
+      "name": "existing-image-deployment",
+      "workflows": [
+        {
+          "name": "deploy-existing-image",
+          "kind": "DEPLOY",
+          "steps": []
+        }
+      ],
+      "failure": {
+        "notify": false,
+        "rollback": false,
+        "stopOnError": true
+      }
+    },
+    "report": {
+      "standardVersion": "0.8.0",
+      "mode": "DRAFT",
+      "classification": {
+        "type": "deployment",
+        "confidence": 0.0
+      },
+      "confidence": {
+        "overall": 0.0,
+        "intentType": 0.0,
+        "entities": 0.0,
+        "dependencies": 0.0,
+        "safety": 0.0
+      },
+      "explanation": [
+        "Manually authored integration fixture. No model was called. Confidence is not calibrated."
+      ],
+      "guardrails": [
+        "Shared compiler validation remains authoritative."
+      ],
+      "openQuestions": [
+        {
+          "id": "representability",
+          "field": "workflows[0].steps",
+          "severity": "REQUIRED",
+          "question": "Supply explicit approval/deployment bindings and a representable failure-only notification contract. The empty proposal is intentionally incomplete; do not substitute build or rollback steps."
+        }
+      ]
+    }
+  }
+}

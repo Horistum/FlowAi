@@ -109,6 +109,7 @@ class CliArgumentSchema(
 internal object ProductCliArguments {
     private val targetFlags = setOf(CliFlagOption.STRICT, CliFlagOption.FAIL_ON_UNSUPPORTED, CliFlagOption.RENDER)
     private val schemas = mapOf(
+        "proposal" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET), targetFlags, minPositionals = 1, maxPositionals = 1),
         "intent" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET), targetFlags, maxPositionals = 1),
         "normalize" to CliArgumentSchema(
             setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET, CliValueOption.FILE, CliValueOption.APP,

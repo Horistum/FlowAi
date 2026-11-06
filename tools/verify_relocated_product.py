@@ -128,7 +128,13 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
     link.symlink_to(preserved, target_is_directory=True)
     ordinary_file = cwd / "integrated-file"
     ordinary_file.write_text("existing file")
+    proposal = inputs / "proposal.json"
+    proposal.write_bytes(resources["examples/proposals/accepted.json"])
+    rejected_proposal = inputs / "rejected-proposal.json"
+    rejected_proposal.write_bytes(resources["examples/proposals/rejected.json"])
     cases = [
+        ("proposal-accepted", ["proposal", str(proposal), "--out=integrated proposal"], 0, "integrated proposal"),
+        ("proposal-rejected", ["proposal", str(rejected_proposal), "--out=integrated rejected proposal"], 4, "integrated rejected proposal"),
         ("diagnostics", ["diagnostics", "--out=integrated diagnostics"], 0, "integrated diagnostics"),
         ("normalize", ["normalize", "--out=integrated normalized", "--app=shop", "--file", str(text)], 0, "integrated normalized"),
         ("external-intent", ["intent", "--out=integrated external", "--contracts", str(external), "--target=jenkins", "--render", "--", str(authored)], 0, "integrated external"),
@@ -157,6 +163,15 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
         if result.returncode != expected or result.stderr:
             raise ValueError(f"Integrated CLI {key} failed: {result.returncode}: {result.stdout[-1500:]} {result.stderr}")
         document = sections(result.stdout)
+        if name.startswith("proposal-"):
+            review = document.get("AI PROPOSAL REVIEW", {})
+            accepted = name == "proposal-accepted"
+            if (review.get("exitCode") != expected or review.get("semanticAcceptance") != ("accepted" if accepted else "rejected")
+                    or review.get("requestFidelity") != "unassessed" or bool(review.get("graphDigest")) != accepted
+                    or review.get("inputSource", {}).get("sha256") != hashlib.sha256((proposal if accepted else rejected_proposal).read_bytes()).hexdigest()):
+                raise ValueError("Installed proposal review lost semantic outcome or exact input provenance.")
+            if not accepted and (not review.get("diagnostics") or review.get("artifacts") != ["proposal-review.json"]):
+                raise ValueError("Rejected proposal lost diagnostics or published a plan.")
         if expected == 2:
             failure = document.get("CLI DIAGNOSTIC FAILURE", {})
             if failure.get("code") != "CLI_INVALID_INPUT" or not 0 < len(failure.get("message", "")) <= 2048:

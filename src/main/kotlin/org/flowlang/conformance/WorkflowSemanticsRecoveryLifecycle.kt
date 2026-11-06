@@ -91,7 +91,8 @@ internal data class WorkflowSemanticsRecoveryLifecycleSnapshot(
     val certificationConditionCallWorkPackage: Map<String, Any?> = emptyMap(),
     val certificationConditionCallBaseline: String? = null,
     val certificationCheckoutResultWorkPackage: Map<String, Any?> = emptyMap(),
-    val certificationCheckoutResultBaseline: String? = null
+    val certificationCheckoutResultBaseline: String? = null,
+    val aiAuthoringWorkPackage: Map<String, Any?> = emptyMap()
 )
 
 /** Checks the exact structured claim; a coherent active candidate is not a completion receipt. */
@@ -229,7 +230,8 @@ internal object WorkflowSemanticsRecoveryLifecycle {
             optionalMap(root, AdapterObservationAuthenticationLifecycle.CONDITION_CALL_WORK_PACKAGE),
             File(root, AdapterObservationAuthenticationLifecycle.CONDITION_CALL_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
             optionalMap(root, AdapterObservationAuthenticationLifecycle.CHECKOUT_RESULT_WORK_PACKAGE),
-            File(root, AdapterObservationAuthenticationLifecycle.CHECKOUT_RESULT_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8)
+            File(root, AdapterObservationAuthenticationLifecycle.CHECKOUT_RESULT_BASELINE).takeIf { it.isFile }?.readText(Charsets.UTF_8),
+            optionalMap(root, AiAuthoringActivation.WORK_PACKAGE)
         )
     }
 
@@ -237,6 +239,10 @@ internal object WorkflowSemanticsRecoveryLifecycle {
         File(root, path).let { if (it.isFile) FlowYaml.readMap(it) else emptyMap() }
 
     fun errors(snapshot: WorkflowSemanticsRecoveryLifecycleSnapshot): List<String> = buildList {
+        if (AiAuthoringActivation.selected(snapshot)) {
+            addAll(AiAuthoringActivation.errors(snapshot))
+            return@buildList
+        }
         if (map(snapshot.recovery["currentDecision"])["workPackage"] == AdapterCertificationLifecycle.WORK_PACKAGE) {
             if (snapshot.certificationWorkPackage["selectedSlice"] == "AR-06C" || snapshot.release.containsKey("recoveryCertification"))
                 addAll(AdapterObservationAuthenticationLifecycle.errors(snapshot))

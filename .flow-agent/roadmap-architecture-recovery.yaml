@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 66
+revision: 67
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -21,12 +21,21 @@ currentDecision:
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AR-06"
-  nextItemName: "Behavioral Adapter Certification and Honest Target Portfolio"
+  nextItem: "AI-A1"
+  nextItemName: "External AI proposal import and compiler feedback"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/behavioral-adapter-certification.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/workspace-producer-success.yaml"
-  decisionBasis: "PR #251 merged at e7a9824 with the same tree c5520bc38fb295552f22ee4425b57984c421866a as validated head ca16f0399422dccdbe9074d8a382ab36e653e1f9. Flow CI 40249779687 and runtime CI 40249779695 succeeded. C16 now requires compiler-bound native checkout/upload failures, blocked consumers, forced-consumer mutants and independent API replay; success-only scheduling is a supporting detail. Current-revision CI remains required. No target-wide promotion, AR-06 closure, AR-07 activation or EF-09 resumption."
+  workPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+  correctiveWorkPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+  decisionBasis: "Maintainer authorized AI-A1 from merged proposal PR #254 at 803bd7d20bf4302799c76d2ddffa9f5fa11d4650. Both proposal workflows passed. Activate only external proposal import using completed AR-01 and AR-05 prerequisites; AR-06 remains open, full AR-07 closure remains dependent on AR-06, and EF-09 remains paused."
+
+authoringDevelopment:
+  selectedSlice: AI-A1
+  parentMilestone: AR-07
+  status: active
+  dependsOn: [AR-01, AR-05]
+  workPackage: .flow-agent/work-packages/ai-a1-external-proposal.yaml
+  proposal: docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
+  closureScope: AI-A1 only; AR-06 and AR-07 remain open, including F-16 and F-20.
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
@@ -82,7 +91,7 @@ systemAuditFollowup:
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05]
   nextRecommendedFinding: null
-  nextScope: C16 is the current AR-06 candidate for asserted checkout/upload action errors and output-bound consumer guards. C15 conditional producers are merged. Repeated-control workspace transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
+  nextScope: AI-A1 is selected independently under the bounded authoring activation. C16 and its same-run workflow composition were merged through PR #253; this does not close AR-06. Repeated-control workspace transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
   closureRule: A-05 documentation completion does not retire facades or close AR-07 migration work. Merged A-06 admission does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:

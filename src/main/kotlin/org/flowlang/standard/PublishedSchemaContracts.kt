@@ -28,6 +28,7 @@ object PublishedSchemaContracts {
     val contracts: List<PublishedSchemaContract> = listOf(
         interchange("adapter-diagnostics.schema.json"),
         interchange("ai-normalization-report.schema.json"),
+        interchange("ai-proposal.schema.json", "org.flowlang.frontend.ai.ExternalAiProposalReader"),
         interchange("artifact-evidence-report.schema.json"),
         interchange("artifact-integrity-report.schema.json"),
         interchange("ast.schema.json", "org.flowlang.ast.FlowAst serialized contract"),
@@ -55,6 +56,7 @@ object PublishedSchemaContracts {
         interchange("operational-domain-case.schema.json", "org.flowlang.conformance.OperationalDomainCorpusLoader"),
         interchange("operational-domain-corpus.schema.json", "org.flowlang.conformance.OperationalDomainCorpusLoader"),
         interchange("public-standard-surface.schema.json"),
+        interchange("proposal-review.schema.json", "org.flowlang.cli.honest.ProposalReviewReport"),
         interchange("real-world-case.schema.json", "org.flowlang.conformance.RealWorldCorpusLoader"),
         interchange("real-world-corpus.schema.json", "org.flowlang.conformance.RealWorldCorpusLoader"),
         interchange("real-world-evidence.schema.json", "org.flowlang.conformance.RealWorldCorpusLoader"),

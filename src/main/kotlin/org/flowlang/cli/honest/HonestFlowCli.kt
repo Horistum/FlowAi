@@ -149,6 +149,7 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
                     when (command) {
                         "intent" -> runIntentCommand(parsed, output, resources.root)
                         "normalize" -> runNormalizeCommand(parsed, output, resources.root)
+                        "proposal" -> ProposalCommand.execute(parsed, output, resources.root)
                         else -> {
                             if (command != "resources") StandardCliCommands.run(command, parsed, output, resources.root)
                             CliExecutionResult.Completed(output.snapshot())
@@ -180,7 +181,9 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
         }
         val diagnostic = CliExecutionDiagnostic(
             code = code,
-            message = BoundedIo.diagnostic(limit?.message ?: failure.message ?: "CLI command failed without a diagnostic message."),
+            message = BoundedIo.diagnostic(limit?.message ?: if (command == "proposal")
+                "Proposal command failed during input, contract loading or publication; no new artifact batch was published."
+                else failure.message ?: "CLI command failed without a diagnostic message."),
             causeType = failure::class.qualifiedName ?: failure::class.simpleName.orEmpty()
         )
         val report = CliCommandFailureReport(
@@ -933,11 +936,12 @@ private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String
     output.text("Flow CLI commands: ${(productCommands + additionalCommands).sorted().joinToString()}")
     output.text("Contract commands use packaged resources; --contracts <root> explicitly replaces the complete resource set.")
     output.text("Target materialization requires --target. Rendering additionally requires --render.")
+    output.text("proposal <request.json> [--out <new-directory>] [--target <target>] [--render] imports an external AI proposal; its request may also declare the explicit target.")
 }
 
-private val contractCommands = setOf("intent", "normalize", "flow", "targets", "modules", "resources")
+private val contractCommands = setOf("intent", "normalize", "proposal", "flow", "targets", "modules", "resources")
 
-private val productCommands = setOf("resources", "intent", "normalize", "diagnostics", "standard-verify") +
+private val productCommands = setOf("resources", "intent", "normalize", "proposal", "diagnostics", "standard-verify") +
     StandardCliCommands.names
 
 private val knownJsonArtifacts = setOf(

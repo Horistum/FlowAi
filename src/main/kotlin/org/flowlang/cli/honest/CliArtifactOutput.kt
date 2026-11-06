@@ -16,6 +16,7 @@ internal object CliArtifactOutput {
         val budget = IoBudget(InputLimits.MAX_TOTAL_OUTPUT_BYTES, code = "OUTPUT")
         val schemas = bundle?.artifacts?.associate { it.name to it.schema }.orEmpty()
         val standaloneSchemas = mapOf("standard-diagnostic-catalog.json" to "schemas/standard-diagnostic-catalog.schema.json",
+            "proposal-review.json" to "schemas/proposal-review.schema.json",
             "standard-bundle-verification.json" to "schemas/standard-bundle-verification.schema.json")
         val contents = values.mapValues { (name, value) ->
             require(name.isNotBlank() && name != "." && name != ".." && '/' !in name && '\\' !in name) {

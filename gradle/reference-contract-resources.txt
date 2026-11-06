@@ -25,6 +25,9 @@ docs/adr/ADR_0_9_6_7_FIRST_EXECUTABLE_REFERENCE_SCENARIO.md
 examples/hello.flow
 examples/intent/build-test-deploy.intent.yaml
 examples/intent/checkout-build-image.intent.yaml
+examples/proposals/accepted.json
+examples/proposals/existing-image-blocked.json
+examples/proposals/rejected.json
 modules/argocd.yaml
 modules/database.yaml
 modules/docker.yaml
@@ -37,6 +40,7 @@ modules/shell.yaml
 modules/standard.yaml
 schemas/adapter-diagnostics.schema.json
 schemas/ai-normalization-report.schema.json
+schemas/ai-proposal.schema.json
 schemas/artifact-evidence-report.schema.json
 schemas/artifact-integrity-report.schema.json
 schemas/ast.schema.json
@@ -63,6 +67,7 @@ schemas/module.schema.json
 schemas/negative-conformance-corpus.schema.json
 schemas/operational-domain-case.schema.json
 schemas/operational-domain-corpus.schema.json
+schemas/proposal-review.schema.json
 schemas/public-standard-surface.schema.json
 schemas/real-world-case.schema.json
 schemas/real-world-corpus.schema.json
