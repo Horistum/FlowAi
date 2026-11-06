@@ -65,6 +65,24 @@
         "domain": "INFRASTRUCTURE_STATE",
         "operation": "DELETE"
       }
+    },
+    {
+      "id": "no-delete-data-transformation",
+      "sourceQuote": "delete data",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "DATA_TRANSFORMATION",
+        "operation": "DELETE"
+      }
+    },
+    {
+      "id": "no-delete-state-recovery",
+      "sourceQuote": "delete data",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "STATE_RECOVERY",
+        "operation": "DELETE"
+      }
     }
   ]
 }

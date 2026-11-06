@@ -65,6 +65,16 @@ class RequestFidelityTests {
         }
     }
 
+    @Test fun stateProhibitionCoversUpsertDeletionAndExecutionBeyondNamedMaintenanceCapabilities() = workspace { root ->
+        for ((capability, requirement) in listOf("PROVISION" to "no-state-upsert", "DEPROVISION" to "no-state-delete", "RUNBOOK" to "no-state-execute")) {
+            val proposal = tree("certificate-prohibitions")
+            steps(proposal).addObject().put("id", "invented-effect").put("capability", capability)
+            val review = evaluate(root, proposal, tree("certificate-prohibitions", "requirements"))
+            assertEquals(RequestFidelityState.VIOLATED, review.state, capability)
+            assertEquals(FidelityRequirementState.VIOLATED, review.requirements.single { it.id == requirement }.state, capability)
+        }
+    }
+
     @Test fun addedBuildIsRejectedEvenWhenTheProviderClaimsNoProblems() = workspace { root ->
         val proposal = tree("deployment-prohibitions")
         steps(proposal).add(Json.mapper.readTree("""{"id":"invented-build","capability":"BUILD_IMAGE","params":{"image":"unrequested"}}"""))

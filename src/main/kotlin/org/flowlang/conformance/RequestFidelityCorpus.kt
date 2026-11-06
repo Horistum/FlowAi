@@ -126,7 +126,10 @@ internal class RequestFidelityCorpus(private val root: File) {
                     (steps(it)[1] as ObjectNode).putArray("requires")
                     (steps(it)[0] as ObjectNode).putArray("requires").add("deploy")
                 },
-                Triple("deployment-prohibitions", "no-image-build") { steps(it).addObject().put("id", "invented-build").put("capability", "BUILD_IMAGE") }
+                Triple("deployment-prohibitions", "no-image-build") { steps(it).addObject().put("id", "invented-build").put("capability", "BUILD_IMAGE") },
+                Triple("certificate-prohibitions", "no-state-upsert") { steps(it).addObject().put("id", "invented-provision").put("capability", "PROVISION") },
+                Triple("certificate-prohibitions", "no-state-delete") { steps(it).addObject().put("id", "invented-delete").put("capability", "DEPROVISION") },
+                Triple("certificate-prohibitions", "no-state-execute") { steps(it).addObject().put("id", "invented-runbook").put("capability", "RUNBOOK") }
             )
             mutations.forEach { (id, requirement, mutate) ->
                 val case = cases().single { it.path("id").asText() == id }

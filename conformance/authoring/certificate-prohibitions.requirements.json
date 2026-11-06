@@ -65,6 +65,51 @@
         "domain": "INFRASTRUCTURE_STATE",
         "operation": "UPDATE"
       }
+    },
+    {
+      "id": "no-state-create",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "CREATE"
+      }
+    },
+    {
+      "id": "no-state-delete",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "DELETE"
+      }
+    },
+    {
+      "id": "no-state-upsert",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "UPSERT"
+      }
+    },
+    {
+      "id": "no-state-execute",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "EXECUTE"
+      }
+    },
+    {
+      "id": "no-state-emit",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "EMIT"
+      }
     }
   ]
 }
