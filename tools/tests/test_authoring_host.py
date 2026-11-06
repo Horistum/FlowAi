@@ -11,7 +11,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 ROOT = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
 from authoring_host.contracts import (HostError, canonical, digest, loads, public_contracts,
-                                      reservation, validate_config, verify_inventory)
+                                      read, reservation, validate_config, verify_inventory)
 from authoring_host.evaluation import corpus_cases, evaluate, summarize
 from authoring_host.session import resume, start
 
@@ -299,6 +299,16 @@ class AuthoringHostTests(unittest.TestCase):
         run_state.write_bytes(b"{}")
         with self.assertRaisesRegex(HostError, "run changed"):
             summarize(self.root / "suite")
+
+    def test_changed_public_catalog_stops_evaluation_before_another_paid_dispatch(self):
+        with patch("authoring_host.session.capability_catalog", side_effect=[
+                [{"capability": "VERIFY"}], [{"capability": "DIFFERENT"}]]):
+            with self.assertRaisesRegex(HostError, "inputs changed before dispatch"):
+                evaluate(self.config, ROOT / "conformance/authoring/corpus.json", self.root / "suite",
+                         target="jenkins", max_cost_microusd=36_000_000)
+        self.assertEqual("1", self.counter.read_text())
+        manifest = loads(read(self.root / "suite/state.json"))
+        self.assertEqual(1, len(manifest["runs"]))
 
 
 if __name__ == "__main__":

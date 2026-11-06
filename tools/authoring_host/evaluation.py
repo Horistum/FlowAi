@@ -48,7 +48,8 @@ def evaluate(config, corpus_path, directory, *, repetitions=3, target, max_cost_
             name = f"repeat-{repetition + 1}-{case['id']}"
             render = case["split"] == "held-out" and case["category"] == "specified"
             state = start(config, request_data, requirements_data, root / name,
-                          target=target if render else None, render=render)
+                          target=target if render else None, render=render, expected_settings=manifest.get("settings"))
+            manifest.setdefault("settings", state["settings"])
             manifest["runs"].append({"case": case["id"], "domain": case["domain"], "category": case["category"],
                                      "split": case["split"], "repetition": repetition + 1, "directory": name,
                                      "stateSha256": digest(read(root / name / "state.json"))})
@@ -77,6 +78,10 @@ def summarize(directory):
         verify_inventory(root / name, state)
         require(state["files"]["config.json"] == manifest["configSha256"] and state["evidenceKind"] == manifest["evidenceKind"],
                 "Evaluation settings changed across runs")
+        require(state["settings"] == manifest["settings"] and
+                state["files"]["contracts.json"] == manifest["settings"]["contractsSha256"] and
+                state["files"]["instructions.txt"] == manifest["settings"]["instructionsSha256"] and
+                state["compilerDigest"] == manifest["settings"]["compilerDigest"], "Evaluation public inputs changed across runs")
         reviews = [a["review"] for a in state["attempts"] if "review" in a]
         def faithful(review):
             return (review.get("semanticAcceptance") == "accepted" and

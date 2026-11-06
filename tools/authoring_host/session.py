@@ -17,7 +17,7 @@ def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def start(config, request_data, requirements_data, directory, *, target=None, render=False):
+def start(config, request_data, requirements_data, directory, *, target=None, render=False, expected_settings=None):
     config = validate_config(loads(canonical(config)))
     request = loads(request_data)
     keys(request, ("userText",), ("context", "mode"))
@@ -36,6 +36,10 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     snapshots = {"config.json": canonical(config), "request.json": request_data,
                  "requirements-0.json": requirements_data, "contracts.json": canonical(contracts),
                  "instructions.txt": INSTRUCTIONS.encode()}
+    settings = {"configSha256": digest(snapshots["config.json"]), "contractsSha256": digest(snapshots["contracts.json"]),
+                "instructionsSha256": digest(snapshots["instructions.txt"]), "compilerDigest": compiler_digest,
+                "promptVersion": PROMPT_VERSION}
+    require(expected_settings is None or settings == expected_settings, "Evaluation inputs changed before dispatch")
     for data in snapshots.values():
         require(not contains_credential(data, environment),
                 "A credential appears in retained inputs")
@@ -46,6 +50,7 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     finally:
         os.close(descriptor)
     state = {"formatVersion": 1, "runId": uuid.uuid4().hex, "status": "ready", "files": {},
+             "settings": settings,
              "startedAt": _now(), "hostVersion": "bounded-authoring-host/1",
              "promptVersion": PROMPT_VERSION, "compilerCommit": config["compiler"]["commit"],
              "compilerAttribution": "caller-declared-commit-with-local-binary-digest",

@@ -154,9 +154,10 @@ cannot be replaced during continuation. A process lock prevents concurrent resum
 `state.json` indexes retained bytes by SHA-256 and records prompt/schema identities,
 caller-declared compiler commit, local launcher/jar digest, configured provider/model
 version, attempts, usage, reserved cost, repair/clarification counts and final status.
-Each attempt retains its exact wire request, provider response, complete assembled
+Each attempt retains its exact command-protocol request/response, complete assembled
 proposal and compiler artifact directory. Compiler reports retain stage outcomes,
 graph digest, requirements-source identity and materialization disposition.
+Upstream HTTP envelopes are owned by the adapter and are not retained by this host.
 
 These are local integrity receipts, not signatures, authenticated human decisions,
 proof of provider authorship or a reproducible build attestation. Custom compiler
@@ -187,7 +188,8 @@ actual charge. A broken provider/compiler integration stops the remaining suite.
 The runner pins the frozen twelve-case inventory and expectation digests, never
 opens expected proposal fixtures, and sends only original requests/public contracts
 to the provider. It renders only fully specified held-out cases using the explicitly
-selected target. The configuration and prompt are fixed across repetitions.
+selected target. The configuration, public contracts, prompt and compiler digest
+are pinned across repetitions; a change stops evaluation before the next provider dispatch.
 
 The report separates first-pass canonical/fidelity acceptance, acceptance after
 repair, fidelity violations, unsupported detection, per-domain acceptance, rendered
