@@ -132,7 +132,17 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
     proposal.write_bytes(resources["examples/proposals/accepted.json"])
     rejected_proposal = inputs / "rejected-proposal.json"
     rejected_proposal.write_bytes(resources["examples/proposals/rejected.json"])
+    faithful = inputs / "faithful.json"
+    faithful.write_bytes(resources["examples/proposals/faithful.json"])
+    requirements = inputs / "requirements.json"
+    requirements.write_bytes(resources["examples/proposals/reviewed-requirements.json"])
+    mutated = inputs / "mutated.json"
+    candidate = json.loads(faithful.read_bytes())
+    candidate["response"]["normalizedIntent"]["workflows"][0]["steps"][1]["params"]["image"] = "changed-digest"
+    mutated.write_text(json.dumps(candidate))
     cases = [
+        ("fidelity-satisfied", ["proposal", str(faithful), "--requirements", str(requirements), "--out=integrated fidelity"], 0, "integrated fidelity"),
+        ("fidelity-violated", ["proposal", str(mutated), "--requirements", str(requirements), "--target=jenkins", "--render", "--out=integrated violation"], 4, "integrated violation"),
         ("proposal-accepted", ["proposal", str(proposal), "--out=integrated proposal"], 0, "integrated proposal"),
         ("proposal-rejected", ["proposal", str(rejected_proposal), "--out=integrated rejected proposal"], 4, "integrated rejected proposal"),
         ("diagnostics", ["diagnostics", "--out=integrated diagnostics"], 0, "integrated diagnostics"),
@@ -172,6 +182,29 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
                 raise ValueError("Installed proposal review lost semantic outcome or exact input provenance.")
             if not accepted and (not review.get("diagnostics") or review.get("artifacts") != ["proposal-review.json"]):
                 raise ValueError("Rejected proposal lost diagnostics or published a plan.")
+        if name.startswith("fidelity-"):
+            review = document.get("AI PROPOSAL REVIEW", {})
+            fidelity = document.get("REQUEST FIDELITY REVIEW", {})
+            passed = name == "fidelity-satisfied"
+            source = faithful if passed else mutated
+            if (review.get("formatVersion") != 2 or review.get("exitCode") != expected
+                    or review.get("semanticAcceptance") != "accepted"
+                    or review.get("requestFidelity") != ("requirements-satisfied" if passed else "violated")
+                    or review.get("inputSource", {}).get("sha256") != hashlib.sha256(source.read_bytes()).hexdigest()
+                    or fidelity.get("state") != ("REQUIREMENTS_SATISFIED" if passed else "VIOLATED")
+                    or fidelity.get("requirementsSource", {}).get("sha256") != hashlib.sha256(requirements.read_bytes()).hexdigest()
+                    or fidelity.get("graphDigest") != review.get("graphDigest") or not fidelity.get("graphDigest")
+                    or fidelity.get("scope") != "confirmed-requirements-only"
+                    or fidelity.get("naturalLanguageCompleteness") != "unassessed"
+                    or review.get("renderAuthorized") is not False
+                    or "target-manifest.json" in review.get("artifacts", [])):
+                raise ValueError("Installed fidelity review lost independent provenance or allowed unsupported authority.")
+            if not passed and review.get("targetDisposition") != "withheld-for-fidelity":
+                raise ValueError("Installed mutation bypassed the fidelity gate.")
+            receipt = json.loads((cwd / output / "artifact-integrity-report.json").read_bytes())["publication"]
+            schemas = {r["path"]: r.get("schema") for r in receipt["coveredFiles"]}
+            if schemas.get("proposal-review.json") != "schemas/proposal-review-v2.schema.json" or schemas.get("request-fidelity-review.json") != "schemas/request-fidelity-review.schema.json":
+                raise ValueError("Installed fidelity publication used the wrong schema versions.")
         if expected == 2:
             failure = document.get("CLI DIAGNOSTIC FAILURE", {})
             if failure.get("code") != "CLI_INVALID_INPUT" or not 0 < len(failure.get("message", "")) <= 2048:

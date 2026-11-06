@@ -1,0 +1,33 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "Capture ledger and catalog at one atomic logical instant across independent databases. Never keep a partial pair.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "two-captures",
+      "sourceQuote": "ledger and catalog",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "BACKUP"
+        },
+        "minimum": 2,
+        "maximum": 2
+      }
+    },
+    {
+      "id": "atomicity",
+      "sourceQuote": "one atomic logical instant across independent databases",
+      "check": {
+        "kind": "unsupported",
+        "blocker": "EXTERNAL_ATOMICITY"
+      }
+    }
+  ]
+}

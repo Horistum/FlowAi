@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 67
+revision: 68
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -21,21 +21,21 @@ currentDecision:
   preemptedItemName: "Human Approval and Change-Control Falsification"
   preemptedItemState: "active-after-evidence-admission"
   preemptedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AI-A1"
-  nextItemName: "External AI proposal import and compiler feedback"
+  nextItem: "AI-A2"
+  nextItemName: "Independent request requirements and bounded fidelity review"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
-  decisionBasis: "Maintainer authorized AI-A1 from merged proposal PR #254 at 803bd7d20bf4302799c76d2ddffa9f5fa11d4650. Both proposal workflows passed. Activate only external proposal import using completed AR-01 and AR-05 prerequisites; AR-06 remains open, full AR-07 closure remains dependent on AR-06, and EF-09 remains paused."
+  workPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
+  correctiveWorkPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
+  decisionBasis: "Maintainer selected AI-A2 after AI-A1 merged in PR #255 at 48461b18f52fd1ae60889afd3029b7f0d406798f with passing main CI. Independent requirements and the bounded corpus do not close AR-06 or AR-07; EF-09 remains paused."
 
 authoringDevelopment:
-  selectedSlice: AI-A1
+  selectedSlice: AI-A2
   parentMilestone: AR-07
   status: active
-  dependsOn: [AR-01, AR-05]
-  workPackage: .flow-agent/work-packages/external-ai-proposal-import.yaml
+  dependsOn: [AI-A1]
+  workPackage: .flow-agent/work-packages/request-fidelity-review.yaml
   proposal: docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
-  closureScope: AI-A1 only; AR-06 and AR-07 remain open, including F-16 and F-20.
+  closureScope: AI-A2 only; AR-06 and AR-07 remain open, including F-16 and F-20.
 
 systemAuditFollowup:
   audit: docs/audits/2026-10-20-system-roadmap/README.md
@@ -91,7 +91,7 @@ systemAuditFollowup:
   remainingScalability: General compaction of distinct availability states remains open; deterministic limits continue to bound them.
   remainingFindings: [A-02, A-03, A-05]
   nextRecommendedFinding: null
-  nextScope: AI-A1 is selected independently under the bounded authoring activation. C16 and its same-run workflow composition were merged through PR #253; this does not close AR-06. Repeated-control workspace transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
+  nextScope: AI-A2 is selected independently under the bounded authoring activation. C16 and its same-run workflow composition were merged through PR #253; this does not close AR-06. Repeated-control workspace transport, cancellation/infrastructure failure experiments and general VALUE/STATE continuity remain open. A-02/A-03 need separate typed designs; A-05 migration and AI cleanup remain AR-07-owned.
   closureRule: A-05 documentation completion does not retire facades or close AR-07 migration work. Merged A-06 admission does not implement dynamic defaults or new approval policies. Global initializer containment does not implement variable semantics; data-payload containment does not implement typed data operations. Earlier resource and handler containment do not establish general symbolic scalability or handler implementation. Other findings remain open.
 
 deliveryModel:

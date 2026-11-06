@@ -1,0 +1,68 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-fidelity-fixture",
+  "request": {
+    "userText": "Renew api.example.invalid in namespace edge, then verify api.example.invalid. Do not rotate secrets.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "2.0",
+      "kind": "FlowIntentDocument",
+      "name": "certificate-specified",
+      "workflows": [
+        {
+          "name": "renew",
+          "kind": "CUSTOM",
+          "steps": [
+            {
+              "id": "renew",
+              "capability": "CERTIFICATE_RENEW",
+              "params": {
+                "certificate": "api.example.invalid",
+                "namespace": "edge"
+              },
+              "requires": []
+            },
+            {
+              "id": "verify",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "api.example.invalid"
+              },
+              "requires": [
+                "renew"
+              ]
+            }
+          ]
+        }
+      ],
+      "failure": {
+        "notify": false,
+        "rollback": false,
+        "stopOnError": true
+      }
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-fidelity-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored integration candidate; no model was called. Oracle expectations are in a separate reviewed document."
+      ],
+      "guardrails": [
+        "Compiler safety obligations remain independent of request-fidelity checks."
+      ]
+    }
+  }
+}

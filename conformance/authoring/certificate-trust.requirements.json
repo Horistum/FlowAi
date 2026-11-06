@@ -1,0 +1,45 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "Renew signing.example.invalid only after live OCSP checks prove the issuer is trusted and not revoked.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "renew",
+      "sourceQuote": "Renew",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "CERTIFICATE_RENEW"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "identity",
+      "sourceQuote": "signing.example.invalid",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "CERTIFICATE_RENEW"
+        },
+        "parameter": "certificate",
+        "expected": "signing.example.invalid"
+      }
+    },
+    {
+      "id": "trust-evidence",
+      "sourceQuote": "live OCSP checks prove the issuer is trusted and not revoked",
+      "check": {
+        "kind": "unsupported",
+        "blocker": "EXTERNAL_TRUST_EVIDENCE"
+      }
+    }
+  ]
+}

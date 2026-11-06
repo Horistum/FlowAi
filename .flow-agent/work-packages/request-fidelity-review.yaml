@@ -1,0 +1,37 @@
+version: AI-A2
+name: Independent request requirements and bounded fidelity review
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AI-A2
+authorization:
+  source: Maintainer requested AI-A2 after the merged external proposal import.
+  baseline: 48461b18f52fd1ae60889afd3029b7f0d406798f
+  predecessorPullRequest: 255
+  proposal: docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
+objective: Detect omitted requirements, invented work and changed constraints against independently reviewed expectations.
+architecturePurpose: Evaluate bounded request requirements over compiler-authorized canonical meaning before target materialization.
+universalInvariant: Candidate proposals cannot supply or confirm their own expectations; unsupported or unconfirmed requirements cannot become a fidelity pass.
+scope:
+- A separate versioned requirements document bound to the complete original request and cited source text.
+- Explicit reviewer confirmation and caller-declared provenance, with no model identity or reviewer authentication claim.
+- Bounded canonical capability, effect, literal-value and ordering checks with explicit unsupported and review states.
+- Optional requirements input on the proposal CLI, atomic fidelity evidence and compatible versioned proposal feedback.
+- Twelve independently authored requests across deployment, backup/restore and certificate maintenance, with six held out from model evaluation.
+- Controlled mutations and the existing-image approval/failure-only-notification acceptance case.
+- Coordinated AI-A2 activation retaining AI-A1 acceptance and all earlier recovery gates.
+forbiddenScope:
+- Model calls, natural-language heuristics as confirmation, workflow execution or new adapter special cases.
+- New Core semantics to make corpus cases pass.
+- Claiming general natural-language fidelity, real-model quality or authenticated human approval.
+- Closing AR-06, AR-07, F-16, F-20 or resuming EF-09.
+completionEvidence:
+- Independent expectations detect changed digests, forbidden builds, late approvals, removed steps and broadened environments.
+- Stale request bindings and malformed requirements fail closed; provisional and uncheckable requirements withhold rendering.
+- Six held-out cases and six development cases have reviewed expectations before any live model call.
+- All domain and case categories retain representability limitations rather than substituting convenient workflows.
+- Installed CLI, conformance, full test suites and final-revision GitHub checks pass.
+validationPlan:
+- Focused parser, evaluator, CLI and provenance regressions, including mutation of caller-owned values.
+- Corpus inventory, source-reference integrity, independent expectation digests and controlled proposal mutations.
+- Backward-compatible AI-A1 behavior without requirements and versioned feedback with requirements.
+- Current and historical roadmap lifecycle checks, physical module isolation, exact-head and merge-candidate CI.

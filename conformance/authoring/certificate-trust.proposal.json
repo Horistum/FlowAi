@@ -1,0 +1,67 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-fidelity-fixture",
+  "request": {
+    "userText": "Renew signing.example.invalid only after live OCSP checks prove the issuer is trusted and not revoked.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "2.0",
+      "kind": "FlowIntentDocument",
+      "name": "certificate-trust",
+      "workflows": [
+        {
+          "name": "renew",
+          "kind": "CUSTOM",
+          "steps": [
+            {
+              "id": "trust-probe",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "signing.example.invalid"
+              },
+              "requires": []
+            },
+            {
+              "id": "renew",
+              "capability": "CERTIFICATE_RENEW",
+              "params": {
+                "certificate": "signing.example.invalid"
+              },
+              "requires": [
+                "trust-probe"
+              ]
+            }
+          ]
+        }
+      ],
+      "failure": {
+        "notify": false,
+        "rollback": false,
+        "stopOnError": true
+      }
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-fidelity-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored integration candidate; no model was called. Oracle expectations are in a separate reviewed document."
+      ],
+      "guardrails": [
+        "Compiler safety obligations remain independent of request-fidelity checks."
+      ]
+    }
+  }
+}

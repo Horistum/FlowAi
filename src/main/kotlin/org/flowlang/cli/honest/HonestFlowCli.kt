@@ -936,7 +936,7 @@ private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String
     output.text("Flow CLI commands: ${(productCommands + additionalCommands).sorted().joinToString()}")
     output.text("Contract commands use packaged resources; --contracts <root> explicitly replaces the complete resource set.")
     output.text("Target materialization requires --target. Rendering additionally requires --render.")
-    output.text("proposal <request.json> [--out <new-directory>] [--target <target>] [--render] imports an external AI proposal; its request may also declare the explicit target.")
+    output.text("proposal <request.json> [--requirements <reviewed-requirements.json>] [--out <new-directory>] [--target <target>] [--render] imports an external AI proposal; its request may also declare the explicit target.")
 }
 
 private val contractCommands = setOf("intent", "normalize", "proposal", "flow", "targets", "modules", "resources")

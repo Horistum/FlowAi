@@ -12,6 +12,10 @@ import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.ai.ExternalAiProposalReader
 import org.flowlang.frontend.ai.ProposalInputException
 import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
+import org.flowlang.frontend.ai.RequestRequirementsReader
+import org.flowlang.frontend.ai.RequestRequirementsException
+import org.flowlang.frontend.ai.RequestFidelityEvaluator
+import org.flowlang.frontend.ai.RequestFidelityState
 import org.flowlang.materialization.TargetSelectionAuthority
 import org.flowlang.materialization.TargetSelectionDecision
 import org.flowlang.modules.ModuleRegistry
@@ -62,10 +66,13 @@ internal object ProposalCommand {
     fun execute(args: CliArguments, output: CliOutputCollector, contractRoot: File): CliExecutionResult {
         val directory = args.value(CliValueOption.OUT)?.let(::File)
         val render = args.has(CliFlagOption.RENDER)
+        val requirementsPath = args.value(CliValueOption.REQUIREMENTS)
+        val reviewVersion = if (requirementsPath == null) 1 else 2
         val input = try {
             ExternalAiProposalReader.read(File(args.positionals.single()))
         } catch (failure: ProposalInputException) {
             return publish(ProposalReviewReport(
+                formatVersion = reviewVersion,
                 outcome = CliProcessExit.INVALID_INPUT, stage = "INPUT", semanticAcceptance = "not-assessed",
                 inputSource = failure.inputSource, renderRequested = render,
                 diagnostics = listOf(diagnostic(failure.code, failure.field))
@@ -86,14 +93,20 @@ internal object ProposalCommand {
         val cliTarget = args.value(CliValueOption.TARGET)
         val target = cliTarget ?: requestedTarget
         val base = ProposalReviewReport(
+            formatVersion = reviewVersion,
             outcome = CliProcessExit.SUCCESS, stage = "INPUT", semanticAcceptance = "not-assessed",
             inputSource = input.inputSource, providerId = proposal.providerId, reviewItems = items,
             target = target, renderRequested = render
         )
-        fun invalid(code: String, field: String) = publish(base.copy(
+        fun invalid(code: String, field: String, disposition: String = "invalid-selection") = publish(base.copy(
             outcome = CliProcessExit.INVALID_INPUT, diagnostics = listOf(diagnostic(code, field)),
-            targetDisposition = "invalid-selection"
+            targetDisposition = disposition
         ), linkedMapOf(), directory, output)
+        val requirements = try {
+            requirementsPath?.let { RequestRequirementsReader.read(File(it)).also { captured -> captured.requireRequest(proposal.request) } }
+        } catch (failure: RequestRequirementsException) {
+            return invalid(failure.code, "$.requirements", if (target == null) "not-requested" else "withheld")
+        }
         if (requestedTarget != null && cliTarget != null && requestedTarget != cliTarget)
             return invalid("PROPOSAL_TARGET_CONFLICT", "$.request.context.target")
         if (render && target == null) return invalid("CLI_TARGET_REQUIRED_FOR_RENDER", "$.request.context.target")
@@ -111,11 +124,13 @@ internal object ProposalCommand {
         val compiled = ReviewedAiProposalFrontend(compiler).compile(proposal)
         if (compiled is CompilationResult.Rejected) {
             val rejected = compiled.rejection
+            val fidelity = requirements?.let { RequestFidelityEvaluator.rejected(it, rejected.source) }
             return publish(base.copy(
                 outcome = CliProcessExit.BLOCKED, stage = rejected.stage.name, semanticAcceptance = "rejected",
                 compilationSource = rejected.source, targetDisposition = "withheld",
+                requestFidelity = fidelity?.state?.wire ?: "unassessed",
                 diagnostics = rejected.diagnostics.map { diagnostic(it.code, "$.response.normalizedIntent", it.severity.name) }
-            ), linkedMapOf(), directory, output)
+            ), linkedMapOf<String, Any>().apply { if (fidelity != null) put("request-fidelity-review.json", fidelity) }, directory, output)
         }
         val unit = (compiled as CompilationResult.Accepted).unit
         val values = linkedMapOf<String, Any>(
@@ -125,13 +140,20 @@ internal object ProposalCommand {
             values["execution-plan.json"] = unit.executionPlan
             values["canonical-execution-plan.json"] = unit.canonicalPlan
         }
+        val fidelity = requirements?.let { RequestFidelityEvaluator.evaluate(it, unit) }
+        fidelity?.let { values["request-fidelity-review.json"] = it }
         val accepted = base.copy(
             stage = "CANONICALIZATION", semanticAcceptance = "accepted", compilationSource = unit.source,
             graphDigest = unit.graphDigest.value,
+            requestFidelity = fidelity?.state?.wire ?: "unassessed",
             diagnostics = unit.requireReviewedAiProposalEvidence().validation.issues.map {
                 diagnostic(it.code, "$.response.normalizedIntent", it.level.uppercase())
             }
         )
+        if (fidelity != null && fidelity.state != RequestFidelityState.REQUIREMENTS_SATISFIED) return publish(accepted.copy(
+            outcome = if (fidelity.state == RequestFidelityState.REVIEW_REQUIRED) CliProcessExit.REVIEW_REQUIRED else CliProcessExit.BLOCKED,
+            stage = "REQUEST_FIDELITY", targetDisposition = "withheld-for-fidelity"
+        ), values, directory, output)
         if (reviewRequired) return publish(accepted.copy(
             outcome = CliProcessExit.REVIEW_REQUIRED, targetDisposition = "withheld-for-review"
         ), values, directory, output)
@@ -181,6 +203,7 @@ internal object ProposalCommand {
         val report = review.copy(artifacts = values.keys.toList() + "proposal-review.json")
         values["proposal-review.json"] = report
         output.section("AI PROPOSAL REVIEW", report)
+        values["request-fidelity-review.json"]?.let { output.section("REQUEST FIDELITY REVIEW", it) }
         values["workflow-execution-plan-set.json"]?.let { output.section("WORKFLOW EXECUTION PLAN SET", it) }
         values["target-manifest.json"]?.let { output.section("TARGET MANIFEST", it) }
         values["target-selection-evidence.json"]?.let { output.section("TARGET SELECTION EVIDENCE", it) }

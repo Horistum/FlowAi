@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/proposal-review/2/proposal-review.schema.json",
+  "title": "External proposal review version 2 with independent requirements",
+  "type": "object",
+  "required": [
+    "formatVersion",
+    "outcome",
+    "exitCode",
+    "stage",
+    "semanticAcceptance",
+    "providerAttribution",
+    "requestFidelity",
+    "reviewItems",
+    "diagnostics",
+    "targetDisposition",
+    "renderRequested",
+    "renderAuthorized",
+    "artifacts"
+  ],
+  "properties": {
+    "formatVersion": {
+      "const": 2
+    },
+    "outcome": {
+      "enum": [
+        "SUCCESS",
+        "INVALID_INPUT",
+        "REVIEW_REQUIRED",
+        "BLOCKED",
+        "INTERNAL_ERROR"
+      ]
+    },
+    "exitCode": {
+      "enum": [
+        0,
+        2,
+        3,
+        4,
+        70
+      ]
+    },
+    "stage": {
+      "enum": [
+        "INPUT",
+        "PROPOSAL_REVIEW",
+        "INTENT_VALIDATION",
+        "INTENT_LOWERING",
+        "FLOW_VALIDATION",
+        "PLANNING",
+        "CANONICALIZATION",
+        "MATERIALIZATION",
+        "REQUEST_FIDELITY"
+      ]
+    },
+    "semanticAcceptance": {
+      "enum": [
+        "not-assessed",
+        "accepted",
+        "rejected"
+      ]
+    },
+    "inputSource": {
+      "type": "object",
+      "required": [
+        "frontend",
+        "identity",
+        "sourceName",
+        "mediaType",
+        "sha256",
+        "byteCount"
+      ],
+      "properties": {
+        "frontend": {
+          "enum": [
+            "REVIEWED_AI_PROPOSAL"
+          ]
+        },
+        "identity": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "byteCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "compilationSource": {
+      "type": "object",
+      "required": [
+        "frontend",
+        "identity",
+        "sourceName",
+        "mediaType",
+        "sha256",
+        "byteCount"
+      ],
+      "properties": {
+        "frontend": {
+          "enum": [
+            "REVIEWED_AI_PROPOSAL"
+          ]
+        },
+        "identity": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "byteCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "graphDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "providerId": {
+      "type": "string"
+    },
+    "providerAttribution": {
+      "const": "caller-declared"
+    },
+    "requestFidelity": {
+      "enum": [
+        "unassessed",
+        "requirements-satisfied",
+        "violated",
+        "review-required",
+        "unsupported",
+        "not-evaluated"
+      ]
+    },
+    "reviewItems": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "field",
+          "severity"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "code",
+          "severity",
+          "field",
+          "message"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "target": {
+      "type": "string"
+    },
+    "targetDisposition": {
+      "enum": [
+        "not-requested",
+        "invalid-selection",
+        "withheld",
+        "withheld-for-review",
+        "executable",
+        "review_only",
+        "blocked",
+        "withheld-for-fidelity"
+      ]
+    },
+    "renderRequested": {
+      "type": "boolean"
+    },
+    "renderAuthorized": {
+      "type": "boolean"
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

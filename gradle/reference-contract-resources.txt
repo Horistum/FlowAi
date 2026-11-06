@@ -27,7 +27,9 @@ examples/intent/build-test-deploy.intent.yaml
 examples/intent/checkout-build-image.intent.yaml
 examples/proposals/accepted.json
 examples/proposals/existing-image-blocked.json
+examples/proposals/faithful.json
 examples/proposals/rejected.json
+examples/proposals/reviewed-requirements.json
 modules/argocd.yaml
 modules/database.yaml
 modules/docker.yaml
@@ -67,6 +69,7 @@ schemas/module.schema.json
 schemas/negative-conformance-corpus.schema.json
 schemas/operational-domain-case.schema.json
 schemas/operational-domain-corpus.schema.json
+schemas/proposal-review-v2.schema.json
 schemas/proposal-review.schema.json
 schemas/public-standard-surface.schema.json
 schemas/real-world-case.schema.json
@@ -81,6 +84,8 @@ schemas/real-world-target-assessments.schema.json
 schemas/reference-corpus-index.schema.json
 schemas/reference-intent-corpus.schema.json
 schemas/release-metadata-honesty-report.schema.json
+schemas/request-fidelity-review.schema.json
+schemas/request-requirements.schema.json
 schemas/scenario-pack.schema.json
 schemas/standard-bundle-verification.schema.json
 schemas/standard-compliance-report.schema.json

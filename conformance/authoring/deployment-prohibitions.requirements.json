@@ -1,0 +1,145 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "The image is already in the registry. After approval, deploy this exact digest to production. If the health check fails, notify the team. Do not build another image and do not roll back. Digest: registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "approval",
+      "sourceQuote": "After approval",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "APPROVE"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "deploy",
+      "sourceQuote": "deploy this exact digest",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "digest",
+      "sourceQuote": "registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "parameter": "image",
+        "expected": "registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "environment",
+      "sourceQuote": "to production",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "parameter": "environment",
+        "expected": "production"
+      }
+    },
+    {
+      "id": "health-check",
+      "sourceQuote": "the health check",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "notification",
+      "sourceQuote": "notify the team",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "NOTIFY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "approval-first",
+      "sourceQuote": "After approval",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "APPROVE"
+        },
+        "after": {
+          "capability": "DEPLOY"
+        }
+      }
+    },
+    {
+      "id": "health-after-deploy",
+      "sourceQuote": "deploy this exact digest to production. If the health check fails",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "DEPLOY"
+        },
+        "after": {
+          "capability": "VERIFY"
+        }
+      }
+    },
+    {
+      "id": "no-image-build",
+      "sourceQuote": "Do not build another image",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD_IMAGE"
+      }
+    },
+    {
+      "id": "no-image-effect",
+      "sourceQuote": "Do not build another image",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "SOFTWARE_DELIVERY",
+        "operation": "CREATE",
+        "resource": "software.image"
+      }
+    },
+    {
+      "id": "no-rollback",
+      "sourceQuote": "do not roll back",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "ROLLBACK"
+      }
+    },
+    {
+      "id": "failure-only-notify",
+      "sourceQuote": "If the health check fails, notify the team",
+      "check": {
+        "kind": "unsupported",
+        "blocker": "OPERATION_FAILURE_SCOPE"
+      }
+    }
+  ]
+}
