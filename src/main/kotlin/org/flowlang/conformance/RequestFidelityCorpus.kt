@@ -119,6 +119,9 @@ internal class RequestFidelityCorpus(private val root: File) {
                 Triple("deployment-specified", "digest") { (steps(it)[1].path("params") as ObjectNode).put("image", "different-digest") },
                 Triple("deployment-specified", "environment") { (steps(it)[1].path("params") as ObjectNode).put("environment", "test") },
                 Triple("deployment-specified", "verify") { steps(it).remove(2) },
+                Triple("deployment-specified", "verified-resource") { (steps(it)[2].path("params") as ObjectNode).put("resource", "unrelated-resource") },
+                Triple("backup-specified", "verified-resource") { (steps(it)[1].path("params") as ObjectNode).put("resource", "unrelated-resource") },
+                Triple("certificate-specified", "verified-resource") { (steps(it)[1].path("params") as ObjectNode).put("resource", "unrelated-resource") },
                 Triple("deployment-specified", "approval-first") {
                     (steps(it)[1] as ObjectNode).putArray("requires")
                     (steps(it)[0] as ObjectNode).putArray("requires").add("deploy")

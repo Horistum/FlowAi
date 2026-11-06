@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "request": {
-    "userText": "Renew api.example.invalid in namespace edge, then verify the certificate. Do not rotate secrets.",
+    "userText": "Renew api.example.invalid in namespace edge, then verify api.example.invalid. Do not rotate secrets.",
     "context": {},
     "mode": "DRAFT"
   },
@@ -60,7 +60,7 @@
     },
     {
       "id": "verify",
-      "sourceQuote": "verify the certificate",
+      "sourceQuote": "verify api.example.invalid",
       "check": {
         "kind": "capability-count",
         "selector": {
@@ -89,6 +89,18 @@
       "check": {
         "kind": "forbid-capability",
         "capability": "SECRET_ROTATE"
+      }
+    },
+    {
+      "id": "verified-resource",
+      "sourceQuote": "verify api.example.invalid",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "parameter": "resource",
+        "expected": "api.example.invalid"
       }
     }
   ]

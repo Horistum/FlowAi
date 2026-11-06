@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "providerId": "manual-fidelity-fixture",
   "request": {
-    "userText": "Capture ledger into archive-store retaining 7d. Verify the backup after capture. Do not restore data.",
+    "userText": "Capture ledger into archive-store retaining 7d. Verify resource ledger-backup after capture. Do not restore data.",
     "context": {},
     "mode": "DRAFT"
   },

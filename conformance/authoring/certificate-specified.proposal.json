@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "providerId": "manual-fidelity-fixture",
   "request": {
-    "userText": "Renew api.example.invalid in namespace edge, then verify the certificate. Do not rotate secrets.",
+    "userText": "Renew api.example.invalid in namespace edge, then verify api.example.invalid. Do not rotate secrets.",
     "context": {},
     "mode": "DRAFT"
   },

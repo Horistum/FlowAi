@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "request": {
-    "userText": "Capture ledger into archive-store retaining 7d. Verify the backup after capture. Do not restore data.",
+    "userText": "Capture ledger into archive-store retaining 7d. Verify resource ledger-backup after capture. Do not restore data.",
     "context": {},
     "mode": "DRAFT"
   },
@@ -72,7 +72,7 @@
     },
     {
       "id": "verify",
-      "sourceQuote": "Verify the backup",
+      "sourceQuote": "Verify resource ledger-backup",
       "check": {
         "kind": "capability-count",
         "selector": {
@@ -101,6 +101,18 @@
       "check": {
         "kind": "forbid-capability",
         "capability": "RESTORE"
+      }
+    },
+    {
+      "id": "verified-resource",
+      "sourceQuote": "resource ledger-backup",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "parameter": "resource",
+        "expected": "ledger-backup"
       }
     }
   ]

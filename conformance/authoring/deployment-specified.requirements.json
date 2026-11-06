@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "request": {
-    "userText": "After manual approval, deploy the existing image registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa to staging. Verify the deployment after deployment.",
+    "userText": "After manual approval, deploy the existing image registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa to staging. Verify resource payments after deployment.",
     "context": {},
     "mode": "DRAFT"
   },
@@ -35,7 +35,7 @@
     },
     {
       "id": "verify",
-      "sourceQuote": "Verify the deployment",
+      "sourceQuote": "Verify resource payments",
       "check": {
         "kind": "capability-count",
         "selector": {
@@ -93,6 +93,18 @@
         "after": {
           "capability": "VERIFY"
         }
+      }
+    },
+    {
+      "id": "verified-resource",
+      "sourceQuote": "resource payments",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "parameter": "resource",
+        "expected": "payments"
       }
     }
   ]

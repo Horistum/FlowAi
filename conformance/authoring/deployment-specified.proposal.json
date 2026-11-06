@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "providerId": "manual-fidelity-fixture",
   "request": {
-    "userText": "After manual approval, deploy the existing image registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa to staging. Verify the deployment after deployment.",
+    "userText": "After manual approval, deploy the existing image registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa to staging. Verify resource payments after deployment.",
     "context": {},
     "mode": "DRAFT"
   },

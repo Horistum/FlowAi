@@ -54,6 +54,17 @@ class RequestFidelityTests {
         }
     }
 
+    @Test fun verificationOfAnotherResourceCannotStandInForTheRequestedCheck() = workspace { root ->
+        for (id in listOf("deployment-specified", "backup-specified", "certificate-specified")) {
+            val candidate = tree(id)
+            val verification = steps(candidate).single { it.path("capability").asText() == "VERIFY" }
+            (verification.path("params") as ObjectNode).put("resource", "unrelated-resource")
+            val review = evaluate(root, candidate, tree(id, "requirements"))
+            assertEquals(RequestFidelityState.VIOLATED, review.state, id)
+            assertEquals(FidelityRequirementState.VIOLATED, review.requirements.single { it.id == "verified-resource" }.state, id)
+        }
+    }
+
     @Test fun addedBuildIsRejectedEvenWhenTheProviderClaimsNoProblems() = workspace { root ->
         val proposal = tree("deployment-prohibitions")
         steps(proposal).add(Json.mapper.readTree("""{"id":"invented-build","capability":"BUILD_IMAGE","params":{"image":"unrequested"}}"""))
