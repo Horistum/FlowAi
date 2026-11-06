@@ -36,7 +36,9 @@ This is diagnostic handling, not a provider-free preflight or a zero-cost guaran
   corpus repetitions. Attempt counts are derived from captured states.
 - Relocated install/ZIP proof adds the profile-only target case with retained
   independent fidelity evidence and atomic schema/byte receipts.
-- A public conformance vector and executable check cover target availability.
+- An executable recovery conformance vector and inventoried check cover target
+  availability. The vector belongs to Architecture Recovery; it does not extend
+  the frozen historical Core closure inventory.
 - Full JVM, conformance, physical isolation and installed-host checks are required
   on the final PR head and synthetic merge candidate before delivery.
 

@@ -1,6 +1,6 @@
 kind: FlowConformanceVector
 version: "1.0"
-id: intent.proposal-target-readiness
+id: architecture-recovery.proposal-target-readiness
 description: A declared target without an installed projection provider preserves accepted canonical and fidelity evidence while withholding target artifacts.
 input:
   command: conformance

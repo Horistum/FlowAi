@@ -9,6 +9,7 @@ import org.flowlang.frontend.ai.ExternalAiProposalReader
 import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.modules.ModuleRegistry
+import org.flowlang.serialization.FlowYaml
 
 internal class AiProposalImportChecks(private val root: File) {
     fun checks(): List<ConformanceCheck> = listOf(
@@ -32,6 +33,10 @@ internal class AiProposalImportChecks(private val root: File) {
             require(result.review.requestFidelity == "unassessed")
         },
         check("ai.proposal.unavailable-target-preserves-plan") {
+            val vector = FlowYaml.readMap(File(root, "architecture-recovery/conformance/proposal-target-readiness.yaml"))
+            val expected = vector["expected"] as Map<*, *>
+            require(expected["requiredCheck"] == "ai.proposal.unavailable-target-preserves-plan")
+            require(expected["targetProfiles"] == listOf("local", "argo-workflows", "azure-devops"))
             for (target in listOf("local", "argo-workflows", "azure-devops")) {
                 val result = executeCli(arrayOf("proposal", File(root, "examples/proposals/faithful.json").path,
                     "--requirements", File(root, "examples/proposals/reviewed-requirements.json").path,
@@ -42,6 +47,12 @@ internal class AiProposalImportChecks(private val root: File) {
                 require(result.review.graphDigest != null && "canonical-execution-plan.json" in result.review.artifacts)
                 require("target-manifest.json" !in result.review.artifacts)
                 require(result.review.diagnostics.any { it.code == "PROPOSAL_TARGET_PROJECTION_UNAVAILABLE" })
+                require(expected["exitCode"] == result.exitCode && expected["stage"] == result.review.stage)
+                require(expected["semanticAcceptance"] == result.review.semanticAcceptance &&
+                    expected["requestFidelity"] == result.review.requestFidelity)
+                require(expected["targetDisposition"] == result.review.targetDisposition &&
+                    expected["renderAuthorized"] == result.review.renderAuthorized)
+                require(result.review.diagnostics.any { it.code == expected["diagnostic"] })
             }
         }
     )
