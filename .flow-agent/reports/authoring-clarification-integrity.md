@@ -42,11 +42,13 @@ second semantic-equivalence authority in the Python host.
 
 ## Validation ownership
 
-Six new Python process regressions cover removed and rewritten constraints, duplicate
+Seven new Python process regressions cover removed and rewritten constraints, duplicate
 or invalid IDs, nested predicate changes, JSON value types, allowed additions and
 reordering, answered question removal and multiple continuation rounds. Negative
 cases assert unchanged state/evidence and provider-call counts, followed by a valid
-continuation.
+continuation. A subprocess test exercises the real host CLI's exit code and actionable
+diagnostic, verifies that rejected input and raw filesystem paths are not echoed,
+and completes the same session with the corrected requirements.
 
 The installed-product verifier adds five independent requirement mutations:
 removed approval ordering, changed image, changed verification resource, relaxed

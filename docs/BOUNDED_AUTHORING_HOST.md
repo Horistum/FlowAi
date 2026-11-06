@@ -150,6 +150,8 @@ rejected before provider dispatch. A rejected continuation writes no answer or
 requirements revision and consumes no additional budget; the same waiting session
 can receive a corrected revision. To correct or change established constraints,
 start a new run with independently reviewed requirements and an explicit budget.
+The CLI returns exit 2 with a bounded host-authored diagnostic on a rejected
+revision. Raw filesystem/process exception messages remain suppressed.
 Reviewer identity is caller-declared, not authenticated approval.
 
 ```json

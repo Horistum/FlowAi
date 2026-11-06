@@ -49,7 +49,11 @@ def main(argv=None):
             return 3  # Descriptive measurements always require independent quality review.
         print(json.dumps({k: value[k] for k in ("runId", "status", "repairCount", "clarificationCount")}))
         return 0 if value["status"] == "accepted" else 3 if value["status"] == "awaiting-user" else 4
-    except (HostError, OSError, ValueError, KeyError, TypeError):
+    except HostError as failure:
+        # HostError carries only bounded, host-authored public diagnostics.
+        print(f"Authoring host rejected input: {failure}", file=sys.stderr)
+        return 2
+    except (OSError, ValueError, KeyError, TypeError):
         print("Authoring host failed closed; inspect retained evidence and configuration.", file=sys.stderr)
         return 2
 

@@ -503,6 +503,44 @@ class AuthoringHostTests(unittest.TestCase):
         self.assertEqual(324576, state["reservedTokens"])
         verify_inventory(self.out, state)
 
+    def test_resume_cli_reports_constraint_conflict_without_echoing_external_data(self):
+        import subprocess
+        self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+        state = self.run_host()
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Confirmed."} for p in state["pending"]]}
+        confirmed = copy.deepcopy(self.requirements)
+        confirmed.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        changed = copy.deepcopy(confirmed)
+        changed["requirements"][0]["sourceQuote"] = "private-value-not-for-diagnostics"
+        answers_path, requirements_path = self.root / "answers.json", self.root / "revision.json"
+        answers_path.write_bytes(canonical(answers))
+        requirements_path.write_bytes(canonical(changed))
+        command = [sys.executable, str(TOOLS / "author_proposal.py"), "resume", "--run", str(self.out),
+                   "--answers", str(answers_path), "--requirements", str(requirements_path)]
+        before = read(self.out / "state.json")
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(2, result.returncode)
+        self.assertIn("cannot remove or change established requirements", result.stderr)
+        self.assertIn("start a new run", result.stderr)
+        self.assertNotIn("private-value-not-for-diagnostics", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual("", result.stdout)
+        self.assertEqual(before, read(self.out / "state.json"))
+        self.assertEqual("1", self.counter.read_text())
+        # Raw filesystem errors still suppress external paths and exception text.
+        requirements_path.unlink()
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(2, result.returncode)
+        self.assertNotIn(str(requirements_path), result.stderr)
+        self.assertIn("failed closed", result.stderr)
+        self.assertEqual(before, read(self.out / "state.json"))
+        requirements_path.write_bytes(canonical(confirmed))
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("accepted", json.loads(result.stdout)["status"])
+        self.assertEqual("2", self.counter.read_text())
+
 
 if __name__ == "__main__":
     unittest.main()
