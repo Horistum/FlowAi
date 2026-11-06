@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 129
+stateVersion: 130
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -917,5 +917,12 @@ recoveryBoundedAuthoring:
   milestoneComplete: false
   liveEvaluationGate: pending-configured-provider-and-budget
   heldOutRenderGate: pending-target-evidence
+  clarificationFollowup:
+    workPackage: .flow-agent/work-packages/authoring-clarification-integrity.yaml
+    report: .flow-agent/reports/authoring-clarification-integrity.md
+    predecessorMain: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+    predecessorPullRequest: 258
+    validation: current-revision-ci-required
+    localExecution: unavailable
   supportPromotion: false
   recoveryClosure: false

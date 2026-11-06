@@ -8,7 +8,7 @@ from pathlib import Path
 import uuid
 
 from .contracts import (HostError, INSTRUCTIONS, PROMPT_VERSION, canonical, checkpoint, contains_credential, digest,
-                        integer, keys, loads, nonblank, priced_usage, public_contracts, read,
+                        integer, keys, loads, nonblank, preserve_requirements, priced_usage, public_contracts, read,
                         require, requirements, reservation, save, validate_config, verify_inventory)
 from .transport import capability_catalog, compiler_environment, compiler_fingerprint, credentials, invoke
 
@@ -98,6 +98,7 @@ def resume(directory, answers_data, requirements_data):
                 "Resumption requires caller-confirmed requirements and matching reviewer attribution")
         require(not any(i["check"].get("kind") == "clarification" for i in reviewed["requirements"]),
                 "Requirements still contain unanswered decisions")
+        preserve_requirements(prior_requirements, reviewed)
         config = validate_config(loads(read(root / "config.json")))
         environment = credentials(config)
         for data in (answers_data, requirements_data):

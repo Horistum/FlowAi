@@ -8,7 +8,7 @@ import subprocess
 import sys
 import tempfile
 
-from authoring_host.contracts import canonical, loads, read, require, verify_inventory
+from authoring_host.contracts import HostError, canonical, loads, read, require, verify_inventory
 from authoring_host.evaluation import evaluate
 from authoring_host.session import resume, start
 
@@ -54,6 +54,38 @@ def verify(root, cli):
         require(state["status"] == "awaiting-user", "Unconfirmed requirements did not stop")
         answers = {"runId": state["runId"], "reviewerId": loads(req)["reviewerId"], "answers": [
             {"id": p["id"], "answer": "I confirm these original requirements."} for p in state["pending"]]}
+
+        # Exercise the continuation boundary with real compiler-accepted requirements.
+        # Rejected changes must neither consume a provider call nor alter retained evidence.
+        mutations = []
+        removed = loads(req)
+        removed["requirements"] = [item for item in removed["requirements"] if item["id"] != "approval-first"]
+        mutations.append(removed)
+        for identifier, field, value in (
+                ("digest", "expected", "registry.example.invalid/other@sha256:" + "b" * 64),
+                ("verified-resource", "expected", "different"),
+                ("approval", "maximum", 2)):
+            changed = loads(req)
+            next(item for item in changed["requirements"] if item["id"] == identifier)["check"][field] = value
+            mutations.append(changed)
+        duplicate = loads(req)
+        duplicate["requirements"].append(copy.deepcopy(duplicate["requirements"][0]))
+        mutations.append(duplicate)
+        snapshot = read(work / "clarification" / "state.json")
+        files_before = {str(p.relative_to(work / "clarification")) for p in (work / "clarification").rglob("*")}
+        for changed in mutations:
+            try:
+                resume(work / "clarification", canonical(answers), canonical(changed))
+            except HostError:
+                pass
+            else:
+                raise AssertionError("Clarification accepted a changed established requirement")
+            require(read(work / "clarification" / "state.json") == snapshot,
+                    "Rejected clarification changed session state")
+            require({str(p.relative_to(work / "clarification")) for p in (work / "clarification").rglob("*")} == files_before,
+                    "Rejected clarification wrote continuation evidence")
+            require(counter.read_text() == "1", "Rejected clarification dispatched a provider call")
+            verify_inventory(work / "clarification", state)
         state = resume(work / "clarification", canonical(answers), req)
         require(state["status"] == "accepted" and state["clarificationCount"] == 1, "Explicit clarification did not resume")
         certificate = fixture("certificate-specified")
@@ -114,7 +146,7 @@ def verify(root, cli):
             require(row["status"] == expected, "Installed corpus classification changed")
         attempts = sum(len(loads(read(path)).get("attempts", [])) for path in work.rglob("state.json"))
         print(json.dumps({"status": "PASS", "evidenceKind": "deterministic-test", "corpusRuns": 36,
-                          "processAttempts": attempts, "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
+                          "processAttempts": attempts, "rejectedClarificationMutations": len(mutations), "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
                           "milestoneComplete": False}))
 
 
