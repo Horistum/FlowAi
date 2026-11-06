@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "Inspect edge.example.invalid. Do not renew certificates, rotate secrets or change cluster state.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "verify",
+      "sourceQuote": "Inspect",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "identity",
+      "sourceQuote": "edge.example.invalid",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "parameter": "resource",
+        "expected": "edge.example.invalid"
+      }
+    },
+    {
+      "id": "no-renew",
+      "sourceQuote": "Do not renew certificates",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "CERTIFICATE_RENEW"
+      }
+    },
+    {
+      "id": "no-secret-rotation",
+      "sourceQuote": "rotate secrets",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "SECRET_ROTATE"
+      }
+    },
+    {
+      "id": "no-cluster-maintenance",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "CLUSTER_MAINTENANCE"
+      }
+    },
+    {
+      "id": "no-state-update",
+      "sourceQuote": "change cluster state",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "UPDATE"
+      }
+    }
+  ]
+}

@@ -4,7 +4,7 @@ import java.io.File
 import kotlin.test.*
 
 class AiAuthoringActivationTests {
-    private fun live() = WorkflowSemanticsRecoveryLifecycle.load(File("."))
+    private fun live() = RequestFidelityActivation.predecessor(WorkflowSemanticsRecoveryLifecycle.load(File(".")))
     @Test fun authoringActivationPreservesEveryPriorRecoveryReceipt() {
         val snapshot = live()
         assertTrue(AiAuthoringActivation.selected(snapshot))

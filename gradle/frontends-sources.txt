@@ -5,6 +5,9 @@ org/flowlang/cli/Json.kt
 org/flowlang/frontend/CompilationSourceCapture.kt
 org/flowlang/frontend/FrontendCompilerComposition.kt
 org/flowlang/frontend/ai/ExternalAiProposalReader.kt
+org/flowlang/frontend/ai/RequestFidelityEvaluator.kt
+org/flowlang/frontend/ai/RequestRequirements.kt
+org/flowlang/frontend/ai/RequestRequirementsReader.kt
 org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt
 org/flowlang/frontend/intent/FlowIntentExpressionParser.kt
 org/flowlang/frontend/intent/IntentYamlFrontend.kt

@@ -1,0 +1,153 @@
+{
+  "formatVersion": 1,
+  "purpose": "Deterministic request-fidelity conformance, not real-model evaluation",
+  "oracleProvenance": "Expectations authored as a separate repository test oracle before candidate fixtures; proposed for maintainer review in this PR. No authenticated human approval is claimed.",
+  "modelEvaluated": false,
+  "heldOutPolicy": "Six cases are reserved from AI-A3 prompt construction and repair tuning; public deterministic fixtures are not a secret benchmark.",
+  "cases": [
+    {
+      "id": "deployment-specified",
+      "domain": "deployment",
+      "category": "specified",
+      "split": "development",
+      "requirements": "deployment-specified.requirements.json",
+      "requirementsSha256": "e2062967d1972308d748005291ac18bbbbf9a2b8111780fc4b80777a0a83090f",
+      "proposal": "deployment-specified.proposal.json",
+      "expectedFidelity": "REQUIREMENTS_SATISFIED",
+      "expectedExit": 0,
+      "structuralDifference": "Approval, deploy and verify only: no checkout, test, build or push stage."
+    },
+    {
+      "id": "deployment-ambiguous",
+      "domain": "deployment",
+      "category": "ambiguous",
+      "split": "held-out",
+      "requirements": "deployment-ambiguous.requirements.json",
+      "requirementsSha256": "5edae888636cc2eae4b685d2df614155c428ca9536827d2681dbc1dd04432175",
+      "proposal": "deployment-ambiguous.proposal.json",
+      "expectedFidelity": "REVIEW_REQUIRED",
+      "expectedExit": 3,
+      "structuralDifference": "One incomplete deploy operation without a default environment."
+    },
+    {
+      "id": "deployment-prohibitions",
+      "domain": "deployment",
+      "category": "prohibitions",
+      "split": "development",
+      "requirements": "deployment-prohibitions.requirements.json",
+      "requirementsSha256": "3433bbfd0dff4c7c3e67a17d010d74f4b027fa51ccb7b21a8046aedb67f9bde8",
+      "proposal": "deployment-prohibitions.proposal.json",
+      "expectedFidelity": "UNSUPPORTED",
+      "expectedExit": 4,
+      "structuralDifference": "Existing-image deployment with approval and an operation-specific failure requirement; never a build/deploy template."
+    },
+    {
+      "id": "deployment-atomic",
+      "domain": "deployment",
+      "category": "unsupported",
+      "split": "held-out",
+      "requirements": "deployment-atomic.requirements.json",
+      "requirementsSha256": "017f68980ddc229520b0cb7502d633649ac2cb9a794d6b466470b8d3e6cdbfef",
+      "proposal": "deployment-atomic.proposal.json",
+      "expectedFidelity": "UNSUPPORTED",
+      "expectedExit": 4,
+      "structuralDifference": "Two independently owned workflows; no inferred distributed transaction."
+    },
+    {
+      "id": "backup-specified",
+      "domain": "backup-restore",
+      "category": "specified",
+      "split": "development",
+      "requirements": "backup-specified.requirements.json",
+      "requirementsSha256": "85d95492ac05362c358fff1e515b93744abe8be4ca61a55af721286c97baa33c",
+      "proposal": "backup-specified.proposal.json",
+      "expectedFidelity": "REQUIREMENTS_SATISFIED",
+      "expectedExit": 0,
+      "structuralDifference": "Capture and verification without restore; source, destination and retention are independent expectations."
+    },
+    {
+      "id": "restore-ambiguous",
+      "domain": "backup-restore",
+      "category": "ambiguous",
+      "split": "held-out",
+      "requirements": "restore-ambiguous.requirements.json",
+      "requirementsSha256": "5df97ce62a91bd228272f7e53725fda423a9f2a0ef629ddec76e9a12c2dfd62b",
+      "proposal": "restore-ambiguous.proposal.json",
+      "expectedFidelity": "REVIEW_REQUIRED",
+      "expectedExit": 3,
+      "structuralDifference": "One restore operation with unresolved recovery point and target; no invented new backup."
+    },
+    {
+      "id": "backup-prohibitions",
+      "domain": "backup-restore",
+      "category": "prohibitions",
+      "split": "held-out",
+      "requirements": "backup-prohibitions.requirements.json",
+      "requirementsSha256": "b15917ac5317ccc9874ea3a906c271063430b50fef88bd212cc92574d6d7bd86",
+      "proposal": "backup-prohibitions.proposal.json",
+      "expectedFidelity": "REQUIREMENTS_SATISFIED",
+      "expectedExit": 0,
+      "structuralDifference": "Read-only verification without backup or restore operations."
+    },
+    {
+      "id": "backup-atomic",
+      "domain": "backup-restore",
+      "category": "unsupported",
+      "split": "development",
+      "requirements": "backup-atomic.requirements.json",
+      "requirementsSha256": "f77a76da8797bf2c8180d6df1c521deb8fc03b8657f89797a9f8a14da1e4582d",
+      "proposal": "backup-atomic.proposal.json",
+      "expectedFidelity": "UNSUPPORTED",
+      "expectedExit": 4,
+      "structuralDifference": "Two independent capture workflows with a declared cross-database atomicity blocker."
+    },
+    {
+      "id": "certificate-specified",
+      "domain": "certificate-maintenance",
+      "category": "specified",
+      "split": "held-out",
+      "requirements": "certificate-specified.requirements.json",
+      "requirementsSha256": "ba2b01ee020eb6b2dfe4c84faec4f66a7acc0a4ab1902cf439a0383b3c922f3e",
+      "proposal": "certificate-specified.proposal.json",
+      "expectedFidelity": "REQUIREMENTS_SATISFIED",
+      "expectedExit": 0,
+      "structuralDifference": "Renew then verify with explicit certificate identity and namespace, no secret rotation."
+    },
+    {
+      "id": "certificate-ambiguous",
+      "domain": "certificate-maintenance",
+      "category": "ambiguous",
+      "split": "development",
+      "requirements": "certificate-ambiguous.requirements.json",
+      "requirementsSha256": "63dd81c8854b7d874df54f25afeae6e1651484f40e3639f6b55663faafad1c24",
+      "proposal": "certificate-ambiguous.proposal.json",
+      "expectedFidelity": "REVIEW_REQUIRED",
+      "expectedExit": 3,
+      "structuralDifference": "One provisional renewal with no guessed certificate or maintenance window."
+    },
+    {
+      "id": "certificate-prohibitions",
+      "domain": "certificate-maintenance",
+      "category": "prohibitions",
+      "split": "development",
+      "requirements": "certificate-prohibitions.requirements.json",
+      "requirementsSha256": "82547f766d57de4f4c0916d675155710637ddcacf8ccd5f033dfaee9b0fc9cd0",
+      "proposal": "certificate-prohibitions.proposal.json",
+      "expectedFidelity": "REQUIREMENTS_SATISFIED",
+      "expectedExit": 0,
+      "structuralDifference": "Read-only inspection; neither certificate renewal nor cluster maintenance is substituted."
+    },
+    {
+      "id": "certificate-trust",
+      "domain": "certificate-maintenance",
+      "category": "unsupported",
+      "split": "held-out",
+      "requirements": "certificate-trust.requirements.json",
+      "requirementsSha256": "05482b0e00d26593150f8a653b18d4e88a578db61ab554977ece35e48a2493ed",
+      "proposal": "certificate-trust.proposal.json",
+      "expectedFidelity": "UNSUPPORTED",
+      "expectedExit": 4,
+      "structuralDifference": "Pre-renewal verification cannot substitute for independently authenticated live trust evidence."
+    }
+  ]
+}

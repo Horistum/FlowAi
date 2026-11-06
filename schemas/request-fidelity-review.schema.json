@@ -1,0 +1,152 @@
+{
+  "type": "object",
+  "properties": {
+    "formatVersion": {
+      "const": 1
+    },
+    "state": {
+      "enum": [
+        "REQUIREMENTS_SATISFIED",
+        "VIOLATED",
+        "REVIEW_REQUIRED",
+        "UNSUPPORTED",
+        "NOT_EVALUATED"
+      ]
+    },
+    "scope": {
+      "const": "confirmed-requirements-only"
+    },
+    "naturalLanguageCompleteness": {
+      "const": "unassessed"
+    },
+    "reviewerAttribution": {
+      "const": "caller-declared"
+    },
+    "confirmation": {
+      "enum": [
+        "PROVISIONAL",
+        "CONFIRMED"
+      ]
+    },
+    "origin": {
+      "enum": [
+        "REVIEWER_AUTHORED",
+        "MODEL_EXTRACTED"
+      ]
+    },
+    "requirementsSource": {
+      "type": "object",
+      "properties": {
+        "identity": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "identity",
+        "sha256",
+        "sizeBytes"
+      ],
+      "additionalProperties": false
+    },
+    "compilationSource": {
+      "type": "object",
+      "required": [
+        "frontend",
+        "identity",
+        "sourceName",
+        "mediaType",
+        "sha256",
+        "byteCount"
+      ],
+      "properties": {
+        "frontend": {
+          "enum": [
+            "REVIEWED_AI_PROPOSAL"
+          ]
+        },
+        "identity": {
+          "type": "string"
+        },
+        "sourceName": {
+          "type": "string"
+        },
+        "mediaType": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "byteCount": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false
+    },
+    "graphDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "field": {
+            "type": "string"
+          },
+          "state": {
+            "enum": [
+              "SATISFIED",
+              "VIOLATED",
+              "REVIEW_REQUIRED",
+              "UNSUPPORTED",
+              "NOT_EVALUATED"
+            ]
+          },
+          "code": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "field",
+          "state",
+          "code"
+        ],
+        "additionalProperties": false
+      },
+      "not": {
+        "minItems": 257
+      }
+    }
+  },
+  "required": [
+    "formatVersion",
+    "state",
+    "scope",
+    "naturalLanguageCompleteness",
+    "reviewerAttribution",
+    "confirmation",
+    "origin",
+    "requirementsSource",
+    "requirements"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/request-fidelity-review/1/request-fidelity-review.schema.json",
+  "title": "Bounded request fidelity review version 1"
+}

@@ -30,7 +30,7 @@ Input is one UTF-8 JSON document. Duplicate keys, unknown envelope/request/repor
 
 ## Review and outcomes
 
-[The result schema](../schemas/proposal-review.schema.json) defines `proposal-review.json`. Its `semanticAcceptance` is independent of `requestFidelity`, which is always `unassessed` in AI-A1. A successful compilation does not prove that the natural-language request was preserved.
+[The result schema](../schemas/proposal-review.schema.json) defines `proposal-review.json`. Its `semanticAcceptance` is independent of `requestFidelity`, which remains `unassessed` when no independent requirements are supplied. A successful compilation does not prove that the natural-language request was preserved.
 
 `inputSource` identifies and hashes the exact supplied bytes. `compilationSource` identifies the deterministic typed request/response snapshot captured by the existing frontend and bound to compilation authorization. Both derive their source identity from the actual input path. Whitespace can change the input digest without changing the interpreted source digest. Provider/request changes affect interpreted provenance even when the canonical graph stays equal. `graphDigest` exists only after accepted compilation.
 
@@ -52,4 +52,4 @@ A target may be explicitly supplied by the CLI or by `request.context.target`; i
 
 ## Next boundary
 
-AI-A2 adds independently authored request-fidelity expectations. AI-A3 adds an external model host and bounded correction. This command supplies their deterministic input/result boundary; it does not perform model orchestration, execute workflows, attest model identity or establish calibrated confidence.
+[Independent request-fidelity review](REQUEST_FIDELITY_REVIEW.md) is available with `--requirements reviewed-requirements.json`. This selects proposal feedback version 2 and adds a separate bounded fidelity report; omitting the option retains version 1. AI-A3 adds an external model host and bounded correction. This command supplies their deterministic input/result boundary; it does not perform model orchestration, execute workflows, attest model identity or establish calibrated confidence.

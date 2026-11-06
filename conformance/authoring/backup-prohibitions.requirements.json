@@ -1,0 +1,70 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "Inspect ledger-backup readiness only. Do not capture, restore or delete data.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "verify",
+      "sourceQuote": "Inspect ledger-backup readiness",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "resource",
+      "sourceQuote": "ledger-backup",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "parameter": "resource",
+        "expected": "ledger-backup"
+      }
+    },
+    {
+      "id": "no-capture",
+      "sourceQuote": "Do not capture",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BACKUP"
+      }
+    },
+    {
+      "id": "no-restore",
+      "sourceQuote": "restore",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "RESTORE"
+      }
+    },
+    {
+      "id": "no-cleanup",
+      "sourceQuote": "delete data",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "CLEANUP"
+      }
+    },
+    {
+      "id": "no-delete-effect",
+      "sourceQuote": "delete data",
+      "check": {
+        "kind": "forbid-effect",
+        "domain": "INFRASTRUCTURE_STATE",
+        "operation": "DELETE"
+      }
+    }
+  ]
+}

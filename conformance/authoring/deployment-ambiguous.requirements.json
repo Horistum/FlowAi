@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "Deploy the retained image to the environment we agreed on.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "PROVISIONAL",
+  "reviewerId": null,
+  "requirements": [
+    {
+      "id": "deploy",
+      "sourceQuote": "Deploy",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "image-decision",
+      "sourceQuote": "the retained image",
+      "check": {
+        "kind": "clarification",
+        "question": "Which immutable image digest is approved?"
+      }
+    },
+    {
+      "id": "environment-decision",
+      "sourceQuote": "the environment we agreed on",
+      "check": {
+        "kind": "clarification",
+        "question": "Which exact environment was agreed?"
+      }
+    }
+  ]
+}

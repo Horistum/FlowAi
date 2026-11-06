@@ -1,0 +1,99 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "After manual approval, deploy the existing image registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa to staging. Verify the deployment after deployment.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "approval",
+      "sourceQuote": "manual approval",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "APPROVE"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "deploy",
+      "sourceQuote": "deploy the existing image",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "verify",
+      "sourceQuote": "Verify the deployment",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "digest",
+      "sourceQuote": "registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "parameter": "image",
+        "expected": "registry.example.invalid/payments@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    {
+      "id": "environment",
+      "sourceQuote": "to staging",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "DEPLOY"
+        },
+        "parameter": "environment",
+        "expected": "staging"
+      }
+    },
+    {
+      "id": "approval-first",
+      "sourceQuote": "After manual approval",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "APPROVE"
+        },
+        "after": {
+          "capability": "DEPLOY"
+        }
+      }
+    },
+    {
+      "id": "verify-after",
+      "sourceQuote": "after deployment",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "DEPLOY"
+        },
+        "after": {
+          "capability": "VERIFY"
+        }
+      }
+    }
+  ]
+}

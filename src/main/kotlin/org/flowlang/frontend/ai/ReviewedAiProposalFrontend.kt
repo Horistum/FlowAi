@@ -15,6 +15,7 @@ import org.flowlang.ai.normalization.AiIntentResponse
 import org.flowlang.ai.normalization.NormalizationReport
 import org.flowlang.compiler.CompilationFrontend
 import org.flowlang.compiler.CompilationResult
+import org.flowlang.compiler.CompilationUnit
 import org.flowlang.frontend.CompilationSourceCapture
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.ReviewedAiProposalCompilationInput
@@ -71,6 +72,17 @@ class ReviewedAiProposalFrontend(
             )
         )
     }
+}
+
+/** Request review must remain attached to the typed snapshot actually compiled, not a later caller edit. */
+internal fun requireReviewedProposalSnapshot(unit: CompilationUnit) {
+    val evidence = unit.requireReviewedAiProposalEvidence()
+    val snapshot = ReviewedAiProposal(evidence.providerId, evidence.request, evidence.response,
+        unit.source.identity, unit.source.sourceName).snapshot()
+    val bytes = ReviewedAiProposalSourceViewEncoder.encode(snapshot)
+    val digest = java.security.MessageDigest.getInstance("SHA-256").digest(bytes)
+        .joinToString("") { "%02x".format(it.toInt() and 255) }
+    require(digest == unit.source.sha256) { "Reviewed proposal evidence no longer matches the compiled source snapshot." }
 }
 
 private data class ReviewedAiProposalSourceView(

@@ -1,0 +1,107 @@
+{
+  "formatVersion": 1,
+  "request": {
+    "userText": "Capture ledger into archive-store retaining 7d. Verify the backup after capture. Do not restore data.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-test-oracle",
+  "requirements": [
+    {
+      "id": "capture",
+      "sourceQuote": "Capture ledger",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "BACKUP"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "subject",
+      "sourceQuote": "ledger",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "BACKUP"
+        },
+        "parameter": "subject",
+        "expected": "ledger"
+      }
+    },
+    {
+      "id": "destination",
+      "sourceQuote": "archive-store",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "BACKUP"
+        },
+        "parameter": "destination",
+        "expected": "archive-store"
+      }
+    },
+    {
+      "id": "retention",
+      "sourceQuote": "7d",
+      "check": {
+        "kind": "literal-parameter",
+        "selector": {
+          "capability": "BACKUP"
+        },
+        "parameter": "retention",
+        "expected": "7d"
+      }
+    },
+    {
+      "id": "capture-effect",
+      "sourceQuote": "Capture ledger",
+      "check": {
+        "kind": "require-effect",
+        "domain": "STATE_RECOVERY",
+        "operation": "CREATE",
+        "resource": "recovery.point",
+        "selector": {
+          "capability": "BACKUP"
+        }
+      }
+    },
+    {
+      "id": "verify",
+      "sourceQuote": "Verify the backup",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "VERIFY"
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "verify-after",
+      "sourceQuote": "after capture",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "BACKUP"
+        },
+        "after": {
+          "capability": "VERIFY"
+        }
+      }
+    },
+    {
+      "id": "no-restore",
+      "sourceQuote": "Do not restore data",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "RESTORE"
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 126
+stateVersion: 127
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -50,10 +50,10 @@ roadmapState:
   completedRecoveryItem: "AR-05"
   completedRecoveryItemName: "Artifact, Distribution, CLI and I/O Integrity"
   completedRecoveryWorkPackage: ".flow-agent/work-packages/artifact-distribution-cli-io-integrity.yaml"
-  nextRecoveryItem: "AI-A1"
-  nextRecoveryItemName: "External AI proposal import and compiler feedback"
+  nextRecoveryItem: "AI-A2"
+  nextRecoveryItemName: "Independent request requirements and bounded fidelity review"
   nextRecoveryActivationState: "active"
-  activeRecoveryWorkPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
+  activeRecoveryWorkPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -875,5 +875,26 @@ recoveryAiAuthoring:
   validation: current-revision-ci-required
   liveModelEvaluated: false
   requestFidelity: unassessed
+  supportPromotion: false
+  recoveryClosure: false
+
+recoveryRequestFidelity:
+  candidate: AI-A2
+  status: candidate
+  workPackage: .flow-agent/work-packages/request-fidelity-review.yaml
+  report: .flow-agent/reports/request-fidelity-review.md
+  predecessorMain: 48461b18f52fd1ae60889afd3029b7f0d406798f
+  predecessorPullRequest: 255
+  predecessorValidation:
+    flowCi: https://github.com/Horistum/FlowAi/actions/runs/42165986651
+    adapterRuntime: https://github.com/Horistum/FlowAi/actions/runs/42165986618
+    conclusion: success
+  validation: current-revision-ci-required
+  corpusCases: 12
+  heldOutCases: 6
+  liveModelEvaluated: false
+  requestFidelity: confirmed-requirements-only
+  naturalLanguageCompleteness: unassessed
+  reviewerAttribution: caller-declared
   supportPromotion: false
   recoveryClosure: false
