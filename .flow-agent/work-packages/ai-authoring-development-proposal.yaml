@@ -1,0 +1,29 @@
+version: AI-AUTHORING-DESIGN
+name: AI-assisted authoring continuation proposal
+status: proposed
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AR-07
+authorization:
+  source: Maintainer requested a development proposal following the review of adapter-focused progress.
+  baseline: 66a4ec77f18bd8fa04656783edc8ff7251d48b6d
+objective: Define a reviewable implementation sequence for external AI proposals, request fidelity, bounded repair and product-driven adapter work.
+architecturePurpose: Reuse the shared compiler and reviewed proposal frontend as the deterministic boundary for AI-assisted automation authoring.
+universalInvariant: Every proposed revision is independently compiled and its semantic acceptance is distinguished from fidelity to the user's request.
+scope:
+- Inspect existing AI, frontend, compiler, CLI and roadmap boundaries.
+- Specify the first implementation PR and its public input and result contracts.
+- Define subsequent fidelity and live-model acceptance evidence.
+- Link the proposal from the roadmap entry page.
+expectedFilesToAdd:
+- docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
+- .flow-agent/work-packages/ai-authoring-development-proposal.yaml
+expectedFilesToChange:
+- .flow-agent/README.md
+completionEvidence:
+- Existing implementation references resolve to repository files.
+- First-PR acceptance covers installed CLI, compiler reuse, rejection diagnostics, provenance and atomic publication.
+- Proposed milestones distinguish planning, actual implementation and live-model evidence.
+validationPlan:
+- Check Markdown links and diff whitespace.
+- Run Flow Agent structure validation and context generation.
+- Verify GitHub Actions for the published proposal PR.

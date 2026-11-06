@@ -36,6 +36,8 @@ The existing Python context generator reports the completed root-stream lifecycl
 
 For implemented module and compiler boundaries, see the [current architecture](../docs/ARCHITECTURE.md).
 
+For the maintainer-requested continuation proposal, see [AI-assisted automation authoring](../docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md). It defines AI-A1 through AI-A4 and the bounded roadmap activation to perform in the first implementation PR.
+
 ## Mandatory Process
 
 Every development step must follow this cycle:
