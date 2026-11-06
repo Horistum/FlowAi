@@ -50,6 +50,7 @@ org/flowlang/conformance/AuthenticatedTargetCoverage.kt
 org/flowlang/conformance/AvailabilityBudgetConformanceChecks.kt
 org/flowlang/conformance/BackupRestoreBaseline.kt
 org/flowlang/conformance/BackupRestoreFalsification.kt
+org/flowlang/conformance/BoundedAuthoringActivation.kt
 org/flowlang/conformance/BoundedDomainCorpusRoadmapLifecycleAuthority.kt
 org/flowlang/conformance/BoundedIoConformanceChecks.kt
 org/flowlang/conformance/BoundedIoLifecycle.kt

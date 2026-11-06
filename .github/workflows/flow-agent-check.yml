@@ -213,7 +213,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon --build-cache clean test installDist --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
+          ./gradlew --no-daemon --build-cache clean test installDist :flow-cli:installDist --stacktrace --console=plain 2>&1 | tee ci-logs/gradle-clean-test.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Conformance
@@ -221,6 +221,13 @@ jobs:
         run: |
           set -o pipefail
           ./build/install/flow-core/bin/flow-core conformance 2>&1 | tee ci-logs/gradle-conformance.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Verify Bounded Authoring Host With Installed Product
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_authoring_host.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/authoring-host.log
           exit ${PIPESTATUS[0]}
 
       - name: Write CI Summary
@@ -379,7 +386,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          ./gradlew --no-daemon --build-cache clean test installDist --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
+          ./gradlew --no-daemon --build-cache clean test installDist :flow-cli:installDist --stacktrace --console=plain 2>&1 | tee ci-logs/merge-candidate-clean-test.log
           exit ${PIPESTATUS[0]}
 
       - name: Run Merge Candidate Conformance
@@ -387,6 +394,13 @@ jobs:
         run: |
           set -o pipefail
           ./build/install/flow-core/bin/flow-core conformance 2>&1 | tee ci-logs/merge-candidate-conformance.log
+          exit ${PIPESTATUS[0]}
+
+      - name: Verify Bounded Authoring Host With Installed Product
+        shell: bash
+        run: |
+          set -o pipefail
+          python3 tools/verify_authoring_host.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/authoring-host.log
           exit ${PIPESTATUS[0]}
 
       - name: Write Merge Candidate Summary

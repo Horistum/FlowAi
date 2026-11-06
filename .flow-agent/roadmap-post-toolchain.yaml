@@ -1,5 +1,5 @@
 roadmap: "POST-TOOLCHAIN"
-revision: 42
+revision: 43
 status: active
 purpose: "Sequence Flow development after TOOLCHAIN-MODERNIZATION while allowing a production-code architecture audit to interrupt feature growth when the implementation no longer matches the target-neutral standardization model."
 
@@ -10,12 +10,12 @@ currentDecision:
   pausedItemName: "Human Approval and Change-Control Falsification"
   pausedItemState: "active-after-evidence-admission"
   pausedWorkPackage: ".flow-agent/work-packages/human-approval-change-control-falsification.yaml"
-  nextItem: "AI-A2"
-  nextItemName: "Independent request requirements and bounded fidelity review"
+  nextItem: "AI-A3"
+  nextItemName: "Bounded external authoring host and reproducible evaluation"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
-  decisionBasis: "AI-A2 follows merged AI-A1 with passing main CI. This bounded request-fidelity slice retains every prior recovery gate and does not resume EF-09."
+  workPackage: ".flow-agent/work-packages/bounded-authoring-host.yaml"
+  decisionBasis: "Maintainer selected AI-A3 after merged AI-A2 PR #256 at 81180222b0cf14867f468e8ff3dfffb0ca75aaa7. Host preparation retains open live-model and held-out-render gates; AR-06 and AR-07 remain open and EF-09 paused."
 
 recoveryRoadmap:
   path: ".flow-agent/roadmap-architecture-recovery.yaml"
@@ -23,9 +23,9 @@ recoveryRoadmap:
   findingCount: 22
   groupedMilestoneCount: 8
   completedItem: "AR-05"
-  activeItem: "AI-A2"
-  activeWorkPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
-  nextItem: "AI-A2"
+  activeItem: "AI-A3"
+  activeWorkPackage: ".flow-agent/work-packages/bounded-authoring-host.yaml"
+  nextItem: "AI-A3"
   activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
 
@@ -109,10 +109,10 @@ sequence:
     interrupts: "EF-09"
     roadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
     completedItem: "AR-05"
-    activeItem: "AI-A2"
-    nextItem: "AI-A2"
+    activeItem: "AI-A3"
+    nextItem: "AI-A3"
     activationState: "active"
-    workPackage: ".flow-agent/work-packages/request-fidelity-review.yaml"
+    workPackage: ".flow-agent/work-packages/bounded-authoring-host.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."

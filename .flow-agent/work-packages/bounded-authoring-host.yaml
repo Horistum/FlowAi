@@ -1,0 +1,36 @@
+version: AI-A3
+name: Bounded external authoring host and reproducible evaluation
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AI-A3
+authorization:
+  source: Maintainer requested AI-A3 after merging request-fidelity review.
+  baseline: 81180222b0cf14867f468e8ff3dfffb0ca75aaa7
+  predecessorPullRequest: 256
+  proposal: docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
+objective: Connect a separately configured data-only model provider to deterministic proposal review with bounded repairs and auditable attempts.
+architecturePurpose: Keep model access and orchestration outside compiler products; reuse the command-reasoning/v2 provider boundary from gitops-agent-control-plane.
+universalInvariant: A candidate cannot change its original request or independent expectations, authorize effects, or bypass compiler review; every dispatched call consumes a reserved budget.
+scope:
+- Standalone Python host, explicit provider command, immutable inputs and complete candidate replacements.
+- Durable attempt receipts, conservative token and monetary reservations, no hidden transport retries.
+- Explicit clarification handoff and bounded continuation after caller-supplied answers.
+- Frozen corpus evaluation runner and separate deterministic versus live evidence.
+- Candidate activation retaining all earlier recovery gates and explicit unfulfilled live acceptance gates.
+forbiddenScope:
+- Workflow execution, model tools, new target adapters or compiler semantic workarounds.
+- Model-supplied requirement confirmation or held-out oracle leakage into prompts or repairs.
+- Credentials in retained records, implicit provider selection or unbudgeted calls.
+- Claiming deterministic fixture runs demonstrate live model quality.
+- Closing AI-A3 without real corpus measurements and the required held-out render.
+- Closing AR-06, AR-07, F-16, F-20 or resuming EF-09.
+completionEvidence:
+- One initial call and at most two corrections by default; unchanged proposals and blocking review states stop.
+- Rejected, interrupted and malformed provider calls retain identity and consume conservative reservations.
+- Compiler acceptance, confirmed-requirements fidelity and target rendering remain separate outcomes.
+- At least three fixed-setting corpus repetitions, faithful accepted plan per domain, and a fully specified held-out render are required for milestone closure.
+- Missing provider access or target support is recorded as an open prerequisite, not a passed gate.
+validationPlan:
+- Offline process regressions for budgets, provenance, schema failures, confidentiality, clarification and crash recovery.
+- Installed CLI integration against the existing corpus without sending oracle expectations to providers.
+- Full Python and JVM tests, standalone conformance, module isolation and final-head and merge-candidate GitHub Actions.
