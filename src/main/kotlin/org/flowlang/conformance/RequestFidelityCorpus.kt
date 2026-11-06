@@ -128,8 +128,17 @@ internal class RequestFidelityCorpus(private val root: File) {
                 },
                 Triple("deployment-prohibitions", "no-image-build") { steps(it).addObject().put("id", "invented-build").put("capability", "BUILD_IMAGE") },
                 Triple("certificate-prohibitions", "no-state-upsert") { steps(it).addObject().put("id", "invented-provision").put("capability", "PROVISION") },
-                Triple("certificate-prohibitions", "no-state-delete") { steps(it).addObject().put("id", "invented-delete").put("capability", "DEPROVISION") },
-                Triple("certificate-prohibitions", "no-state-execute") { steps(it).addObject().put("id", "invented-runbook").put("capability", "RUNBOOK") }
+                Triple("certificate-prohibitions", "no-state-delete") {
+                    steps(it).addObject().put("id", "deletion-approval").put("capability", "APPROVE")
+                    steps(it).addObject().put("id", "invented-delete").put("capability", "DEPROVISION").apply {
+                        putArray("requires").add("deletion-approval")
+                        putObject("params").put("target", "edge.example.invalid")
+                    }
+                },
+                Triple("certificate-prohibitions", "no-state-execute") {
+                    steps(it).addObject().put("id", "invented-runbook").put("capability", "RUNBOOK")
+                        .putObject("params").put("description", "Unrequested maintenance")
+                }
             )
             mutations.forEach { (id, requirement, mutate) ->
                 val case = cases().single { it.path("id").asText() == id }

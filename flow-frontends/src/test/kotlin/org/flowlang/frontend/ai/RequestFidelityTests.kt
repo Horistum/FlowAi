@@ -68,7 +68,13 @@ class RequestFidelityTests {
     @Test fun stateProhibitionCoversUpsertDeletionAndExecutionBeyondNamedMaintenanceCapabilities() = workspace { root ->
         for ((capability, requirement) in listOf("PROVISION" to "no-state-upsert", "DEPROVISION" to "no-state-delete", "RUNBOOK" to "no-state-execute")) {
             val proposal = tree("certificate-prohibitions")
-            steps(proposal).addObject().put("id", "invented-effect").put("capability", capability)
+            if (capability == "DEPROVISION") steps(proposal).addObject().put("id", "deletion-approval").put("capability", "APPROVE")
+            val operation = steps(proposal).addObject().put("id", "invented-effect").put("capability", capability)
+            if (capability == "DEPROVISION") {
+                operation.putArray("requires").add("deletion-approval")
+                operation.putObject("params").put("target", "edge.example.invalid")
+            }
+            if (capability == "RUNBOOK") operation.putObject("params").put("description", "Unrequested maintenance")
             val review = evaluate(root, proposal, tree("certificate-prohibitions", "requirements"))
             assertEquals(RequestFidelityState.VIOLATED, review.state, capability)
             assertEquals(FidelityRequirementState.VIOLATED, review.requirements.single { it.id == requirement }.state, capability)
