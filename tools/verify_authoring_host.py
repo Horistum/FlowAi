@@ -56,6 +56,49 @@ def verify(root, cli):
             {"id": p["id"], "answer": "I confirm these original requirements."} for p in state["pending"]]}
         state = resume(work / "clarification", canonical(answers), req)
         require(state["status"] == "accepted" and state["clarificationCount"] == 1, "Explicit clarification did not resume")
+        certificate = fixture("certificate-specified")
+        certificate_requirements = read(corpus / "certificate-specified.requirements.json")
+        graph_digests = set()
+        for target in ("local", "argo-workflows", "azure-devops", "jenkins", "github-actions", "tekton"):
+            sequence([certificate])
+            directory = work / target
+            state = start(config, canonical(certificate["request"]), certificate_requirements, directory,
+                          target=target, render=True)
+            require(state["status"] == "target-blocked" and len(state["attempts"]) == 1,
+                    "Blocked target was retried or lost its classification")
+            review = state["attempts"][0]["review"]
+            require(review["semanticAcceptance"] == "accepted" and review["requestFidelity"] == "requirements-satisfied"
+                    and review["renderAuthorized"] is False, "Blocked target lost accepted canonical evidence")
+            graph_digests.add(review["graphDigest"])
+            if target in ("local", "argo-workflows", "azure-devops"):
+                require(review["targetDisposition"] == "blocked" and any(
+                        d["code"] == "PROPOSAL_TARGET_PROJECTION_UNAVAILABLE" for d in review["diagnostics"]),
+                        "Unavailable target lost its stable diagnostic")
+                require(set(review["artifacts"]) == {"proposal-review.json", "request-fidelity-review.json",
+                        "workflow-execution-plan-set.json", "execution-plan.json", "canonical-execution-plan.json"},
+                        "Unavailable target published a target artifact or lost its canonical plans")
+            else:
+                require(review["targetDisposition"] == "review_only" and any(
+                        d["code"] == "CLI_RENDER_NOT_AUTHORIZED" for d in review["diagnostics"]),
+                        "Certificate fixture unexpectedly acquired executable target support")
+            verify_inventory(directory, state)
+        require(len(graph_digests) == 1 and None not in graph_digests, "Target selection changed canonical meaning")
+        sequence([certificate])
+        state = start(config, canonical(certificate["request"]), certificate_requirements, work / "unknown-target",
+                      target="unknown", render=True)
+        require(state["status"] == "caller-input-error" and len(state["attempts"]) == 1,
+                "Unknown caller-owned target triggered model repair")
+        verify_inventory(work / "unknown-target", state)
+        declared = copy.deepcopy(certificate["request"])
+        declared.setdefault("context", {})["target"] = "jenkins"
+        declared_requirements = loads(certificate_requirements)
+        declared_requirements["request"] = declared
+        sequence([certificate])
+        state = start(config, canonical(declared), canonical(declared_requirements), work / "conflicting-target",
+                      target="tekton", render=True)
+        require(state["status"] == "caller-input-error" and len(state["attempts"]) == 1,
+                "Conflicting caller-owned targets triggered model repair")
+        verify_inventory(work / "conflicting-target", state)
         index = loads(read(corpus / "corpus.json"))
         sequence([fixture(case["id"]) for _ in range(3) for case in index["cases"]])
         result = evaluate(config, corpus / "corpus.json", work / "corpus", target="jenkins", max_cost_microusd=36_000_000)
@@ -69,8 +112,9 @@ def verify(root, cli):
             if row["case"] == "certificate-specified":
                 expected = "target-blocked"
             require(row["status"] == expected, "Installed corpus classification changed")
+        attempts = sum(len(loads(read(path)).get("attempts", [])) for path in work.rglob("state.json"))
         print(json.dumps({"status": "PASS", "evidenceKind": "deterministic-test", "corpusRuns": 36,
-                          "processAttempts": 41, "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
+                          "processAttempts": attempts, "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
                           "milestoneComplete": False}))
 
 

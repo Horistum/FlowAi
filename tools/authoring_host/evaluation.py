@@ -54,7 +54,7 @@ def evaluate(config, corpus_path, directory, *, repetitions=3, target, max_cost_
                                      "split": case["split"], "repetition": repetition + 1, "directory": name,
                                      "stateSha256": digest(read(root / name / "state.json"))})
             _manifest(root, manifest)
-            if not state["attempts"] or state["status"] in ("provider-error", "provider-or-compiler-error", "provider-budget-overrun", "compiler-error"):
+            if not state["attempts"] or state["status"] in ("provider-error", "provider-or-compiler-error", "provider-budget-overrun", "compiler-error", "caller-input-error"):
                 # A broken integration is not a reason to dispatch the remaining paid corpus.
                 return summarize(root)
     return summarize(root)

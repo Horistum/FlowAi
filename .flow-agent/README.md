@@ -38,6 +38,10 @@ For implemented module and compiler boundaries, see the [current architecture](.
 
 For the maintainer-requested continuation proposal, see [AI-assisted automation authoring](../docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md). It defines AI-A1 through AI-A4. AI-A3 is now selected; its host preparation does not establish real-model completion. AI-A4 still needs separately authorized implementation evidence. See [bounded authoring](../docs/BOUNDED_AUTHORING_HOST.md) and [request-fidelity review](../docs/REQUEST_FIDELITY_REVIEW.md).
 
+After merged PR #257, the [target-readiness followup](work-packages/authoring-target-readiness.yaml)
+preserves canonical feedback for unavailable target implementations and stops model
+repair on immutable caller input errors. Both AI-A3 live gates remain open.
+
 ## Mandatory Process
 
 Every development step must follow this cycle:

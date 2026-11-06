@@ -50,6 +50,15 @@ Accepted proposals expose the complete `workflow-execution-plan-set.json`, inclu
 
 A target may be explicitly supplied by the CLI or by `request.context.target`; if both are supplied, they must agree. The request target is recorded with intent-declaration provenance. Rendering requires an explicit target and `--render`. Materialization uses existing `CliTargetEvidenceAuthority`, typed target outcomes and rendering receipts. Current adapters cannot materialize multiple workflows; their complete target-neutral plan remains available with a blocking target disposition. AI-A1 makes no new adapter-support claim.
 
+A declared target profile does not imply an installed projection provider. Selecting
+`local`, `argo-workflows` or `azure-devops` currently returns exit 4 at `MATERIALIZATION`,
+with `targetDisposition: blocked` and `PROPOSAL_TARGET_PROJECTION_UNAVAILABLE`.
+The accepted canonical plans and any independent fidelity report remain available
+and are published atomically with the proposal review. No target manifest or executable
+artifact is fabricated. This applies with and without `--render`; earlier compiler,
+fidelity and required-review decisions retain precedence. An unknown or conflicting
+target remains an input error with exit 2.
+
 ## Next boundary
 
 [Independent request-fidelity review](REQUEST_FIDELITY_REVIEW.md) is available with `--requirements reviewed-requirements.json`. This selects proposal feedback version 2 and adds a separate bounded fidelity report; omitting the option retains version 1. [The bounded external host](BOUNDED_AUTHORING_HOST.md) supplies AI-A3 orchestration and correction; live evaluation remains a separate acceptance gate. This command supplies their deterministic input/result boundary; it does not perform model orchestration, execute workflows, attest model identity or establish calibrated confidence.

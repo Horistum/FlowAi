@@ -30,6 +30,19 @@ internal class AiProposalImportChecks(private val root: File) {
                 "--target", "github-actions", "--render")) as ProposalCliResult
             require(result.exitCode in setOf(3, 4) && !result.review.renderAuthorized)
             require(result.review.requestFidelity == "unassessed")
+        },
+        check("ai.proposal.unavailable-target-preserves-plan") {
+            for (target in listOf("local", "argo-workflows", "azure-devops")) {
+                val result = executeCli(arrayOf("proposal", File(root, "examples/proposals/faithful.json").path,
+                    "--requirements", File(root, "examples/proposals/reviewed-requirements.json").path,
+                    "--target", target, "--render")) as ProposalCliResult
+                require(result.exitCode == 4 && result.review.stage == "MATERIALIZATION")
+                require(result.review.semanticAcceptance == "accepted" && result.review.requestFidelity == "requirements-satisfied")
+                require(result.review.targetDisposition == "blocked" && !result.review.renderAuthorized)
+                require(result.review.graphDigest != null && "canonical-execution-plan.json" in result.review.artifacts)
+                require("target-manifest.json" !in result.review.artifacts)
+                require(result.review.diagnostics.any { it.code == "PROPOSAL_TARGET_PROJECTION_UNAVAILABLE" })
+            }
         }
     )
 

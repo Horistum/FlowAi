@@ -143,6 +143,7 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
     cases = [
         ("fidelity-satisfied", ["proposal", str(faithful), "--requirements", str(requirements), "--out=integrated fidelity"], 0, "integrated fidelity"),
         ("fidelity-violated", ["proposal", str(mutated), "--requirements", str(requirements), "--target=jenkins", "--render", "--out=integrated violation"], 4, "integrated violation"),
+        ("fidelity-unavailable-target", ["proposal", str(faithful), "--requirements", str(requirements), "--target=local", "--render", "--out=integrated unavailable target"], 4, "integrated unavailable target"),
         ("proposal-accepted", ["proposal", str(proposal), "--out=integrated proposal"], 0, "integrated proposal"),
         ("proposal-rejected", ["proposal", str(rejected_proposal), "--out=integrated rejected proposal"], 4, "integrated rejected proposal"),
         ("diagnostics", ["diagnostics", "--out=integrated diagnostics"], 0, "integrated diagnostics"),
@@ -185,7 +186,7 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
         if name.startswith("fidelity-"):
             review = document.get("AI PROPOSAL REVIEW", {})
             fidelity = document.get("REQUEST FIDELITY REVIEW", {})
-            passed = name == "fidelity-satisfied"
+            passed = name != "fidelity-violated"
             source = faithful if passed else mutated
             if (review.get("formatVersion") != 2 or review.get("exitCode") != expected
                     or review.get("semanticAcceptance") != "accepted"
@@ -201,6 +202,10 @@ def verify_integrated_cases(distribution, cwd, external, resources, report_dir, 
                 raise ValueError("Installed fidelity review lost independent provenance or allowed unsupported authority.")
             if not passed and review.get("targetDisposition") != "withheld-for-fidelity":
                 raise ValueError("Installed mutation bypassed the fidelity gate.")
+            if name == "fidelity-unavailable-target" and (review.get("targetDisposition") != "blocked"
+                    or not any(d["code"] == "PROPOSAL_TARGET_PROJECTION_UNAVAILABLE" for d in review.get("diagnostics", []))
+                    or not {"execution-plan.json", "canonical-execution-plan.json"}.issubset(review.get("artifacts", []))):
+                raise ValueError("Installed profile-only target lost its accepted plans or availability diagnostic.")
             receipt = json.loads((cwd / output / "artifact-integrity-report.json").read_bytes())["publication"]
             schemas = {r["path"]: r.get("schema") for r in receipt["coveredFiles"]}
             if schemas.get("proposal-review.json") != "schemas/proposal-review-v2.schema.json" or schemas.get("request-fidelity-review.json") != "schemas/request-fidelity-review.schema.json":

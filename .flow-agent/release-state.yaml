@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 128
+stateVersion: 129
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -904,6 +904,12 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  followup:
+    workPackage: .flow-agent/work-packages/authoring-target-readiness.yaml
+    report: .flow-agent/reports/authoring-target-readiness.md
+    predecessorMain: 29c5dc8eb6d5c2b277ab5eda74fb9766454bed75
+    predecessorPullRequest: 257
+    validation: current-revision-ci-required
   predecessorMain: 81180222b0cf14867f468e8ff3dfffb0ca75aaa7
   predecessorPullRequest: 256
   validation: current-revision-ci-required
