@@ -2,7 +2,7 @@ package org.flowlang.conformance
 
 /** A bounded authoring selection; prior certification and recovery closure remain independently checked. */
 internal object AiAuthoringActivation {
-    const val WORK_PACKAGE = ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+    const val WORK_PACKAGE = ".flow-agent/work-packages/external-ai-proposal-import.yaml"
     private const val NAME = "External AI proposal import and compiler feedback"
     private const val PREVIOUS_NAME = "Behavioral Adapter Certification and Honest Target Portfolio"
     private const val PREVIOUS_WORK = ".flow-agent/work-packages/behavioral-adapter-certification.yaml"

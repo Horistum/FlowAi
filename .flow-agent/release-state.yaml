@@ -53,7 +53,7 @@ roadmapState:
   nextRecoveryItem: "AI-A1"
   nextRecoveryItemName: "External AI proposal import and compiler feedback"
   nextRecoveryActivationState: "active"
-  activeRecoveryWorkPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+  activeRecoveryWorkPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
   nextItem: ""
   nextItemName: ""
   nextItemStream: ""
@@ -869,8 +869,8 @@ recoveryWorkspaceProducerSuccess:
 recoveryAiAuthoring:
   candidate: AI-A1
   status: candidate
-  workPackage: .flow-agent/work-packages/ai-a1-external-proposal.yaml
-  report: .flow-agent/reports/ai-a1-external-proposal.md
+  workPackage: .flow-agent/work-packages/external-ai-proposal-import.yaml
+  report: .flow-agent/reports/external-ai-proposal-import.md
   predecessorMain: 803bd7d20bf4302799c76d2ddffa9f5fa11d4650
   validation: current-revision-ci-required
   liveModelEvaluated: false

@@ -14,7 +14,7 @@ currentDecision:
   nextItemName: "External AI proposal import and compiler feedback"
   nextItemRoadmap: ".flow-agent/roadmap-architecture-recovery.yaml"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+  workPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
   decisionBasis: "AI-A1 is selected from the merged authoring proposal using completed compiler and CLI prerequisites. This bounded AR-07 slice does not close AR-06 or AR-07 and does not resume EF-09."
 
 recoveryRoadmap:
@@ -24,7 +24,7 @@ recoveryRoadmap:
   groupedMilestoneCount: 8
   completedItem: "AR-05"
   activeItem: "AI-A1"
-  activeWorkPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+  activeWorkPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
   nextItem: "AI-A1"
   activationState: "active"
   completionGate: "AR-07 closes every F-01 through F-22 finding with exact production, test and validation evidence."
@@ -112,7 +112,7 @@ sequence:
     activeItem: "AI-A1"
     nextItem: "AI-A1"
     activationState: "active"
-    workPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+    workPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
     purpose: "Contain false executable claims, restore one canonical compiler axis, extract concrete adapters from Core, harden contracts and distribution boundaries, and close all 22 audited findings in eight coherent milestones."
     requiredOutcomes:
       - "Every F-01 through F-22 finding has a containment or closure milestone."

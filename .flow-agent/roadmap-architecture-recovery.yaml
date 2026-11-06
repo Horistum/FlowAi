@@ -24,8 +24,8 @@ currentDecision:
   nextItem: "AI-A1"
   nextItemName: "External AI proposal import and compiler feedback"
   activationState: "active"
-  workPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
-  correctiveWorkPackage: ".flow-agent/work-packages/ai-a1-external-proposal.yaml"
+  workPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
+  correctiveWorkPackage: ".flow-agent/work-packages/external-ai-proposal-import.yaml"
   decisionBasis: "Maintainer authorized AI-A1 from merged proposal PR #254 at 803bd7d20bf4302799c76d2ddffa9f5fa11d4650. Both proposal workflows passed. Activate only external proposal import using completed AR-01 and AR-05 prerequisites; AR-06 remains open, full AR-07 closure remains dependent on AR-06, and EF-09 remains paused."
 
 authoringDevelopment:
@@ -33,7 +33,7 @@ authoringDevelopment:
   parentMilestone: AR-07
   status: active
   dependsOn: [AR-01, AR-05]
-  workPackage: .flow-agent/work-packages/ai-a1-external-proposal.yaml
+  workPackage: .flow-agent/work-packages/external-ai-proposal-import.yaml
   proposal: docs/AI_ASSISTED_AUTHORING_DEVELOPMENT_PROPOSAL.md
   closureScope: AI-A1 only; AR-06 and AR-07 remain open, including F-16 and F-20.
 
