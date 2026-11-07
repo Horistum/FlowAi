@@ -10,6 +10,8 @@ import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
 import org.flowlang.frontend.intent.IntentYamlFrontend
 import org.flowlang.modules.ModuleRegistry
 import org.flowlang.serialization.FlowYaml
+import org.flowlang.serialization.FlowJson
+import kotlin.io.path.createTempDirectory
 
 internal class AiProposalImportChecks(private val root: File) {
     fun checks(): List<ConformanceCheck> = listOf(
@@ -31,6 +33,33 @@ internal class AiProposalImportChecks(private val root: File) {
                 "--target", "github-actions", "--render")) as ProposalCliResult
             require(result.exitCode in setOf(3, 4) && !result.review.renderAuthorized)
             require(result.review.requestFidelity == "unassessed")
+        },
+        check("ai.proposal.system-resource-fidelity") {
+            val vector = FlowYaml.readMap(File(root, "architecture-recovery/conformance/system-automation-fidelity.yaml"))
+            val expected = vector["expected"] as Map<*, *>
+            require(expected["requiredCheck"] == "ai.proposal.system-resource-fidelity")
+            val cases = vector["cases"] as List<*>
+            require(cases == listOf("infrastructure-foundation", "data-recovery-rehearsal", "environment-retirement"))
+            for (case in cases) {
+                val result = executeCli(arrayOf("proposal", File(root, "examples/system-automation/$case.proposal.json").path,
+                    "--requirements", File(root, "examples/system-automation/$case.requirements.json").path)) as ProposalCliResult
+                require(result.exitCode == 0 && result.review.semanticAcceptance == expected["semanticAcceptance"])
+                require(result.review.requestFidelity == expected["requestFidelity"] && result.review.graphDigest != null)
+                require(result.review.renderAuthorized == expected["renderAuthorized"])
+            }
+            val temporary = createTempDirectory("system-fidelity-vector-").toFile()
+            try {
+                val candidate = FlowJson.readTree(File(root, "examples/system-automation/infrastructure-foundation.proposal.json"))
+                val compute = candidate.path("response").path("normalizedIntent").path("workflows")[0].path("steps")
+                    .single { it.path("id").asText() == "compute" }
+                (compute.path("params").path("stack") as com.fasterxml.jackson.databind.node.ObjectNode)
+                    .put("network", "ref:identity_state")
+                val file = File(temporary, "wrong-producer.json").apply { writeText(candidate.toString()) }
+                val result = executeCli(arrayOf("proposal", file.path, "--requirements",
+                    File(root, "examples/system-automation/infrastructure-foundation.requirements.json").path)) as ProposalCliResult
+                require(result.exitCode == 4 && result.review.semanticAcceptance == expected["semanticAcceptance"])
+                require(result.review.requestFidelity == expected["wrongProducerFidelity"] && !result.review.renderAuthorized)
+            } finally { temporary.deleteRecursively() }
         },
         check("ai.proposal.unavailable-target-preserves-plan") {
             val vector = FlowYaml.readMap(File(root, "architecture-recovery/conformance/proposal-target-readiness.yaml"))

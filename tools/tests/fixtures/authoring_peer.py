@@ -78,6 +78,25 @@ def provider():
     usage = value.pop("usage", {"input_tokens": 10, "output_tokens": 20})
     identity = value.pop("provider", {"id": "test-provider", "model": request["model"], "request_id": str(index)})
     result = value.get("response", {"normalizedIntent": value, "report": {"openQuestions": []}})
+    if "observationTemplate" in value:
+        # Generic deterministic test agent: fill a response from delivered JSON facts.
+        # No domain names, target adapters, requirements or filesystem reads are involved.
+        ledger = request["input"]["investigation"]
+        observations = ledger["observations"]
+        if not observations:
+            result = {"kind": "investigate", "readSources": [ledger["sources"][0]["id"]], "findings": [], "unknowns": []}
+        else:
+            observation = observations[0]
+            facts = json.loads(observation["text"])
+            def fill(node):
+                if isinstance(node, dict):
+                    if set(node) == {"fromObservation"}:
+                        return facts[node["fromObservation"]]
+                    return {k: fill(v) for k, v in node.items()}
+                return [fill(v) for v in node] if isinstance(node, list) else node
+            result = {"kind": "propose", "response": fill(value["observationTemplate"]), "unknowns": [],
+                      "findings": [{"id": "configuration", "statement": "Selected source supplies the proposal parameters.",
+                                    "evidenceRefs": [observation["id"]]}]}
     print(json.dumps({"schema": "command-reasoning/v2", "result": result, "usage": usage, "provider": identity}))
     return 0
 

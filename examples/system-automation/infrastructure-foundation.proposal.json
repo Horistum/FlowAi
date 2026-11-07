@@ -1,0 +1,204 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-system-automation-example",
+  "request": {
+    "userText": "Prepare an Azure development foundation after policy check and manual approval. Create dev-network, dev-identity, dev-compute, dev-monitoring, dev-project, dev-connection and dev-agents. The compute configuration must consume the new network and identity outputs. Monitoring must consume compute state. The service connection must consume the project and identity outputs. Agents must consume compute and connection outputs. Verify dev-foundation using the monitoring and agents outputs. Do not create shared-network. Do not check out source, build or deploy an application.",
+    "context": {
+      "knownSystems": {
+        "cloud": "Azure development account; implementation selection remains open",
+        "devops": "DevOps organization to be selected by the operator"
+      }
+    },
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "2.0",
+      "kind": "FlowIntentDocument",
+      "name": "infrastructure-foundation",
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "PROVISION",
+          "steps": [
+            {
+              "id": "policy",
+              "capability": "POLICY_CHECK",
+              "params": {
+                "policy": "foundation-rules",
+                "subject": "development"
+              },
+              "requires": [],
+              "produces": [
+                "policy_result"
+              ]
+            },
+            {
+              "id": "approval",
+              "capability": "APPROVE",
+              "params": {
+                "message": "Approve development foundation"
+              },
+              "requires": [
+                "policy"
+              ],
+              "produces": []
+            },
+            {
+              "id": "network",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-network",
+                "mode": "create"
+              },
+              "requires": [
+                "approval"
+              ],
+              "produces": [
+                "network_state"
+              ]
+            },
+            {
+              "id": "identity",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-identity",
+                "mode": "create"
+              },
+              "requires": [
+                "approval"
+              ],
+              "produces": [
+                "identity_state"
+              ]
+            },
+            {
+              "id": "compute",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-compute",
+                "mode": "create",
+                "stack": {
+                  "network": "ref:network_state",
+                  "identity": "ref:identity_state"
+                }
+              },
+              "requires": [
+                "network",
+                "identity"
+              ],
+              "produces": [
+                "compute_state"
+              ]
+            },
+            {
+              "id": "monitoring",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-monitoring",
+                "stack": "ref:compute_state"
+              },
+              "requires": [
+                "compute"
+              ],
+              "produces": [
+                "monitoring_state"
+              ]
+            },
+            {
+              "id": "project",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-project",
+                "mode": "create"
+              },
+              "requires": [
+                "approval"
+              ],
+              "produces": [
+                "project_state"
+              ]
+            },
+            {
+              "id": "connection",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-connection",
+                "stack": {
+                  "project": "ref:project_state",
+                  "identity": "ref:identity_state"
+                }
+              },
+              "requires": [
+                "project",
+                "identity"
+              ],
+              "produces": [
+                "connection_state"
+              ]
+            },
+            {
+              "id": "agents",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "dev-agents",
+                "stack": {
+                  "compute": "ref:compute_state",
+                  "connection": "ref:connection_state"
+                }
+              },
+              "requires": [
+                "compute",
+                "connection"
+              ],
+              "produces": [
+                "agents_state"
+              ]
+            },
+            {
+              "id": "verify",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "dev-foundation",
+                "criteria": {
+                  "monitoring": "ref:monitoring_state",
+                  "agents": "ref:agents_state"
+                }
+              },
+              "requires": [
+                "monitoring",
+                "agents"
+              ],
+              "produces": []
+            }
+          ]
+        }
+      ],
+      "failure": {
+        "notify": false,
+        "rollback": false,
+        "stopOnError": true
+      }
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "reviewer-authored-system-plan",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored planning example. No model, cloud account, runtime execution or provider support is claimed."
+      ],
+      "guardrails": [
+        "Compiler and target gates remain authoritative; listed verification operations are not observations."
+      ]
+    }
+  }
+}

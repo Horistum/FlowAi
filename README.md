@@ -20,6 +20,12 @@ Availability analysis has deterministic compiler resource budgets; see
 
 Horistum is an AI-first standardization layer for IT and DevOps automation intent.
 
+Its selected development direction covers whole environment changes: infrastructure
+and DevOps foundations, identity, data recovery, maintenance and retirement, as well
+as software delivery. A request can start without an application or source repository.
+See the [system automation direction](docs/SYSTEM_AUTOMATION_DIRECTION.md) and
+[multi-resource planning examples](examples/system-automation/README.md).
+
 It is designed to turn human or AI-written automation requests into a validated, portable automation model that can be checked against target capabilities before any target-specific output is generated.
 
 Horistum is not a runtime executor, SDK-first platform, plugin lifecycle framework, Jenkins DSL, Kubernetes DSL, GitHub Actions DSL, or general-purpose programming language. Those boundaries are deliberate. The project exists to define a stable automation standard that can be projected to multiple DevOps platforms without making the standard depend on any one of them.

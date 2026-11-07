@@ -11,6 +11,12 @@ The two [complete examples](../examples/proposals) are packaged with the install
 
 ## Requirements input
 
+Version 1 remains unchanged. [Version 2](../schemas/request-requirements-v2.schema.json)
+adds exact string-literal semantic parameter filters to selectors, permits zero-count
+resource exclusions and adds `value-from` producer/consumer checks. See the
+[migration and bounded semantics](migrations/request-requirements-v2.md) and
+[system lifecycle examples](../examples/system-automation/README.md).
+
 The [version 1 schema](../schemas/request-requirements.schema.json) describes a separate JSON document. It repeats the complete typed original `request` (text, context and mode), names the expectation `origin`, records `confirmation` and a caller-declared `reviewerId`, and contains 1–256 requirements. The reader rejects unknown fields, duplicate keys, malformed/null values, scalar coercion, unsupported versions and input-budget violations using the existing bounded I/O policy.
 
 Each requirement has a unique lowercase identifier, an exact nonblank `sourceQuote` from `request.userText`, and one typed `check`. Matching quotes demonstrate traceability, not that the check completely or correctly interprets that quote. The reviewer must inspect the mapping. The original request must equal the proposal's complete typed request; a changed answer, context or mode requires a freshly reviewed requirements document. The captured requirement bytes are immutable for the evaluation and identified by SHA-256.
@@ -29,6 +35,7 @@ Checks use the accepted canonical graph and existing capability/effect contracts
 | `require-effect` | Every selected node has the declared effect; an empty selection violates the requirement |
 | `literal-parameter` | Every selected node has exactly the expected string literal in a canonical parameter; references and expressions require review even with a matching default |
 | `before` | Every selected after-node has all matching before-nodes in its own workflow as transitive resolved ordering predecessors; empty or unrelated approval is insufficient |
+| `value-from` (v2) | Each selected consumer uses an output of the uniquely selected producer through a resolved VALUE edge; optional object-field paths select a direct reference inside a literal object |
 | `clarification` | A visible unresolved question; always requires review |
 | `unsupported` | An explicit unrepresented requirement; always blocks a fidelity pass |
 

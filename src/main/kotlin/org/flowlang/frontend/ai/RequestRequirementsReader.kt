@@ -41,25 +41,39 @@ object RequestRequirementsReader {
     internal fun decode(bytes: ByteArray): RequestRequirementsDocument = guarded {
         val tree = FlowJson.readTree(BoundedIo.decodeUtf8(bytes), "<request-requirements>")
         val document = mapper.treeToValue(tree, RequestRequirementsDocument::class.java)
-        require(document.formatVersion == 1 && document.request.userText.isNotBlank())
+        require(document.formatVersion in 1..2 && document.request.userText.isNotBlank())
+        // Version 1 remains frozen, including explicit empty/null uses of new fields.
+        if (document.formatVersion == 1) require(tree.path("requirements").findValues("parameters").isEmpty())
         require(document.requirements.isNotEmpty() && document.requirements.size <= 256)
         require(document.requirements.map { it.id }.distinct().size == document.requirements.size)
         require(document.reviewerId == null || document.reviewerId.isNotBlank())
         require(document.confirmation != RequirementConfirmation.CONFIRMED || !document.reviewerId.isNullOrBlank())
-        fun selector(s: RequirementSelector) { require(s.workflow == null || s.workflow.isNotBlank()) }
+        val parameterPattern = Regex("[A-Za-z][A-Za-z0-9_]{0,63}")
+        fun selector(s: RequirementSelector) {
+            require(s.workflow == null || s.workflow.isNotBlank())
+            require(s.parameters.size <= 16)
+            require(s.parameters.all { (key, value) -> parameterPattern.matches(key) && value.length <= 1000 })
+        }
         document.requirements.forEach { requirement ->
             require(idPattern.matches(requirement.id))
             require(requirement.sourceQuote.isNotBlank() && requirement.sourceQuote in document.request.userText)
             when (val check = requirement.check) {
                 is CapabilityCount -> {
                     selector(check.selector)
-                    require(check.minimum in 1..10000 && (check.maximum == null || check.maximum in check.minimum..10000))
+                    val lowerBound = if (document.formatVersion == 2) 0 else 1
+                    require(check.minimum in lowerBound..10000 && (check.maximum == null || check.maximum in check.minimum..10000))
                 }
                 is ForbiddenCapability -> Unit
                 is ForbiddenEffect -> require(check.resource == null || check.resource.isNotBlank())
                 is RequiredEffect -> { selector(check.selector); require(check.resource == null || check.resource.isNotBlank()) }
-                is LiteralParameter -> { selector(check.selector); require(check.parameter.matches(Regex("[A-Za-z][A-Za-z0-9_]{0,63}"))) }
+                is LiteralParameter -> { selector(check.selector); require(check.parameter.matches(parameterPattern)) }
                 is RequiredOrdering -> { selector(check.before); selector(check.after) }
+                is RequiredValueFrom -> {
+                    require(document.formatVersion == 2)
+                    selector(check.producer); selector(check.consumer)
+                    require(check.parameter.matches(parameterPattern))
+                    require(check.path.size <= 8 && check.path.all { it.isNotBlank() && it.length <= 128 })
+                }
                 is RequirementClarification -> require(check.question.isNotBlank())
                 is UnsupportedRequirement -> Unit
             }

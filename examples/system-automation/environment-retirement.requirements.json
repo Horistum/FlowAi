@@ -1,0 +1,262 @@
+{
+  "formatVersion": 2,
+  "request": {
+    "userText": "Retire a temporary environment. Back up ephemeral-data to retained-vault and verify ephemeral-backup using the backup output. Check retirement-ownership for ephemeral-environment. Require manual approval after backup verification and the ownership check. Remove ephemeral-compute using the ownership result, then remove ephemeral-network using the compute removal result. Verify ephemeral-environment-absent using the network removal result. Never remove shared-network or retained-vault. Do not build or deploy an application.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-example-reviewer",
+  "requirements": [
+    {
+      "id": "two-removals",
+      "sourceQuote": "Remove ephemeral-compute",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPROVISION",
+          "parameters": {}
+        },
+        "minimum": 2,
+        "maximum": 2
+      }
+    },
+    {
+      "id": "remove-compute",
+      "sourceQuote": "Remove ephemeral-compute",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-compute"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "remove-network",
+      "sourceQuote": "remove ephemeral-network",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-network"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "preserve-network",
+      "sourceQuote": "Never remove shared-network or retained-vault.",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "shared-network"
+          }
+        },
+        "minimum": 0,
+        "maximum": 0
+      }
+    },
+    {
+      "id": "preserve-vault",
+      "sourceQuote": "Never remove shared-network or retained-vault.",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "retained-vault"
+          }
+        },
+        "minimum": 0,
+        "maximum": 0
+      }
+    },
+    {
+      "id": "verify-before-approval",
+      "sourceQuote": "manual approval after backup verification",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "ephemeral-backup"
+          }
+        },
+        "after": {
+          "capability": "APPROVE",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "ownership-before-approval",
+      "sourceQuote": "manual approval after backup verification and the ownership check",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "POLICY_CHECK",
+          "parameters": {
+            "policy": "retirement-ownership"
+          }
+        },
+        "after": {
+          "capability": "APPROVE",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "approval-before-removals",
+      "sourceQuote": "Require manual approval",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "APPROVE",
+          "parameters": {}
+        },
+        "after": {
+          "capability": "DEPROVISION",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "compute-before-network",
+      "sourceQuote": "then remove ephemeral-network",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-compute"
+          }
+        },
+        "after": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-network"
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-backup",
+      "sourceQuote": "verify ephemeral-backup using the backup output",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "BACKUP",
+          "parameters": {
+            "subject": "ephemeral-data"
+          }
+        },
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "ephemeral-backup"
+          }
+        },
+        "parameter": "criteria",
+        "path": []
+      }
+    },
+    {
+      "id": "compute-ownership",
+      "sourceQuote": "Remove ephemeral-compute using the ownership result",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "POLICY_CHECK",
+          "parameters": {
+            "policy": "retirement-ownership"
+          }
+        },
+        "consumer": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-compute"
+          }
+        },
+        "parameter": "safety",
+        "path": []
+      }
+    },
+    {
+      "id": "network-compute",
+      "sourceQuote": "remove ephemeral-network using the compute removal result",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-compute"
+          }
+        },
+        "consumer": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-network"
+          }
+        },
+        "parameter": "safety",
+        "path": []
+      }
+    },
+    {
+      "id": "verify-absence",
+      "sourceQuote": "Verify ephemeral-environment-absent using the network removal result",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "DEPROVISION",
+          "parameters": {
+            "target": "ephemeral-network"
+          }
+        },
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "ephemeral-environment-absent"
+          }
+        },
+        "parameter": "criteria",
+        "path": []
+      }
+    },
+    {
+      "id": "no-build",
+      "sourceQuote": "Do not build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD"
+      }
+    },
+    {
+      "id": "no-build-image",
+      "sourceQuote": "Do not build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD_IMAGE"
+      }
+    },
+    {
+      "id": "no-deploy",
+      "sourceQuote": "Do not build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "DEPLOY"
+      }
+    }
+  ]
+}

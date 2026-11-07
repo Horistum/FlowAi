@@ -11,6 +11,8 @@ import tempfile
 from authoring_host.contracts import HostError, canonical, loads, read, require, verify_inventory
 from authoring_host.evaluation import evaluate
 from authoring_host.session import resume, start
+from verify_authoring_investigation import verify as verify_investigation
+from verify_system_automation import verify as verify_system_automation
 
 
 def verify(root, cli):
@@ -148,6 +150,8 @@ def verify(root, cli):
         print(json.dumps({"status": "PASS", "evidenceKind": "deterministic-test", "corpusRuns": 36,
                           "processAttempts": attempts, "rejectedClarificationMutations": len(mutations), "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
                           "milestoneComplete": False}))
+    verify_investigation(root, cli)
+    verify_system_automation(root, cli)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 130
+stateVersion: 132
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -904,6 +904,50 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  reconciliationFollowup:
+    workPackage: .flow-agent/work-packages/authoring-pr260-reconciliation.yaml
+    report: .flow-agent/reports/authoring-pr260-reconciliation.md
+    mergedMain: 9d45e478d0f1662de8cb0c72309634bd8e58f2e3
+    predecessorPullRequest: 259
+    validation: local-python-conformance-installed-proof-passed-final-revision-ci-required
+    localPythonTests: 338
+    localConformanceChecks: 299
+    installedClarificationMutations: 5
+    installedInvestigationCases: 6
+    installedSystemCases: 10
+  systemAutomationFollowup:
+    selectedSlice: AI-A3-S1
+    workPackage: .flow-agent/work-packages/system-automation-direction.yaml
+    report: .flow-agent/reports/system-automation-direction.md
+    direction: docs/SYSTEM_AUTOMATION_DIRECTION.md
+    validation: local-python-jvm-conformance-installed-proof-passed-final-revision-ci-required
+    localPythonTests: 330
+    localJvmTests: 2443
+    localConformanceChecks: 299
+    installedSystemCases: 10
+    requirementsVersions: [1, 2]
+    promptVersion: bounded-authoring/2
+    scope: Resource-specific independent plan requirements and direct producer-consumer value checks.
+    nextSlice: S2-structured-operations-and-outcomes
+    autonomousDiscovery: false
+    runtimePostconditions: false
+    liveModelEvaluated: false
+    supportPromotion: false
+  investigationFollowup:
+    workPackage: .flow-agent/work-packages/evidence-driven-authoring.yaml
+    report: .flow-agent/reports/evidence-driven-authoring.md
+    predecessorMain: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+    validation: local-python-jvm-conformance-investigation-passed-final-revision-ci-required
+    localPythonTests: 329
+    localJvmTests: 2430
+    localConformanceChecks: 298
+    installedInvestigationCases: 6
+    protocol: authoring-investigation/1
+    scope: operator-selected-digest-pinned-local-text-sources
+    modelTools: false
+    hostReadOnlyInvestigation: true
+    liveModelEvaluated: false
+    supportPromotion: false
   followup:
     workPackage: .flow-agent/work-packages/authoring-target-readiness.yaml
     report: .flow-agent/reports/authoring-target-readiness.md

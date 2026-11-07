@@ -45,6 +45,18 @@ class AuthoringHostTests(unittest.TestCase):
             self.responses.write_text(json.dumps(responses))
         return start(self.config, canonical(self.request), canonical(self.requirements), self.out)
 
+    def test_version_two_requirements_remain_independent_and_captured(self):
+        self.requirements["formatVersion"] = 2
+        self.requirements["requirements"][0]["check"] = {
+            "kind": "capability-count", "selector": {"capability": "RESTORE", "parameters": {"subject": "production"}},
+            "minimum": 0, "maximum": 0}
+        state = self.run_host()
+        self.assertEqual("accepted", state["status"])
+        self.assertEqual(self.requirements, loads(read(self.out / "requirements-0.json")))
+        prompt = loads(read(self.out / "attempt-000/provider-request.json"))
+        self.assertNotIn("production", json.dumps(prompt))
+        verify_inventory(self.out, state)
+
     def test_complete_repair_uses_compiler_feedback_and_never_the_oracle(self):
         state = self.run_host([{"marker": "reject"}, {"marker": "accept"}])
         self.assertEqual("accepted", state["status"])

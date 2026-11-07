@@ -32,6 +32,7 @@ def evaluate(config, corpus_path, directory, *, repetitions=3, target, max_cost_
     integer(repetitions, 3, 10)
     integer(max_cost_microusd, 1)
     config = validate_config(loads(canonical(config)))
+    require("investigation" not in config, "Frozen corpus has no reviewed source-exposure contract for investigation")
     require(isinstance(target, str) and bool(target.strip()), "Evaluation requires an explicit target")
     cases = corpus_cases(corpus_path)
     # Separate suite cap prevents multiplying a per-run allowance without authorization.

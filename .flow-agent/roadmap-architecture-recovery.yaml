@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 69
+revision: 70
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -30,6 +30,12 @@ currentDecision:
 
 authoringDevelopment:
   selectedSlice: AI-A3
+  investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
+  selectedFollowup: .flow-agent/work-packages/system-automation-direction.yaml
+  systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
+  selectedFollowupSlice: AI-A3-S1
+  nextFollowupSlice: S2-structured-operations-and-outcomes
+  outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active
   dependsOn: [AI-A1, AI-A2]

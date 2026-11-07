@@ -1,0 +1,435 @@
+{
+  "formatVersion": 2,
+  "request": {
+    "userText": "Prepare an Azure development foundation after policy check and manual approval. Create dev-network, dev-identity, dev-compute, dev-monitoring, dev-project, dev-connection and dev-agents. The compute configuration must consume the new network and identity outputs. Monitoring must consume compute state. The service connection must consume the project and identity outputs. Agents must consume compute and connection outputs. Verify dev-foundation using the monitoring and agents outputs. Do not create shared-network. Do not check out source, build or deploy an application.",
+    "context": {
+      "knownSystems": {
+        "cloud": "Azure development account; implementation selection remains open",
+        "devops": "DevOps organization to be selected by the operator"
+      }
+    },
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-example-reviewer",
+  "requirements": [
+    {
+      "id": "all-provisions",
+      "sourceQuote": "Create dev-network, dev-identity, dev-compute, dev-monitoring, dev-project, dev-connection and dev-agents.",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {}
+        },
+        "minimum": 7,
+        "maximum": 7
+      }
+    },
+    {
+      "id": "dev-network",
+      "sourceQuote": "dev-network",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-network"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "dev-identity",
+      "sourceQuote": "dev-identity",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-identity"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "dev-compute",
+      "sourceQuote": "dev-compute",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-compute"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "dev-monitoring",
+      "sourceQuote": "dev-monitoring",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-monitoring"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "dev-project",
+      "sourceQuote": "dev-project",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-project"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "dev-connection",
+      "sourceQuote": "dev-connection",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-connection"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "dev-agents",
+      "sourceQuote": "dev-agents",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-agents"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "protect-shared",
+      "sourceQuote": "Do not create shared-network.",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "shared-network"
+          }
+        },
+        "minimum": 0,
+        "maximum": 0
+      }
+    },
+    {
+      "id": "verification",
+      "sourceQuote": "Verify dev-foundation",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "dev-foundation"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "policy-before-approval",
+      "sourceQuote": "after policy check and manual approval",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "POLICY_CHECK",
+          "parameters": {
+            "policy": "foundation-rules"
+          }
+        },
+        "after": {
+          "capability": "APPROVE",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "approval-before-provision",
+      "sourceQuote": "after policy check and manual approval",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "APPROVE",
+          "parameters": {}
+        },
+        "after": {
+          "capability": "PROVISION",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "compute-network",
+      "sourceQuote": "compute configuration must consume the new network and identity outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-network"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-compute"
+          }
+        },
+        "parameter": "stack",
+        "path": [
+          "network"
+        ]
+      }
+    },
+    {
+      "id": "compute-identity",
+      "sourceQuote": "compute configuration must consume the new network and identity outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-identity"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-compute"
+          }
+        },
+        "parameter": "stack",
+        "path": [
+          "identity"
+        ]
+      }
+    },
+    {
+      "id": "monitor-compute",
+      "sourceQuote": "Monitoring must consume compute state",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-compute"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-monitoring"
+          }
+        },
+        "parameter": "stack",
+        "path": []
+      }
+    },
+    {
+      "id": "connection-project",
+      "sourceQuote": "service connection must consume the project and identity outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-project"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-connection"
+          }
+        },
+        "parameter": "stack",
+        "path": [
+          "project"
+        ]
+      }
+    },
+    {
+      "id": "connection-identity",
+      "sourceQuote": "service connection must consume the project and identity outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-identity"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-connection"
+          }
+        },
+        "parameter": "stack",
+        "path": [
+          "identity"
+        ]
+      }
+    },
+    {
+      "id": "agents-compute",
+      "sourceQuote": "Agents must consume compute and connection outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-compute"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-agents"
+          }
+        },
+        "parameter": "stack",
+        "path": [
+          "compute"
+        ]
+      }
+    },
+    {
+      "id": "agents-connection",
+      "sourceQuote": "Agents must consume compute and connection outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-connection"
+          }
+        },
+        "consumer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-agents"
+          }
+        },
+        "parameter": "stack",
+        "path": [
+          "connection"
+        ]
+      }
+    },
+    {
+      "id": "verify-monitor",
+      "sourceQuote": "Verify dev-foundation using the monitoring and agents outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-monitoring"
+          }
+        },
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "dev-foundation"
+          }
+        },
+        "parameter": "criteria",
+        "path": [
+          "monitoring"
+        ]
+      }
+    },
+    {
+      "id": "verify-agents",
+      "sourceQuote": "Verify dev-foundation using the monitoring and agents outputs",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "PROVISION",
+          "parameters": {
+            "resource": "dev-agents"
+          }
+        },
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "dev-foundation"
+          }
+        },
+        "parameter": "criteria",
+        "path": [
+          "agents"
+        ]
+      }
+    },
+    {
+      "id": "no-checkout",
+      "sourceQuote": "Do not check out source, build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "CHECKOUT"
+      }
+    },
+    {
+      "id": "no-build",
+      "sourceQuote": "Do not check out source, build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD"
+      }
+    },
+    {
+      "id": "no-build-image",
+      "sourceQuote": "Do not check out source, build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD_IMAGE"
+      }
+    },
+    {
+      "id": "no-deploy",
+      "sourceQuote": "Do not check out source, build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "DEPLOY"
+      }
+    }
+  ]
+}

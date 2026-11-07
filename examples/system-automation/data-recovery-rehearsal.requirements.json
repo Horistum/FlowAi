@@ -1,0 +1,230 @@
+{
+  "formatVersion": 2,
+  "request": {
+    "userText": "Rehearse a database migration without changing production. Back up orders-production to retained-vault. After manual approval restore orders-rehearsal from that backup, verify the restored state, then apply migration v42 to orders-rehearsal retaining the original backup reference. Verify the migrated schema. Do not restore or migrate orders-production. Do not build or deploy an application.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "repository-example-reviewer",
+  "requirements": [
+    {
+      "id": "backup",
+      "sourceQuote": "Back up orders-production to retained-vault",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "BACKUP",
+          "parameters": {
+            "subject": "orders-production",
+            "destination": "retained-vault"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "restore",
+      "sourceQuote": "restore orders-rehearsal from that backup",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "RESTORE",
+          "parameters": {
+            "subject": "orders-rehearsal"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "migration",
+      "sourceQuote": "apply migration v42 to orders-rehearsal",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DATABASE_MIGRATE",
+          "parameters": {
+            "database": "orders-rehearsal",
+            "migration": "v42"
+          }
+        },
+        "minimum": 1,
+        "maximum": 1
+      }
+    },
+    {
+      "id": "no-production-restore",
+      "sourceQuote": "Do not restore or migrate orders-production.",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "RESTORE",
+          "parameters": {
+            "subject": "orders-production"
+          }
+        },
+        "minimum": 0,
+        "maximum": 0
+      }
+    },
+    {
+      "id": "no-production-migration",
+      "sourceQuote": "Do not restore or migrate orders-production.",
+      "check": {
+        "kind": "capability-count",
+        "selector": {
+          "capability": "DATABASE_MIGRATE",
+          "parameters": {
+            "database": "orders-production"
+          }
+        },
+        "minimum": 0,
+        "maximum": 0
+      }
+    },
+    {
+      "id": "approval-before-restore",
+      "sourceQuote": "After manual approval restore orders-rehearsal",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "APPROVE",
+          "parameters": {}
+        },
+        "after": {
+          "capability": "RESTORE",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "verify-before-migrate",
+      "sourceQuote": "verify the restored state, then apply migration",
+      "check": {
+        "kind": "before",
+        "before": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "orders-rehearsal"
+          }
+        },
+        "after": {
+          "capability": "DATABASE_MIGRATE",
+          "parameters": {}
+        }
+      }
+    },
+    {
+      "id": "restore-backup",
+      "sourceQuote": "restore orders-rehearsal from that backup",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "BACKUP",
+          "parameters": {
+            "subject": "orders-production"
+          }
+        },
+        "consumer": {
+          "capability": "RESTORE",
+          "parameters": {
+            "subject": "orders-rehearsal"
+          }
+        },
+        "parameter": "recoveryPoint",
+        "path": []
+      }
+    },
+    {
+      "id": "verify-restore-state",
+      "sourceQuote": "verify the restored state",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "RESTORE",
+          "parameters": {
+            "subject": "orders-rehearsal"
+          }
+        },
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "orders-rehearsal"
+          }
+        },
+        "parameter": "criteria",
+        "path": []
+      }
+    },
+    {
+      "id": "migration-backup",
+      "sourceQuote": "retaining the original backup reference",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "BACKUP",
+          "parameters": {
+            "subject": "orders-production"
+          }
+        },
+        "consumer": {
+          "capability": "DATABASE_MIGRATE",
+          "parameters": {
+            "database": "orders-rehearsal"
+          }
+        },
+        "parameter": "backup",
+        "path": []
+      }
+    },
+    {
+      "id": "verify-migrated-state",
+      "sourceQuote": "Verify the migrated schema.",
+      "check": {
+        "kind": "value-from",
+        "producer": {
+          "capability": "DATABASE_MIGRATE",
+          "parameters": {
+            "database": "orders-rehearsal"
+          }
+        },
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "orders-rehearsal-schema"
+          }
+        },
+        "parameter": "criteria",
+        "path": []
+      }
+    },
+    {
+      "id": "no-build",
+      "sourceQuote": "Do not build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD"
+      }
+    },
+    {
+      "id": "no-build-image",
+      "sourceQuote": "Do not build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "BUILD_IMAGE"
+      }
+    },
+    {
+      "id": "no-deploy",
+      "sourceQuote": "Do not build or deploy an application.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "DEPLOY"
+      }
+    }
+  ]
+}

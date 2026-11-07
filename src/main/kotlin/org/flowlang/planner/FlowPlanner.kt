@@ -415,7 +415,10 @@ class FlowPlanner(registry: ModuleCatalog) {
         val explicitDependencies = action.dependsOn.mapNotNull { binding ->
             ctx.resolveOrderingProducer(availability, path, binding)
         }.distinct()
-        val dependencies = (dataDependencies.map(DataDependency::sourceNodeId) + explicitDependencies)
+        // Match the declared-ordering then data-ordering relation projection below.
+        // Both describe the same prerequisite set; divergent list order used to reject
+        // valid plans when value binding names sorted differently from declared gates.
+        val dependencies = (explicitDependencies + dataDependencies.map(DataDependency::sourceNodeId))
             .distinct()
             .filter { it != id }
 

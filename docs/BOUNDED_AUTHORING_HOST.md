@@ -1,10 +1,23 @@
 # Bounded external authoring host
 
+The opt-in [evidence-driven investigation](AUTHORING_INVESTIGATION.md) extends this
+host with bounded, host-mediated reads of explicitly selected pinned files. Its
+versioned result envelope and ledger are separate from the default data-only
+proposal format below. Provider executables still receive no tool execution authority.
+
 `python3 tools/author_proposal.py` connects one operator-configured, data-only
 provider to the installed `flow-core proposal` command. It is a standalone POSIX
 Python host, not a compiler dependency, workflow executor or deployment service.
 It uses only the standard library. AI-A3 remains open until live evaluation and
 held-out rendering evidence meet the development proposal's acceptance criteria.
+
+New runs use prompt version `bounded-authoring/2`, which covers infrastructure,
+identity, DevOps setup, data, recovery, maintenance and retirement alongside delivery.
+Application/repository defaults are optional. Requirements versions 1 and 2 are
+accepted and retained outside the provider prompt; their full authority remains in
+the product reader. Existing captured runs retain their captured instructions on
+resume. See the [version 2 migration](migrations/request-requirements-v2.md) and
+[selected development direction](SYSTEM_AUTOMATION_DIRECTION.md).
 
 ## Integration boundary
 
@@ -143,6 +156,8 @@ may reorder entries, add constraints and remove or replace answered clarificatio
 entries. It cannot remove, rename or rewrite an established check, even when the
 original requirements were provisional or model-extracted. Requirements introduced
 by an earlier clarification become equally protected in later rounds.
+The same check applies to investigation decisions and compiler-requested decisions,
+including version 2 resource selectors and producer-to-consumer value requirements.
 
 The comparison uses captured JSON values; the host does not infer semantic
 equivalence or decide that a replacement is stronger. Duplicate requirement IDs are

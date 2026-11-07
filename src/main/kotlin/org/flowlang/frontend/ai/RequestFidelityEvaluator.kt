@@ -1,6 +1,6 @@
 package org.flowlang.frontend.ai
 
-import org.flowlang.ast.StringLiteralNode
+import org.flowlang.ast.*
 import org.flowlang.compiler.*
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
@@ -23,9 +23,29 @@ object RequestFidelityEvaluator {
         val ancestors = mutableMapOf<CanonicalNodeId, Set<CanonicalNodeId>>()
         fun capability(node: CanonicalExecutionNode): String? =
             if (node is CanonicalApprovalNode) StandardCapability.APPROVE.name else node.semantics.capability?.value
-        fun select(selector: RequirementSelector) = graph.nodes.filter {
-            capability(it) == selector.capability.name && (selector.workflow == null || workflows[it.workflow]?.name == selector.workflow)
+        data class Selection(val nodes: List<CanonicalExecutionNode>, val uncertain: Boolean)
+        val selections = mutableMapOf<RequirementSelector, Selection>()
+        fun selection(selector: RequirementSelector) = selections.getOrPut(selector) {
+            var uncertain = false
+            val nodes = graph.nodes.filter { node ->
+                if (capability(node) != selector.capability.name ||
+                    (selector.workflow != null && workflows[node.workflow]?.name != selector.workflow)) return@filter false
+                var dynamic = false
+                // A known mismatch rules a node out, even if another filter is dynamic.
+                for ((parameter, expected) in selector.parameters) {
+                    val source = node.semantics.parameters[parameter] ?: return@filter false
+                    when (val value = runCatching { ExpressionParser.parseSource(source) }.getOrNull()) {
+                        is StringLiteralNode -> if (value.value != expected) return@filter false
+                        is NumberLiteralNode, is BooleanLiteralNode, is NullLiteralNode -> return@filter false
+                        else -> dynamic = true
+                    }
+                }
+                if (dynamic) uncertain = true
+                !dynamic
+            }
+            Selection(nodes, uncertain)
         }
+        fun select(selector: RequirementSelector) = selection(selector).nodes
         val flatWorkflows = graph.nodes.groupBy { it.workflow }.filter { (id, nodes) ->
             val workflow = workflows.getValue(id)
             val roots = workflow.rootNodeIds.toSet()
@@ -55,6 +75,17 @@ object RequestFidelityEvaluator {
             fun boolean(value: Boolean) = if (value) result(FidelityRequirementState.SATISFIED, "FIDELITY_SATISFIED")
                 else result(FidelityRequirementState.VIOLATED, "FIDELITY_VIOLATED")
             fun review() = result(FidelityRequirementState.REVIEW_REQUIRED, "FIDELITY_UNCHECKABLE_GRAPH")
+            val selectors = when (check) {
+                is CapabilityCount -> listOf(check.selector)
+                is RequiredEffect -> listOf(check.selector)
+                is LiteralParameter -> listOf(check.selector)
+                is RequiredOrdering -> listOf(check.before, check.after)
+                is RequiredValueFrom -> listOf(check.producer, check.consumer)
+                else -> emptyList()
+            }
+            // Never certify a convenient subset while another node might match at runtime.
+            if (selectors.any { selection(it).uncertain })
+                return result(FidelityRequirementState.REVIEW_REQUIRED, "FIDELITY_DYNAMIC_SELECTION")
             return when (check) {
                 is CapabilityCount -> {
                     val nodes = select(check.selector)
@@ -91,6 +122,42 @@ object RequestFidelityEvaluator {
                         val gates = before.filter { it.workflow == target.workflow }
                         gates.isNotEmpty() && gates.all { it.id != target.id && precedes(it.id, target.id) }
                     })
+                }
+                is RequiredValueFrom -> {
+                    val producers = select(check.producer)
+                    val consumers = select(check.consumer)
+                    when {
+                        producers.isEmpty() || consumers.isEmpty() -> boolean(false)
+                        producers.size != 1 -> result(FidelityRequirementState.REVIEW_REQUIRED, "FIDELITY_AMBIGUOUS_PRODUCER")
+                        consumers.size > 256 || !flat(producers + consumers) -> review()
+                        else -> {
+                            val producer = producers.single()
+                            val results = consumers.map { consumer ->
+                                val source = consumer.semantics.parameters[check.parameter] ?: return@map boolean(false)
+                                var value = runCatching { ExpressionParser.parseSource(source) }.getOrNull()
+                                for (field in check.path) {
+                                    val container = value
+                                    if (container !is MapLiteralNode) return@map review()
+                                    value = container.entries[field] ?: return@map boolean(false)
+                                }
+                                when {
+                                    value is StringLiteralNode || value is NumberLiteralNode ||
+                                        value is BooleanLiteralNode || value is NullLiteralNode -> boolean(false)
+                                    value !is ReferenceNode || value.path.size != 1 || value.safe || value.scope != "auto" -> review()
+                                    else -> boolean(producer.workflow == consumer.workflow && producer.id != consumer.id &&
+                                        value.path.single() in producer.semantics.outputs && graph.dependencyEdges.any { edge ->
+                                            edge.kind == CanonicalDependencyKind.VALUE &&
+                                                edge.resolution == CanonicalDependencyResolution.RESOLVED &&
+                                                edge.sourceNodeId == producer.id && edge.targetNodeId == consumer.id &&
+                                                edge.channel == value.path.single()
+                                        })
+                                }
+                            }
+                            results.firstOrNull { it.first == FidelityRequirementState.VIOLATED }
+                                ?: results.firstOrNull { it.first == FidelityRequirementState.REVIEW_REQUIRED }
+                                ?: boolean(true)
+                        }
+                    }
                 }
                 is RequirementClarification -> result(FidelityRequirementState.REVIEW_REQUIRED, "FIDELITY_CLARIFICATION_REQUIRED")
                 is UnsupportedRequirement -> result(FidelityRequirementState.UNSUPPORTED, "FIDELITY_${check.blocker.name}")

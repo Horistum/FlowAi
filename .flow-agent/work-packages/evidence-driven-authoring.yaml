@@ -1,0 +1,26 @@
+version: AI-A3-E1
+name: Evidence-driven bounded authoring investigation
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
+authorization:
+  source: Maintainer explicitly requested implementation of evidence, unknowns and bounded repository investigation.
+  baseline: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+objective: Let the external host collect selected source observations and retain evidence-linked findings and unresolved questions before proposing automation.
+architecturePurpose: Compose generic read-only investigation independently of scenario packs and target adapters; retain all compiler and materialization authorities.
+universalInvariant: Source observations and model inferences never authorize effects or replace independent requirements, and every model turn consumes the existing durable budget.
+scope:
+- Opt-in versioned investigation protocol over the existing data-only command transport.
+- Operator-selected, digest-pinned UTF-8 source files; model selection by source ID only.
+- Append-only observations, derived findings and unknown revisions with explicit attribution and dependency links.
+- Bounded read/progress loops, source drift rejection, explicit user decisions and unchanged compiler review.
+- Deployment and backup investigations through the same implementation plus negative boundary tests.
+forbiddenScope:
+- Arbitrary shell, network access, workflow execution or model-selected filesystem paths.
+- Treating citations, hashes or model assertions as truth, target certification or user approval.
+- Weakening requirements, bypassing compiler gates or exposing frozen evaluation oracles.
+- New target adapters or closure of AI-A3, AR-06, AR-07, F-16/F-20 or EF-09.
+validationPlan:
+- Full Python regression and generic source/ledger/process adversarial tests.
+- Installed compiler integration for two distinct domains and preserved prohibited effects.
+- Existing architecture/module isolation and conformance checks on final PR head and merge candidate.

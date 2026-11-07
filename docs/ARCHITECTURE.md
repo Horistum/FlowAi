@@ -24,6 +24,16 @@ AI proposals retain provider identity, the authored request and the complete typ
 
 ## Meaning, construction and authorization
 
+The selected [system automation direction](SYSTEM_AUTOMATION_DIRECTION.md) treats
+managed resources, implementation bindings and orchestration targets as separate
+identities. Requirements version 2 can select operations by literal semantic
+parameters and verify actual producer/consumer VALUE edges, including references
+inside literal object fields. Multiple PROVISION operations can therefore have
+independent obligations. This is plan fidelity over the existing graph, not typed
+cloud resource identity, live postcondition evidence or general conditional fidelity.
+The current Intent authoring surface still exposes flat steps; extending structured
+authoring and resource/outcome contracts is the next selected slice.
+
 The semantic kernel owns canonical capability, control, effect, workflow and dependency meaning. Module contracts describe explicit actions, bindings, schemas and obligations; a module name or concrete platform does not define universal meaning.
 
 The planner is a construction stage. `CanonicalExecutionGraph` owns represented execution meaning. `ExecutionPlan`, `CanonicalExecutionPlan` and `WorkflowExecutionPlanSet` are derived compatibility/public views. [CompilationAuthorization](../src/main/kotlin/org/flowlang/compiler/CompilationAuthorization.kt) validates the graph, recomputes its digest and checks that projected workflow plans still match.

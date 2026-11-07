@@ -147,7 +147,8 @@ jobs:
     needs: [isolation-candidates, module-isolation]
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Full tests, conformance and installed-host/lifecycle proofs share this budget.
+    timeout-minutes: 25
 
     steps:
       - name: Require Successful Module Isolation
@@ -321,7 +322,8 @@ jobs:
     needs: [isolation-candidates, module-isolation]
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # Allow runner variance observed after adding the installed lifecycle proofs.
+    timeout-minutes: 25
 
     steps:
       - name: Require Successful Module Isolation
