@@ -1,0 +1,112 @@
+{
+  "formatVersion": 3,
+  "request": {
+    "userText": "Choose archiveHandle if archive is available; otherwise replicaHandle when replica is available, or coldHandle. Verify the selected recovery source for ledger.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "structured-fixture-reviewer",
+  "requirements": [
+    {
+      "id": "obligation-1",
+      "sourceQuote": "Choose archiveHandle if archive is available; otherwise replicaHandle when replica is available, or coldHandle. Verify the selected recovery source for ledger.",
+      "check": {
+        "kind": "joined-value-from",
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "ledger"
+          }
+        },
+        "parameter": "target",
+        "origins": [
+          {
+            "scope": [
+              {
+                "predicate": "archive",
+                "positive": true
+              }
+            ],
+            "input": "archiveHandle"
+          },
+          {
+            "scope": [
+              {
+                "predicate": "archive",
+                "positive": false
+              },
+              {
+                "predicate": "replica",
+                "positive": true
+              }
+            ],
+            "input": "replicaHandle"
+          },
+          {
+            "scope": [
+              {
+                "predicate": "archive",
+                "positive": false
+              },
+              {
+                "predicate": "replica",
+                "positive": false
+              }
+            ],
+            "input": "coldHandle"
+          }
+        ]
+      }
+    },
+    {
+      "id": "common-verification-true",
+      "sourceQuote": "Choose archiveHandle if archive is available; otherwise replicaHandle when replica is available, or coldHandle. Verify the selected recovery source for ledger.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "archive",
+            "positive": true
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "VERIFY",
+            "parameters": {
+              "resource": "ledger"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "common-verification-false",
+      "sourceQuote": "Choose archiveHandle if archive is available; otherwise replicaHandle when replica is available, or coldHandle. Verify the selected recovery source for ledger.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "archive",
+            "positive": false
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "VERIFY",
+            "parameters": {
+              "resource": "ledger"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    }
+  ]
+}

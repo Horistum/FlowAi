@@ -1,0 +1,120 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-structured-fixture",
+  "request": {
+    "userText": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "3.0",
+      "kind": "FlowIntentDocument",
+      "name": "generic-composition",
+      "inputs": [
+        {
+          "name": "first",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "second",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "third",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CUSTOM",
+          "body": [
+            {
+              "kind": "branch",
+              "id": "a",
+              "when": "ref:first",
+              "then": [
+                {
+                  "kind": "operation",
+                  "id": "alpha",
+                  "capability": "VERIFY",
+                  "params": {
+                    "resource": "alpha"
+                  }
+                }
+              ],
+              "otherwise": []
+            },
+            {
+              "kind": "branch",
+              "id": "b",
+              "when": "ref:second",
+              "then": [
+                {
+                  "kind": "branch",
+                  "id": "c",
+                  "when": "ref:third",
+                  "then": [
+                    {
+                      "kind": "operation",
+                      "id": "notice",
+                      "capability": "NOTIFY",
+                      "params": {
+                        "subject": "Nested",
+                        "body": "Nested choice"
+                      }
+                    }
+                  ],
+                  "otherwise": [
+                    {
+                      "kind": "operation",
+                      "id": "beta",
+                      "capability": "VERIFY",
+                      "params": {
+                        "resource": "beta"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "otherwise": []
+            },
+            {
+              "kind": "operation",
+              "id": "done",
+              "capability": "NOTIFY",
+              "params": {
+                "subject": "Complete",
+                "body": "Planned composition"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-fidelity-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored integration candidate; no model was called. Oracle expectations are in a separate reviewed document."
+      ],
+      "guardrails": [
+        "Compiler safety obligations remain independent of request-fidelity checks."
+      ]
+    }
+  }
+}

@@ -19,6 +19,7 @@ import org.flowlang.compiler.CompilationUnit
 import org.flowlang.frontend.CompilationSourceCapture
 import org.flowlang.compiler.FlowCompilationService
 import org.flowlang.compiler.ReviewedAiProposalCompilationInput
+import org.flowlang.intent.*
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentList
 import org.flowlang.intent.IntentObject
@@ -91,9 +92,15 @@ private data class ReviewedAiProposalSourceView(
     val response: AiIntentResponse
 )
 
+private abstract class LegacyWorkflowSnapshot {
+    @get:JsonInclude(JsonInclude.Include.NON_NULL)
+    abstract val body: List<IntentStatement>?
+}
+
 private object ReviewedAiProposalSourceViewEncoder {
     private val mapper: ObjectMapper = JsonMapper.builder()
         .addModule(KotlinModule.Builder().build())
+        .addMixIn(IntentWorkflow::class.java, LegacyWorkflowSnapshot::class.java)
         .serializationInclusion(JsonInclude.Include.ALWAYS)
         .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
         .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
@@ -114,10 +121,14 @@ private object ReviewedAiProposalSourceViewEncoder {
  * exact source bytes are hashed. Source provenance and the value reviewed by the compiler therefore
  * describe the same immutable snapshot even when a provider reuses or mutates its response object.
  */
-private fun ReviewedAiProposal.snapshot(): ReviewedAiProposal = copy(
+private fun ReviewedAiProposal.snapshot(): ReviewedAiProposal {
+    // Validate recursive admission before copying a caller-owned typed tree.
+    response.normalizedIntent.workflows.forEach { IntentStructure.visits(it) }
+    return copy(
     request = request.snapshot(),
     response = response.snapshot()
-)
+    )
+}
 
 private fun AiIntentRequest.snapshot(): AiIntentRequest = copy(context = context.snapshot())
 
@@ -164,18 +175,22 @@ private fun IntentDocument.snapshot(): IntentDocument = copy(
     },
     workflows = workflows.map { workflow ->
         workflow.copy(
-            steps = workflow.steps.map { step ->
-                step.copy(
-                    requires = step.requires.toList(),
-                    produces = step.produces.toList(),
-                    params = step.params.mapValues { (_, value) -> value.snapshot() }
-                )
-            }
+            steps = workflow.steps.map { it.snapshot() },
+            body = workflow.body?.map { it.snapshot() }
         )
     },
     policies = policies.map { it.copy() },
     failure = failure.copy()
 )
+
+private fun IntentStep.snapshot(): IntentStep = copy(requires = requires.toList(), produces = produces.toList(),
+    params = params.mapValues { (_, value) -> value.snapshot() })
+private fun IntentStatement.snapshot(): IntentStatement = when (this) {
+    is IntentOperation -> copy(operation = operation.snapshot())
+    is IntentBranch -> copy(condition = condition.snapshot(), then = then.map { it.snapshot() }, otherwise = otherwise.map { it.snapshot() })
+    is IntentLocalValue -> copy(value = value.snapshot())
+    is IntentMerge -> copy(sources = sources.map { it.copy(path = it.path.toList()) })
+}
 
 private fun IntentValue?.snapshotOrNull(): IntentValue? = this?.snapshot()
 

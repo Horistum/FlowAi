@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.structured.schemas
+introducedIn: "AI-A3-S2.1"
+description: Structured Intent and requirements version 3 fixtures conform to their advertised interchange schemas.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.structured.schemas
+  runtimeExecutionAssessed: false

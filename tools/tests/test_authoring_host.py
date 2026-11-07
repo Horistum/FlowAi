@@ -293,7 +293,7 @@ class AuthoringHostTests(unittest.TestCase):
 
     def test_output_schema_resolves_nested_intent_references_without_repo_paths(self):
         schema = public_contracts(ROOT)["outputSchema"]
-        self.assertEqual({"$ref": "#/$defs/intent"}, schema["properties"]["normalizedIntent"])
+        self.assertEqual({"oneOf": [{"$ref": "#/$defs/intent"}, {"$ref": "#/$defs/structuredIntent"}]}, schema["properties"]["normalizedIntent"])
         reference = schema["$defs"]["intent"]["properties"]["workflows"]["items"]["$ref"]
         self.assertEqual("#/$defs/intent/$defs/workflow", reference)
         self.assertNotIn("$id", schema["$defs"]["intent"])
@@ -310,6 +310,29 @@ class AuthoringHostTests(unittest.TestCase):
                 for value in node:
                     resolve_refs(value)
         resolve_refs(schema)
+
+    def test_conditional_requirements_survive_resume_without_candidate_oracle_access(self):
+        self.requirements.update(formatVersion=3, confirmation="PROVISIONAL", reviewerId=None)
+        check = {"kind": "on-path", "scope": [{"predicate": "window", "positive": True}],
+                 "check": {"kind": "capability-count", "selector": {"capability": "VERIFY"}, "minimum": 1}}
+        self.requirements["requirements"][0]["check"] = check
+        state = self.run_host()
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Confirmed."} for p in state["pending"]]}
+        revised = copy.deepcopy(self.requirements)
+        revised.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        before = read(self.out / "state.json")
+        calls = self.counter.read_bytes()
+        for mutation in (lambda c: c["scope"][0].update(positive=False),
+                         lambda c: c["check"].update(minimum=0)):
+            bad = copy.deepcopy(revised)
+            mutation(bad["requirements"][0]["check"])
+            with self.assertRaisesRegex(HostError, "established requirements"):
+                resume(self.out, canonical(answers), canonical(bad))
+            self.assertEqual(before, read(self.out / "state.json"))
+            self.assertEqual(calls, self.counter.read_bytes())
+        resumed = resume(self.out, canonical(answers), canonical(revised))
+        self.assertEqual("accepted", resumed["status"])
 
     def test_frozen_corpus_integrity_and_suite_cost_cap_precede_dispatch(self):
         cases = corpus_cases(ROOT / "conformance/authoring/corpus.json")

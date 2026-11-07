@@ -155,3 +155,7 @@ They are not completion evidence for this direction. Counting source reads or pa
 ledger-format tests cannot substitute for discovering, composing and checking a system
 change. The original 12-case AI-A3 corpus remains frozen; the broader system portfolio
 is additive and its independent live exposure policy is still required.
+
+The bounded [S2.1 implementation](STRUCTURED_AUTHORING.md) adds structured authoring
+and independent conditional fidelity. Resource ownership, observation freshness,
+operation outcomes and partial-failure recovery remain subsequent S2 work.

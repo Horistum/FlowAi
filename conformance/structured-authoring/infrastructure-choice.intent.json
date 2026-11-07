@@ -1,0 +1,64 @@
+{
+  "intentVersion": "3.0",
+  "kind": "FlowIntentDocument",
+  "name": "infrastructure-choice",
+  "inputs": [
+    {
+      "name": "reuse",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "name": "existingHandle",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "workflows": [
+    {
+      "name": "main",
+      "kind": "CUSTOM",
+      "body": [
+        {
+          "kind": "branch",
+          "id": "choose",
+          "when": "ref:reuse",
+          "then": [
+            {
+              "kind": "value",
+              "id": "existing",
+              "value": "ref:existingHandle"
+            }
+          ],
+          "otherwise": [
+            {
+              "kind": "operation",
+              "id": "create",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "network"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "merge",
+          "id": "selected",
+          "sources": [
+            "ref:existing",
+            "ref:create"
+          ]
+        },
+        {
+          "kind": "operation",
+          "id": "check",
+          "capability": "VERIFY",
+          "params": {
+            "resource": "network",
+            "target": "ref:selected"
+          }
+        }
+      ]
+    }
+  ]
+}

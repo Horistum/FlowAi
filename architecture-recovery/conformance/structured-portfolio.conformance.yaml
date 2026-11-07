@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.structured.portfolio
+introducedIn: "AI-A3-S2.1"
+description: Cross-domain structured proposals satisfy independently authored conditional and joined-value obligations.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.structured.portfolio
+  runtimeExecutionAssessed: false

@@ -70,6 +70,7 @@ object RequestFidelityEvaluator {
             }
             seen - after
         }
+        val conditional by lazy { ConditionalFidelityEvaluator(graph) }
         fun check(check: FidelityCheck): Pair<FidelityRequirementState, String> {
             fun result(state: FidelityRequirementState, code: String) = state to code
             fun boolean(value: Boolean) = if (value) result(FidelityRequirementState.SATISFIED, "FIDELITY_SATISFIED")
@@ -159,6 +160,7 @@ object RequestFidelityEvaluator {
                         }
                     }
                 }
+                is OnlyUnder, is OnPath, is JoinedValueFrom -> conditional.evaluate(check)
                 is RequirementClarification -> result(FidelityRequirementState.REVIEW_REQUIRED, "FIDELITY_CLARIFICATION_REQUIRED")
                 is UnsupportedRequirement -> result(FidelityRequirementState.UNSUPPORTED, "FIDELITY_${check.blocker.name}")
             }

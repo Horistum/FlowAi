@@ -1,0 +1,141 @@
+{
+  "formatVersion": 3,
+  "request": {
+    "userText": "Reuse existingHandle when reuse is true; otherwise provision network. Verify the selected handle for network.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "structured-fixture-reviewer",
+  "requirements": [
+    {
+      "id": "obligation-1",
+      "sourceQuote": "Reuse existingHandle when reuse is true; otherwise provision network. Verify the selected handle for network.",
+      "check": {
+        "kind": "only-under",
+        "selector": {
+          "capability": "PROVISION",
+          "parameters": {}
+        },
+        "scope": [
+          {
+            "predicate": "reuse",
+            "positive": false
+          }
+        ]
+      }
+    },
+    {
+      "id": "obligation-2",
+      "sourceQuote": "Reuse existingHandle when reuse is true; otherwise provision network. Verify the selected handle for network.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "reuse",
+            "positive": false
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "PROVISION",
+            "parameters": {
+              "resource": "network"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "obligation-3",
+      "sourceQuote": "Reuse existingHandle when reuse is true; otherwise provision network. Verify the selected handle for network.",
+      "check": {
+        "kind": "joined-value-from",
+        "consumer": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "network"
+          }
+        },
+        "parameter": "target",
+        "origins": [
+          {
+            "scope": [
+              {
+                "predicate": "reuse",
+                "positive": true
+              }
+            ],
+            "input": "existingHandle"
+          },
+          {
+            "scope": [
+              {
+                "predicate": "reuse",
+                "positive": false
+              }
+            ],
+            "producer": {
+              "capability": "PROVISION",
+              "parameters": {
+                "resource": "network"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "common-verification-true",
+      "sourceQuote": "Reuse existingHandle when reuse is true; otherwise provision network. Verify the selected handle for network.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "reuse",
+            "positive": true
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "VERIFY",
+            "parameters": {
+              "resource": "network"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "common-verification-false",
+      "sourceQuote": "Reuse existingHandle when reuse is true; otherwise provision network. Verify the selected handle for network.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "reuse",
+            "positive": false
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "VERIFY",
+            "parameters": {
+              "resource": "network"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    }
+  ]
+}

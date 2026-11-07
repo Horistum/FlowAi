@@ -8,7 +8,7 @@ package org.flowlang.intent
  */
 object ConventionResolver {
     fun assumptions(intent: IntentDocument): List<String> {
-        val steps = intent.workflows.flatMap { it.steps }
+        val steps = intent.workflows.flatMap { it.operations() }
         val out = mutableListOf<String>()
         steps.forEach { step ->
             when (step.capability) {

@@ -32,7 +32,7 @@ object IntentYamlLoader {
         val kind = root.optionalString("kind", "$.kind", sourceName) ?: "FlowIntentDocument"
         if (kind != "FlowIntentDocument") fail("UNSUPPORTED_INTENT_KIND", "$.kind", sourceName, "Unsupported intent kind '$kind'.")
         val intentVersion = root.optionalString("intentVersion", "$.intentVersion", sourceName) ?: FlowStandardVersions.INTENT_VERSION
-        if (intentVersion != FlowStandardVersions.INTENT_VERSION) {
+        if (intentVersion !in setOf(FlowStandardVersions.INTENT_VERSION, IntentStructure.VERSION)) {
             fail(
                 "UNSUPPORTED_INTENT_VERSION",
                 "$.intentVersion",
@@ -40,6 +40,7 @@ object IntentYamlLoader {
                 "Unsupported intentVersion '$intentVersion'. Migrate to ${FlowStandardVersions.INTENT_VERSION}; schedules are top-level triggers in the 2.0 contract."
             )
         }
+        val structureBudget = intArrayOf(0)
         return IntentDocument(
             intentVersion = intentVersion,
             kind = kind,
@@ -48,7 +49,7 @@ object IntentYamlLoader {
             inputs = root.objectList("inputs", "$.inputs", sourceName).mapIndexed { index, value -> value.toIntentInput("$.inputs[$index]", sourceName) },
             systems = root.objectList("systems", "$.systems", sourceName).mapIndexed { index, value -> value.toIntentSystem("$.systems[$index]", sourceName) },
             triggers = root.objectList("triggers", "$.triggers", sourceName).mapIndexed { index, value -> value.toIntentTrigger("$.triggers[$index]", sourceName) },
-            workflows = root.objectList("workflows", "$.workflows", sourceName).mapIndexed { index, value -> value.toIntentWorkflow("$.workflows[$index]", sourceName) },
+            workflows = root.objectList("workflows", "$.workflows", sourceName).mapIndexed { index, value -> value.toIntentWorkflow("$.workflows[$index]", sourceName, intentVersion, structureBudget) },
             policies = root.objectList("policies", "$.policies", sourceName).mapIndexed { index, value -> value.toIntentPolicy("$.policies[$index]", sourceName) },
             failure = root.optionalObject("failure", "$.failure", sourceName)?.toIntentFailurePolicy("$.failure", sourceName) ?: IntentFailurePolicy()
         )
@@ -111,14 +112,52 @@ object IntentYamlLoader {
         )
     }
 
-    private fun Map<String, Any?>.toIntentWorkflow(path: String, source: String): IntentWorkflow {
-        requireOnly(setOf("name", "kind", "steps"), path, source)
+    private fun Map<String, Any?>.toIntentWorkflow(path: String, source: String, version: String, budget: IntArray): IntentWorkflow {
+        val structured = version == IntentStructure.VERSION
+        requireOnly(setOf("name", "kind", if (structured) "body" else "steps"), path, source)
+        if (structured && !containsKey("body")) fail("MISSING_REQUIRED_INTENT_FIELD", "$path.body", source, "Structured Intent requires an explicit body.")
         val name = requiredString("name", "$path.name", source)
         return IntentWorkflow(
             name = name,
             kind = strictEnum(optionalString("kind", "$path.kind", source) ?: "CUSTOM", "UNKNOWN_WORKFLOW_KIND", "$path.kind", source),
-            steps = objectList("steps", "$path.steps", source).mapIndexed { index, value -> value.toIntentStep("$path.steps[$index]", source) }
+            steps = if (structured) emptyList() else objectList("steps", "$path.steps", source).mapIndexed { index, value -> value.toIntentStep("$path.steps[$index]", source) },
+            body = if (structured) toBody("body", path, source, budget, 0) else null
         )
+    }
+
+    private fun Map<String, Any?>.toBody(key: String, path: String, source: String, budget: IntArray, depth: Int): List<IntentStatement> {
+        if (depth > IntentStructure.MAX_DEPTH) fail("INTENT_STRUCTURE_LIMIT", path, source, "Structured Intent nesting limit exceeded.")
+        return objectList(key, "$path.$key", source).mapIndexed { index, node ->
+            val location = "$path.$key[$index]"
+            if (++budget[0] > IntentStructure.MAX_STATEMENTS) fail("INTENT_STRUCTURE_LIMIT", location, source, "Structured Intent statement limit exceeded.")
+            val id = node.requiredString("id", "$location.id", source)
+            when (node.requiredString("kind", "$location.kind", source)) {
+                "operation" -> IntentOperation(node.filterKeys { it != "kind" }.toIntentStep(location, source))
+                "branch" -> {
+                    node.requireOnly(setOf("kind", "id", "when", "then", "otherwise"), location, source)
+                    if (!node.containsKey("when") || !node.containsKey("then")) fail("MISSING_REQUIRED_INTENT_FIELD", location, source, "Branch requires when and then.")
+                    IntentBranch(id, node["when"].toIntentValue("$location.when", source),
+                        node.toBody("then", location, source, budget, depth + 1),
+                        node.toBody("otherwise", location, source, budget, depth + 1))
+                }
+                "value" -> {
+                    node.requireOnly(setOf("kind", "id", "value"), location, source)
+                    if (!node.containsKey("value")) fail("MISSING_REQUIRED_INTENT_FIELD", "$location.value", source, "Local value requires value.")
+                    IntentLocalValue(id, node["value"].toIntentValue("$location.value", source))
+                }
+                "merge" -> {
+                    node.requireOnly(setOf("kind", "id", "sources"), location, source)
+                    val refs = node.stringList("sources", "$location.sources", source).map { raw ->
+                        val value = raw.toIntentValue("$location.sources", source)
+                        (value as? IntentRef)?.takeIf { it.path.size == 1 }
+                            ?: fail("INVALID_MERGE_REFERENCE", "$location.sources", source, "Merge inputs must be simple references.")
+                    }
+                    if (refs.size < 2) fail("MERGE_ARITY_INVALID", "$location.sources", source, "Merge requires at least two sources.")
+                    IntentMerge(id, refs)
+                }
+                else -> fail("UNKNOWN_INTENT_STATEMENT", "$location.kind", source, "Unknown structured statement kind.")
+            }
+        }
     }
 
     private fun Map<String, Any?>.toIntentStep(path: String, source: String): IntentStep {

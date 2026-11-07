@@ -16,6 +16,8 @@ versionBoundary:
   correctionTrackStatus: "completed"
   artifactContracts:
     intent: "2.0"
+    structuredIntent: "3.0"
+    requestRequirements: "3"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"

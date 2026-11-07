@@ -1,6 +1,7 @@
 # Structured authoring and conditional fidelity
 
-Status: proposed design, 2026-11-07. No new syntax or contract is implemented by this document.
+Status: design baseline, 2026-11-07. The first bounded implementation is described in
+[structured authoring](STRUCTURED_AUTHORING.md); the proposal below retains its original acceptance goals.
 Baseline: merged PR #260, `81ecc2c91220a6a6121142cbb2d307f8ee90b277`.
 Work package: [AI-A3-S2.1-DESIGN](../.flow-agent/work-packages/structured-authoring-design.yaml).
 Parent direction: [system automation](SYSTEM_AUTOMATION_DIRECTION.md).
@@ -49,7 +50,7 @@ These are reusable compiler mechanisms, not evidence that structured Intent alre
 Propose Intent **3.0** with a `body` in each workflow. Each body is an ordered list
 of tagged statements. Intent 2.0 retains its existing `steps` reader, defaults and
 ordering behavior. Reject mixed `steps`/`body` representations; do not infer a version
-from payload shape. The exact version and schema remain proposals until implemented.
+from payload shape. The implemented boundary is documented in [structured authoring](STRUCTURED_AUTHORING.md).
 An omitted `intentVersion` keeps the existing 2.0 interpretation; new structured
 documents must request 3.0 explicitly. Bumping a global default must not reinterpret
 old files or captured sessions. Readers and advertised schemas must agree on both.
@@ -66,7 +67,7 @@ availability analysis. `value` is local to execution flow; it does not enable th
 currently contained global initializer feature. A branch does not implicitly export
 a value. Explicit bindings and merges expose that choice for inspection.
 
-Illustrative proposed workflow body, **not accepted by the current Intent reader**:
+Illustrative workflow body, accepted by the explicit Intent 3.0 reader:
 
 ```yaml
 body:
@@ -280,7 +281,11 @@ are usable, with an explicitly configured provider and budget. Record blocked pl
 constraint violations, clarification quality and cost. Deterministic integration
 tests do not establish live generalization; this proposal authorizes no paid calls.
 
-## Integration questions to close before implementation acceptance
+## Original integration questions
+
+The implementation decisions and their limits are recorded in
+[the current contract](STRUCTURED_AUTHORING.md) and
+[the implementation report](../.flow-agent/reports/structured-authoring.md).
 
 | Question | Required evidence or decision |
 | --- | --- |
@@ -310,12 +315,13 @@ implementations remain S4. In particular, this slice does not complete the full
 environment lifecycle request in the parent direction. Existing AI-A3 live/render
 gates, AR-06/AR-07 findings and the EF-09 pause remain unchanged.
 
-## Validation of this design change
+## Validation of the original design-only revision
 
-This change contains a proposal and work package only. Current production contracts,
-schemas, fixtures, release state and roadmap selection are unchanged. Source references
+The original design-only revision contained a proposal and work package only. At that
+revision, production contracts, schemas, fixtures, release state and roadmap selection
+were unchanged. Source references
 were checked against the merged baseline. All 21 local links across this proposal and
 its parent direction resolve; the illustrative YAML and work-package references were
 validated. Agent validation and whitespace checks passed. No production tests or
-runtime experiments were rerun for this documentation change. Implementation acceptance
-above remains future work and is not reported as a test result.
+runtime experiments were rerun for that documentation change. Those checks did not
+establish implementation acceptance; consult the current implementation report.

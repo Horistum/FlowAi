@@ -13,6 +13,7 @@ from authoring_host.evaluation import evaluate
 from authoring_host.session import resume, start
 from verify_authoring_investigation import verify as verify_investigation
 from verify_system_automation import verify as verify_system_automation
+from verify_structured_authoring import verify as verify_structured_authoring
 
 
 def verify(root, cli):
@@ -152,6 +153,7 @@ def verify(root, cli):
                           "milestoneComplete": False}))
     verify_investigation(root, cli)
     verify_system_automation(root, cli)
+    verify_structured_authoring(root, cli)
 
 
 if __name__ == "__main__":

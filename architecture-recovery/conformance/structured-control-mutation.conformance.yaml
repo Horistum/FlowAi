@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.structured.control-mutation
+introducedIn: "AI-A3-S2.1"
+description: Replacing a public Boolean gate with a constant violates independent conditional requirements.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.structured.control-mutation
+  runtimeExecutionAssessed: false

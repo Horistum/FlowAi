@@ -21,15 +21,15 @@ class IntentCapabilityValidator(registry: ModuleCatalog) {
     private val registry = ModuleCatalogIndex.capture(registry)
 
     fun validate(intent: IntentDocument): IntentValidationReport {
-        val issues = IntentIdentityIndex.issues(intent).toMutableList()
+        val issues = (IntentStructure.issues(intent) + IntentIdentityIndex.issues(intent)).toMutableList()
         if (issues.isNotEmpty()) return IntentValidationReport(
             valid = false,
             issues = issues,
-            meaning = CanonicalIntentMeaningAuthority.rejectedIdentityMeaning(intent)
+            meaning = CanonicalIntentMeaningAuthority.rejectedSourceMeaning(intent)
         )
         val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
         val bindingsByStep = resolution.bindings.associateBy { it.stepId }
-        val steps = intent.workflows.flatMap { it.steps }
+        val steps = intent.workflows.flatMap { it.operations() }
         val stepIds = steps.map { it.id }
 
         intent.workflows.filter { it.name.isBlank() }.forEach {
@@ -91,7 +91,7 @@ class IntentCapabilityValidator(registry: ModuleCatalog) {
             }
         }
         val workflowByStep = intent.workflows.flatMap { workflow ->
-            workflow.steps.map { step -> step.id to workflow.name }
+            workflow.operations().map { step -> step.id to workflow.name }
         }.groupBy({ it.first }, { it.second })
         steps.forEach { step ->
             val owner = workflowByStep[step.id]?.singleOrNull()

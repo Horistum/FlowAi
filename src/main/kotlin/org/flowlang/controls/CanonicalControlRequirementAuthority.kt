@@ -1,5 +1,7 @@
 package org.flowlang.controls
 
+import org.flowlang.intent.operations
+import org.flowlang.intent.IntentStructure
 import org.flowlang.intent.IntentBoolean
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.IntentPolicy
@@ -18,7 +20,7 @@ object CanonicalControlRequirementAuthority {
     fun requirementsFor(intent: IntentDocument): List<ControlRequirement> {
         val requirements = mutableListOf<ControlRequirement>()
         intent.workflows.forEach { workflow ->
-            workflow.steps.forEach { step ->
+            workflow.operations().forEach { step ->
                 requirements += requirementsForStep(workflow.name, step)
             }
         }
@@ -480,7 +482,8 @@ object CanonicalControlRequirementAuthority {
      */
     private data class IntentControlGraph(
         val stepsByWorkflow: Map<String, Map<String, IntentStep>>,
-        val allSteps: List<ScopedIntentStep>
+        val allSteps: List<ScopedIntentStep>,
+        val contexts: Map<Pair<String, String>, IntentStructure.Visit>
     ) {
         fun steps(): List<ScopedIntentStep> = allSteps
 
@@ -502,7 +505,7 @@ object CanonicalControlRequirementAuthority {
             if (operations.isEmpty()) return controls
             return controls.filter { control ->
                 operations.any { operation ->
-                    control.workflow == operation.workflow &&
+                    control.workflow == operation.workflow && covers(control, operation) &&
                         control.step.id in ancestorsOf(operation.workflow, operation.step.id)
                 }
             }
@@ -517,7 +520,7 @@ object CanonicalControlRequirementAuthority {
                 val ancestorIds = ancestorsOf(protected.workflow, protected.step.id)
                 val workflowSteps = stepsByWorkflow[protected.workflow].orEmpty()
                 return ancestorIds.mapNotNull { id -> workflowSteps[id]?.let { ScopedIntentStep(protected.workflow, it) } }
-                    .filter { it.step.capability == capability }
+                    .filter { it.step.capability == capability && covers(it, protected) }
             }
 
             if (requirement.scope.kind != ControlRequirementScopeKind.INTENT) return emptyList()
@@ -530,11 +533,17 @@ object CanonicalControlRequirementAuthority {
             val coverage = operations.map { operation ->
                 val ancestors = ancestorsOf(operation.workflow, operation.step.id)
                 controls.filter { control ->
-                    control.workflow == operation.workflow && control.step.id in ancestors
+                    control.workflow == operation.workflow && covers(control, operation) && control.step.id in ancestors
                 }
             }
             if (coverage.any { it.isEmpty() }) return emptyList()
             return coverage.flatten().distinct()
+        }
+
+        private fun covers(control: ScopedIntentStep, operation: ScopedIntentStep): Boolean {
+            val before = contexts[control.workflow to control.step.id] ?: return true
+            val after = contexts[operation.workflow to operation.step.id] ?: return false
+            return IntentStructure.covers(before, after)
         }
 
         private fun protectedStep(requirement: ControlRequirement): ScopedIntentStep? {
@@ -571,13 +580,17 @@ object CanonicalControlRequirementAuthority {
 
             fun index(intent: IntentDocument): IntentControlGraph {
                 val all = intent.workflows.flatMap { workflow ->
-                    workflow.steps.map { step -> ScopedIntentStep(workflow.name, step) }
+                    workflow.operations().map { step -> ScopedIntentStep(workflow.name, step) }
                 }
                 return IntentControlGraph(
                     stepsByWorkflow = intent.workflows.associate { workflow ->
-                        workflow.name to workflow.steps.associateBy(IntentStep::id)
+                        workflow.name to workflow.operations().associateBy(IntentStep::id)
                     },
-                    allSteps = all
+                    allSteps = all,
+                    contexts = intent.workflows.filter { it.body != null }.flatMap { workflow ->
+                        IntentStructure.visits(workflow).filter { it.statement is org.flowlang.intent.IntentOperation }
+                            .map { (workflow.name to it.statement.id) to it }
+                    }.toMap()
                 )
             }
         }

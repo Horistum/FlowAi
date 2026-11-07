@@ -1031,6 +1031,12 @@
           "items": {
             "$ref": "#/$defs/intentSourceField"
           }
+        },
+        "intentVersion": {
+          "enum": [
+            null,
+            "3.0"
+          ]
         }
       },
       "additionalProperties": false

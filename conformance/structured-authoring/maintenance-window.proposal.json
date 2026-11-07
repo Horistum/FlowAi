@@ -1,0 +1,82 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-structured-fixture",
+  "request": {
+    "userText": "Run maintenance only in the admitted window and notify otherwise. Do not build an image.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "3.0",
+      "kind": "FlowIntentDocument",
+      "name": "maintenance-window",
+      "inputs": [
+        {
+          "name": "window",
+          "type": "boolean",
+          "required": true
+        },
+        {
+          "name": "extra",
+          "type": "boolean",
+          "required": true
+        }
+      ],
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CUSTOM",
+          "body": [
+            {
+              "kind": "branch",
+              "id": "windowChoice",
+              "when": "ref:window",
+              "then": [
+                {
+                  "kind": "operation",
+                  "id": "maintenance",
+                  "capability": "RUNBOOK",
+                  "params": {
+                    "description": "service maintenance"
+                  }
+                }
+              ],
+              "otherwise": [
+                {
+                  "kind": "operation",
+                  "id": "notify",
+                  "capability": "NOTIFY",
+                  "params": {
+                    "subject": "Deferred",
+                    "body": "Outside window"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-fidelity-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored integration candidate; no model was called. Oracle expectations are in a separate reviewed document."
+      ],
+      "guardrails": [
+        "Compiler safety obligations remain independent of request-fidelity checks."
+      ]
+    }
+  }
+}

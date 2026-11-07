@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    "infrastructure-choice",
+    "maintenance-window",
+    "recovery-selection",
+    "generic-composition"
+  ]
+}

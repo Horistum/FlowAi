@@ -1,5 +1,8 @@
 package org.flowlang.lowering
 
+import org.flowlang.intent.operations
+import org.flowlang.intent.IntentStructure
+import org.flowlang.intent.IntentOperation
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import org.flowlang.intent.IntentDocument
@@ -50,7 +53,7 @@ object IntentLoweringAuthority {
             )
         }
         val workflows = intent.workflows.map { workflow ->
-            IntentWorkflowMetadata(workflow.name, workflow.kind.name, workflow.steps.map { it.id })
+            IntentWorkflowMetadata(workflow.name, workflow.kind.name, workflow.operations().map { it.id })
         }
         val policies = intent.policies.map { policy ->
             IntentPolicyMetadata(policy.name, policy.type.name, policy.condition, policy.message)
@@ -77,7 +80,8 @@ object IntentLoweringAuthority {
                 rollback = intent.failure.rollback,
                 stopOnError = intent.failure.stopOnError
             ),
-            fields = fields
+            fields = fields,
+            intentVersion = intent.intentVersion.takeIf { it == IntentStructure.VERSION }
         )
     }
 
@@ -105,6 +109,18 @@ object IntentLoweringAuthority {
 
     private fun report(view: LoweringPlanView): IntentLoweringReport {
         val sourceIntent = view.sourceIntent
+        val structured = sourceIntent.intentVersion == IntentStructure.VERSION
+        require(sourceIntent.intentVersion == null || structured) { "Unsupported lowering source version." }
+        val bodyFields = sourceIntent.fields.filter { it.valueKind == "structured-body" }
+        if (structured) {
+            require(sourceIntent.fields.any { it.identity == "intent/version" && it.targetIdentity == "plan/source-intent/version" }) {
+                "Structured provenance must retain its version receipt."
+            }
+            val expected = sourceIntent.workflows.map { "workflow/${segment(it.name)}/structure" }.toSet()
+            require(expected.isNotEmpty() && bodyFields.map { it.identity }.toSet() == expected && bodyFields.size == expected.size) {
+                "Structured provenance must cover every workflow body exactly once."
+            }
+        } else require(bodyFields.isEmpty()) { "Structured preservation requires explicit source version provenance." }
         require(sourceIntent.fields.isNotEmpty()) {
             "Artifact-derived lowering evidence requires a non-empty source field catalog."
         }
@@ -165,6 +181,8 @@ object IntentLoweringAuthority {
         inputNames: Set<String>,
         expressions: IntentExpressionParser
     ): List<IntentSourceField> = buildList {
+        if (intent.intentVersion == IntentStructure.VERSION) add(preserved("intent/version", "$.intentVersion",
+            "plan/source-intent/version", "string", intent.intentVersion))
         add(preserved("intent/name", "$.name", "plan/flow/name", "string", intent.name))
         intent.description?.let {
             add(preserved("intent/description", "$.description", "plan/source-intent/description", "string", it))
@@ -305,16 +323,22 @@ object IntentLoweringAuthority {
             val workflowSource = "$.workflows[$workflowIndex]"
             add(preserved("workflow/$workflowId/name", "$workflowSource.name", "plan/source-intent/workflow/$workflowId/name", "string", workflow.name))
             add(preserved("workflow/$workflowId/kind", "$workflowSource.kind", "plan/source-intent/workflow/$workflowId/kind", "enum", workflow.kind.name))
-            workflow.steps.forEachIndexed { stepIndex, step ->
+            workflow.body?.let { body ->
+                add(preserved("workflow/$workflowId/structure", "$workflowSource.body", "plan/structure/$workflowId",
+                    "structured-body", IntentStructureEvidence.source(body, expressions)))
+            }
+            IntentStructure.visits(workflow).filter { it.statement is IntentOperation }.forEach { visit ->
+                val step = (visit.statement as IntentOperation).operation
+                val stepSource = "$workflowSource.${visit.path}"
                 val stepId = segment(step.id)
                 add(preserved(
                     "workflow/$workflowId/step/$stepId",
-                    "$workflowSource.steps[$stepIndex].id",
+                    "$stepSource.id",
                     "plan/source-intent/workflow/$workflowId/step/$stepId",
                     "workflow-step-membership",
                     step.id
                 ))
-                addStepFields(step, "$workflowSource.steps[$stepIndex]", inputNames, expressions)
+                addStepFields(step, stepSource, inputNames, expressions)
             }
         }
 
@@ -517,6 +541,10 @@ object IntentLoweringAuthority {
                 "name" -> view.flowName
                 else -> missing(targetIdentity)
             }
+            "structure" -> {
+                val candidates = if (view.workflowPlans.size == 1) view.workflowPlans else view.workflowPlans.filter { it.flowName == parts.getOrNull(2) }
+                IntentStructureEvidence.plan(unique(candidates, targetIdentity).nodes)
+            }
             "input" -> resolveInput(view.inputs, parts, targetIdentity)
             "trigger" -> resolveTrigger(view.triggers, parts, targetIdentity)
             "source-intent" -> resolveSourceIntent(view.sourceIntent, parts, targetIdentity)
@@ -559,6 +587,7 @@ object IntentLoweringAuthority {
         parts: List<String>,
         identity: String
     ): String = when (parts.getOrNull(2)) {
+        "version" -> source.intentVersion ?: missing(identity)
         "description" -> source.description ?: missing(identity)
         "workflow" -> {
             val workflow = unique(source.workflows.filter { it.name == parts.getOrNull(3) }, identity)
