@@ -58,6 +58,14 @@ step/output-renaming regression exercise the original failure.
 - Final exact-head and merge-candidate CI are required on the published revision;
   their run links belong in the pull request rather than a self-referential commit.
 
+The first GitHub run on `c28cb2947e6a365ab008f518b132785c35ebfa7e` passed
+runtime certification, physical isolation and complete exact-head validation
+(18m33s). The merge candidate passed compilation, tests and conformance, then
+was canceled at the 20-minute job boundary during the installed-host proof.
+Both full-validation jobs now have a 25-minute ceiling; isolation remains at
+20 minutes. The CI cost-policy regression and documentation retain both revision
+checks and all proof steps. A fresh run is required for the final revision.
+
 ## Limits and next owner
 
 These are declared-plan checks, not typed cloud identity, runtime postconditions,

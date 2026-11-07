@@ -16,6 +16,7 @@ scope:
 - Exercise infrastructure and DevOps foundation planning, data recovery rehearsal and environment retirement through the installed compiler.
 - Repair the discovered planner dependency-order inconsistency so mixed declared and value dependencies retain exact graph projection without weakening authorization.
 - Falsify resource substitution, wrong value producers, ordering-only dependencies, ambiguous selectors and invented build work.
+- Give both full-validation jobs a bounded 25-minute budget after the installed-host proof exhausted the former 20-minute merge-candidate ceiling; retain every check and separate isolation budget.
 forbiddenScope:
 - No Azure runtime, generic shell escape, target support promotion or provider-specific semantic rules.
 - No new canonical graph, parallel intent model or implicit cross-workflow execution.
