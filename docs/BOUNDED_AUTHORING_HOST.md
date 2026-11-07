@@ -1,5 +1,10 @@
 # Bounded external authoring host
 
+The opt-in [evidence-driven investigation](AUTHORING_INVESTIGATION.md) extends this
+host with bounded, host-mediated reads of explicitly selected pinned files. Its
+versioned result envelope and ledger are separate from the default data-only
+proposal format below. Provider executables still receive no tool execution authority.
+
 `python3 tools/author_proposal.py` connects one operator-configured, data-only
 provider to the installed `flow-core proposal` command. It is a standalone POSIX
 Python host, not a compiler dependency, workflow executor or deployment service.

@@ -30,6 +30,7 @@ currentDecision:
 
 authoringDevelopment:
   selectedSlice: AI-A3
+  investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
   parentMilestone: AR-07
   status: active
   dependsOn: [AI-A1, AI-A2]

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 129
+stateVersion: 130
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -904,6 +904,21 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  investigationFollowup:
+    workPackage: .flow-agent/work-packages/evidence-driven-authoring.yaml
+    report: .flow-agent/reports/evidence-driven-authoring.md
+    predecessorMain: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+    validation: local-python-jvm-conformance-investigation-passed-final-revision-ci-required
+    localPythonTests: 329
+    localJvmTests: 2430
+    localConformanceChecks: 298
+    installedInvestigationCases: 6
+    protocol: authoring-investigation/1
+    scope: operator-selected-digest-pinned-local-text-sources
+    modelTools: false
+    hostReadOnlyInvestigation: true
+    liveModelEvaluated: false
+    supportPromotion: false
   followup:
     workPackage: .flow-agent/work-packages/authoring-target-readiness.yaml
     report: .flow-agent/reports/authoring-target-readiness.md

@@ -42,6 +42,12 @@ After merged PR #257, the [target-readiness followup](work-packages/authoring-ta
 preserves canonical feedback for unavailable target implementations and stops model
 repair on immutable caller input errors. Both AI-A3 live gates remain open.
 
+The maintainer-authorized [investigation followup](work-packages/evidence-driven-authoring.yaml)
+adds evidence-linked findings, unknown revisions and bounded reads to the external
+host. See [its contract](../docs/AUTHORING_INVESTIGATION.md). This extends host
+preparation without closing the live-model or held-out-render gates or changing
+target implementation authority.
+
 ## Mandatory Process
 
 Every development step must follow this cycle:

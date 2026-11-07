@@ -11,6 +11,7 @@ from .contracts import (HostError, INSTRUCTIONS, PROMPT_VERSION, canonical, chec
                         integer, keys, loads, nonblank, priced_usage, public_contracts, read,
                         require, requirements, reservation, save, validate_config, verify_inventory)
 from .transport import capability_catalog, compiler_environment, compiler_fingerprint, credentials, invoke
+from . import investigation
 
 
 def _now():
@@ -27,6 +28,9 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     if target is not None:
         nonblank(target)
     environment = credentials(config)
+    investigation_config = config.get("investigation")
+    if investigation_config is not None:
+        investigation.verify_sources(investigation_config, environment)
     contracts = public_contracts(config["compiler"]["contracts"])
     compiler_digest = compiler_fingerprint(config)
     contracts["capabilityCatalog"] = capability_catalog(config)
@@ -36,6 +40,8 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     snapshots = {"config.json": canonical(config), "request.json": request_data,
                  "requirements-0.json": requirements_data, "contracts.json": canonical(contracts),
                  "instructions.txt": INSTRUCTIONS.encode()}
+    if investigation_config is not None:
+        snapshots["instructions.txt"] += ("\n\n" + investigation.INSTRUCTIONS).encode()
     settings = {"configSha256": digest(snapshots["config.json"]), "contractsSha256": digest(snapshots["contracts.json"]),
                 "instructionsSha256": digest(snapshots["instructions.txt"]), "compilerDigest": compiler_digest,
                 "promptVersion": PROMPT_VERSION}
@@ -62,6 +68,10 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
              "reservedTokens": 0, "reservedCostMicrousd": 0, "reportedUsage": [], "pending": []}
     for name, data in snapshots.items():
         save(root, name, data, state["files"])
+    if investigation_config is not None:
+        state.update(hostVersion="bounded-authoring-host/2", investigationSteps=0,
+                     investigationProtocol=investigation.VERSION)
+        investigation.persist(root, state, investigation.initial(investigation_config), "investigation-initial.json")
     checkpoint(root, state)
     return _locked_advance(root, state, config, environment, "initial")
 
@@ -71,15 +81,20 @@ def resume(directory, answers_data, requirements_data):
     with (root / "lock").open("a+b") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         state = loads(read(root / "state.json"))
-        require(state.get("formatVersion") == 1 and state.get("hostVersion") == "bounded-authoring-host/1",
+        require(state.get("formatVersion") == 1 and state.get("hostVersion") in
+                ("bounded-authoring-host/1", "bounded-authoring-host/2"),
                 "Unsupported captured host version")
         verify_inventory(root, state)
         require(state["status"] == "awaiting-user", "Only an explicit clarification can resume; interrupted calls never replay")
         last = state["attempts"][-1]
-        require(last.get("review", {}).get("exitCode") == 3, "Captured compiler review does not request a user decision")
-        previous = loads(read(root / last["directory"] / "proposal.json"))
-        prior_requirements = loads(read(root / state["requirementsFile"]))
-        require(state["pending"] == _pending(previous, prior_requirements, last["review"]), "Pending decisions changed")
+        investigation_pending = last.get("status") == "investigation-awaiting-user"
+        if investigation_pending:
+            require(state["pending"] == investigation.pending(investigation.load(root, state)), "Pending decisions changed")
+        else:
+            require(last.get("review", {}).get("exitCode") == 3, "Captured compiler review does not request a user decision")
+            previous = loads(read(root / last["directory"] / "proposal.json"))
+            prior_requirements = loads(read(root / state["requirementsFile"]))
+            require(state["pending"] == _pending(previous, prior_requirements, last["review"]), "Pending decisions changed")
         answers = loads(answers_data)
         keys(answers, ("runId", "reviewerId", "answers"))
         require(answers["runId"] == state["runId"], "Answers belong to another run")
@@ -98,14 +113,31 @@ def resume(directory, answers_data, requirements_data):
                 "Resumption requires caller-confirmed requirements and matching reviewer attribution")
         require(not any(i["check"].get("kind") == "clarification" for i in reviewed["requirements"]),
                 "Requirements still contain unanswered decisions")
+        if "investigationFile" in state:
+            prior = loads(read(root / state["requirementsFile"]))
+            require(all(item in reviewed["requirements"] for item in prior["requirements"]
+                        if item["check"].get("kind") != "clarification"),
+                    "Investigation answers cannot remove or change existing hard requirements")
         config = validate_config(loads(read(root / "config.json")))
         environment = credentials(config)
+        if "investigation" in config:
+            require(state["investigationSteps"] == sum(a["status"] == "investigated" for a in state["attempts"]),
+                    "Investigation step ledger is inconsistent")
+            try:
+                investigation.verify_sources(config["investigation"], environment)
+            except investigation.SourceChanged:
+                return _finish(root, state, "source-changed")
         for data in (answers_data, requirements_data):
             require(not contains_credential(data, environment), "A credential appears in retained inputs")
         number = state["clarificationCount"] + 1
+        answered_ledger = (investigation.answer(investigation.load(root, state), answers["answers"],
+                           f"answers-{number}.json", config["investigation"]["maxRecords"])
+                           if investigation_pending else None)
         save(root, f"answers-{number}.json", answers_data, state["files"])
         name = f"requirements-{number}.json"
         save(root, name, requirements_data, state["files"])
+        if answered_ledger is not None:
+            investigation.persist(root, state, answered_ledger, f"investigation-answers-{number}.json")
         state.update(requirementsFile=name, clarificationCount=number, pending=[], status="ready-to-continue")
         # Reviewer identity is evidence for the operator, never candidate prompt content.
         state["answers"].extend(answers["answers"])
@@ -202,12 +234,22 @@ def _advance(root, state, config, environment, kind):
     instructions = (root / "instructions.txt").read_text(encoding="utf-8")
     request = loads(read(root / "request.json"))
     previous, feedback = None, None
+    investigation_config = config.get("investigation")
+    output_schema = (investigation.output_schema(contracts["outputSchema"])
+                     if investigation_config is not None else contracts["outputSchema"])
     if state["attempts"]:
         last = state["attempts"][-1]
         previous = loads(read(root / last["directory"] / "proposal.json"))["response"]
-        feedback = _feedback(last["review"])
+        feedback = _feedback(last["review"]) if "review" in last else None
     while True:
         verify_inventory(root, state)
+        if investigation_config is not None:
+            require(state["investigationSteps"] == sum(a["status"] == "investigated" for a in state["attempts"]),
+                    "Investigation step ledger is inconsistent")
+            try:
+                investigation.verify_sources(investigation_config, environment)
+            except investigation.SourceChanged:
+                return _finish(root, state, "source-changed")
         tokens, cost = reservation(config)
         require(state["reservedTokens"] == tokens * len(state["attempts"]) and
                 state["reservedCostMicrousd"] == cost * len(state["attempts"]) and
@@ -230,16 +272,18 @@ def _advance(root, state, config, environment, kind):
                    "input": {"request": request, "capabilityContracts": contracts["modules"],
                              "capabilityCatalog": contracts["capabilityCatalog"],
                              "previousResponse": previous, "compilerFeedback": feedback, "userAnswers": state["answers"]},
-                   "output_schema": contracts["outputSchema"],
+                   "output_schema": output_schema,
                    "response_schema": {"type": "object", "additionalProperties": False,
-                       "$defs": contracts["outputSchema"]["$defs"],
+                       "$defs": output_schema["$defs"],
                        "required": ["schema", "result", "usage", "provider"], "properties": {
-                           "schema": {"const": "command-reasoning/v2"}, "result": contracts["outputSchema"],
+                           "schema": {"const": "command-reasoning/v2"}, "result": output_schema,
                            "usage": {"type": "object", "additionalProperties": False, "properties": {
                                k: {"type": "integer", "minimum": 0} for k in ("input_tokens", "output_tokens", "cached_input_tokens")}},
                            "provider": {"type": "object", "additionalProperties": False,
                                "required": ["id", "model", "request_id"], "properties": {
                                    k: {"type": "string"} for k in ("id", "model", "request_id")}}}}}
+        if investigation_config is not None:
+            payload["input"]["investigation"] = investigation.load(root, state)
         data = canonical(payload)
         # Conservative byte bound; token caps must additionally be enforced by the configured adapter.
         if len(data) > budget["maxInputTokensPerCall"]:
@@ -281,6 +325,37 @@ def _advance(root, state, config, environment, kind):
             if (usage.get("input_tokens", 0) > budget["maxInputTokensPerCall"] or
                     usage.get("output_tokens", 0) > budget["maxOutputTokensPerCall"]):
                 return _finish(root, state, "provider-budget-overrun")
+            if investigation_config is not None:
+                phase = "investigation"
+                verify_inventory(root, state)
+                investigation.verify_sources(investigation_config, environment)
+                action = value["result"]
+                if action.get("kind") == "investigate" and state["investigationSteps"] >= investigation_config["maxSteps"]:
+                    attempt["status"] = "investigation-limit"
+                    return _finish(root, state, "investigation-limit")
+                ledger = investigation.load(root, state)
+                updated = investigation.apply(ledger, action, investigation_config, environment, attempt_id)
+                investigation.persist(root, state, updated, attempt["directory"] + "/investigation.json")
+                if action["kind"] == "investigate":
+                    attempt["status"] = "investigated"
+                    state["investigationSteps"] += 1
+                    if updated == ledger:
+                        return _finish(root, state, "investigation-no-progress")
+                    kind = "investigation"
+                    checkpoint(root, state)
+                    continue
+                value["result"] = action["response"]
+                decisions = investigation.pending(updated)
+                if decisions:
+                    proposal = {"formatVersion": 1, "providerId": config["provider"]["id"], "request": request,
+                                "response": value["result"]}
+                    save(root, attempt["directory"] + "/proposal.json", canonical(proposal), state["files"])
+                    attempt["status"] = "investigation-awaiting-user"
+                    state["pending"] = decisions
+                    return _finish(root, state, "awaiting-user")
+                if investigation.blocked(updated):
+                    attempt["status"] = "investigation-blocked"
+                    return _finish(root, state, "investigation-blocked")
             proposal = {"formatVersion": 1, "providerId": config["provider"]["id"], "request": request,
                         "response": value["result"]}
             response_digest = digest(canonical(value["result"]))
@@ -289,6 +364,8 @@ def _advance(root, state, config, environment, kind):
             # Every complete response is retained, including an unchanged replacement.
             phase = "compiler"
             review = _compile(root, state, config, attempt, proposal)
+            if investigation_config is not None:
+                investigation.verify_sources(investigation_config, environment)
             attempt["status"] = "reviewed"
             if review["exitCode"] == 70 or any(d.get("field") == "$.requirements" for d in review["diagnostics"]):
                 return _finish(root, state, "compiler-error")
@@ -318,6 +395,9 @@ def _advance(root, state, config, environment, kind):
             # Only compiler input/semantic diagnostics are eligible for automatic correction.
             previous, feedback, kind = value["result"], _feedback(review), "repair"
             checkpoint(root, state)
+        except investigation.SourceChanged:
+            attempt["status"] = "source-changed"
+            return _finish(root, state, "source-changed")
         except (HostError, OSError, ValueError, KeyError, TypeError) as error:
             # Partial/unknown outcomes remain reserved. Never echo external exception strings.
             attempt["status"] = "unusable-result"

@@ -94,7 +94,7 @@ def argv(value):
 
 
 def validate_config(config):
-    keys(config, ("formatVersion", "provider", "compiler", "budget"))
+    keys(config, ("formatVersion", "provider", "compiler", "budget"), ("investigation",))
     require(type(config["formatVersion"]) is int and config["formatVersion"] == 1, "Unsupported host configuration")
     provider, compiler, budget = (config[k] for k in ("provider", "compiler", "budget"))
     keys(provider, ("id", "model", "version", "argv", "credentialEnv", "evidenceKind"))
@@ -127,6 +127,9 @@ def validate_config(config):
     tokens, cost = reservation(config)
     require(tokens <= budget["maxTotalTokens"] and cost <= budget["maxCostMicrousd"],
             "Budget cannot reserve even one call")
+    if "investigation" in config:
+        from .investigation import validate
+        validate(config["investigation"])
     return config
 
 
