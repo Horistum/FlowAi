@@ -33,7 +33,7 @@ object IntentSourceContradictionAuthority {
             .hasNegatedMention
 
     private fun declaresPositiveBackupEvidence(intent: IntentDocument): Boolean {
-        val steps = intent.workflows.flatMap(IntentWorkflow::steps)
+        val steps = intent.workflows.flatMap(IntentWorkflow::operations)
         if (steps.any { it.capability == StandardCapability.BACKUP }) return true
 
         return steps.any { step ->

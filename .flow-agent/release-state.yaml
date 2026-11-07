@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 132
+stateVersion: 133
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -15,6 +15,8 @@ versionBoundary:
   publicStandardVersion: "0.8.0"
   artifactContracts:
     intent: "2.0"
+    structuredIntent: "3.0"
+    requestRequirements: "3"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"
@@ -915,6 +917,27 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  structuredAuthoringFollowup:
+    selectedSlice: AI-A3-S2.1
+    workPackage: .flow-agent/work-packages/structured-authoring.yaml
+    report: .flow-agent/reports/structured-authoring.md
+    contract: docs/STRUCTURED_AUTHORING.md
+    baselineMain: 81ecc2c91220a6a6121142cbb2d307f8ee90b277
+    validation: local-python-jvm-conformance-installed-proof-passed-final-revision-ci-required
+    localJvmTests: 2464
+    localPythonTests: 339
+    localConformanceChecks: 302
+    installedStructuredCases: 11
+    intentVersions: ["2.0", "3.0"]
+    defaultIntentVersion: "2.0"
+    requirementsVersions: [1, 2, 3]
+    promptVersion: bounded-authoring/3
+    scope: Ordered conditional authoring and bounded independent conditional and joined-origin requirements.
+    nextSlice: S2-operation-outcomes-and-resource-boundaries
+    autonomousDiscovery: false
+    runtimePostconditions: false
+    liveModelEvaluated: false
+    supportPromotion: false
   systemAutomationFollowup:
     selectedSlice: AI-A3-S1
     workPackage: .flow-agent/work-packages/system-automation-direction.yaml

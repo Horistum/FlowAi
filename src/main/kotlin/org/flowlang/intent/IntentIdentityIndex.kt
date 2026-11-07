@@ -20,7 +20,7 @@ internal class IntentIdentityIndex private constructor(private val steps: Map<Se
             val issues = issues(intent)
             require(issues.isEmpty()) { issues.joinToString("; ") { "${it.code}: ${it.message}" } }
             return IntentIdentityIndex(java.util.Collections.unmodifiableMap(
-                intent.workflows.flatMap { it.steps }.associate { step ->
+                intent.workflows.flatMap { it.operations() }.associate { step ->
                     val identity = IntentStepIdentity.from(step)
                     identity.semanticId to identity
                 }
@@ -49,10 +49,10 @@ internal class IntentIdentityIndex private constructor(private val steps: Map<Se
             declarations(intent.triggers.mapIndexed { i, t -> t.id to "triggers[$i].id" }, "DUPLICATE_INTENT_TRIGGER")
             declarations(intent.policies.mapIndexed { i, p -> p.name to "policies[$i].name" }, "DUPLICATE_INTENT_POLICY")
             declarations(intent.workflows.flatMapIndexed { wi, workflow ->
-                workflow.steps.mapIndexed { si, step -> step.id to "workflows[$wi].steps[$si].id" }
+                IntentStructure.visits(workflow).map { it.statement.id to "workflows[$wi].${it.path}.id" }
             }, "DUPLICATE_INTENT_STEP")
             val needsStandard = intent.failure.notify || intent.failure.rollback || intent.workflows.any { workflow ->
-                workflow.steps.any { it.capability != StandardCapability.APPROVE && it.uses.isNullOrBlank() }
+                workflow.operations().any { it.capability != StandardCapability.APPROVE && it.uses.isNullOrBlank() }
             }
             if (needsStandard && intent.systems.any { it.name == "standard" && it.type != "standard" }) {
                 error("INTENT_SYSTEM_COLLISION", "systems: authored system 'standard' conflicts with the required semantic standard system.")
@@ -61,11 +61,17 @@ internal class IntentIdentityIndex private constructor(private val steps: Map<Se
                 listOf("standard" to "implicit semantic system") else emptyList()
             intent.workflows.ifEmpty { listOf(IntentWorkflow(name = "main", kind = IntentWorkflowKind.CUSTOM)) }.forEachIndexed { wi, workflow ->
                 val symbols = (inputs + systems + implicit).toMutableList()
-                workflow.steps.forEachIndexed { si, step ->
+                workflow.operations().forEachIndexed { si, step ->
                     val path = "workflows[$wi].steps[$si]"
                     runCatching { IntentStepIdentity.from(step) }.getOrNull()?.let { symbols += it.resultName to "$path.id" }
                     declarations(step.produces.mapIndexed { oi, output -> output to "$path.produces[$oi]" }, "DUPLICATE_STEP_OUTPUT", "EMPTY_STEP_OUTPUT")
                     symbols += step.produces.mapIndexed { oi, output -> output to "$path.produces[$oi]" }
+                }
+                if (workflow.body != null) IntentStructure.visits(workflow).forEach { visit ->
+                    if (visit.statement is IntentLocalValue || visit.statement is IntentMerge) {
+                        runCatching { IntentStepIdentity.resultSymbol(SemanticId.of(visit.statement.id)) }
+                            .getOrNull()?.let { symbols += it to "workflows[$wi].${visit.path}.id" }
+                    }
                 }
                 symbols.groupBy { it.first }.toSortedMap().forEach { (symbol, owners) ->
                     if (owners.size > 1) error("INTENT_SYMBOL_COLLISION",

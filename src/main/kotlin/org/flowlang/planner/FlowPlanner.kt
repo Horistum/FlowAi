@@ -300,6 +300,18 @@ class FlowPlanner(registry: ModuleCatalog) {
             planMerge(statement, merge, ctx, path)
         } ?: run {
             val id = ctx.id("set")
+            // Preserve local value provenance in the same graph used for task parameters.
+            val roots = linkedSetOf<String>()
+            collectRoots(statement.value, roots)
+            roots.sorted().forEach { binding ->
+                ctx.resolveProducer(availability, path, binding)?.let { source ->
+                    for (kind in listOf(PlanDependencyKind.ORDERING, PlanDependencyKind.VALUE)) {
+                        ctx.dependencyRelations += PlanDependencyRelation(sourceNodeId = source, targetNodeId = id,
+                            kind = kind, channel = binding.takeIf { kind == PlanDependencyKind.VALUE },
+                            evidence = PlanDependencyEvidence.DATA_REFERENCE, path = listOf(source, id))
+                    }
+                }
+            }
             ctx.registerProducer(availability.producerAt(path, statement.name), id)
             ControlNode(id, "Set", "${statement.name} = ${ExpressionRenderer.render(statement.value)}")
         }

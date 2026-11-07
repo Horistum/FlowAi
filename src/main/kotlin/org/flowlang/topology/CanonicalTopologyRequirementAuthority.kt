@@ -1,13 +1,18 @@
 package org.flowlang.topology
 
+import org.flowlang.intent.operations
 import org.flowlang.intent.IntentDocument
 import org.flowlang.intent.StandardCapability
 
 /** Derives target-neutral topology requirements before implementation binding. */
 object CanonicalTopologyRequirementAuthority {
     fun requirementsFor(intent: IntentDocument): List<ExecutionTopologyRequirement> {
+        // Version 3 carries explicit control and value structure. Let the existing
+        // PlanningTopologyAuthority derive its complete requirements from those nodes,
+        // as it does for Flow Source; do not add a second flat workflow scope.
+        if (intent.intentVersion == org.flowlang.intent.IntentStructure.VERSION) return emptyList()
         val requirements = buildList {
-            intent.workflows.filter { it.steps.isNotEmpty() }.forEach { workflow ->
+            intent.workflows.filter { it.steps.isNotEmpty() || !it.body.isNullOrEmpty() }.forEach { workflow ->
                 add(requirement(
                     kind = ExecutionTopologyKind.WORKFLOW_SCOPE,
                     subject = workflow.name,
@@ -20,7 +25,7 @@ object CanonicalTopologyRequirementAuthority {
                     source = ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW,
                     reference = "intent.workflows.${workflow.name}"
                 ))
-                workflow.steps.filter { it.capability == StandardCapability.APPROVE }.forEach { step ->
+                workflow.operations().filter { it.capability == StandardCapability.APPROVE }.forEach { step ->
                     add(requirement(
                         kind = ExecutionTopologyKind.SUSPEND_RESUME,
                         subject = step.id,

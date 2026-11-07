@@ -89,7 +89,7 @@ class IntentDecisionAnalyzer(
     private val registry = ModuleCatalogIndex.capture(registry)
 
     fun analyze(intent: IntentDocument): IntentDecisionReport {
-        val steps = intent.workflows.flatMap { it.steps }
+        val steps = intent.workflows.flatMap { it.operations() }
         val controls = CanonicalControlRequirementAuthority.assess(intent)
         val decisions = mutableListOf<IntentDecision>()
         val missing = mutableListOf<IntentMissingDecision>()
@@ -240,7 +240,7 @@ class IntentDecisionAnalyzer(
         gates: MutableList<IntentSafetyGate>
     ) {
         intent.workflows.forEach { workflow ->
-            workflow.steps.filter { it.capability == StandardCapability.DEPLOY }.forEach deploy@ { step ->
+            workflow.operations().filter { it.capability == StandardCapability.DEPLOY }.forEach deploy@ { step ->
                 val parameters = step.params.filterKeys(environmentPolicy::recognizesParameter)
                     .map { (name, value) -> environmentParameter(name, value) } +
                     intent.inputs.filter { input ->
@@ -263,7 +263,7 @@ class IntentDecisionAnalyzer(
                 }
                 // Presence is a frontend observation, not proof of scope or runtime approval.
                 // The compiler's safety/control boundaries remain authoritative for that proof.
-                val mechanismPresent = workflow.steps.any { it.capability == StandardCapability.APPROVE }
+                val mechanismPresent = workflow.operations().any { it.capability == StandardCapability.APPROVE }
                 risks += IntentDecisionRisk(
                     id = "risk.prod-deploy.${workflow.name}.${step.id}", severity = "high",
                     message = "Production deployment '${step.id}' can affect live users.",

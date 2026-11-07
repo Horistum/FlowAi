@@ -1,0 +1,51 @@
+{
+  "intentVersion": "3.0",
+  "kind": "FlowIntentDocument",
+  "name": "maintenance-window",
+  "inputs": [
+    {
+      "name": "window",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "name": "extra",
+      "type": "boolean",
+      "required": true
+    }
+  ],
+  "workflows": [
+    {
+      "name": "main",
+      "kind": "CUSTOM",
+      "body": [
+        {
+          "kind": "branch",
+          "id": "windowChoice",
+          "when": "ref:window",
+          "then": [
+            {
+              "kind": "operation",
+              "id": "maintenance",
+              "capability": "RUNBOOK",
+              "params": {
+                "description": "service maintenance"
+              }
+            }
+          ],
+          "otherwise": [
+            {
+              "kind": "operation",
+              "id": "notify",
+              "capability": "NOTIFY",
+              "params": {
+                "subject": "Deferred",
+                "body": "Outside window"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

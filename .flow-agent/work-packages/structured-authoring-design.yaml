@@ -1,0 +1,34 @@
+version: AI-A3-S2.1-DESIGN
+name: General structured authoring and conditional fidelity
+status: proposed
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+proposal: docs/STRUCTURED_AUTHORING_PROPOSAL.md
+authorization:
+  source: Maintainer requested a careful proposal for the next step, reusable across structurally different scenarios.
+  baseline: 81ecc2c91220a6a6121142cbb2d307f8ee90b277
+  predecessorPullRequest: 260
+  currentScope: Design and implementation acceptance criteria; no production implementation or contract activation.
+objective: Enable reviewed AI and Intent inputs to preserve conditional operations and explicit value joins through the existing compiler, with independent checks of the requested branch behavior.
+universalInvariant: Every accepted operation retains its required control context, and every accepted value use has exactly the producer coverage established by the canonical availability and merge contracts.
+scope:
+- Specify operation, branch, local value and explicit merge constructs over existing AST semantics.
+- Define conditional obligation and value origin checks without using model-selected IDs as independent expectations.
+- Preserve old Intent and requirements behavior through explicit version boundaries.
+- Define structurally different positive cases, falsifying mutations and implementation owners.
+- Record unresolved integration questions as implementation gates, never as established support.
+forbiddenScope:
+- No provider-specific branching, project-name dispatch or new execution graph in the authoring host.
+- No cloud execution, automatic discovery, resource ownership attestation, retry policy or recovery completion claim.
+- No silent flattening, default-false conversion or relaxation of existing admission budgets.
+- No runtime certification or AI-A3, AR-06 or AR-07 closure from this proposal.
+designValidation:
+- Check proposal references and YAML structure against the merged baseline.
+- Validate repository agent structure and documentation whitespace.
+implementationAcceptance:
+- Equivalent accepted structures preserve normalized control and data meaning across Flow Source, Intent YAML/JSON and reviewed AI input.
+- Infrastructure choice, maintenance gating and nested data recovery cases use the same production mechanism.
+- Conditional requirements reject removed or narrowed obligations, polarity changes and unguarded duplicates.
+- Value checks reject missing paths, wrong origins, overlapping producers and ordering-only substitutes.
+- Existing version fixtures and captured host sessions retain their historical meaning.
+- Installed CLI proofs and final exact-head and merge-candidate CI pass on the implementation revision.

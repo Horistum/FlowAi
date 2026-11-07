@@ -51,7 +51,9 @@ data class IntentSourceMetadata(
     val systems: List<IntentSystemMetadata> = emptyList(),
     val systemPurposes: Map<String, String> = emptyMap(),
     val failure: IntentFailureMetadata = IntentFailureMetadata(),
-    val fields: List<IntentSourceField> = emptyList()
+    val fields: List<IntentSourceField> = emptyList(),
+    /** Absent on legacy flat provenance; explicit for versioned structured authoring. */
+    val intentVersion: String? = null
 )
 
 data class IntentWorkflowMetadata(

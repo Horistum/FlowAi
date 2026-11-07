@@ -11,7 +11,8 @@ package org.flowlang.standard
 object FlowStandardVersions {
     const val IMPLEMENTATION_PACKAGE_VERSION = "0.9.5"
     const val FLOW_STANDARD_VERSION = "0.8.0"
-    const val INTENT_VERSION = "2.0"
+    const val INTENT_VERSION = "2.0" // Legacy default remains frozen.
+    const val STRUCTURED_INTENT_VERSION = "3.0"
     const val AST_VERSION = "2.2"
     const val EXECUTION_PLAN_VERSION = "2.4"
     const val WORKFLOW_EXECUTION_PLAN_SET_VERSION = "1.1"

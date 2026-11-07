@@ -41,7 +41,7 @@ object RequestRequirementsReader {
     internal fun decode(bytes: ByteArray): RequestRequirementsDocument = guarded {
         val tree = FlowJson.readTree(BoundedIo.decodeUtf8(bytes), "<request-requirements>")
         val document = mapper.treeToValue(tree, RequestRequirementsDocument::class.java)
-        require(document.formatVersion in 1..2 && document.request.userText.isNotBlank())
+        require(document.formatVersion in 1..3 && document.request.userText.isNotBlank())
         // Version 1 remains frozen, including explicit empty/null uses of new fields.
         if (document.formatVersion == 1) require(tree.path("requirements").findValues("parameters").isEmpty())
         require(document.requirements.isNotEmpty() && document.requirements.size <= 256)
@@ -54,13 +54,16 @@ object RequestRequirementsReader {
             require(s.parameters.size <= 16)
             require(s.parameters.all { (key, value) -> parameterPattern.matches(key) && value.length <= 1000 })
         }
-        document.requirements.forEach { requirement ->
-            require(idPattern.matches(requirement.id))
-            require(requirement.sourceQuote.isNotBlank() && requirement.sourceQuote in document.request.userText)
-            when (val check = requirement.check) {
+        fun scope(guards: List<RequirementGuard>) {
+            require(guards.isNotEmpty() && guards.size <= 32)
+            require(guards.all { it.predicate.isNotBlank() && it.predicate.length <= 1000 })
+            require(guards.map { it.predicate }.distinct().size == guards.size)
+        }
+        fun validate(check: FidelityCheck, nested: Boolean = false) {
+            when (check) {
                 is CapabilityCount -> {
                     selector(check.selector)
-                    val lowerBound = if (document.formatVersion == 2) 0 else 1
+                    val lowerBound = if (document.formatVersion >= 2) 0 else 1
                     require(check.minimum in lowerBound..10000 && (check.maximum == null || check.maximum in check.minimum..10000))
                 }
                 is ForbiddenCapability -> Unit
@@ -69,14 +72,35 @@ object RequestRequirementsReader {
                 is LiteralParameter -> { selector(check.selector); require(check.parameter.matches(parameterPattern)) }
                 is RequiredOrdering -> { selector(check.before); selector(check.after) }
                 is RequiredValueFrom -> {
-                    require(document.formatVersion == 2)
+                    require(document.formatVersion >= 2)
                     selector(check.producer); selector(check.consumer)
                     require(check.parameter.matches(parameterPattern))
                     require(check.path.size <= 8 && check.path.all { it.isNotBlank() && it.length <= 128 })
                 }
+                is OnlyUnder -> { require(document.formatVersion == 3 && !nested); selector(check.selector); scope(check.scope) }
+                is OnPath -> {
+                    require(document.formatVersion == 3 && !nested); scope(check.scope)
+                    require(check.check is CapabilityCount || check.check is RequiredEffect || check.check is LiteralParameter || check.check is RequiredOrdering)
+                    validate(check.check, true)
+                }
+                is JoinedValueFrom -> {
+                    require(document.formatVersion == 3 && !nested); selector(check.consumer)
+                    require(check.parameter.matches(parameterPattern) && check.origins.size in 2..32)
+                    check.origins.forEach { origin ->
+                        scope(origin.scope)
+                        require((origin.input == null) != (origin.producer == null))
+                        origin.input?.let { require(parameterPattern.matches(it)) }
+                        origin.producer?.let(::selector)
+                    }
+                }
                 is RequirementClarification -> require(check.question.isNotBlank())
                 is UnsupportedRequirement -> Unit
             }
+        }
+        document.requirements.forEach { requirement ->
+            require(idPattern.matches(requirement.id))
+            require(requirement.sourceQuote.isNotBlank() && requirement.sourceQuote in document.request.userText)
+            validate(requirement.check)
         }
         document
     }

@@ -21,7 +21,7 @@ class RequestFidelityConformanceTests {
         val selected = original.path("requirements").first { it.path("check").path("kind").asText() == "capability-count" }
         original.putArray("requirements").add(selected)
         val mutations = listOf<(com.fasterxml.jackson.databind.node.ObjectNode) -> Unit>(
-            { it.put("formatVersion", 3) },
+            { it.put("formatVersion", 4) },
             { (it.path("requirements")[0].path("check").path("selector") as com.fasterxml.jackson.databind.node.ObjectNode)
                 .putObject("parameters").apply { repeat(17) { put("field$it", "x") } } },
             { (it.path("requirements")[0].path("check").path("selector") as com.fasterxml.jackson.databind.node.ObjectNode)

@@ -109,8 +109,20 @@ enum class IntentScheduleKind { CRON, INTERVAL, CALENDAR }
 data class IntentWorkflow(
     val name: String,
     val kind: IntentWorkflowKind,
-    val steps: List<IntentStep> = emptyList()
+    val steps: List<IntentStep> = emptyList(),
+    val body: List<IntentStatement>? = null
 )
+
+/** Authored structure; canonical control and availability remain compiler-owned. */
+sealed interface IntentStatement { val id: String }
+data class IntentOperation(val operation: IntentStep) : IntentStatement { override val id: String get() = operation.id }
+data class IntentBranch(override val id: String, val condition: IntentValue,
+                        val then: List<IntentStatement>, val otherwise: List<IntentStatement> = emptyList()) : IntentStatement
+data class IntentLocalValue(override val id: String, val value: IntentValue) : IntentStatement
+data class IntentMerge(override val id: String, val sources: List<IntentRef>) : IntentStatement
+
+fun IntentWorkflow.operations(): List<IntentStep> =
+    if (body == null) steps else IntentStructure.visits(this).mapNotNull { (it.statement as? IntentOperation)?.operation }
 
 enum class IntentWorkflowKind {
     BUILD,

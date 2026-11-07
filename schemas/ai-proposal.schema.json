@@ -89,7 +89,14 @@
       ],
       "properties": {
         "normalizedIntent": {
-          "$ref": "intent.schema.json"
+          "oneOf": [
+            {
+              "$ref": "intent.schema.json"
+            },
+            {
+              "$ref": "intent-v3.schema.json"
+            }
+          ]
         },
         "report": {
           "type": "object",

@@ -91,3 +91,6 @@ checks:
   - ai.fidelity.independent-corpus
   - ai.fidelity.bounded-outcomes
   - ai.fidelity.constraint-mutations
+  - ai.structured.portfolio
+  - ai.structured.control-mutation
+  - ai.structured.schemas

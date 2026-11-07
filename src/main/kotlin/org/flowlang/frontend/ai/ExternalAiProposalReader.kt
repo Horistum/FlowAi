@@ -91,7 +91,7 @@ object ExternalAiProposalReader {
         "message", "recommendation", "mitigated", "selectedPack", "matchedTriggers", "alternativesRejected",
         "intentVersion", "kind", "name", "description", "inputs", "systems", "triggers", "workflows", "policies",
         "failure", "required", "default", "config", "purpose", "schedule", "event", "params", "expression",
-        "timezone", "steps", "capability", "uses", "requires", "produces", "condition", "notify", "rollback", "stopOnError"
+        "timezone", "steps", "body", "when", "then", "otherwise", "sources", "capability", "uses", "requires", "produces", "condition", "notify", "rollback", "stopOnError"
     )
     private fun safeField(field: String): String = field.takeIf { it in fields } ?: "*"
     private fun safePath(path: String): String = Regex("\\.[^.\\[\\]]+|\\[\\d+]").findAll(path)

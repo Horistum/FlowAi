@@ -46,7 +46,7 @@ class IntentDesignAnalyzer(registry: ModuleCatalog) {
 
     fun analyze(intent: IntentDocument): IntentDesignReport {
         val declaredSystems = intent.systems.associateBy { it.name }
-        val steps = intent.workflows.flatMap { it.steps }
+        val steps = intent.workflows.flatMap { it.operations() }
         val resolution = CanonicalIntentMeaningAuthority(registry).resolve(intent)
         val capabilities = steps.map { step ->
             val def = StandardIntentCatalog.byCapability[step.capability]

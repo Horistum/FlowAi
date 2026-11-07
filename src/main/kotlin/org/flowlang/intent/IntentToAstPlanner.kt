@@ -72,6 +72,7 @@ class IntentToAstPlanner(
         val validation = validated.report
         validation.assertValid()
         val bindings = validation.bindings.associateBy { it.stepId }
+        StructuredIntentPredicates.validate(intent, bindings, registry, expressions)
         val declaredWorkflows = intent.workflows.ifEmpty {
             listOf(IntentWorkflow(name = "main", kind = IntentWorkflowKind.CUSTOM))
         }
@@ -79,7 +80,7 @@ class IntentToAstPlanner(
         val systems = LinkedHashMap<String, SystemNode>()
         intent.systems.forEach { systems[it.name] = it.toSystemNode() }
 
-        val allSteps = declaredWorkflows.flatMap { it.steps }
+        val allSteps = declaredWorkflows.flatMap { it.operations() }
         ensureImplicitSystems(intent, allSteps, bindings, systems)
         val errorHandler = buildErrorHandler(intent)
         val sourceMetadata = IntentLoweringAuthority.sourceMetadata(intent, expressions)
@@ -93,7 +94,8 @@ class IntentToAstPlanner(
             .sortedBy { it.id }
 
         val lowered = declaredWorkflows.map { workflow ->
-            val statements = lowerOrderedSteps(workflow.steps, intent, bindings, validated.identities)
+            val statements = workflow.body?.let { lowerBody(it, intent, bindings, validated.identities) }
+                ?: lowerOrderedSteps(workflow.steps, intent, bindings, validated.identities)
             val imports = collectModules(statements, systems.values).sorted()
                 .map { name -> ModuleImportNode(name = name, version = registry.requireModule(name).version) }
             val control = if (multiple) {
@@ -169,7 +171,7 @@ class IntentToAstPlanner(
         requirements: List<ExecutionTopologyRequirement>,
         workflow: IntentWorkflow
     ): List<ExecutionTopologyRequirement> {
-        val stepIds = workflow.steps.map { it.id }.toSet()
+        val stepIds = workflow.operations().map { it.id }.toSet()
         return requirements.filter { requirement ->
             when (requirement.source) {
                 ExecutionTopologyRequirementSource.CANONICAL_WORKFLOW ->
@@ -250,6 +252,23 @@ class IntentToAstPlanner(
     ): List<StatementNode> {
         return orderedSteps(steps).flatMap { step ->
             lowerStep(step, intent, step.requires.map { identities.step(it).resultName }, bindings.getValue(step.id), identities.step(step.id))
+        }
+    }
+
+    private fun lowerBody(
+        body: List<IntentStatement>, intent: IntentDocument,
+        bindings: Map<String, IntentBindingEvidence>, identities: IntentIdentityIndex
+    ): List<StatementNode> = body.flatMap { statement ->
+        when (statement) {
+            is IntentOperation -> statement.operation.let { step ->
+                lowerStep(step, intent, step.requires.map { identities.step(it).resultName }, bindings.getValue(step.id), identities.step(step.id))
+            }
+            is IntentBranch -> listOf(IfNode(condition = statement.condition.toExpression(),
+                then = lowerBody(statement.then, intent, bindings, identities),
+                otherwise = lowerBody(statement.otherwise, intent, bindings, identities)))
+            is IntentLocalValue -> listOf(SetNode(name = IntentStepIdentity.resultSymbol(org.flowlang.identity.SemanticId.of(statement.id)), value = statement.value.toExpression()))
+            is IntentMerge -> listOf(SetNode(name = IntentStepIdentity.resultSymbol(org.flowlang.identity.SemanticId.of(statement.id)),
+                value = CallExpressionNode(function = "merge", args = statement.sources.map { it.toExpression() })))
         }
     }
 

@@ -1,0 +1,106 @@
+{
+  "intentVersion": "3.0",
+  "kind": "FlowIntentDocument",
+  "name": "recovery-selection",
+  "inputs": [
+    {
+      "name": "archive",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "name": "replica",
+      "type": "boolean",
+      "required": true
+    },
+    {
+      "name": "archiveHandle",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "replicaHandle",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "coldHandle",
+      "type": "text",
+      "required": true
+    }
+  ],
+  "workflows": [
+    {
+      "name": "main",
+      "kind": "CUSTOM",
+      "body": [
+        {
+          "kind": "branch",
+          "id": "chooseArchive",
+          "when": "ref:archive",
+          "then": [
+            {
+              "kind": "value",
+              "id": "archiveValue",
+              "value": "ref:archiveHandle"
+            }
+          ],
+          "otherwise": [
+            {
+              "kind": "branch",
+              "id": "chooseReplica",
+              "when": "ref:replica",
+              "then": [
+                {
+                  "kind": "value",
+                  "id": "replicaValue",
+                  "value": "ref:replicaHandle"
+                }
+              ],
+              "otherwise": [
+                {
+                  "kind": "value",
+                  "id": "coldValue",
+                  "value": "ref:coldHandle"
+                }
+              ]
+            },
+            {
+              "kind": "merge",
+              "id": "fallback",
+              "sources": [
+                "ref:replicaValue",
+                "ref:coldValue"
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "merge",
+          "id": "chosen",
+          "sources": [
+            "ref:archiveValue",
+            "ref:fallback"
+          ]
+        },
+        {
+          "kind": "operation",
+          "id": "unrelated",
+          "capability": "VERIFY",
+          "params": {
+            "resource": "other-ledger"
+          }
+        },
+        {
+          "kind": "operation",
+          "id": "verify",
+          "capability": "VERIFY",
+          "params": {
+            "resource": "ledger",
+            "target": "ref:chosen"
+          }
+        }
+      ]
+    }
+  ]
+}

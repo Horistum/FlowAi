@@ -1,0 +1,26 @@
+version: AI-A3-S2.1
+name: Structured authoring and conditional fidelity
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+proposal: docs/STRUCTURED_AUTHORING_PROPOSAL.md
+authorization:
+  source: Maintainer requested continuing development of the reviewed proposal.
+  baseline: 92eecca418350817b0feda3870e007e4721d0a6d
+  main: 81ecc2c91220a6a6121142cbb2d307f8ee90b277
+objective: Preserve structured authoring through the existing compiler and independently check conditional operations and joined value origins across domains.
+universalInvariant: Accepted operations retain their control context and accepted value uses retain canonical producer and path coverage.
+scope:
+- Versioned structured Intent reader, typed model, contextual validation and existing AST lowering.
+- Source-to-plan preservation evidence for conditions, local values and joins.
+- Versioned independent conditional requirements over the authorized graph.
+- Compatibility, adversarial cross-domain tests, installed proof and migration documentation.
+forbiddenScope:
+- No cloud execution, new runtime graph, provider-specific dispatch or arbitrary shell fallback.
+- No ownership, live-model, runtime outcome or recovery milestone promotion.
+- No weakening of availability, approval, authorization or evidence-integrity gates.
+validationPlan:
+- Reference Flow Source and equivalent structured Intent/AI compositions.
+- Negative condition, scope, approval, value-origin and merge mutations.
+- Existing-version regression, schema packaging, host continuation and budget checks.
+- Full Python/JVM, conformance, isolation and final head/merge GitHub validation.

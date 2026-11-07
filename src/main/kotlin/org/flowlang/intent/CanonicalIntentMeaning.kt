@@ -94,7 +94,7 @@ class CanonicalIntentMeaningAuthority(registry: ModuleCatalog) {
 
     fun resolve(intent: IntentDocument): CanonicalIntentResolution = CanonicalIntentResolution(
         meaning = canonicalize(intent),
-        bindings = intent.workflows.flatMap { workflow -> workflow.steps.map { resolveBinding(intent, it) } }
+        bindings = intent.workflows.flatMap { workflow -> workflow.operations().map { resolveBinding(intent, it) } }
     )
 
     private fun resolveBinding(intent: IntentDocument, step: IntentStep): IntentBindingEvidence {
@@ -245,9 +245,9 @@ class CanonicalIntentMeaningAuthority(registry: ModuleCatalog) {
                 CanonicalTopologyRequirementAuthority.requirementsFor(intent))
         }
 
-        /** Invalid identities have no resolvable requirement owners. Retain authored structure, never derived evidence. */
-        internal fun rejectedIdentityMeaning(intent: IntentDocument): CanonicalIntentMeaning {
-            require(IntentIdentityIndex.issues(intent).isNotEmpty()) { "A valid intent requires normal semantic resolution." }
+        /** Invalid identity or structure has no resolvable requirement owners. Retain the source inventory, never derived evidence. */
+        internal fun rejectedSourceMeaning(intent: IntentDocument): CanonicalIntentMeaning {
+            require(IntentIdentityIndex.issues(intent).isNotEmpty() || IntentStructure.issues(intent).isNotEmpty()) { "A valid intent requires normal semantic resolution." }
             return projectAuthoredMeaning(intent, emptyList(), emptyList())
         }
 
@@ -266,7 +266,7 @@ class CanonicalIntentMeaningAuthority(registry: ModuleCatalog) {
                 CanonicalIntentWorkflow(
                     name = workflow.name,
                     kind = workflow.kind,
-                    steps = workflow.steps.map { step ->
+                    steps = workflow.operations().map { step ->
                         CanonicalIntentStep(
                             id = step.id,
                             capability = step.capability,

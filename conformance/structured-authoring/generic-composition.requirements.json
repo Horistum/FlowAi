@@ -1,0 +1,163 @@
+{
+  "formatVersion": 3,
+  "request": {
+    "userText": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "origin": "REVIEWER_AUTHORED",
+  "confirmation": "CONFIRMED",
+  "reviewerId": "structured-fixture-reviewer",
+  "requirements": [
+    {
+      "id": "obligation-1",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "only-under",
+        "selector": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "alpha"
+          }
+        },
+        "scope": [
+          {
+            "predicate": "first",
+            "positive": true
+          }
+        ]
+      }
+    },
+    {
+      "id": "obligation-2",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "first",
+            "positive": true
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "VERIFY",
+            "parameters": {
+              "resource": "alpha"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "obligation-3",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "second",
+            "positive": true
+          },
+          {
+            "predicate": "third",
+            "positive": false
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "VERIFY",
+            "parameters": {
+              "resource": "beta"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "obligation-4",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "forbid-capability",
+        "capability": "PROVISION"
+      }
+    },
+    {
+      "id": "completion-true",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "first",
+            "positive": true
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "NOTIFY",
+            "parameters": {
+              "subject": "Complete"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "completion-false",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "on-path",
+        "scope": [
+          {
+            "predicate": "first",
+            "positive": false
+          }
+        ],
+        "check": {
+          "kind": "capability-count",
+          "selector": {
+            "capability": "NOTIFY",
+            "parameters": {
+              "subject": "Complete"
+            }
+          },
+          "minimum": 1,
+          "maximum": 1
+        }
+      }
+    },
+    {
+      "id": "beta-scope",
+      "sourceQuote": "Check alpha when first is true. When second is true, notify if third is true and check beta otherwise. Always notify completion.",
+      "check": {
+        "kind": "only-under",
+        "selector": {
+          "capability": "VERIFY",
+          "parameters": {
+            "resource": "beta"
+          }
+        },
+        "scope": [
+          {
+            "predicate": "second",
+            "positive": true
+          },
+          {
+            "predicate": "third",
+            "positive": false
+          }
+        ]
+      }
+    }
+  ]
+}

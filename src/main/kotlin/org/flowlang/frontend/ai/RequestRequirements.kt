@@ -37,6 +37,9 @@ data class RequirementSelector(
     JsonSubTypes.Type(LiteralParameter::class, name = "literal-parameter"),
     JsonSubTypes.Type(RequiredOrdering::class, name = "before"),
     JsonSubTypes.Type(RequiredValueFrom::class, name = "value-from"),
+    JsonSubTypes.Type(OnlyUnder::class, name = "only-under"),
+    JsonSubTypes.Type(OnPath::class, name = "on-path"),
+    JsonSubTypes.Type(JoinedValueFrom::class, name = "joined-value-from"),
     JsonSubTypes.Type(RequirementClarification::class, name = "clarification"),
     JsonSubTypes.Type(UnsupportedRequirement::class, name = "unsupported")
 )
@@ -54,6 +57,14 @@ data class RequiredValueFrom(
     val parameter: String,
     val path: List<String> = emptyList()
 ) : FidelityCheck
+/** Predicates name public Boolean inputs, not candidate-chosen statement IDs. */
+data class RequirementGuard(val predicate: String, val positive: Boolean = true)
+data class OnlyUnder(val selector: RequirementSelector, val scope: List<RequirementGuard>) : FidelityCheck
+/** Apply one existing positive obligation to every normally progressing path in scope. */
+data class OnPath(val scope: List<RequirementGuard>, val check: FidelityCheck) : FidelityCheck
+/** One expected origin per alternative; exactly one of input/producer must be supplied. */
+data class JoinedOrigin(val scope: List<RequirementGuard>, val input: String? = null, val producer: RequirementSelector? = null)
+data class JoinedValueFrom(val consumer: RequirementSelector, val parameter: String, val origins: List<JoinedOrigin>) : FidelityCheck
 data class RequirementClarification(val question: String) : FidelityCheck
 data class UnsupportedRequirement(val blocker: FidelityBlocker) : FidelityCheck
 

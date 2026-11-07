@@ -62,3 +62,10 @@ target remains an input error with exit 2.
 ## Next boundary
 
 [Independent request-fidelity review](REQUEST_FIDELITY_REVIEW.md) is available with `--requirements reviewed-requirements.json`. This selects proposal feedback version 2 and adds a separate bounded fidelity report; omitting the option retains version 1. [The bounded external host](BOUNDED_AUTHORING_HOST.md) supplies AI-A3 orchestration and correction; live evaluation remains a separate acceptance gate. This command supplies their deterministic input/result boundary; it does not perform model orchestration, execute workflows, attest model identity or establish calibrated confidence.
+
+## Structured proposals
+
+Envelope version 1 also admits explicit Intent 3.0 bodies. Independent requirements
+version 3 checks branch membership, per-path obligations and joined origins. See
+[structured authoring](STRUCTURED_AUTHORING.md) for the contract, migration and
+limits. Legacy Intent 2.0 and requirements 1/2 retain their meanings.
