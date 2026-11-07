@@ -137,8 +137,22 @@ a new run. Candidate response input errors remain eligible for bounded repair.
 An `awaiting-user` state publishes pending decision IDs and questions in `state.json`.
 No background call occurs. Supply an answer for every pending ID plus independently
 reviewed requirements that retain the original request, remove resolved clarification
-checks and declare `CONFIRMED`. Preserve existing hard constraints when filling
-missing values. Reviewer identity is caller-declared, not authenticated approval.
+checks and declare `CONFIRMED`. The host preserves every previously captured
+non-clarification requirement by its ID, source quote and complete check. A revision
+may reorder entries, add constraints and remove or replace answered clarification
+entries. It cannot remove, rename or rewrite an established check, even when the
+original requirements were provisional or model-extracted. Requirements introduced
+by an earlier clarification become equally protected in later rounds.
+
+The comparison uses captured JSON values; the host does not infer semantic
+equivalence or decide that a replacement is stronger. Duplicate requirement IDs are
+rejected before provider dispatch. A rejected continuation writes no answer or
+requirements revision and consumes no additional budget; the same waiting session
+can receive a corrected revision. To correct or change established constraints,
+start a new run with independently reviewed requirements and an explicit budget.
+The CLI returns exit 2 with a bounded host-authored diagnostic on a rejected
+revision. Raw filesystem/process exception messages remain suppressed.
+Reviewer identity is caller-declared, not authenticated approval.
 
 ```json
 {"runId":"RUN_ID_FROM_STATE","reviewerId":"operator","answers":[{"id":"question-0","answer":"The exact approved value is ..."}]}

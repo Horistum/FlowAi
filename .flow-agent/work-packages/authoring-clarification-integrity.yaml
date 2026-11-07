@@ -1,0 +1,31 @@
+version: AI-A3
+name: Preserve established requirements across authoring clarification
+status: candidate
+stream: architecture-recovery
+roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AI-A3
+parentWorkPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
+authorization:
+  source: Maintainer requested review of the latest merged PR and continuation of the next development part.
+  baseline: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+  predecessorPullRequest: 258
+objective: Prevent clarification from silently replacing established requirements while retaining explicit answers and bounded model continuation.
+architecturePurpose: Enforce the external host's immutable-request boundary across independently reviewed requirement revisions without adding compiler semantics.
+universalInvariant: Within one run, every existing non-clarification requirement retains its identity, source quote and complete check; new requirements can only add constraints.
+scope:
+- Compare the previous requirements with the proposed confirmed revision before saving answers or reserving another call.
+- Reject removed, replaced, renamed and duplicate requirement identities with an actionable host diagnostic.
+- Permit reordering, additional constraints and replacement or removal of answered clarification entries.
+- Demonstrate rejected mutations leave the session unchanged and a valid continuation still succeeds.
+forbiddenScope:
+- Semantic equivalence or weakening inference for requirements.
+- Editing original requests or changing operational constraints inside an existing run.
+- Model-authored expectations or leaking independent requirement values to the provider.
+- New target bindings, changed corpus fixtures, live model claims or milestone closure.
+completionEvidence:
+- Process regressions reject constraint weakening before a second provider dispatch or evidence mutation.
+- Installed compiler proof rejects removed approval and altered image, resource and ordering requirements.
+- Valid clarification and frozen-corpus replay continue to pass on the final head and merge candidate.
+validationPlan:
+- Existing Python tooling suite plus focused clarification mutations and continuation tests.
+- Installed product verification with the unchanged independently authored corpus.
+- Exact-head and merge-candidate GitHub Actions, conformance and physical product isolation.

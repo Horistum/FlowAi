@@ -341,6 +341,206 @@ class AuthoringHostTests(unittest.TestCase):
         self.assertEqual("1", self.counter.read_text())
         self.assertFalse(value["milestoneComplete"])
 
+    def test_clarification_cannot_remove_replace_or_rename_established_requirements(self):
+        self.requirements["requirements"].append({
+            "id": "verify", "sourceQuote": "Verify retained backup", "check": {
+                "kind": "capability-count", "selector": {"capability": "VERIFY"}, "minimum": 1}})
+        self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+        state = self.run_host()
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Confirm the original constraints."} for p in state["pending"]]}
+        confirmed = copy.deepcopy(self.requirements)
+        confirmed.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        mutations = []
+        removed = copy.deepcopy(confirmed)
+        removed["requirements"].pop(0)
+        mutations.append(removed)
+        for field, value in (("id", "renamed"), ("sourceQuote", "Verify retained backup"),
+                             ("check", {"kind": "forbid-capability", "capability": "BUILD"})):
+            changed = copy.deepcopy(confirmed)
+            changed["requirements"][0][field] = value
+            mutations.append(changed)
+        duplicate = copy.deepcopy(confirmed)
+        duplicate["requirements"].append(copy.deepcopy(duplicate["requirements"][0]))
+        mutations.append(duplicate)
+        before = read(self.out / "state.json")
+        paths = {str(p.relative_to(self.out)) for p in self.out.rglob("*")}
+        for index, changed in enumerate(mutations):
+            with self.subTest(mutation=index), self.assertRaises(HostError):
+                resume(self.out, canonical(answers), canonical(changed))
+            self.assertEqual(before, read(self.out / "state.json"))
+            self.assertEqual(paths, {str(p.relative_to(self.out)) for p in self.out.rglob("*")})
+            self.assertEqual("1", self.counter.read_text())
+            verify_inventory(self.out, state)
+        resumed = resume(self.out, canonical(answers), canonical(confirmed))
+        self.assertEqual("accepted", resumed["status"])
+        self.assertEqual(1, resumed["clarificationCount"])
+        self.assertEqual("2", self.counter.read_text())
+
+    def test_clarification_preserves_complete_nested_checks_and_json_value_types(self):
+        pairs = [
+            ({"kind": "forbid-effect", "domain": "STATE_RECOVERY", "operation": "DELETE"},
+             {"kind": "forbid-effect", "domain": "STATE_RECOVERY", "operation": "READ"}),
+            ({"kind": "require-effect", "selector": {"capability": "VERIFY"},
+              "domain": "STATE_RECOVERY", "operation": "READ", "resource": "backup"},
+             {"kind": "require-effect", "selector": {"capability": "VERIFY"},
+              "domain": "STATE_RECOVERY", "operation": "READ", "resource": "different"}),
+            ({"kind": "literal-parameter", "selector": {"capability": "VERIFY"},
+              "parameter": "resource", "expected": "backup"},
+             {"kind": "literal-parameter", "selector": {"capability": "VERIFY"},
+              "parameter": "resource", "expected": "different"}),
+            ({"kind": "before", "before": {"capability": "APPROVE"}, "after": {"capability": "DEPLOY"}},
+             {"kind": "before", "before": {"capability": "DEPLOY"}, "after": {"capability": "APPROVE"}}),
+            ({"kind": "capability-count", "selector": {"capability": "VERIFY"}, "minimum": 1},
+             {"kind": "capability-count", "selector": {"capability": "VERIFY"}, "minimum": True}),
+            ({"kind": "capability-count", "selector": {"capability": "VERIFY"}, "maximum": 1},
+             {"kind": "capability-count", "selector": {"capability": "VERIFY"}}),
+        ]
+        for index, (original, replacement) in enumerate(pairs):
+            with self.subTest(check=original["kind"], index=index):
+                self.out = self.root / str(index)
+                self.counter.unlink(missing_ok=True)
+                self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+                self.requirements["requirements"] = [{"id": "constraint", "sourceQuote": "Verify retained backup",
+                                                     "check": original}]
+                state = self.run_host()
+                answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+                    {"id": p["id"], "answer": "Confirmed."} for p in state["pending"]]}
+                revised = copy.deepcopy(self.requirements)
+                revised.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+                revised["requirements"][0]["check"] = replacement
+                before = read(self.out / "state.json")
+                with self.assertRaisesRegex(HostError, "established requirements"):
+                    resume(self.out, canonical(answers), canonical(revised))
+                self.assertEqual(before, read(self.out / "state.json"))
+                self.assertEqual("1", self.counter.read_text())
+
+    def test_clarification_can_add_and_reorder_constraints_and_resolve_questions(self):
+        self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+        self.requirements["requirements"].append({
+            "id": "resource", "sourceQuote": "retained backup",
+            "check": {"kind": "clarification", "question": "Which backup resource?"}})
+        state = self.run_host()
+        self.assertIn("requirement-resource", {p["id"] for p in state["pending"]})
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Use backup-2026; retain all existing constraints."} for p in state["pending"]]}
+        confirmed = copy.deepcopy(self.requirements)
+        confirmed.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        confirmed["requirements"][1]["check"] = {
+            "kind": "literal-parameter", "selector": {"capability": "VERIFY"},
+            "parameter": "resource", "expected": "backup-2026"}
+        confirmed["requirements"].append({
+            "id": "verify", "sourceQuote": "Verify retained backup",
+            "check": {"kind": "capability-count", "selector": {"capability": "VERIFY"}, "minimum": 1}})
+        confirmed["requirements"].reverse()
+        state = resume(self.out, canonical(answers), canonical(confirmed))
+        self.assertEqual("accepted", state["status"])
+        self.assertEqual(confirmed, loads(read(self.out / state["requirementsFile"])))
+        self.assertEqual("2", self.counter.read_text())
+        payload = loads(read(self.out / "attempt-001/provider-request.json"))
+        self.assertNotIn("forbid-capability", json.dumps(payload))
+        self.assertEqual(answers["answers"], payload["input"]["userAnswers"])
+        verify_inventory(self.out, state)
+
+    def test_clarification_can_remove_answered_question_with_remaining_constraints(self):
+        self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+        self.requirements["requirements"].append({
+            "id": "question", "sourceQuote": "retained backup",
+            "check": {"kind": "clarification", "question": "Confirm the backup selection."}})
+        state = self.run_host()
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Confirmed."} for p in state["pending"]]}
+        self.requirements["requirements"].pop()
+        self.requirements.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        state = resume(self.out, canonical(answers), canonical(self.requirements))
+        self.assertEqual("accepted", state["status"])
+        self.assertEqual("2", self.counter.read_text())
+
+    def test_requirement_identities_are_unambiguous_before_any_provider_dispatch(self):
+        original = copy.deepcopy(self.requirements)
+        for index, identity in enumerate((None, "", [], "forbidden")):
+            with self.subTest(identity=identity):
+                self.out = self.root / str(index)
+                self.requirements = copy.deepcopy(original)
+                self.requirements["requirements"].append({
+                    "id": identity, "sourceQuote": "Verify retained backup",
+                    "check": {"kind": "forbid-capability", "capability": "BUILD"}})
+                with self.assertRaises(HostError):
+                    self.run_host()
+                self.assertFalse(self.counter.exists())
+                self.assertFalse(self.out.exists())
+
+    def test_new_constraints_remain_protected_in_later_clarification_rounds(self):
+        self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+        question = {"response": {"normalizedIntent": {"marker": "accept"}, "report": {
+            "openQuestions": [{"severity": "REQUIRED", "question": "Confirm retention of these requirements."}]}}}
+        state = self.run_host([{"marker": "accept"}, question, {"marker": "accept"}])
+        def answers_for(current):
+            return canonical({"runId": current["runId"], "reviewerId": "test-reviewer", "answers": [
+                {"id": p["id"], "answer": "Confirmed."} for p in current["pending"]]})
+        confirmed = copy.deepcopy(self.requirements)
+        confirmed.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        confirmed["requirements"].append({
+            "id": "verify", "sourceQuote": "Verify retained backup",
+            "check": {"kind": "capability-count", "selector": {"capability": "VERIFY"}, "minimum": 1}})
+        state = resume(self.out, answers_for(state), canonical(confirmed))
+        self.assertEqual("awaiting-user", state["status"])
+        self.assertEqual(1, state["clarificationCount"])
+        self.assertEqual("2", self.counter.read_text())
+        weakened = copy.deepcopy(confirmed)
+        weakened["requirements"].pop()
+        answers = answers_for(state)
+        before = read(self.out / "state.json")
+        with self.assertRaisesRegex(HostError, "established requirements"):
+            resume(self.out, answers, canonical(weakened))
+        self.assertEqual(before, read(self.out / "state.json"))
+        self.assertEqual("2", self.counter.read_text())
+        state = resume(self.out, answers, canonical(confirmed))
+        self.assertEqual("accepted", state["status"])
+        self.assertEqual(2, state["clarificationCount"])
+        self.assertEqual(0, state["repairCount"])
+        self.assertEqual("3", self.counter.read_text())
+        self.assertEqual(324576, state["reservedTokens"])
+        verify_inventory(self.out, state)
+
+    def test_resume_cli_reports_constraint_conflict_without_echoing_external_data(self):
+        import subprocess
+        self.requirements.update(confirmation="PROVISIONAL", reviewerId=None)
+        state = self.run_host()
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Confirmed."} for p in state["pending"]]}
+        confirmed = copy.deepcopy(self.requirements)
+        confirmed.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        changed = copy.deepcopy(confirmed)
+        changed["requirements"][0]["sourceQuote"] = "private-value-not-for-diagnostics"
+        answers_path, requirements_path = self.root / "answers.json", self.root / "revision.json"
+        answers_path.write_bytes(canonical(answers))
+        requirements_path.write_bytes(canonical(changed))
+        command = [sys.executable, str(TOOLS / "author_proposal.py"), "resume", "--run", str(self.out),
+                   "--answers", str(answers_path), "--requirements", str(requirements_path)]
+        before = read(self.out / "state.json")
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(2, result.returncode)
+        self.assertIn("cannot remove or change established requirements", result.stderr)
+        self.assertIn("start a new run", result.stderr)
+        self.assertNotIn("private-value-not-for-diagnostics", result.stderr)
+        self.assertNotIn("Traceback", result.stderr)
+        self.assertEqual("", result.stdout)
+        self.assertEqual(before, read(self.out / "state.json"))
+        self.assertEqual("1", self.counter.read_text())
+        # Raw filesystem errors still suppress external paths and exception text.
+        requirements_path.unlink()
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(2, result.returncode)
+        self.assertNotIn(str(requirements_path), result.stderr)
+        self.assertIn("failed closed", result.stderr)
+        self.assertEqual(before, read(self.out / "state.json"))
+        requirements_path.write_bytes(canonical(confirmed))
+        result = subprocess.run(command, capture_output=True, text=True, timeout=10)
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertEqual("accepted", json.loads(result.stdout)["status"])
+        self.assertEqual("2", self.counter.read_text())
+
 
 if __name__ == "__main__":
     unittest.main()
