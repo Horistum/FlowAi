@@ -87,6 +87,12 @@ before implementation; later rows are planned, not implicitly implemented by S1.
 | S4 — reusable implementation composition | Select or propose bounded operation implementations from discovered contracts and existing tooling | One implementation mechanism composes multiple independently chosen requests; no project-name switches or arbitrary shell fallback; preview and postcondition checking are separate |
 | S5 — integrated system automation | Request, discovery, decisions, plan, artifact, isolated execution and independent outcome assessment | Repeat live-agent trials across creation, operational change and retirement/recovery; report blocked cases and cost; accepted constraint violations block completion |
 
+The proposed first S2 implementation slice is [structured authoring and conditional
+fidelity (S2.1)](STRUCTURED_AUTHORING_PROPOSAL.md). It specifies reusable branches,
+local values, explicit joins and independent conditional obligations. Its contract
+versions and acceptance portfolio are a design proposal, not implemented support or
+a change to the active roadmap selection.
+
 S2 must start with an authored infrastructure/data example that cannot be represented
 today and trace the exact loss or rejection. Reuse the canonical graph and existing
 Flow Source structures. Do not introduce a second execution model in the Python host.
