@@ -12,6 +12,7 @@ from authoring_host.contracts import canonical, loads, read, require, verify_inv
 from authoring_host.evaluation import evaluate
 from authoring_host.session import resume, start
 from verify_authoring_investigation import verify as verify_investigation
+from verify_system_automation import verify as verify_system_automation
 
 
 def verify(root, cli):
@@ -118,6 +119,7 @@ def verify(root, cli):
                           "processAttempts": attempts, "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
                           "milestoneComplete": False}))
     verify_investigation(root, cli)
+    verify_system_automation(root, cli)
 
 
 if __name__ == "__main__":

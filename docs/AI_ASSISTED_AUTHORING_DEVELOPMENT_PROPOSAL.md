@@ -1,5 +1,11 @@
 # AI-assisted automation authoring development proposal
 
+Current continuation: the maintainer selected the broader
+[system automation direction](SYSTEM_AUTOMATION_DIRECTION.md) on 2026-11-07.
+It defines the next slices around complete environment lifecycles and supersedes
+using application delivery or a pinned-file ledger as the primary product outcome.
+The historical baseline and AI-A1–AI-A4 acceptance gates below remain intact.
+
 Status: proposed implementation sequence. Baseline: `66a4ec77f18bd8fa04656783edc8ff7251d48b6d`, including merged PR #253. The maintainer requested this proposal after reviewing the concentration of recent work on adapter certification. Command names and new artifact fields below are proposed contracts.
 
 ## Product outcome

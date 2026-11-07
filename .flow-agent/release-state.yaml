@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 130
+stateVersion: 131
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -904,6 +904,24 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  systemAutomationFollowup:
+    selectedSlice: AI-A3-S1
+    workPackage: .flow-agent/work-packages/system-automation-direction.yaml
+    report: .flow-agent/reports/system-automation-direction.md
+    direction: docs/SYSTEM_AUTOMATION_DIRECTION.md
+    validation: local-python-jvm-conformance-installed-proof-passed-final-revision-ci-required
+    localPythonTests: 330
+    localJvmTests: 2443
+    localConformanceChecks: 299
+    installedSystemCases: 10
+    requirementsVersions: [1, 2]
+    promptVersion: bounded-authoring/2
+    scope: Resource-specific independent plan requirements and direct producer-consumer value checks.
+    nextSlice: S2-structured-operations-and-outcomes
+    autonomousDiscovery: false
+    runtimePostconditions: false
+    liveModelEvaluated: false
+    supportPromotion: false
   investigationFollowup:
     workPackage: .flow-agent/work-packages/evidence-driven-authoring.yaml
     report: .flow-agent/reports/evidence-driven-authoring.md

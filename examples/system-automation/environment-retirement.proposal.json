@@ -1,0 +1,140 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-system-automation-example",
+  "request": {
+    "userText": "Retire a temporary environment. Back up ephemeral-data to retained-vault and verify ephemeral-backup using the backup output. Check retirement-ownership for ephemeral-environment. Require manual approval after backup verification and the ownership check. Remove ephemeral-compute using the ownership result, then remove ephemeral-network using the compute removal result. Verify ephemeral-environment-absent using the network removal result. Never remove shared-network or retained-vault. Do not build or deploy an application.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "2.0",
+      "kind": "FlowIntentDocument",
+      "name": "environment-retirement",
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CLEANUP",
+          "steps": [
+            {
+              "id": "backup",
+              "capability": "BACKUP",
+              "params": {
+                "subject": "ephemeral-data",
+                "destination": "retained-vault"
+              },
+              "requires": [],
+              "produces": [
+                "backup_point"
+              ]
+            },
+            {
+              "id": "verify-backup",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "ephemeral-backup",
+                "criteria": "ref:backup_point"
+              },
+              "requires": [
+                "backup"
+              ],
+              "produces": [
+                "backup_check"
+              ]
+            },
+            {
+              "id": "ownership",
+              "capability": "POLICY_CHECK",
+              "params": {
+                "policy": "retirement-ownership",
+                "subject": "ephemeral-environment"
+              },
+              "requires": [],
+              "produces": [
+                "ownership_result"
+              ]
+            },
+            {
+              "id": "approval",
+              "capability": "APPROVE",
+              "params": {
+                "message": "Approve temporary environment removal"
+              },
+              "requires": [
+                "verify-backup",
+                "ownership"
+              ],
+              "produces": []
+            },
+            {
+              "id": "remove-compute",
+              "capability": "DEPROVISION",
+              "params": {
+                "target": "ephemeral-compute",
+                "safety": "ref:ownership_result"
+              },
+              "requires": [
+                "approval",
+                "ownership"
+              ],
+              "produces": [
+                "compute_removed"
+              ]
+            },
+            {
+              "id": "remove-network",
+              "capability": "DEPROVISION",
+              "params": {
+                "target": "ephemeral-network",
+                "safety": "ref:compute_removed"
+              },
+              "requires": [
+                "remove-compute"
+              ],
+              "produces": [
+                "network_removed"
+              ]
+            },
+            {
+              "id": "verify-absent",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "ephemeral-environment-absent",
+                "criteria": "ref:network_removed"
+              },
+              "requires": [
+                "remove-network"
+              ],
+              "produces": []
+            }
+          ]
+        }
+      ],
+      "failure": {
+        "notify": false,
+        "rollback": false,
+        "stopOnError": true
+      }
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "reviewer-authored-system-plan",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored planning example. No model, cloud account, runtime execution or provider support is claimed."
+      ],
+      "guardrails": [
+        "Compiler and target gates remain authoritative; listed verification operations are not observations."
+      ]
+    }
+  }
+}

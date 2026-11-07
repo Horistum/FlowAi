@@ -21,7 +21,12 @@ data class RequestRequirementsDocument(
 )
 
 data class RequestRequirement(val id: String, val sourceQuote: String, val check: FidelityCheck)
-data class RequirementSelector(val capability: StandardCapability, val workflow: String? = null)
+/** Semantic filters identify operations without depending on provider-chosen step IDs. */
+data class RequirementSelector(
+    val capability: StandardCapability,
+    val workflow: String? = null,
+    val parameters: Map<String, String> = emptyMap()
+)
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.PROPERTY, property = "kind")
 @JsonSubTypes(
@@ -31,6 +36,7 @@ data class RequirementSelector(val capability: StandardCapability, val workflow:
     JsonSubTypes.Type(RequiredEffect::class, name = "require-effect"),
     JsonSubTypes.Type(LiteralParameter::class, name = "literal-parameter"),
     JsonSubTypes.Type(RequiredOrdering::class, name = "before"),
+    JsonSubTypes.Type(RequiredValueFrom::class, name = "value-from"),
     JsonSubTypes.Type(RequirementClarification::class, name = "clarification"),
     JsonSubTypes.Type(UnsupportedRequirement::class, name = "unsupported")
 )
@@ -41,6 +47,13 @@ data class ForbiddenEffect(val domain: EffectDomain, val operation: EffectOperat
 data class RequiredEffect(val selector: RequirementSelector, val domain: EffectDomain, val operation: EffectOperation, val resource: String? = null) : FidelityCheck
 data class LiteralParameter(val selector: RequirementSelector, val parameter: String, val expected: String) : FidelityCheck
 data class RequiredOrdering(val before: RequirementSelector, val after: RequirementSelector) : FidelityCheck
+/** The named consumer parameter must directly read an output owned by the selected producer. */
+data class RequiredValueFrom(
+    val producer: RequirementSelector,
+    val consumer: RequirementSelector,
+    val parameter: String,
+    val path: List<String> = emptyList()
+) : FidelityCheck
 data class RequirementClarification(val question: String) : FidelityCheck
 data class UnsupportedRequirement(val blocker: FidelityBlocker) : FidelityCheck
 

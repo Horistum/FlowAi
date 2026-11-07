@@ -1,0 +1,27 @@
+version: AI-A3-S1
+name: System automation direction and resource-specific request fidelity
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
+authorization:
+  source: Maintainer explicitly requested broadening FlowAi beyond application builds to infrastructure, DevOps foundations and complex operational scenarios.
+  baseline: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+  replacesAcceptance: Pinned-file investigation alone does not satisfy the requested system automation outcome.
+objective: Describe and check multi-resource automation without assuming an application or source repository, while selecting the remaining structural, discovery and implementation work explicitly.
+universalInvariant: Independent requirements distinguish operations by canonical resource parameters and verify actual producer-to-consumer value dependencies; ordering or matching capability names cannot substitute for value ownership.
+scope:
+- Rewrite the product continuation around desired system changes, managed-system scope, operation contracts and independently checked outcomes.
+- Add requirements format version 2 with semantic parameter selectors and a direct value-from check over the authorized canonical graph.
+- Preserve format version 1 and its frozen corpus; never silently reinterpret old requirements.
+- Exercise infrastructure and DevOps foundation planning, data recovery rehearsal and environment retirement through the installed compiler.
+- Repair the discovered planner dependency-order inconsistency so mixed declared and value dependencies retain exact graph projection without weakening authorization.
+- Falsify resource substitution, wrong value producers, ordering-only dependencies, ambiguous selectors and invented build work.
+forbiddenScope:
+- No Azure runtime, generic shell escape, target support promotion or provider-specific semantic rules.
+- No new canonical graph, parallel intent model or implicit cross-workflow execution.
+- No claim that deterministic proposals establish autonomous model reasoning, runtime postconditions or AI-A3 completion.
+- No weakening of compiler admission, existing fidelity requirements or historical recovery gates.
+validationPlan:
+- Versioned reader/schema parity and focused production evaluator regressions.
+- Installed CLI proof with reviewed multi-resource cases and negative mutations.
+- Full Python and JVM regressions, conformance, module isolation and final exact-head/merge-candidate CI.

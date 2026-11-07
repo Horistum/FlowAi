@@ -1,5 +1,11 @@
 # Evidence-driven authoring investigation
 
+Scope reassessment: the maintainer found this ledger-only outcome insufficient for
+system automation. It remains supporting infrastructure; the selected continuation
+is [system automation direction](../../docs/SYSTEM_AUTOMATION_DIRECTION.md), with
+resource-specific fidelity and a broader lifecycle portfolio. The measurements below
+describe the earlier ledger revision and do not establish the new direction's success.
+
 Baseline: merged PR #258, `d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a`.
 The maintainer explicitly authorized the investigation extension discussed after
 reviewing REA's evidence/unknown pattern. This is an AI-A3 host followup, not

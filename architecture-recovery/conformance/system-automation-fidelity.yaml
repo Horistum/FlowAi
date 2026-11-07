@@ -1,0 +1,14 @@
+version: 1
+id: system-automation-resource-fidelity
+workPackage: .flow-agent/work-packages/system-automation-direction.yaml
+scope: Manually authored plans, not live-agent or external execution evidence.
+cases:
+- infrastructure-foundation
+- data-recovery-rehearsal
+- environment-retirement
+expected:
+  requiredCheck: ai.proposal.system-resource-fidelity
+  semanticAcceptance: accepted
+  requestFidelity: requirements-satisfied
+  wrongProducerFidelity: violated
+  renderAuthorized: false

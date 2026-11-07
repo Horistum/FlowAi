@@ -30,6 +30,13 @@ examples/proposals/existing-image-blocked.json
 examples/proposals/faithful.json
 examples/proposals/rejected.json
 examples/proposals/reviewed-requirements.json
+examples/system-automation/README.md
+examples/system-automation/data-recovery-rehearsal.proposal.json
+examples/system-automation/data-recovery-rehearsal.requirements.json
+examples/system-automation/environment-retirement.proposal.json
+examples/system-automation/environment-retirement.requirements.json
+examples/system-automation/infrastructure-foundation.proposal.json
+examples/system-automation/infrastructure-foundation.requirements.json
 modules/argocd.yaml
 modules/database.yaml
 modules/docker.yaml
@@ -85,6 +92,7 @@ schemas/reference-corpus-index.schema.json
 schemas/reference-intent-corpus.schema.json
 schemas/release-metadata-honesty-report.schema.json
 schemas/request-fidelity-review.schema.json
+schemas/request-requirements-v2.schema.json
 schemas/request-requirements.schema.json
 schemas/scenario-pack.schema.json
 schemas/standard-bundle-verification.schema.json

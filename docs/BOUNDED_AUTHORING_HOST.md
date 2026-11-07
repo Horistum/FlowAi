@@ -11,6 +11,14 @@ Python host, not a compiler dependency, workflow executor or deployment service.
 It uses only the standard library. AI-A3 remains open until live evaluation and
 held-out rendering evidence meet the development proposal's acceptance criteria.
 
+New runs use prompt version `bounded-authoring/2`, which covers infrastructure,
+identity, DevOps setup, data, recovery, maintenance and retirement alongside delivery.
+Application/repository defaults are optional. Requirements versions 1 and 2 are
+accepted and retained outside the provider prompt; their full authority remains in
+the product reader. Existing captured runs retain their captured instructions on
+resume. See the [version 2 migration](migrations/request-requirements-v2.md) and
+[selected development direction](SYSTEM_AUTOMATION_DIRECTION.md).
+
 ## Integration boundary
 
 Reuse the existing [command-reasoning/v2 protocol](https://github.com/Horistum/gitops-agent-control-plane/blob/main/docs/ADAPTERS.md)

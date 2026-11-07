@@ -30,6 +30,7 @@ object PublishedSchemaContracts {
         interchange("ai-normalization-report.schema.json"),
         interchange("ai-proposal.schema.json", "org.flowlang.frontend.ai.ExternalAiProposalReader"),
         interchange("request-requirements.schema.json", "org.flowlang.frontend.ai.RequestRequirementsReader"),
+        interchange("request-requirements-v2.schema.json", "org.flowlang.frontend.ai.RequestRequirementsReader"),
         interchange("request-fidelity-review.schema.json", "org.flowlang.frontend.ai.RequestFidelityEvaluator"),
         interchange("proposal-review-v2.schema.json", "org.flowlang.cli.honest.ProposalReviewReport"),
         interchange("artifact-evidence-report.schema.json"),

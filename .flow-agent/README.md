@@ -48,6 +48,14 @@ host. See [its contract](../docs/AUTHORING_INVESTIGATION.md). This extends host
 preparation without closing the live-model or held-out-render gates or changing
 target implementation authority.
 
+Within AI-A3, the selected continuation is now
+[system automation direction and resource fidelity](work-packages/system-automation-direction.yaml).
+Read the [direction and remaining slices](../docs/SYSTEM_AUTOMATION_DIRECTION.md)
+before selecting new implementation work. S1 checks multiple managed resources and
+their value dependencies; S2 must address structured authoring and resource/outcome
+semantics. Delivery-only demonstrations and pinned-file ledger tests do not satisfy
+this broader product outcome. Existing recovery and live-evaluation gates remain open.
+
 ## Mandatory Process
 
 Every development step must follow this cycle:

@@ -6,6 +6,7 @@ roadmapReference: .flow-agent/roadmap-architecture-recovery.yaml#AI-A3
 followupWorkPackages:
 - .flow-agent/work-packages/authoring-target-readiness.yaml
 - .flow-agent/work-packages/evidence-driven-authoring.yaml
+- .flow-agent/work-packages/system-automation-direction.yaml
 authorization:
   source: Maintainer requested AI-A3 after merging request-fidelity review.
   baseline: 81180222b0cf14867f468e8ff3dfffb0ca75aaa7

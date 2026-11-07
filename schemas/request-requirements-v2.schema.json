@@ -1,0 +1,487 @@
+{
+  "type": "object",
+  "properties": {
+    "formatVersion": {
+      "const": 2
+    },
+    "request": {
+      "type": "object",
+      "required": [
+        "userText"
+      ],
+      "properties": {
+        "userText": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "context": {
+          "type": "object",
+          "required": [],
+          "properties": {
+            "target": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "defaultApplication": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "defaultEnvironment": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "repositoryUrl": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "notificationChannel": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "knownSystems": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "mode": {
+          "enum": [
+            "DRAFT",
+            "STRICT",
+            "EXPLAIN",
+            "REPAIR"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "origin": {
+      "enum": [
+        "REVIEWER_AUTHORED",
+        "MODEL_EXTRACTED"
+      ]
+    },
+    "confirmation": {
+      "enum": [
+        "PROVISIONAL",
+        "CONFIRMED"
+      ]
+    },
+    "reviewerId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "requirements": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,63}$"
+          },
+          "sourceQuote": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "check": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "capability-count"
+                  },
+                  "selector": {
+                    "$ref": "#/$defs/selector"
+                  },
+                  "minimum": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 10000
+                  },
+                  "maximum": {
+                    "type": [
+                      "integer",
+                      "null"
+                    ],
+                    "minimum": 0,
+                    "maximum": 10000
+                  }
+                },
+                "required": [
+                  "kind",
+                  "selector"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "forbid-capability"
+                  },
+                  "capability": {
+                    "enum": [
+                      "CHECKOUT",
+                      "BUILD",
+                      "TEST",
+                      "PACKAGE",
+                      "BUILD_IMAGE",
+                      "PUSH_IMAGE",
+                      "DEPLOY",
+                      "VERIFY",
+                      "APPROVE",
+                      "ROLLBACK",
+                      "NOTIFY",
+                      "SYNC",
+                      "DATA_SYNC",
+                      "DATA_TRANSFORM",
+                      "TRANSFORM",
+                      "VALIDATE",
+                      "BACKUP",
+                      "RESTORE",
+                      "CLEANUP",
+                      "PROVISION",
+                      "DEPROVISION",
+                      "DATABASE_MIGRATE",
+                      "CERTIFICATE_RENEW",
+                      "CLUSTER_MAINTENANCE",
+                      "RUNBOOK",
+                      "INCIDENT",
+                      "SECRET_ROTATE",
+                      "POLICY_CHECK",
+                      "RUN_COMMAND",
+                      "CALL_API",
+                      "CUSTOM"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "capability"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "forbid-effect"
+                  },
+                  "domain": {
+                    "enum": [
+                      "SOFTWARE_DELIVERY",
+                      "DATA_TRANSFORMATION",
+                      "INFRASTRUCTURE_STATE",
+                      "STATE_RECOVERY",
+                      "COMMUNICATION",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "operation": {
+                    "enum": [
+                      "READ",
+                      "CREATE",
+                      "UPDATE",
+                      "DELETE",
+                      "UPSERT",
+                      "EXECUTE",
+                      "EMIT",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "resource": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "domain",
+                  "operation"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "require-effect"
+                  },
+                  "selector": {
+                    "$ref": "#/$defs/selector"
+                  },
+                  "domain": {
+                    "enum": [
+                      "SOFTWARE_DELIVERY",
+                      "DATA_TRANSFORMATION",
+                      "INFRASTRUCTURE_STATE",
+                      "STATE_RECOVERY",
+                      "COMMUNICATION",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "operation": {
+                    "enum": [
+                      "READ",
+                      "CREATE",
+                      "UPDATE",
+                      "DELETE",
+                      "UPSERT",
+                      "EXECUTE",
+                      "EMIT",
+                      "UNKNOWN"
+                    ]
+                  },
+                  "resource": {
+                    "type": [
+                      "string",
+                      "null"
+                    ],
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "kind",
+                  "selector",
+                  "domain",
+                  "operation"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "literal-parameter"
+                  },
+                  "selector": {
+                    "$ref": "#/$defs/selector"
+                  },
+                  "parameter": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                  },
+                  "expected": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "selector",
+                  "parameter",
+                  "expected"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "before"
+                  },
+                  "before": {
+                    "$ref": "#/$defs/selector"
+                  },
+                  "after": {
+                    "$ref": "#/$defs/selector"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "before",
+                  "after"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "clarification"
+                  },
+                  "question": {
+                    "type": "string",
+                    "pattern": "\\S"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "question"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "unsupported"
+                  },
+                  "blocker": {
+                    "enum": [
+                      "OPERATION_FAILURE_SCOPE",
+                      "EXTERNAL_ATOMICITY",
+                      "EXTERNAL_TRUST_EVIDENCE",
+                      "UNREPRESENTED_PREDICATE"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind",
+                  "blocker"
+                ],
+                "additionalProperties": false
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "kind": {
+                    "const": "value-from"
+                  },
+                  "producer": {
+                    "$ref": "#/$defs/selector"
+                  },
+                  "consumer": {
+                    "$ref": "#/$defs/selector"
+                  },
+                  "parameter": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+                  },
+                  "path": {
+                    "type": "array",
+                    "not": {
+                      "minItems": 9
+                    },
+                    "items": {
+                      "type": "string",
+                      "pattern": "\\S",
+                      "not": {
+                        "minLength": 129
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "kind",
+                  "producer",
+                  "consumer",
+                  "parameter"
+                ],
+                "additionalProperties": false
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "sourceQuote",
+          "check"
+        ],
+        "additionalProperties": false
+      },
+      "not": {
+        "minItems": 257
+      }
+    }
+  },
+  "required": [
+    "formatVersion",
+    "request",
+    "origin",
+    "confirmation",
+    "requirements"
+  ],
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flowlang.dev/schemas/request-requirements/2/request-requirements.schema.json",
+  "title": "Independent system automation requirements version 2",
+  "$defs": {
+    "selector": {
+      "type": "object",
+      "properties": {
+        "capability": {
+          "enum": [
+            "CHECKOUT",
+            "BUILD",
+            "TEST",
+            "PACKAGE",
+            "BUILD_IMAGE",
+            "PUSH_IMAGE",
+            "DEPLOY",
+            "VERIFY",
+            "APPROVE",
+            "ROLLBACK",
+            "NOTIFY",
+            "SYNC",
+            "DATA_SYNC",
+            "DATA_TRANSFORM",
+            "TRANSFORM",
+            "VALIDATE",
+            "BACKUP",
+            "RESTORE",
+            "CLEANUP",
+            "PROVISION",
+            "DEPROVISION",
+            "DATABASE_MIGRATE",
+            "CERTIFICATE_RENEW",
+            "CLUSTER_MAINTENANCE",
+            "RUNBOOK",
+            "INCIDENT",
+            "SECRET_ROTATE",
+            "POLICY_CHECK",
+            "RUN_COMMAND",
+            "CALL_API",
+            "CUSTOM"
+          ]
+        },
+        "workflow": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "minLength": 1
+        },
+        "parameters": {
+          "type": "object",
+          "propertyNames": {
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,63}$"
+          },
+          "additionalProperties": {
+            "type": "string",
+            "not": {
+              "minLength": 1001
+            }
+          },
+          "not": {
+            "minProperties": 17
+          }
+        }
+      },
+      "required": [
+        "capability"
+      ],
+      "additionalProperties": false
+    }
+  }
+}
