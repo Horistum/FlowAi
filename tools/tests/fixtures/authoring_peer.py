@@ -32,6 +32,8 @@ def compiler():
         code, fidelity, stage = 4, "unsupported", "REQUEST_FIDELITY"
     elif requirements["confirmation"] != "CONFIRMED":
         code, fidelity, stage = 3, "review-required", "REQUEST_FIDELITY"
+    elif any(q.get("severity") == "REQUIRED" for q in response.get("report", {}).get("openQuestions", [])):
+        code = 3
     elif "--render" in args:
         code, stage = 3, "MATERIALIZATION"
     report = {"formatVersion": 2, "exitCode": code, "stage": stage, "semanticAcceptance": semantic,

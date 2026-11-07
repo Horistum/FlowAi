@@ -76,3 +76,7 @@ Every development step must follow this cycle:
 
 All repository text must be English.
 Chat communication may use Czech or another user-preferred language.
+
+After merged PR #258, the [clarification-integrity followup](work-packages/authoring-clarification-integrity.yaml)
+protects established requirements across explicit continuation. The target-readiness
+correction is merged; live evaluation and executable held-out rendering remain open.

@@ -1,0 +1,22 @@
+version: AI-A3-S1-R1
+name: Reconcile system automation authoring with clarification integrity
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+authorization:
+  source: Maintainer requested resolving PR 260 conflicts after merging PR 259.
+  baseline: ed9c93e0a3dd2b4385862d6bcc5f73bc6d32b034
+  mergedMain: 9d45e478d0f1662de8cb0c72309634bd8e58f2e3
+objective: Preserve both merged clarification integrity and the broader system automation authoring behavior in the existing PR.
+universalInvariant: Every continuation preserves established requirements by identity and canonical JSON value before consuming budget, calling providers or changing captured evidence, including investigation and compiler clarification paths.
+scope:
+- Merge main into the existing authoring branch and retain both followup records.
+- Use the shared clarification integrity check for all continuation paths.
+- Verify immutable version 2 resource selectors and value ownership through investigation continuations.
+forbiddenScope:
+- No new runtime, requirements format, target binding or roadmap milestone closure.
+- No merge of PR 260 into main.
+validationPlan:
+- Full Python regression suite and focused investigation continuation checks.
+- Installed compiler authoring, investigation and system automation proofs.
+- Repository agent validation and final exact-head and merge-candidate GitHub checks.

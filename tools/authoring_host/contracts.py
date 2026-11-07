@@ -164,8 +164,30 @@ def requirements(data, request):
             "Invalid requirements inventory")
     for item in value["requirements"]:
         require(isinstance(item, dict) and isinstance(item.get("check"), dict), "Invalid requirements entry")
+    _requirements_by_id(value)
     # Full requirement schema and semantic authority remain in the product reader.
     return value
+
+
+def _requirements_by_id(document):
+    result = {}
+    for item in document["requirements"]:
+        identifier = item.get("id")
+        nonblank(identifier)
+        require(identifier not in result, "Duplicate requirement identity")
+        result[identifier] = item
+    return result
+
+
+def preserve_requirements(previous, revised):
+    """Clarification can fill gaps, but cannot redefine an existing check."""
+    before, after = _requirements_by_id(previous), _requirements_by_id(revised)
+    for identifier, item in before.items():
+        if item["check"].get("kind") == "clarification":
+            continue
+        # Compare captured JSON values, not Python equality (True == 1).
+        require(identifier in after and canonical(item) == canonical(after[identifier]),
+                "Clarification cannot remove or change established requirements; start a new run for revised constraints")
 
 
 def contains_credential(data, environment):

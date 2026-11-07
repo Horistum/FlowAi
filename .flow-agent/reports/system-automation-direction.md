@@ -2,6 +2,7 @@
 
 Baseline: merged PR #258 (`d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a`).
 Work package: [AI-A3-S1](../work-packages/system-automation-direction.yaml).
+For integration with merged PR #259, see the [reconciliation report](authoring-pr260-reconciliation.md).
 The maintainer requested whole infrastructure/DevOps and complex operational scenarios.
 Pinned-file investigation is retained as support, not accepted as that product outcome.
 

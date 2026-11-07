@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 131
+stateVersion: 132
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -904,6 +904,17 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  reconciliationFollowup:
+    workPackage: .flow-agent/work-packages/authoring-pr260-reconciliation.yaml
+    report: .flow-agent/reports/authoring-pr260-reconciliation.md
+    mergedMain: 9d45e478d0f1662de8cb0c72309634bd8e58f2e3
+    predecessorPullRequest: 259
+    validation: local-python-conformance-installed-proof-passed-final-revision-ci-required
+    localPythonTests: 338
+    localConformanceChecks: 299
+    installedClarificationMutations: 5
+    installedInvestigationCases: 6
+    installedSystemCases: 10
   systemAutomationFollowup:
     selectedSlice: AI-A3-S1
     workPackage: .flow-agent/work-packages/system-automation-direction.yaml
@@ -950,5 +961,12 @@ recoveryBoundedAuthoring:
   milestoneComplete: false
   liveEvaluationGate: pending-configured-provider-and-budget
   heldOutRenderGate: pending-target-evidence
+  clarificationFollowup:
+    workPackage: .flow-agent/work-packages/authoring-clarification-integrity.yaml
+    report: .flow-agent/reports/authoring-clarification-integrity.md
+    predecessorMain: d4f98d525a8ad4ae9a6fc051155e75dcb4752f1a
+    predecessorPullRequest: 258
+    validation: current-revision-ci-required
+    localExecution: unavailable
   supportPromotion: false
   recoveryClosure: false

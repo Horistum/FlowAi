@@ -187,7 +187,7 @@ class InvestigationTests(unittest.TestCase):
                    "answers": [{"id": "investigation:missing", "answer": "Use ledger-backup."}]}
         changed = copy.deepcopy(self.requirements)
         changed["requirements"][0]["check"]["capability"] = "BACKUP"
-        with self.assertRaisesRegex(HostError, "hard requirements"):
+        with self.assertRaisesRegex(HostError, "established requirements"):
             resume(self.out, canonical(answers), canonical(changed))
         self.assertEqual("2", self.counter.read_text())
         state["investigationSteps"] = 0
@@ -195,6 +195,68 @@ class InvestigationTests(unittest.TestCase):
         with self.assertRaisesRegex(HostError, "step ledger"):
             resume(self.out, canonical(answers), canonical(self.requirements))
         self.assertEqual("2", self.counter.read_text())
+
+    def test_version_two_constraints_survive_investigation_and_compiler_clarifications(self):
+        self.configure()
+        self.requirements["formatVersion"] = 2
+        self.requirements["requirements"].extend([
+            {"id": "scoped-verification", "sourceQuote": "Verify retained backup", "check": {
+                "kind": "capability-count", "selector": {
+                    "capability": "VERIFY", "parameters": {"resource": "ledger-backup"}}, "minimum": 1}},
+            {"id": "backup-owner", "sourceQuote": "Verify retained backup", "check": {
+                "kind": "value-from", "producer": {
+                    "capability": "BACKUP", "parameters": {"resource": "ledger-backup"}},
+                "consumer": {"capability": "VERIFY", "parameters": {"resource": "ledger-backup"}},
+                "parameter": "criteria", "path": ["backup"]}}])
+        compiler_question = self.action("propose")
+        compiler_question["response"]["response"]["report"]["openQuestions"] = [
+            {"severity": "REQUIRED", "question": "Confirm the retained backup verification."}]
+        state = self.run_host([self.action("propose", unknowns=[self.unknown("decision")]),
+                               compiler_question, self.action("propose")])
+        for round_number, expected_attempt in enumerate(("investigation-awaiting-user", "reviewed")):
+            with self.subTest(continuation=expected_attempt):
+                self.assertEqual("awaiting-user", state["status"])
+                self.assertEqual(expected_attempt, state["attempts"][-1]["status"])
+                answers = canonical({"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+                    {"id": p["id"], "answer": "Verify ledger-backup; retain every constraint."}
+                    for p in state["pending"]]})
+                mutations = []
+                for index, path, replacement in (
+                        (1, ("selector", "parameters", "resource"), "other-backup"),
+                        (1, ("minimum",), True),
+                        (2, ("producer", "parameters", "resource"), "other-backup"),
+                        (2, ("consumer", "parameters", "resource"), "other-backup"),
+                        (2, ("path",), ["other"]),
+                        (2, ("parameter",), "resource")):
+                    changed = copy.deepcopy(self.requirements)
+                    target = changed["requirements"][index]["check"]
+                    for part in path[:-1]:
+                        target = target[part]
+                    target[path[-1]] = replacement
+                    mutations.append(changed)
+                removed = copy.deepcopy(self.requirements)
+                removed["requirements"].pop()
+                mutations.append(removed)
+                before = {p.relative_to(self.out): p.read_bytes() for p in self.out.rglob("*") if p.is_file()}
+                for changed in mutations:
+                    with self.assertRaisesRegex(HostError, "established requirements"):
+                        resume(self.out, answers, canonical(changed))
+                    self.assertEqual(before, {p.relative_to(self.out): p.read_bytes()
+                                              for p in self.out.rglob("*") if p.is_file()})
+                    self.assertEqual(str(round_number + 1), self.counter.read_text())
+                    self.ledger(state)
+                if round_number == 0:
+                    self.requirements["requirements"].append({
+                        "id": "approved-scope", "sourceQuote": "Do not restore", "check": {
+                            "kind": "capability-count", "selector": {
+                                "capability": "RESTORE", "parameters": {"resource": "production"}},
+                            "minimum": 0, "maximum": 0}})
+                state = resume(self.out, answers, canonical(self.requirements))
+        self.assertEqual("accepted", state["status"])
+        self.assertEqual(2, state["clarificationCount"])
+        self.assertEqual("3", self.counter.read_text())
+        self.assertEqual(self.requirements, loads(read(self.out / state["requirementsFile"])))
+        self.assertEqual("addressed", self.ledger(state)["unknowns"][-1]["status"])
 
     def test_schema_references_resolve_for_the_opt_in_envelope(self):
         from authoring_host.contracts import public_contracts

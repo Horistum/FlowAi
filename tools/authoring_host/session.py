@@ -8,7 +8,7 @@ from pathlib import Path
 import uuid
 
 from .contracts import (HostError, INSTRUCTIONS, PROMPT_VERSION, canonical, checkpoint, contains_credential, digest,
-                        integer, keys, loads, nonblank, priced_usage, public_contracts, read,
+                        integer, keys, loads, nonblank, preserve_requirements, priced_usage, public_contracts, read,
                         require, requirements, reservation, save, validate_config, verify_inventory)
 from .transport import capability_catalog, compiler_environment, compiler_fingerprint, credentials, invoke
 from . import investigation
@@ -87,13 +87,13 @@ def resume(directory, answers_data, requirements_data):
         verify_inventory(root, state)
         require(state["status"] == "awaiting-user", "Only an explicit clarification can resume; interrupted calls never replay")
         last = state["attempts"][-1]
+        prior_requirements = loads(read(root / state["requirementsFile"]))
         investigation_pending = last.get("status") == "investigation-awaiting-user"
         if investigation_pending:
             require(state["pending"] == investigation.pending(investigation.load(root, state)), "Pending decisions changed")
         else:
             require(last.get("review", {}).get("exitCode") == 3, "Captured compiler review does not request a user decision")
             previous = loads(read(root / last["directory"] / "proposal.json"))
-            prior_requirements = loads(read(root / state["requirementsFile"]))
             require(state["pending"] == _pending(previous, prior_requirements, last["review"]), "Pending decisions changed")
         answers = loads(answers_data)
         keys(answers, ("runId", "reviewerId", "answers"))
@@ -113,11 +113,7 @@ def resume(directory, answers_data, requirements_data):
                 "Resumption requires caller-confirmed requirements and matching reviewer attribution")
         require(not any(i["check"].get("kind") == "clarification" for i in reviewed["requirements"]),
                 "Requirements still contain unanswered decisions")
-        if "investigationFile" in state:
-            prior = loads(read(root / state["requirementsFile"]))
-            require(all(item in reviewed["requirements"] for item in prior["requirements"]
-                        if item["check"].get("kind") != "clarification"),
-                    "Investigation answers cannot remove or change existing hard requirements")
+        preserve_requirements(prior_requirements, reviewed)
         config = validate_config(loads(read(root / "config.json")))
         environment = credentials(config)
         if "investigation" in config:
