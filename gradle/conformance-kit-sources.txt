@@ -85,6 +85,7 @@ org/flowlang/conformance/ExplicitMergeConformanceChecks.kt
 org/flowlang/conformance/ExportManifestVerifierChecks.kt
 org/flowlang/conformance/ExternalCorpusContracts.kt
 org/flowlang/conformance/ExternalCorpusLoader.kt
+org/flowlang/conformance/FailureRegionChecks.kt
 org/flowlang/conformance/FlowSensitiveConformanceChecks.kt
 org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/GitHubActionsConditionRuntimeCertification.kt

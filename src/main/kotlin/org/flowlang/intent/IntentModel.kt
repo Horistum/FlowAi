@@ -120,6 +120,11 @@ data class IntentBranch(override val id: String, val condition: IntentValue,
                         val then: List<IntentStatement>, val otherwise: List<IntentStatement> = emptyList()) : IntentStatement
 data class IntentLocalValue(override val id: String, val value: IntentValue) : IntentStatement
 data class IntentMerge(override val id: String, val sources: List<IntentRef>) : IntentStatement
+enum class IntentFailureDisposition { PROPAGATE, RECOVER }
+data class IntentAttempt(override val id: String, val body: List<IntentStatement>,
+                         val onFailure: List<IntentStatement>, val disposition: IntentFailureDisposition) : IntentStatement
+data class IntentRetry(override val id: String, val maxAttempts: Int, val delaySeconds: Int,
+                       val body: List<IntentStatement>) : IntentStatement
 
 fun IntentWorkflow.operations(): List<IntentStep> =
     if (body == null) steps else IntentStructure.visits(this).mapNotNull { (it.statement as? IntentOperation)?.operation }

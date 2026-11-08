@@ -40,6 +40,8 @@ data class RequirementSelector(
     JsonSubTypes.Type(OnlyUnder::class, name = "only-under"),
     JsonSubTypes.Type(OnPath::class, name = "on-path"),
     JsonSubTypes.Type(JoinedValueFrom::class, name = "joined-value-from"),
+    JsonSubTypes.Type(RetryRegion::class, name = "retry-region"),
+    JsonSubTypes.Type(FailureRegion::class, name = "failure-region"),
     JsonSubTypes.Type(RequirementClarification::class, name = "clarification"),
     JsonSubTypes.Type(UnsupportedRequirement::class, name = "unsupported")
 )
@@ -65,6 +67,11 @@ data class OnPath(val scope: List<RequirementGuard>, val check: FidelityCheck) :
 /** One expected origin per alternative; exactly one of input/producer must be supplied. */
 data class JoinedOrigin(val scope: List<RequirementGuard>, val input: String? = null, val producer: RequirementSelector? = null)
 data class JoinedValueFrom(val consumer: RequirementSelector, val parameter: String, val origins: List<JoinedOrigin>) : FidelityCheck
+/** Exact ordered operation membership; selectors never name author-chosen region IDs. */
+data class RetryRegion(val operations: List<RequirementSelector>, val maxAttempts: Int, val delaySeconds: Int) : FidelityCheck
+enum class RequiredFailureDisposition { PROPAGATE, RECOVER }
+data class FailureRegion(val protected: List<RequirementSelector>, val handler: List<RequirementSelector>,
+                         val disposition: RequiredFailureDisposition) : FidelityCheck
 data class RequirementClarification(val question: String) : FidelityCheck
 data class UnsupportedRequirement(val blocker: FidelityBlocker) : FidelityCheck
 

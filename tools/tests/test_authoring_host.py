@@ -293,7 +293,7 @@ class AuthoringHostTests(unittest.TestCase):
 
     def test_output_schema_resolves_nested_intent_references_without_repo_paths(self):
         schema = public_contracts(ROOT)["outputSchema"]
-        self.assertEqual({"oneOf": [{"$ref": "#/$defs/intent"}, {"$ref": "#/$defs/structuredIntent"}]}, schema["properties"]["normalizedIntent"])
+        self.assertEqual({"oneOf": [{"$ref": "#/$defs/intent"}, {"$ref": "#/$defs/structuredIntent"}, {"$ref": "#/$defs/recoveryIntent"}]}, schema["properties"]["normalizedIntent"])
         reference = schema["$defs"]["intent"]["properties"]["workflows"]["items"]["$ref"]
         self.assertEqual("#/$defs/intent/$defs/workflow", reference)
         self.assertNotIn("$id", schema["$defs"]["intent"])
@@ -342,6 +342,26 @@ class AuthoringHostTests(unittest.TestCase):
             evaluate(self.config, ROOT / "conformance/authoring/corpus.json", self.root / "suite",
                      target="jenkins", max_cost_microusd=1)
         self.assertFalse(self.counter.exists())
+
+    def test_recovery_obligations_cannot_be_weakened_during_clarification(self):
+        self.requirements.update(formatVersion=4, confirmation="PROVISIONAL", reviewerId=None)
+        self.requirements["requirements"][0]["check"] = {
+            "kind": "failure-region", "protected": [{"capability": "PROVISION"}],
+            "handler": [{"capability": "NOTIFY"}], "disposition": "PROPAGATE"}
+        state = self.run_host()
+        answers = {"runId": state["runId"], "reviewerId": "test-reviewer", "answers": [
+            {"id": p["id"], "answer": "Confirmed."} for p in state["pending"]]}
+        revised = copy.deepcopy(self.requirements)
+        revised.update(confirmation="CONFIRMED", reviewerId="test-reviewer")
+        before, calls = read(self.out / "state.json"), self.counter.read_bytes()
+        for mutate in (lambda c: c.update(disposition="RECOVER"), lambda c: c.update(handler=[])):
+            weakened = copy.deepcopy(revised)
+            mutate(weakened["requirements"][0]["check"])
+            with self.assertRaisesRegex(HostError, "established requirements"):
+                resume(self.out, canonical(answers), canonical(weakened))
+            self.assertEqual(before, read(self.out / "state.json"))
+            self.assertEqual(calls, self.counter.read_bytes())
+        self.assertEqual("accepted", resume(self.out, canonical(answers), canonical(revised))["status"])
 
     def test_evaluation_stops_on_transport_error_and_never_claims_live_completion(self):
         self.responses.write_text('["fail"]')

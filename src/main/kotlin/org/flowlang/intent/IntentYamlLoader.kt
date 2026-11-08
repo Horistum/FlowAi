@@ -32,7 +32,7 @@ object IntentYamlLoader {
         val kind = root.optionalString("kind", "$.kind", sourceName) ?: "FlowIntentDocument"
         if (kind != "FlowIntentDocument") fail("UNSUPPORTED_INTENT_KIND", "$.kind", sourceName, "Unsupported intent kind '$kind'.")
         val intentVersion = root.optionalString("intentVersion", "$.intentVersion", sourceName) ?: FlowStandardVersions.INTENT_VERSION
-        if (intentVersion !in setOf(FlowStandardVersions.INTENT_VERSION, IntentStructure.VERSION)) {
+        if (intentVersion !in setOf(FlowStandardVersions.INTENT_VERSION, IntentStructure.VERSION, IntentStructure.RECOVERY_VERSION)) {
             fail(
                 "UNSUPPORTED_INTENT_VERSION",
                 "$.intentVersion",
@@ -113,7 +113,7 @@ object IntentYamlLoader {
     }
 
     private fun Map<String, Any?>.toIntentWorkflow(path: String, source: String, version: String, budget: IntArray): IntentWorkflow {
-        val structured = version == IntentStructure.VERSION
+        val structured = IntentStructure.isStructured(version)
         requireOnly(setOf("name", "kind", if (structured) "body" else "steps"), path, source)
         if (structured && !containsKey("body")) fail("MISSING_REQUIRED_INTENT_FIELD", "$path.body", source, "Structured Intent requires an explicit body.")
         val name = requiredString("name", "$path.name", source)
@@ -121,11 +121,11 @@ object IntentYamlLoader {
             name = name,
             kind = strictEnum(optionalString("kind", "$path.kind", source) ?: "CUSTOM", "UNKNOWN_WORKFLOW_KIND", "$path.kind", source),
             steps = if (structured) emptyList() else objectList("steps", "$path.steps", source).mapIndexed { index, value -> value.toIntentStep("$path.steps[$index]", source) },
-            body = if (structured) toBody("body", path, source, budget, 0) else null
+            body = if (structured) toBody("body", path, source, budget, 0, version) else null
         )
     }
 
-    private fun Map<String, Any?>.toBody(key: String, path: String, source: String, budget: IntArray, depth: Int): List<IntentStatement> {
+    private fun Map<String, Any?>.toBody(key: String, path: String, source: String, budget: IntArray, depth: Int, version: String): List<IntentStatement> {
         if (depth > IntentStructure.MAX_DEPTH) fail("INTENT_STRUCTURE_LIMIT", path, source, "Structured Intent nesting limit exceeded.")
         return objectList(key, "$path.$key", source).mapIndexed { index, node ->
             val location = "$path.$key[$index]"
@@ -137,13 +137,35 @@ object IntentYamlLoader {
                     node.requireOnly(setOf("kind", "id", "when", "then", "otherwise"), location, source)
                     if (!node.containsKey("when") || !node.containsKey("then")) fail("MISSING_REQUIRED_INTENT_FIELD", location, source, "Branch requires when and then.")
                     IntentBranch(id, node["when"].toIntentValue("$location.when", source),
-                        node.toBody("then", location, source, budget, depth + 1),
-                        node.toBody("otherwise", location, source, budget, depth + 1))
+                        node.toBody("then", location, source, budget, depth + 1, version),
+                        node.toBody("otherwise", location, source, budget, depth + 1, version))
                 }
                 "value" -> {
                     node.requireOnly(setOf("kind", "id", "value"), location, source)
                     if (!node.containsKey("value")) fail("MISSING_REQUIRED_INTENT_FIELD", "$location.value", source, "Local value requires value.")
                     IntentLocalValue(id, node["value"].toIntentValue("$location.value", source))
+                }
+                "attempt" -> {
+                    if (version != IntentStructure.RECOVERY_VERSION) fail("RECOVERY_INTENT_VERSION_REQUIRED", location, source, "Failure regions require Intent 3.1.")
+                    node.requireOnly(setOf("kind", "id", "body", "onFailure", "disposition"), location, source)
+                    val disposition = when (node.requiredString("disposition", "$location.disposition", source)) {
+                        "propagate" -> IntentFailureDisposition.PROPAGATE
+                        "recover" -> IntentFailureDisposition.RECOVER
+                        else -> fail("INVALID_FAILURE_DISPOSITION", location, source, "Expected propagate or recover.")
+                    }
+                    IntentAttempt(id, node.toBody("body", location, source, budget, depth + 1, version),
+                        node.toBody("onFailure", location, source, budget, depth + 1, version), disposition)
+                }
+                "retry" -> {
+                    if (version != IntentStructure.RECOVERY_VERSION) fail("RECOVERY_INTENT_VERSION_REQUIRED", location, source, "Retries require Intent 3.1.")
+                    node.requireOnly(setOf("kind", "id", "body", "maxAttempts", "delaySeconds"), location, source)
+                    fun bound(key: String, range: IntRange): Int {
+                        val value = node[key]
+                        if (value !is Int || value !in range) fail("INVALID_RETRY_POLICY", "$location.$key", source, "Expected a bounded integer.")
+                        return value
+                    }
+                    IntentRetry(id, bound("maxAttempts", 1..100), bound("delaySeconds", 0..3600),
+                        node.toBody("body", location, source, budget, depth + 1, version))
                 }
                 "merge" -> {
                     node.requireOnly(setOf("kind", "id", "sources"), location, source)

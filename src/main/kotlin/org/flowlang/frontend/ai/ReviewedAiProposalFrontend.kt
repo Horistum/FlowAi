@@ -190,6 +190,8 @@ private fun IntentStatement.snapshot(): IntentStatement = when (this) {
     is IntentBranch -> copy(condition = condition.snapshot(), then = then.map { it.snapshot() }, otherwise = otherwise.map { it.snapshot() })
     is IntentLocalValue -> copy(value = value.snapshot())
     is IntentMerge -> copy(sources = sources.map { it.copy(path = it.path.toList()) })
+    is IntentAttempt -> copy(body = body.map { it.snapshot() }, onFailure = onFailure.map { it.snapshot() })
+    is IntentRetry -> copy(body = body.map { it.snapshot() })
 }
 
 private fun IntentValue?.snapshotOrNull(): IntentValue? = this?.snapshot()

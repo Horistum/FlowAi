@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.recovery.portfolio
+introducedIn: "AI-A3-S2.3"
+description: Three unrelated operation lifecycles preserve their explicit failure and retry regions.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.recovery.portfolio
+  runtimeExecutionAssessed: false

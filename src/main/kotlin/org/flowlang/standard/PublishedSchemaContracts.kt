@@ -60,6 +60,8 @@ object PublishedSchemaContracts {
         interchange("intent-capability-validation-report.schema.json", "org.flowlang.intent.IntentValidationReport"),
         interchange("intent-decision-report.schema.json"),
         interchange("intent-design-report.schema.json"),
+        interchange("intent-v3.1.schema.json", "org.flowlang.intent.IntentDocument + org.flowlang.intent.IntentYamlLoader"),
+        interchange("request-requirements-v4.schema.json", "org.flowlang.frontend.ai.RequestRequirementsReader"),
         interchange("intent-v3.schema.json", "org.flowlang.intent.IntentDocument + org.flowlang.intent.IntentYamlLoader"),
         interchange("intent.schema.json", "org.flowlang.intent.IntentDocument + org.flowlang.intent.IntentYamlLoader"),
         interchange("module.schema.json", "org.flowlang.modules.CanonicalModuleLoader"),

@@ -269,6 +269,12 @@ class IntentToAstPlanner(
             is IntentLocalValue -> listOf(SetNode(name = IntentStepIdentity.resultSymbol(org.flowlang.identity.SemanticId.of(statement.id)), value = statement.value.toExpression()))
             is IntentMerge -> listOf(SetNode(name = IntentStepIdentity.resultSymbol(org.flowlang.identity.SemanticId.of(statement.id)),
                 value = CallExpressionNode(function = "merge", args = statement.sources.map { it.toExpression() })))
+            is IntentRetry -> listOf(RetryNode(policy = RetryPolicyNode(max = statement.maxAttempts,
+                delay = "${statement.delaySeconds}s", backoff = "fixed"), steps = lowerBody(statement.body, intent, bindings, identities)))
+            is IntentAttempt -> listOf(TryNode(steps = lowerBody(statement.body, intent, bindings, identities),
+                errorHandler = ErrorHandlerNode(steps = lowerBody(statement.onFailure, intent, bindings, identities) +
+                    if (statement.disposition == IntentFailureDisposition.PROPAGATE)
+                        listOf(FailNode(message = ReferenceNode(path = listOf("error")))) else emptyList())))
         }
     }
 

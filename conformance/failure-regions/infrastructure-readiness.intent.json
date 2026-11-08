@@ -1,0 +1,64 @@
+{
+  "intentVersion": "3.1",
+  "kind": "FlowIntentDocument",
+  "name": "infrastructure-readiness",
+  "workflows": [
+    {
+      "name": "main",
+      "kind": "CUSTOM",
+      "body": [
+        {
+          "kind": "operation",
+          "id": "approval",
+          "capability": "APPROVE"
+        },
+        {
+          "kind": "attempt",
+          "id": "change",
+          "disposition": "propagate",
+          "body": [
+            {
+              "kind": "operation",
+              "id": "create",
+              "capability": "PROVISION",
+              "params": {
+                "resource": "test-worker"
+              },
+              "requires": [
+                "approval"
+              ]
+            },
+            {
+              "kind": "retry",
+              "id": "readiness",
+              "maxAttempts": 3,
+              "delaySeconds": 5,
+              "body": [
+                {
+                  "kind": "operation",
+                  "id": "ready",
+                  "capability": "VERIFY",
+                  "params": {
+                    "resource": "test-worker",
+                    "criteria": "ready"
+                  }
+                }
+              ]
+            }
+          ],
+          "onFailure": [
+            {
+              "kind": "operation",
+              "id": "notify",
+              "capability": "NOTIFY",
+              "params": {
+                "subject": "worker-failure",
+                "body": "Worker setup failed"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

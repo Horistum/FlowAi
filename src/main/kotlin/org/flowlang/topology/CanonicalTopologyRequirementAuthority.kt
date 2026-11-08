@@ -10,7 +10,7 @@ object CanonicalTopologyRequirementAuthority {
         // Version 3 carries explicit control and value structure. Let the existing
         // PlanningTopologyAuthority derive its complete requirements from those nodes,
         // as it does for Flow Source; do not add a second flat workflow scope.
-        if (intent.intentVersion == org.flowlang.intent.IntentStructure.VERSION) return emptyList()
+        if (org.flowlang.intent.IntentStructure.isStructured(intent.intentVersion)) return emptyList()
         val requirements = buildList {
             intent.workflows.filter { it.steps.isNotEmpty() || !it.body.isNullOrEmpty() }.forEach { workflow ->
                 add(requirement(

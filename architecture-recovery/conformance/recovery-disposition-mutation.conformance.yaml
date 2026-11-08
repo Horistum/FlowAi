@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.recovery.disposition-mutation
+introducedIn: "AI-A3-S2.3"
+description: Changing failure propagation to recovery violates the independently reviewed obligation.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.recovery.disposition-mutation
+  runtimeExecutionAssessed: false
