@@ -1,0 +1,95 @@
+{
+  "intentVersion": "3.1",
+  "kind": "FlowIntentDocument",
+  "name": "isolated-data-recovery",
+  "workflows": [
+    {
+      "name": "main",
+      "kind": "CUSTOM",
+      "body": [
+        {
+          "kind": "operation",
+          "id": "backup",
+          "capability": "BACKUP",
+          "params": {
+            "subject": "isolated-orders",
+            "destination": "recovery-vault"
+          },
+          "produces": [
+            "baseline"
+          ]
+        },
+        {
+          "kind": "operation",
+          "id": "approval",
+          "capability": "APPROVE",
+          "requires": [
+            "backup"
+          ]
+        },
+        {
+          "kind": "attempt",
+          "id": "change",
+          "disposition": "recover",
+          "body": [
+            {
+              "kind": "operation",
+              "id": "migrate",
+              "capability": "DATABASE_MIGRATE",
+              "params": {
+                "database": "isolated-orders",
+                "migration": "v42",
+                "backup": "ref:baseline"
+              },
+              "requires": [
+                "approval",
+                "backup"
+              ]
+            },
+            {
+              "kind": "retry",
+              "id": "readiness",
+              "maxAttempts": 2,
+              "delaySeconds": 0,
+              "body": [
+                {
+                  "kind": "operation",
+                  "id": "verify",
+                  "capability": "VERIFY",
+                  "params": {
+                    "resource": "isolated-orders",
+                    "criteria": "schema-v42"
+                  }
+                }
+              ]
+            }
+          ],
+          "onFailure": [
+            {
+              "kind": "operation",
+              "id": "restore",
+              "capability": "RESTORE",
+              "params": {
+                "subject": "isolated-orders",
+                "recoveryPoint": "ref:baseline"
+              },
+              "requires": [
+                "approval",
+                "backup"
+              ]
+            },
+            {
+              "kind": "operation",
+              "id": "recovered",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "isolated-orders",
+                "criteria": "baseline"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

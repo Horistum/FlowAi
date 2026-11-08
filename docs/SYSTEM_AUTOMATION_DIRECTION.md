@@ -159,4 +159,7 @@ The bounded [S2.1 implementation](STRUCTURED_AUTHORING.md) adds structured autho
 and independent conditional fidelity. [S2.2 operation outcome assessment](OPERATION_OUTCOMES.md)
 adds scoped resource identities and fresh authenticated observations over the same
 accepted graph. It is a post-run evidence assessment, not an executor or execution
-permission. Observer integrations, live evaluation and partial-failure recovery remain open.
+permission. [S2.3 failure regions](FAILURE_REGIONS.md) adds explicit protected and handler bodies,
+propagation/recovery disposition, bounded read-only retries and independent region
+requirements. Observer integrations, attempt-aware runtime evidence, safe changing
+retries and autonomous partial-failure recovery remain open.

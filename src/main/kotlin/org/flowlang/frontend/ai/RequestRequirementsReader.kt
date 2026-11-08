@@ -41,7 +41,7 @@ object RequestRequirementsReader {
     internal fun decode(bytes: ByteArray): RequestRequirementsDocument = guarded {
         val tree = FlowJson.readTree(BoundedIo.decodeUtf8(bytes), "<request-requirements>")
         val document = mapper.treeToValue(tree, RequestRequirementsDocument::class.java)
-        require(document.formatVersion in 1..3 && document.request.userText.isNotBlank())
+        require(document.formatVersion in 1..4 && document.request.userText.isNotBlank())
         // Version 1 remains frozen, including explicit empty/null uses of new fields.
         if (document.formatVersion == 1) require(tree.path("requirements").findValues("parameters").isEmpty())
         require(document.requirements.isNotEmpty() && document.requirements.size <= 256)
@@ -77,14 +77,14 @@ object RequestRequirementsReader {
                     require(check.parameter.matches(parameterPattern))
                     require(check.path.size <= 8 && check.path.all { it.isNotBlank() && it.length <= 128 })
                 }
-                is OnlyUnder -> { require(document.formatVersion == 3 && !nested); selector(check.selector); scope(check.scope) }
+                is OnlyUnder -> { require(document.formatVersion >= 3 && !nested); selector(check.selector); scope(check.scope) }
                 is OnPath -> {
-                    require(document.formatVersion == 3 && !nested); scope(check.scope)
+                    require(document.formatVersion >= 3 && !nested); scope(check.scope)
                     require(check.check is CapabilityCount || check.check is RequiredEffect || check.check is LiteralParameter || check.check is RequiredOrdering)
                     validate(check.check, true)
                 }
                 is JoinedValueFrom -> {
-                    require(document.formatVersion == 3 && !nested); selector(check.consumer)
+                    require(document.formatVersion >= 3 && !nested); selector(check.consumer)
                     require(check.parameter.matches(parameterPattern) && check.origins.size in 2..32)
                     check.origins.forEach { origin ->
                         scope(origin.scope)
@@ -92,6 +92,19 @@ object RequestRequirementsReader {
                         origin.input?.let { require(parameterPattern.matches(it)) }
                         origin.producer?.let(::selector)
                     }
+                }
+                is RetryRegion -> {
+                    require(document.formatVersion == 4 && !nested)
+                    require(check.operations.size in 1..32 && check.operations.distinct().size == check.operations.size)
+                    check.operations.forEach(::selector)
+                    require(check.maxAttempts in 1..100 && check.delaySeconds in 0..3600)
+                }
+                is FailureRegion -> {
+                    require(document.formatVersion == 4 && !nested)
+                    require(check.protected.size in 1..32 && check.handler.size in 1..32)
+                    val selections = check.protected + check.handler
+                    require(selections.distinct().size == selections.size)
+                    selections.forEach(::selector)
                 }
                 is RequirementClarification -> require(check.question.isNotBlank())
                 is UnsupportedRequirement -> Unit

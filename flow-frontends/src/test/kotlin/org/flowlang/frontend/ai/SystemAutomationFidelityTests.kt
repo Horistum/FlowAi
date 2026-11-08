@@ -145,7 +145,7 @@ class SystemAutomationFidelityTests {
     @Test fun selectorsAndValuePathsHaveStrictShapeAndBounds() {
         val initial = requirements(only = "compute-network")
         val invalid = listOf<(ObjectNode) -> Unit>(
-            { it.put("formatVersion", 4) },
+            { it.put("formatVersion", 99) },
             { ((it.path("requirements")[0].path("check") as ObjectNode).putArray("path")).apply { repeat(9) { add("field") } } },
             { (it.path("requirements")[0].path("check").path("producer") as ObjectNode).putNull("parameters") },
             { (it.path("requirements")[0].path("check").path("producer").path("parameters") as ObjectNode).apply { repeat(17) { put("field$it", "x") } } }

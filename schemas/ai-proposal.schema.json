@@ -95,6 +95,9 @@
             },
             {
               "$ref": "intent-v3.schema.json"
+            },
+            {
+              "$ref": "intent-v3.1.schema.json"
             }
           ]
         },

@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.recovery.schemas
+introducedIn: "AI-A3-S2.3"
+description: Versioned failure-region fixtures validate against their published interchange schemas.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.recovery.schemas
+  runtimeExecutionAssessed: false

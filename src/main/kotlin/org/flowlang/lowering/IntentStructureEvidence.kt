@@ -18,6 +18,9 @@ internal object IntentStructureEvidence {
             is IntentLocalValue -> record("set", "${symbol()} = ${render(statement.value)}")
             is IntentMerge -> record("set", "${symbol()} = " + ExpressionRenderer.render(CallExpressionNode(function = "merge",
                 args = statement.sources.map { IntentValueExpressionLowering.lower(it, expressions) })))
+            is IntentRetry -> record("retry", statement.maxAttempts.toString(), "${statement.delaySeconds}s", "fixed", source(statement.body, expressions))
+            is IntentAttempt -> record("try", source(statement.body, expressions),
+                source(statement.onFailure, expressions) + if (statement.disposition == IntentFailureDisposition.PROPAGATE) record(record("fail", "error")) else "")
         }
     }.toTypedArray())
     fun plan(nodes: List<PlanNode>): String = record(*nodes.map { node ->
@@ -25,7 +28,9 @@ internal object IntentStructureEvidence {
             is TaskNode -> record("operation", requireNotNull(node.sourceId))
             is ApprovalNode -> record("operation", requireNotNull(node.sourceId))
             is ConditionNode -> record("branch", node.condition, plan(node.then), plan(node.otherwise))
-            is ControlNode -> { require(node.kind == "Set"); record("set", requireNotNull(node.detail)) }
+            is RetryGroupNode -> record("retry", node.max.toString(), node.delay, node.backoff, plan(node.body))
+            is TryPlanNode -> record("try", plan(node.body), plan(node.errorHandler))
+            is ControlNode -> { require(node.kind in setOf("Set", "Fail")); record(node.kind.lowercase(), requireNotNull(node.detail)) }
             else -> error("Unsupported structured lowering node: ${node.javaClass.simpleName}")
         }
     }.toTypedArray())

@@ -34,7 +34,7 @@ To migrate, explicitly select `intentVersion: "3.0"`, replace each workflow's
 the intended execution order. Dependency sorting is **not** performed on a body.
 Put conditional approvals inside explicit branches. Legacy global failure flags
 `notify`/`rollback` and conditional approval policy expressions are rejected in
-3.0; explicit failure-region authoring remains future work.
+3.0; explicit failure-region authoring uses the separate [Intent 3.1 contract](FAILURE_REGIONS.md).
 
 ## Body contract
 
@@ -160,3 +160,6 @@ cannot preserve it. This change does not execute cloud work, discover resources,
 establish ownership or freshness, implement retries/recovery, certify an adapter,
 or evaluate a live model. AI-A3, AR-06/AR-07 and the existing live/render gates remain
 open; EF-09 remains paused.
+
+The additive [S2.3 failure-region contract](FAILURE_REGIONS.md) selects Intent 3.1
+and requirements 4. It preserves the version 3.0/3 contracts described here.

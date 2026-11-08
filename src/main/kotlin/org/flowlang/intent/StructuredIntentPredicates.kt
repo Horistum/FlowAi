@@ -26,7 +26,7 @@ object StructuredBooleanPredicate {
 
 internal object StructuredIntentPredicates {
     fun validate(intent: IntentDocument, bindings: Map<String, IntentBindingEvidence>, registry: ModuleCatalog, expressions: IntentExpressionParser) {
-        if (intent.intentVersion != IntentStructure.VERSION) return
+        if (!IntentStructure.isStructured(intent.intentVersion)) return
         val inputs = intent.inputs.filter { it.required && it.type == "boolean" && (it.default == null || it.default is IntentBoolean) }
             .map { listOf(it.name) }.toSet()
         intent.workflows.forEach { workflow ->
@@ -35,6 +35,7 @@ internal object StructuredIntentPredicates {
                 fun lower(value: IntentValue) = IntentValueExpressionLowering.lower(value, expressions)
                 fun symbol(id: String) = listOf(IntentStepIdentity.resultSymbol(SemanticId.of(id)))
                 when (val statement = visit.statement) {
+                    is IntentAttempt, is IntentRetry -> Unit
                     is IntentBranch -> require(StructuredBooleanPredicate.admitted(lower(statement.condition), booleans)) {
                         "STRUCTURED_BOOLEAN_REQUIRED: ${workflow.name}.${visit.path}.when requires a non-null Boolean contract and an admitted predicate."
                     }

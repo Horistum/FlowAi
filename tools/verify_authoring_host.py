@@ -15,6 +15,7 @@ from verify_authoring_investigation import verify as verify_investigation
 from verify_system_automation import verify as verify_system_automation
 from verify_structured_authoring import verify as verify_structured_authoring
 from verify_operation_outcomes import verify as verify_operation_outcomes
+from verify_failure_regions import verify as verify_failure_regions
 
 
 def verify(root, cli):
@@ -156,6 +157,7 @@ def verify(root, cli):
     verify_system_automation(root, cli)
     verify_structured_authoring(root, cli)
     verify_operation_outcomes(root, cli)
+    verify_failure_regions(root, cli)
 
 
 if __name__ == "__main__":

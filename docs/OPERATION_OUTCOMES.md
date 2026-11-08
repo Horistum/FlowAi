@@ -175,3 +175,7 @@ that infrastructure, data or credentials were changed in an external system.
 Resource dispositions apply to the declared operation bindings. Unselected
 non-destructive operations remain unassessed; the report does not certify global
 immutability of every shared resource.
+
+[Failure-region authoring](FAILURE_REGIONS.md) separately preserves planned retry and
+recovery structure. Outcome observations version 1 do not certify reached regions,
+individual attempts or the runtime correctness of that structure.

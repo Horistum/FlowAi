@@ -97,3 +97,6 @@ checks:
   - ai.outcomes.missing-observations
   - ai.outcomes.wrong-resource
   - ai.outcomes.schemas
+  - ai.recovery.portfolio
+  - ai.recovery.disposition-mutation
+  - ai.recovery.schemas
