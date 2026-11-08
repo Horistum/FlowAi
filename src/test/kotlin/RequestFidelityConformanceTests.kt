@@ -21,7 +21,7 @@ class RequestFidelityConformanceTests {
         val selected = original.path("requirements").first { it.path("check").path("kind").asText() == "capability-count" }
         original.putArray("requirements").add(selected)
         val mutations = listOf<(com.fasterxml.jackson.databind.node.ObjectNode) -> Unit>(
-            { it.put("formatVersion", 4) },
+            { it.put("formatVersion", 99) },
             { (it.path("requirements")[0].path("check").path("selector") as com.fasterxml.jackson.databind.node.ObjectNode)
                 .putObject("parameters").apply { repeat(17) { put("field$it", "x") } } },
             { (it.path("requirements")[0].path("check").path("selector") as com.fasterxml.jackson.databind.node.ObjectNode)
@@ -38,6 +38,22 @@ class RequestFidelityConformanceTests {
                 assertFailsWith<org.flowlang.frontend.ai.RequestRequirementsException> {
                     org.flowlang.frontend.ai.RequestRequirementsReader.read(file)
                 }
+            }
+        } finally { root.deleteRecursively() }
+    }
+    @Test fun versionFourPreservesExistingSystemChecksWithoutWideningVersionTwoSchema() {
+        val mapper = org.flowlang.serialization.FlowJson
+        val current = mapper.readTree(File("schemas/request-requirements-v4.schema.json"))
+        val legacy = mapper.readTree(File("schemas/request-requirements-v2.schema.json"))
+        val root = createTempDirectory("requirements-v4-compatibility-").toFile()
+        try {
+            File("examples/system-automation").listFiles()!!.filter { it.name.endsWith(".requirements.json") }.forEach { source ->
+                val value = mapper.readTree(source) as com.fasterxml.jackson.databind.node.ObjectNode
+                value.put("formatVersion", 4)
+                org.flowlang.artifacts.ArtifactSchemaValidator.validate(value, current)
+                assertFailsWith<IllegalArgumentException> { org.flowlang.artifacts.ArtifactSchemaValidator.validate(value, legacy) }
+                val file = File(root, source.name).apply { writeText(value.toString()) }
+                org.flowlang.frontend.ai.RequestRequirementsReader.read(file)
             }
         } finally { root.deleteRecursively() }
     }
