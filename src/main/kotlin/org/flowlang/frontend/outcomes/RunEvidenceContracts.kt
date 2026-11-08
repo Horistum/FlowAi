@@ -7,17 +7,18 @@ enum class ExpectedOperationStatus { SUCCEEDED, FAILED, COMPLETED }
 enum class OperationPresence { REQUIRED, WHEN_REACHED }
 data class AttemptOutcomePolicy(val status: ExpectedOperationStatus, val presence: OperationPresence = OperationPresence.REQUIRED)
 enum class RecoveryPath { NOT_NEEDED, RECOVERED, PROPAGATED, FAILED }
+enum class ExpectedRecoveryPath { NOT_NEEDED, RECOVERED, PROPAGATED, RECOVER_IF_NEEDED, PROPAGATE_IF_NEEDED }
 data class RecoveryEvidenceRequirement(
     val id: String,
     val protected: List<RequirementSelector>,
     val handler: List<RequirementSelector>,
     val disposition: RequiredFailureDisposition,
-    val expected: RecoveryPath,
+    val expected: ExpectedRecoveryPath,
     val verificationOperations: List<String> = emptyList()
 )
 data class RunEvidenceRequirement(
     val workflow: String,
-    val status: ObservationStatus,
+    val status: ExpectedOperationStatus,
     val recoveries: List<RecoveryEvidenceRequirement> = emptyList()
 )
 

@@ -12,6 +12,10 @@ history. The existing canonical graph remains the only planned meaning. A bounde
 trace checker correlates each actual task/approval, retry number, failure and handler
 cause with that graph, without dispatching work or adding a second graph.
 
+Conditional recovery/propagation obligations cover healthy and failed runs without
+requiring a reviewer to predict the outcome. Handler verification remains mandatory
+when recovery is reached.
+
 Resource claims belong to exact invocations. All attempt results remain visible;
 expected failure is distinct from successful execution. Declared recovery requires
 an independently selected read-only handler verification and matching state after

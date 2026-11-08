@@ -111,16 +111,17 @@ internal object AttemptOutcomeReviewer {
         val recoveries = requireNotNull(contract.execution).recoveries.map { requirement ->
             recovery(graph, inspector, fidelity, trace, requirement, contract, results)
         }
+        val unexpectedStatus = run != null && contract.execution.status != ExpectedOperationStatus.COMPLETED && run.status.name != contract.execution.status.name
         val runState = when {
             recoveries.any { it.state == OperationOutcomeState.VIOLATED } -> OperationOutcomeState.VIOLATED
             trace == null -> OperationOutcomeState.UNRESOLVED
-            run!!.status != contract.execution.status -> OperationOutcomeState.VIOLATED
+            unexpectedStatus -> OperationOutcomeState.VIOLATED
             recoveries.any { it.state == OperationOutcomeState.UNRESOLVED } -> OperationOutcomeState.UNRESOLVED
             else -> OperationOutcomeState.SATISFIED
         }
         val execution = RunEvidenceReview(runState, when {
             trace == null -> diagnostics.first()
-            run!!.status != contract.execution.status -> "OUTCOME_UNEXPECTED_RUN_STATUS"
+            unexpectedStatus -> "OUTCOME_UNEXPECTED_RUN_STATUS"
             runState != OperationOutcomeState.SATISFIED -> "OUTCOME_RECOVERY_UNCONFIRMED"
             else -> "OUTCOME_RUN_EVIDENCE_SATISFIED"
         }, run?.id, run?.status, run?.invocations.orEmpty(), recoveries, graph.nodes.mapNotNull { node ->
@@ -158,7 +159,14 @@ internal object AttemptOutcomeReviewer {
             val region = graph.nodes.filterIsInstance<CanonicalTryNode>().singleOrNull { flatten(it.bodyNodeIds) == protected }
                 ?: throw UnresolvedOutcome("OUTCOME_UNCHECKABLE_RECOVERY_STRUCTURE")
             observed = trace.recoveries[region.id.value] ?: throw UnresolvedOutcome("OUTCOME_RECOVERY_NOT_REACHED")
-            if (observed.path != requirement.expected) throw Violation("OUTCOME_UNEXPECTED_RECOVERY_PATH")
+            val expected = when (requirement.expected) {
+                ExpectedRecoveryPath.NOT_NEEDED -> setOf(RecoveryPath.NOT_NEEDED)
+                ExpectedRecoveryPath.RECOVERED -> setOf(RecoveryPath.RECOVERED)
+                ExpectedRecoveryPath.PROPAGATED -> setOf(RecoveryPath.PROPAGATED)
+                ExpectedRecoveryPath.RECOVER_IF_NEEDED -> setOf(RecoveryPath.NOT_NEEDED, RecoveryPath.RECOVERED)
+                ExpectedRecoveryPath.PROPAGATE_IF_NEEDED -> setOf(RecoveryPath.NOT_NEEDED, RecoveryPath.PROPAGATED)
+            }
+            if (observed.path !in expected) throw Violation("OUTCOME_UNEXPECTED_RECOVERY_PATH")
             for (id in requirement.verificationOperations) {
                 val operation = contract.operations.single { it.id == id }
                 val node = inspector.select(operation.selector)
@@ -166,6 +174,7 @@ internal object AttemptOutcomeReviewer {
                 if (node.id !in handler || node.semantics.effects.isEmpty() || node.semantics.effects.any {
                     it.domain == EffectDomain.UNKNOWN || it.operation != EffectOperation.READ
                 }) throw UnresolvedOutcome("OUTCOME_RECOVERY_VERIFIER_INVALID")
+                if (observed.path == RecoveryPath.NOT_NEEDED) continue
                 if (result.invocationId !in observed.handlerInvocationIds) throw UnresolvedOutcome("OUTCOME_RECOVERY_VERIFIER_NOT_REACHED")
                 if (result.state == OperationOutcomeState.VIOLATED) throw Violation("OUTCOME_RECOVERY_POSTCONDITION_FAILED")
                 if (result.state != OperationOutcomeState.SATISFIED) throw UnresolvedOutcome("OUTCOME_RECOVERY_POSTCONDITION_MISSING")
@@ -174,7 +183,8 @@ internal object AttemptOutcomeReviewer {
                     event.id in observed.handlerInvocationIds && graph.nodes.single { it.id.value == event.nodeId }.semantics.effects.any { it.operation != EffectOperation.READ }
                 }) throw UnresolvedOutcome("OUTCOME_RECOVERY_VERIFIER_BEFORE_CHANGE")
             }
-            return RecoveryEvidenceResult(requirement.id, OperationOutcomeState.SATISFIED, "OUTCOME_RECOVERY_EVIDENCE_SATISFIED", observed, requirement.verificationOperations)
+            return RecoveryEvidenceResult(requirement.id, OperationOutcomeState.SATISFIED, "OUTCOME_RECOVERY_EVIDENCE_SATISFIED", observed,
+                if (observed.path == RecoveryPath.NOT_NEEDED) emptyList() else requirement.verificationOperations)
         } catch (failure: Violation) {
             return RecoveryEvidenceResult(requirement.id, OperationOutcomeState.VIOLATED, failure.code, observed)
         } catch (failure: UnresolvedOutcome) {

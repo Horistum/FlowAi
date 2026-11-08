@@ -486,7 +486,8 @@
           "type": "string",
           "enum": [
             "SUCCEEDED",
-            "FAILED"
+            "FAILED",
+            "COMPLETED"
           ]
         },
         "recoveries": {
@@ -692,7 +693,9 @@
                 "enum": [
                   "NOT_NEEDED",
                   "RECOVERED",
-                  "PROPAGATED"
+                  "PROPAGATED",
+                  "RECOVER_IF_NEEDED",
+                  "PROPAGATE_IF_NEEDED"
                 ]
               },
               "verificationOperations": {

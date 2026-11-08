@@ -86,25 +86,25 @@ object OperationOutcomeReader {
                 require((d.formatVersion == 2 || op.postconditions.isNotEmpty()) && op.maxAgeSeconds in 1..86400)
             }
             d.execution?.let { execution ->
-                text(execution.workflow); require(execution.status != ObservationStatus.UNKNOWN)
+                text(execution.workflow)
                 require(execution.recoveries.size <= 32 && execution.recoveries.map { it.id }.distinct().size == execution.recoveries.size)
                 execution.recoveries.forEach { recovery ->
-                    require(id.matches(recovery.id) && recovery.expected != RecoveryPath.FAILED)
+                    require(id.matches(recovery.id))
                     listOf(recovery.protected, recovery.handler).forEach { selectors ->
                         require(selectors.size in 1..32 && selectors.distinct().size == selectors.size)
                         selectors.forEach(::selector)
                     }
                     require(recovery.verificationOperations.size <= 32 && recovery.verificationOperations.distinct().size == recovery.verificationOperations.size)
                     require(recovery.verificationOperations.all { name -> d.operations.any { it.id == name } })
-                    if (recovery.expected == RecoveryPath.RECOVERED) {
+                    if (recovery.expected in setOf(ExpectedRecoveryPath.RECOVERED, ExpectedRecoveryPath.RECOVER_IF_NEEDED)) {
                         require(recovery.disposition == org.flowlang.frontend.ai.RequiredFailureDisposition.RECOVER)
                         require(recovery.verificationOperations.isNotEmpty())
                     }
-                    if (recovery.expected == RecoveryPath.PROPAGATED)
+                    if (recovery.expected in setOf(ExpectedRecoveryPath.PROPAGATED, ExpectedRecoveryPath.PROPAGATE_IF_NEEDED))
                         require(recovery.disposition == org.flowlang.frontend.ai.RequiredFailureDisposition.PROPAGATE)
                     recovery.verificationOperations.forEach { name ->
                         val op = d.operations.single { it.id == name }
-                        require(op.postconditions.isNotEmpty() && op.evidence == AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED))
+                        require(op.postconditions.isNotEmpty() && op.evidence?.status == ExpectedOperationStatus.SUCCEEDED)
                     }
                 }
             }

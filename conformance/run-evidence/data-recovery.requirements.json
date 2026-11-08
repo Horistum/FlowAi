@@ -28,9 +28,11 @@
       },
       "resource": "resource",
       "parameter": "resource",
-      "postconditions": {},
+      "postconditions": {
+        "ready": true
+      },
       "evidence": {
-        "status": "FAILED"
+        "status": "COMPLETED"
       }
     },
     {
@@ -42,7 +44,8 @@
       "parameter": "destination",
       "postconditions": {},
       "evidence": {
-        "status": "SUCCEEDED"
+        "status": "SUCCEEDED",
+        "presence": "WHEN_REACHED"
       }
     },
     {
@@ -59,7 +62,8 @@
         "ready": true
       },
       "evidence": {
-        "status": "SUCCEEDED"
+        "status": "SUCCEEDED",
+        "presence": "WHEN_REACHED"
       }
     }
   ],
@@ -89,7 +93,7 @@
           }
         ],
         "disposition": "RECOVER",
-        "expected": "RECOVERED",
+        "expected": "RECOVER_IF_NEEDED",
         "verificationOperations": [
           "verify"
         ]

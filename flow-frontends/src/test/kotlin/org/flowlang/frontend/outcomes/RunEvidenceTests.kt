@@ -49,8 +49,8 @@ class RunEvidenceTests {
                 OperationOutcomeRequirement("probe", probeSelector, "resource", "resource", postconditions = emptyMap(), evidence = AttemptOutcomePolicy(ExpectedOperationStatus.FAILED)),
                 OperationOutcomeRequirement("repair", RequirementSelector(capability), "resource", parameter, postconditions = emptyMap(), evidence = AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED)),
                 OperationOutcomeRequirement("verify", verifySelector, "resource", "resource", postconditions = mapOf("ready" to json(true)), evidence = AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED))),
-            RunEvidenceRequirement("main", ObservationStatus.SUCCEEDED, listOf(RecoveryEvidenceRequirement("recovery", listOf(probeSelector), listOf(RequirementSelector(capability), verifySelector),
-                RequiredFailureDisposition.RECOVER, RecoveryPath.RECOVERED, listOf("verify")))))
+            RunEvidenceRequirement("main", ExpectedOperationStatus.SUCCEEDED, listOf(RecoveryEvidenceRequirement("recovery", listOf(probeSelector), listOf(RequirementSelector(capability), verifySelector),
+                RequiredFailureDisposition.RECOVER, ExpectedRecoveryPath.RECOVERED, listOf("verify")))))
         val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val capture = "synthetic observer capture; no external work".toByteArray()
         var trust = OperationObservationTrust(2, listOf(ObservationGrant("observer", b64(key.public.encoded), listOf(address.scope), listOf(address.type), ObservationKind.entries, listOf("main"))))
@@ -180,7 +180,7 @@ class RunEvidenceTests {
                 "probe" -> it.copy(evidence=AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED))
                 else -> it.copy(evidence=AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED,OperationPresence.WHEN_REACHED))
             }
-        },execution=contract.execution!!.copy(recoveries=contract.execution!!.recoveries.map {it.copy(expected=RecoveryPath.NOT_NEEDED,verificationOperations=emptyList())}))
+        },execution=contract.execution!!.copy(recoveries=contract.execution!!.recoveries.map {it.copy(expected=ExpectedRecoveryPath.NOT_NEEDED,verificationOperations=emptyList())}))
         val run=run(); val events=run.invocations.take(3).map {if(it.id=="probe-2") it.copy(status=ObservationStatus.SUCCEEDED,errorId=null) else it}
         val result=review(run.copy(invocations=events))
         assertEquals(OperationOutcomeState.SATISFIED,result.state,result.toString())
@@ -190,8 +190,8 @@ class RunEvidenceTests {
     }
     @Test fun propagatedFailureKeepsOriginalErrorAfterSuccessfulHandling() = case {
         unit=compile(source.replace("\"disposition\":\"recover\"","\"disposition\":\"propagate\""))
-        contract=contract.copy(graphDigest=unit.graphDigest.value,execution=contract.execution!!.copy(status=ObservationStatus.FAILED,
-            recoveries=contract.execution!!.recoveries.map {it.copy(disposition=RequiredFailureDisposition.PROPAGATE,expected=RecoveryPath.PROPAGATED)}))
+        contract=contract.copy(graphDigest=unit.graphDigest.value,execution=contract.execution!!.copy(status=ExpectedOperationStatus.FAILED,
+            recoveries=contract.execution!!.recoveries.map {it.copy(disposition=RequiredFailureDisposition.PROPAGATE,expected=ExpectedRecoveryPath.PROPAGATED)}))
         val result=review(run().copy(status=ObservationStatus.FAILED,errorId="error-probe-2"))
         assertEquals(OperationOutcomeState.SATISFIED,result.state,result.toString())
         assertEquals(ObservationStatus.FAILED,result.execution!!.status)
@@ -239,6 +239,36 @@ class RunEvidenceTests {
         assertEquals(OperationOutcomeState.SATISFIED,result.state,result.toString())
         assertEquals(7,result.execution!!.invocations.size)
         assertCode(review(run.copy(invocations=events.filter {it.id!="warmup-2"})),"OUTCOME_INVOCATION_PATH")
+    }
+
+    @Test fun oneIndependentContractAcceptsHealthyOrRecoveredRunWithoutPredictingFailure() = case {
+        contract=contract.copy(operations=contract.operations.map {
+            if(it.id=="probe") it.copy(evidence=AttemptOutcomePolicy(ExpectedOperationStatus.COMPLETED))
+            else it.copy(evidence=AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED,OperationPresence.WHEN_REACHED))
+        },execution=contract.execution!!.copy(recoveries=contract.execution!!.recoveries.map {it.copy(expected=ExpectedRecoveryPath.RECOVER_IF_NEEDED)}))
+        val hash=requirements().source.sha256
+        assertEquals(OperationOutcomeState.SATISFIED,review().state)
+        val run=run(); val healthy=run.copy(invocations=run.invocations.take(2).map {if(it.id=="probe-1") it.copy(status=ObservationStatus.SUCCEEDED,errorId=null) else it})
+        val reviewed=review(healthy)
+        assertEquals(OperationOutcomeState.SATISFIED,reviewed.state,reviewed.toString())
+        assertEquals(RecoveryPath.NOT_NEEDED,reviewed.execution!!.recoveries.single().observation!!.path)
+        assertTrue(reviewed.execution!!.recoveries.single().verificationOperationIds.isEmpty())
+        assertEquals(hash,requirements().source.sha256)
+        assertCode(review(claims=claims(run).filter {it.kind!=ObservationKind.STATE}),"OUTCOME_RECOVERY_POSTCONDITION_MISSING")
+    }
+    @Test fun conditionalPropagationReportsActualFailureWithoutRequiringItInAdvance() = case {
+        unit=compile(source.replace("\"disposition\":\"recover\"","\"disposition\":\"propagate\""))
+        contract=contract.copy(graphDigest=unit.graphDigest.value,operations=contract.operations.map {
+            if(it.id=="probe") it.copy(evidence=AttemptOutcomePolicy(ExpectedOperationStatus.COMPLETED))
+            else it.copy(evidence=AttemptOutcomePolicy(ExpectedOperationStatus.SUCCEEDED,OperationPresence.WHEN_REACHED))
+        },execution=contract.execution!!.copy(status=ExpectedOperationStatus.COMPLETED,recoveries=contract.execution!!.recoveries.map {
+            it.copy(disposition=RequiredFailureDisposition.PROPAGATE,expected=ExpectedRecoveryPath.PROPAGATE_IF_NEEDED)
+        }))
+        val failed=review(run().copy(status=ObservationStatus.FAILED,errorId="error-probe-2"))
+        assertEquals(OperationOutcomeState.SATISFIED,failed.state,failed.toString())
+        assertEquals(ObservationStatus.FAILED,failed.execution!!.status)
+        val run=run(); val healthy=run.copy(invocations=run.invocations.take(2).map {if(it.id=="probe-1") it.copy(status=ObservationStatus.SUCCEEDED,errorId=null) else it})
+        assertEquals(OperationOutcomeState.SATISFIED,review(healthy).state)
     }
 
 }

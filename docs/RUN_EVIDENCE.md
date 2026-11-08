@@ -56,7 +56,7 @@ one resource declaration. This does not independently establish complete operand
 coverage of a task that changes several resources. Approval events are recorded but
 do not authenticate a human approval or grant execution permission.
 
-`execution` declares one workflow, its expected terminal `status`, and optional
+`execution` declares one workflow, its expected terminal `status` (`SUCCEEDED`, `FAILED`, or `COMPLETED` for either known result), and optional
 `recoveries`. Each recovery uses independently authored ordered `protected` and
 `handler` semantic selectors, `disposition`, `expected` path and
 `verificationOperations` (outcome requirement IDs). The existing failure-region
@@ -67,9 +67,14 @@ fidelity authority checks exact canonical region membership and disposition.
 | `NOT_NEEDED` | Protected work succeeded and the handler was not invoked |
 | `PROPAGATED` | Protected work failed, the handler completed, and the original correlated error remained the run failure |
 | `RECOVERED` | Protected work failed, the handler completed, and required read-only handler verification has matching independently declared postconditions |
+| `RECOVER_IF_NEEDED` | Either normal success without a handler, or the same verified recovery obligation as `RECOVERED` |
+| `PROPAGATE_IF_NEEDED` | Either normal success without a handler, or handling followed by propagation of the original error |
 
-`RECOVERED` requires at least one verification operation with required successful
-presence and nonempty postconditions. Verification must occur after changing handler
+`RECOVERED` and `RECOVER_IF_NEEDED` require at least one verification operation with
+expected success and nonempty postconditions. For one contract covering both healthy
+and recovered runs, use `COMPLETED` for protected operation status and `WHEN_REACHED`
+for handler operations; recovery verification is mandatory whenever the handler runs.
+An unreached handler is reported as not needed, never as successful recovery. Verification must occur after changing handler
 work. Merely entering the handler, returning zero or reporting that a restore command
 finished does not establish recovery. A handler failure is reported as `FAILED`, with
 both the original triggering error and the handler error retained.

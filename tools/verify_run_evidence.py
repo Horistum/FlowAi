@@ -178,6 +178,8 @@ def verify(root, cli):
                 state_source = canonical(facts)
                 claims.append((dict(common, id="final-state", kind="STATE", status="SUCCEEDED", nodeId=nodes["verify"], resource=resource,
                     invocationId="verify", observedAt=timestamp(), facts=facts, sourceSha256=hashlib.sha256(state_source).hexdigest(), sourceSizeBytes=len(state_source)), state_source))
+                claims.append((dict(common, id="final-probe-state", kind="STATE", status="SUCCEEDED", nodeId=nodes["probe"], resource=resource,
+                    invocationId="probe-2", observedAt=timestamp(), facts=facts, sourceSha256=hashlib.sha256(state_source).hexdigest(), sourceSizeBytes=len(state_source)), state_source))
                 trace_source = canonical({"events": events, "captures": {identifier: hashlib.sha256(source).hexdigest() for identifier, source in captures.items()}, "closed": True})
                 run = dict(common, id="run-history", workflow="main", startedAt=contract["startedAt"], completedAt=completed, complete=True, status="SUCCEEDED",
                            sourceSha256=hashlib.sha256(trace_source).hexdigest(), sourceSizeBytes=len(trace_source), invocations=events)
@@ -211,6 +213,23 @@ def verify(root, cli):
                 assess("invalid-signature", run, claims, 3, "OUTCOME_INVALID_SIGNATURE", corrupt_signature=True)
                 false_facts = [(dict(c, facts={"ready": False}), s) if c["kind"] == "STATE" else (c, s) for c, s in claims]
                 assess("observer-reports-failed-state", run, false_facts, 4, "OUTCOME_RECOVERY_POSTCONDITION_FAILED")
+                # Reuse identical independent obligations for a genuinely healthy run. Only its context changes.
+                contract.update(challenge=secrets.token_urlsafe(32), startedAt=timestamp())
+                requirements.write_bytes(canonical(contract))
+                common.update(contractSha256=hashlib.sha256(requirements.read_bytes()).hexdigest(), challenge=contract["challenge"])
+                events, claims, captures = [], [], {}
+                observe("approval", approvals[0], 1, lambda: {"fixtureApproval": True, "humanApprovalClaimed": False})
+                require(observe("probe-1", nodes["probe"], 1, local.inspect)["status"] == "SUCCEEDED", "Recovered resource must now pass its real initial probe")
+                completed = timestamp()
+                facts = local.inspect()
+                state_source = canonical(facts)
+                claims.append((dict(common, id="healthy-final-state", kind="STATE", status="SUCCEEDED", nodeId=nodes["probe"], resource=resource,
+                    invocationId="probe-1", observedAt=timestamp(), facts=facts, sourceSha256=hashlib.sha256(state_source).hexdigest(), sourceSizeBytes=len(state_source)), state_source))
+                trace_source = canonical({"events": events, "closed": True})
+                healthy = dict(common, id="healthy-history", workflow="main", startedAt=contract["startedAt"], completedAt=completed, complete=True, status="SUCCEEDED",
+                               sourceSha256=hashlib.sha256(trace_source).hexdigest(), sourceSizeBytes=len(trace_source), invocations=events)
+                result = assess("healthy-same-obligations", healthy, claims, 0)
+                require(result["execution"]["recoveries"][0]["observation"]["path"] == "NOT_NEEDED", "Healthy run must not pretend recovery happened")
             finally:
                 local.close()
     result = dict(status="PASS", evidenceKind="local-runtime-observer-test", cases=rows, localWorkExecuted=True,
