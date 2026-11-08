@@ -21,6 +21,7 @@ object OperationOutcomeReviewer {
         if (contract.graphDigest != unit.graphDigest.value) throw OutcomeInputException("OUTCOME_GRAPH_MISMATCH")
         if (evaluatedAt < Instant.parse(contract.startedAt)) throw OutcomeInputException("OUTCOME_INVALID_EVALUATION_TIME")
         require(observations == null || trust != null) { "Observations require caller-owned trust." }
+        if (contract.formatVersion == 2) return AttemptOutcomeReviewer.evaluate(unit, requirements, observations, trust, evaluatedAt)
         val graph = unit.graph
         val resources = contract.resources.associateBy { it.id }
         val diagnostics = mutableListOf<String>()
@@ -105,12 +106,12 @@ object OperationOutcomeReviewer {
             observationsSource = observations?.source, trustSource = trust?.source, results = results, diagnostics = diagnostics)
     }
 
-    private class Violation(val code: String) : RuntimeException()
-    private fun equal(a: JsonNode, b: JsonNode): Boolean = when {
+    internal class Violation(val code: String) : RuntimeException()
+    internal fun equal(a: JsonNode, b: JsonNode): Boolean = when {
         a.isNumber && b.isNumber -> a.decimalValue().compareTo(b.decimalValue()) == 0
         else -> a == b
     }
-    private class Inspector(private val graph: CanonicalExecutionGraph, private val ledger: List<OperationObservation>, private val now: Instant) {
+    internal class Inspector(private val graph: CanonicalExecutionGraph, private val ledger: List<OperationObservation>, private val now: Instant) {
         private val workflows = graph.workflows.associateBy { it.id }
         private val selections = mutableMapOf<RequirementSelector, CanonicalTaskNode>()
         private var work = 0L
@@ -143,9 +144,9 @@ object OperationOutcomeReviewer {
             candidates.single()
         }
         fun observation(kind: ObservationKind, node: String?, resource: ResourceIdentity, age: Int,
-                        used: MutableSet<String>): OperationObservation {
+                        used: MutableSet<String>, invocationId: String? = null): OperationObservation {
             charge(ledger.size)
-            val match = ledger.singleOrNull { it.kind == kind && it.nodeId == node && it.resource == resource }
+            val match = ledger.singleOrNull { it.kind == kind && it.nodeId == node && it.resource == resource && it.invocationId == invocationId }
                 ?: throw UnresolvedOutcome("OUTCOME_OBSERVATION_MISSING")
             fresh(match, age); used += match.id
             return match
@@ -164,7 +165,7 @@ object OperationOutcomeReviewer {
                 else -> false
             }
         }
-        fun resource(node: CanonicalTaskNode, operation: OperationOutcomeRequirement, used: MutableSet<String>): ResourceIdentity {
+        fun resource(node: CanonicalTaskNode, operation: OperationOutcomeRequirement, used: MutableSet<String>, literalOnly: Boolean = false): ResourceIdentity {
             val source = node.semantics.parameters[operation.parameter] ?: throw Violation("OUTCOME_RESOURCE_PARAMETER_MISSING")
             var value = expression(source)
             var pending = operation.path
@@ -179,6 +180,7 @@ object OperationOutcomeReviewer {
                     ?: throw UnresolvedOutcome("OUTCOME_DYNAMIC_RESOURCE_FIELD")
                 return ResourceIdentity(field("scope"), field("type"), field("key"))
             }
+            if (literalOnly) throw UnresolvedOutcome("OUTCOME_ATTEMPT_RESOURCE_BINDING_UNSUPPORTED")
             // A direct text value may be rendered as a one-part string template. Its
             // actual owner must establish the type; never infer it from a shadowed name.
             if (value is TemplateStringNode && pending.isEmpty()) {

@@ -163,3 +163,7 @@ permission. [S2.3 failure regions](FAILURE_REGIONS.md) adds explicit protected a
 propagation/recovery disposition, bounded read-only retries and independent region
 requirements. Observer integrations, attempt-aware runtime evidence, safe changing
 retries and autonomous partial-failure recovery remain open.
+
+S2.4: [Attempt-aware run and recovery evidence](RUN_EVIDENCE.md) connects signed
+invocation history to existing canonical regions and final state obligations, with
+real isolated local service, data and credential integration proofs.

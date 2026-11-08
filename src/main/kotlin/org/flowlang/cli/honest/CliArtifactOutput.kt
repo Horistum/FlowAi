@@ -24,8 +24,12 @@ internal object CliArtifactOutput {
             require(name.isNotBlank() && name != "." && name != ".." && '/' !in name && '\\' !in name) {
                 "Artifact names must be plain file names."
             }
-            val schema = if (name == "proposal-review.json" && value is ProposalReviewReport && value.formatVersion == 2)
-                "schemas/proposal-review-v2.schema.json" else schemas[name] ?: standaloneSchemas[name].orEmpty()
+            val schema = when {
+                name == "proposal-review.json" && value is ProposalReviewReport && value.formatVersion == 2 -> "schemas/proposal-review-v2.schema.json"
+                name == "operation-outcome-review.json" && value is org.flowlang.frontend.outcomes.OperationOutcomeReview && value.formatVersion == 2 ->
+                    "schemas/operation-outcome-review-v2.schema.json"
+                else -> schemas[name] ?: standaloneSchemas[name].orEmpty()
+            }
             ArtifactContent.encode(name, value, schema).also { budget.add(it.bytes.size) }
         }
         return AtomicArtifactWriter().publish(directory, contents, bundle)

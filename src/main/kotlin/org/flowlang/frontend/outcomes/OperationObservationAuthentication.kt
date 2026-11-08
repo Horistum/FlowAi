@@ -15,14 +15,19 @@ internal class UnresolvedOutcome(val code: String) : RuntimeException()
 
 /** Authentication establishes attribution to a caller-authorized observer, never observation truth. */
 object OperationObservationAuthentication {
-    private val domain = "Horistum operation observation\u0000v1\u0000".toByteArray(Charsets.UTF_8)
-
     /** Public signing protocol. The producer signs its original strict-UTF-8 JSON bytes. */
-    fun signingBytes(keyId: String, payload: ByteArray): ByteArray {
+    fun signingBytes(keyId: String, payload: ByteArray, formatVersion: Int = 1): ByteArray {
+        require(formatVersion in 1..2)
+        return signingBytes("Horistum operation observation\u0000v$formatVersion\u0000", keyId, payload)
+    }
+    fun runSigningBytes(keyId: String, payload: ByteArray): ByteArray =
+        signingBytes("Horistum operation run observation\u0000v2\u0000", keyId, payload)
+
+    private fun signingBytes(domain: String, keyId: String, payload: ByteArray): ByteArray {
         require(keyId.matches(Regex("[A-Za-z][A-Za-z0-9_.-]{0,127}")) && payload.size <= OperationOutcomeReader.MAX_PAYLOAD)
         val output = ByteArrayOutputStream()
         DataOutputStream(output).use { stream ->
-            stream.write(domain)
+            stream.write(domain.toByteArray(Charsets.UTF_8))
             val key = keyId.toByteArray(Charsets.UTF_8)
             stream.writeInt(key.size); stream.write(key); stream.write(payload)
         }
@@ -32,6 +37,8 @@ object OperationObservationAuthentication {
     internal fun verify(bundle: OperationObservationBundle, trust: OperationObservationTrust,
                         requirements: OperationOutcomeRequirements, contractSha: String,
                         graph: CanonicalExecutionGraph, now: Instant): List<OperationObservation> {
+        if (bundle.formatVersion != requirements.formatVersion || trust.formatVersion != requirements.formatVersion)
+            throw UnresolvedOutcome("OUTCOME_EVIDENCE_VERSION")
         val keys = try {
             trust.grants.associate { grant ->
                 val key = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(grant.publicKey)))
@@ -48,9 +55,10 @@ object OperationObservationAuthentication {
                 val signature = Base64.getDecoder().decode(signed.signature)
                 require(payload.size <= OperationOutcomeReader.MAX_PAYLOAD && signature.size == 64)
                 val verifier = Signature.getInstance("Ed25519")
-                verifier.initVerify(key); verifier.update(signingBytes(signed.keyId, payload))
+                verifier.initVerify(key); verifier.update(signingBytes(signed.keyId, payload, requirements.formatVersion))
                 if (!verifier.verify(signature)) throw UnresolvedOutcome("OUTCOME_INVALID_SIGNATURE")
                 val observation = OperationOutcomeReader.observation(payload)
+                if (observation.formatVersion != requirements.formatVersion) throw UnresolvedOutcome("OUTCOME_EVIDENCE_VERSION")
                 val source = Base64.getDecoder().decode(signed.source)
                 if (source.size != observation.sourceSizeBytes || source.size > OperationOutcomeReader.MAX_PAYLOAD ||
                     OperationOutcomeReader.sha256(source) != observation.sourceSha256) throw UnresolvedOutcome("OUTCOME_SOURCE_CHANGED")
@@ -75,10 +83,36 @@ object OperationObservationAuthentication {
               catch (_: Exception) { throw UnresolvedOutcome("OUTCOME_INVALID_OBSERVATION") }
         }
         if (observations.map { it.id }.distinct().size != observations.size || observations.map {
-            listOf(it.kind, it.nodeId, it.resource, it.binding, it.path)
+            listOf(it.kind, it.nodeId, it.resource, it.binding, it.path, it.invocationId)
         }.distinct().size != observations.size) throw UnresolvedOutcome("OUTCOME_AMBIGUOUS_OBSERVATIONS")
         return observations
     }
+
+    internal fun verifyRun(signed: SignedOperationObservation, trust: OperationObservationTrust,
+                           requirements: OperationOutcomeRequirements, contractSha: String, now: Instant): OperationRunObservation = try {
+        if (trust.formatVersion != 2 || requirements.formatVersion != 2) throw UnresolvedOutcome("OUTCOME_EVIDENCE_VERSION")
+        val grant = trust.grants.singleOrNull { it.keyId == signed.keyId } ?: throw UnresolvedOutcome("OUTCOME_UNTRUSTED_OBSERVER")
+        val key = KeyFactory.getInstance("Ed25519").generatePublic(X509EncodedKeySpec(Base64.getDecoder().decode(grant.publicKey)))
+        val payload = Base64.getDecoder().decode(signed.payload)
+        val verifier = Signature.getInstance("Ed25519")
+        verifier.initVerify(key); verifier.update(runSigningBytes(signed.keyId, payload))
+        if (!verifier.verify(Base64.getDecoder().decode(signed.signature))) throw UnresolvedOutcome("OUTCOME_INVALID_SIGNATURE")
+        val observation = OperationOutcomeReader.runObservation(payload)
+        val source = Base64.getDecoder().decode(signed.source)
+        if (source.size != observation.sourceSizeBytes || source.size > OperationOutcomeReader.MAX_PAYLOAD ||
+            OperationOutcomeReader.sha256(source) != observation.sourceSha256) throw UnresolvedOutcome("OUTCOME_SOURCE_CHANGED")
+        if (observation.workflow !in grant.workflows || requirements.resources.any {
+            it.identity.scope !in grant.scopes || it.identity.type !in grant.resourceTypes
+        }) throw UnresolvedOutcome("OUTCOME_OBSERVER_SCOPE")
+        if (observation.contractSha256 != contractSha || observation.graphDigest != requirements.graphDigest ||
+            observation.runId != requirements.runId || observation.challenge != requirements.challenge ||
+            observation.workflow != requirements.execution?.workflow || observation.startedAt != requirements.startedAt)
+            throw UnresolvedOutcome("OUTCOME_OBSERVATION_CONTEXT")
+        if (Instant.parse(observation.completedAt) < Instant.parse(observation.startedAt) || Instant.parse(observation.completedAt) > now)
+            throw UnresolvedOutcome("OUTCOME_OBSERVATION_TIME")
+        observation
+    } catch (failure: UnresolvedOutcome) { throw failure }
+      catch (_: Exception) { throw UnresolvedOutcome("OUTCOME_INVALID_RUN_OBSERVATION") }
 
     internal fun outputBindings(graph: CanonicalExecutionGraph, node: CanonicalExecutionNode): Set<String> =
         node.semantics.outputs.toSet() + graph.valueMerges.filter { it.targetNodeId == node.id }.map { it.resultBinding } +

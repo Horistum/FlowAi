@@ -154,3 +154,7 @@ state and establish which actions are safe before proposing a subsequent change.
 Mutating retries, autonomous continuation, compensation, external atomicity and target
 runtime certification remain open. AI-A3, AR-06/AR-07 and live/render gates remain open;
 EF-09 remains paused.
+
+[Attempt-aware run evidence](RUN_EVIDENCE.md) adds opt-in outcome contracts version 2
+for authenticated invocation history and post-recovery state. Version 1 retains its
+previous limits. Production cloud observer integration remains a separate gate.

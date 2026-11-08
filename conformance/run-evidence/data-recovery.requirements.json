@@ -1,0 +1,99 @@
+{
+  "formatVersion": 2,
+  "graphDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "runId": "local-data-recovery",
+  "challenge": "00000000000000000000000000000000",
+  "startedAt": "2026-11-08T08:00:00Z",
+  "reviewerId": "independent-fixture-author",
+  "resources": [
+    {
+      "id": "resource",
+      "identity": {
+        "scope": "isolated-local-test",
+        "type": "sqlite-database",
+        "key": "data-recovery"
+      },
+      "disposition": "MANAGED",
+      "owner": "local-test-harness"
+    }
+  ],
+  "operations": [
+    {
+      "id": "probe",
+      "selector": {
+        "capability": "VERIFY",
+        "parameters": {
+          "criteria": "healthy"
+        }
+      },
+      "resource": "resource",
+      "parameter": "resource",
+      "postconditions": {},
+      "evidence": {
+        "status": "FAILED"
+      }
+    },
+    {
+      "id": "repair",
+      "selector": {
+        "capability": "DATA_SYNC"
+      },
+      "resource": "resource",
+      "parameter": "destination",
+      "postconditions": {},
+      "evidence": {
+        "status": "SUCCEEDED"
+      }
+    },
+    {
+      "id": "verify",
+      "selector": {
+        "capability": "VERIFY",
+        "parameters": {
+          "criteria": "recovered"
+        }
+      },
+      "resource": "resource",
+      "parameter": "resource",
+      "postconditions": {
+        "ready": true
+      },
+      "evidence": {
+        "status": "SUCCEEDED"
+      }
+    }
+  ],
+  "execution": {
+    "workflow": "main",
+    "status": "SUCCEEDED",
+    "recoveries": [
+      {
+        "id": "recovery",
+        "protected": [
+          {
+            "capability": "VERIFY",
+            "parameters": {
+              "criteria": "healthy"
+            }
+          }
+        ],
+        "handler": [
+          {
+            "capability": "DATA_SYNC"
+          },
+          {
+            "capability": "VERIFY",
+            "parameters": {
+              "criteria": "recovered"
+            }
+          }
+        ],
+        "disposition": "RECOVER",
+        "expected": "RECOVERED",
+        "verificationOperations": [
+          "verify"
+        ]
+      }
+    ]
+  }
+}

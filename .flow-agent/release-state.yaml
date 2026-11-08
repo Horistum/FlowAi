@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 135
+stateVersion: 136
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -19,6 +19,7 @@ versionBoundary:
     recoveryIntent: "3.1"
     requestRequirements: "4"
     operationOutcomes: "1"
+    attemptAwareOperationOutcomes: "2"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"
@@ -35,7 +36,7 @@ toolchainState:
   offlineValidation: passed
 
 roadmapState:
-  roadmapVersion: 32
+  roadmapVersion: 33
   activeTrack: ""
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -919,6 +920,23 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  attemptAwareRunEvidenceFollowup:
+    selectedSlice: AI-A3-S2.4
+    workPackage: .flow-agent/work-packages/attempt-aware-run-evidence.yaml
+    report: .flow-agent/reports/attempt-aware-run-evidence.md
+    contract: docs/RUN_EVIDENCE.md
+    baselineHead: b1bc61b313e7e1bde3141cc1f82675dbb1780293
+    dependsOnPullRequest: 262
+    validation: candidate-full-regression-conformance-installed-local-runtime-and-final-ci-required
+    outcomeContractVersion: 2
+    scope: Authenticated bounded invocation history, exact attempts and failure causes, independently declared post-recovery state.
+    nextSlice: S2-durable-observer-integration-and-invocation-lineage
+    productionRuntimeExecution: false
+    localRuntimeEvidence: true
+    cloudRuntimeEvidence: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   failureRegionsFollowup:
     selectedSlice: AI-A3-S2.3
     workPackage: .flow-agent/work-packages/operation-failure-regions.yaml

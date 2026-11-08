@@ -100,3 +100,6 @@ checks:
   - ai.recovery.portfolio
   - ai.recovery.disposition-mutation
   - ai.recovery.schemas
+  - ai.run-evidence.missing-run
+  - ai.run-evidence.wrong-region
+  - ai.run-evidence.schemas

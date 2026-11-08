@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.run-evidence.wrong-region
+introducedIn: "AI-A3-S2.4"
+description: Observed recovery cannot substitute a different independently required failure disposition.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.run-evidence.wrong-region
+  runtimeExecutionAssessed: false

@@ -133,6 +133,7 @@ org/flowlang/conformance/ReferenceSnapshotHonesty.kt
 org/flowlang/conformance/RequestFidelityActivation.kt
 org/flowlang/conformance/RequestFidelityCorpus.kt
 org/flowlang/conformance/RetryCompositionFixture.kt
+org/flowlang/conformance/RunEvidenceChecks.kt
 org/flowlang/conformance/ScenarioAndPlanChecks.kt
 org/flowlang/conformance/ScenarioPackQualityAnalyzer.kt
 org/flowlang/conformance/SchemaScenarioCatalogChecks.kt

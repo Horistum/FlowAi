@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.run-evidence.missing-run
+introducedIn: "AI-A3-S2.4"
+description: A plan without captured invocation history cannot prove recovery.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.run-evidence.missing-run
+  runtimeExecutionAssessed: false

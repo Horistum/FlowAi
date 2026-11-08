@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.run-evidence.schemas
+introducedIn: "AI-A3-S2.4"
+description: Run requirements across service, data and credential domains match version 2 interchange.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.run-evidence.schemas
+  runtimeExecutionAssessed: false

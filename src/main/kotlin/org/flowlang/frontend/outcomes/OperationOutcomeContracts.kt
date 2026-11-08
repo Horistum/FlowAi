@@ -1,6 +1,7 @@
 package org.flowlang.frontend.outcomes
 
 import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.annotation.JsonInclude
 import org.flowlang.compiler.CompilationSource
 import org.flowlang.frontend.ai.RequirementSelector
 
@@ -21,7 +22,8 @@ data class OperationOutcomeRequirement(
     val parameter: String,
     val path: List<String> = emptyList(),
     val postconditions: Map<String, JsonNode>,
-    val maxAgeSeconds: Int = 300
+    val maxAgeSeconds: Int = 300,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val evidence: AttemptOutcomePolicy? = null
 )
 data class OperationOutcomeRequirements(
     val formatVersion: Int,
@@ -31,7 +33,8 @@ data class OperationOutcomeRequirements(
     val startedAt: String,
     val reviewerId: String,
     val resources: List<OutcomeResource>,
-    val operations: List<OperationOutcomeRequirement>
+    val operations: List<OperationOutcomeRequirement>,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val execution: RunEvidenceRequirement? = null
 )
 
 enum class ObservationKind { RESULT, STATE, CREATION, BINDING, OWNERSHIP }
@@ -54,17 +57,20 @@ data class OperationObservation(
     val created: Boolean? = null,
     val binding: String? = null,
     val path: List<String> = emptyList(),
-    val owner: String? = null
+    val owner: String? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val invocationId: String? = null
 )
 /** Sign the original payload bytes; the separate source capture is bound by the signed digest. */
 data class SignedOperationObservation(val keyId: String, val payload: String, val signature: String, val source: String)
-data class OperationObservationBundle(val formatVersion: Int, val observations: List<SignedOperationObservation>)
+data class OperationObservationBundle(val formatVersion: Int, val observations: List<SignedOperationObservation>,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val execution: SignedOperationObservation? = null)
 data class ObservationGrant(
     val keyId: String,
     val publicKey: String,
     val scopes: List<String>,
     val resourceTypes: List<String>,
-    val kinds: List<ObservationKind>
+    val kinds: List<ObservationKind>,
+    @get:JsonInclude(JsonInclude.Include.NON_EMPTY) val workflows: List<String> = emptyList()
 )
 data class OperationObservationTrust(val formatVersion: Int, val grants: List<ObservationGrant>)
 
@@ -76,7 +82,9 @@ data class OperationOutcomeResult(
     val resource: ResourceIdentity,
     val state: OperationOutcomeState,
     val code: String,
-    val observationIds: List<String> = emptyList()
+    val observationIds: List<String> = emptyList(),
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val invocationId: String? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val observedStatus: ObservationStatus? = null
 )
 data class OperationOutcomeReview(
     val formatVersion: Int = 1,
@@ -89,9 +97,10 @@ data class OperationOutcomeReview(
     val observationsSource: OutcomeInputSource?,
     val trustSource: OutcomeInputSource?,
     val results: List<OperationOutcomeResult>,
-    val diagnostics: List<String> = emptyList()
+    val diagnostics: List<String> = emptyList(),
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val execution: RunEvidenceReview? = null
 ) {
-    val scope: String get() = "declared-operation-postconditions"
+    val scope: String get() = if (formatVersion == 2) "declared-run-and-operation-postconditions" else "declared-operation-postconditions"
     val executionAuthorized: Boolean get() = false
     val workflowExecutionCorrectness: String get() = "unassessed"
     val observationTruth: String get() = "trusted-observer-assertion"

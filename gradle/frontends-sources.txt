@@ -13,10 +13,13 @@ org/flowlang/frontend/ai/RequestRequirementsReader.kt
 org/flowlang/frontend/ai/ReviewedAiProposalFrontend.kt
 org/flowlang/frontend/intent/FlowIntentExpressionParser.kt
 org/flowlang/frontend/intent/IntentYamlFrontend.kt
+org/flowlang/frontend/outcomes/AttemptOutcomeReviewer.kt
 org/flowlang/frontend/outcomes/OperationObservationAuthentication.kt
 org/flowlang/frontend/outcomes/OperationOutcomeContracts.kt
 org/flowlang/frontend/outcomes/OperationOutcomeReader.kt
 org/flowlang/frontend/outcomes/OperationOutcomeReviewer.kt
+org/flowlang/frontend/outcomes/RunEvidenceContracts.kt
+org/flowlang/frontend/outcomes/RunTraceReviewer.kt
 org/flowlang/frontend/source/FlowSourceFrontend.kt
 org/flowlang/intent/IntentDecisionAnalyzer.kt
 org/flowlang/intent/IntentYamlLoader.kt

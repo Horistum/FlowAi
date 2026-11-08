@@ -1,0 +1,107 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-run-evidence-test",
+  "request": {
+    "userText": "Assess observed recovery of service-readiness",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "3.1",
+      "kind": "FlowIntentDocument",
+      "name": "service-readiness",
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CUSTOM",
+          "body": [
+            {
+              "kind": "operation",
+              "id": "approval",
+              "capability": "APPROVE"
+            },
+            {
+              "kind": "attempt",
+              "id": "recovery",
+              "disposition": "recover",
+              "body": [
+                {
+                  "kind": "retry",
+                  "id": "readiness",
+                  "maxAttempts": 2,
+                  "delaySeconds": 0,
+                  "body": [
+                    {
+                      "kind": "operation",
+                      "id": "probe",
+                      "capability": "VERIFY",
+                      "params": {
+                        "resource": {
+                          "scope": "isolated-local-test",
+                          "type": "local-service",
+                          "key": "service-readiness"
+                        },
+                        "criteria": "healthy"
+                      }
+                    }
+                  ]
+                }
+              ],
+              "onFailure": [
+                {
+                  "kind": "operation",
+                  "id": "repair",
+                  "capability": "PROVISION",
+                  "params": {
+                    "resource": {
+                      "scope": "isolated-local-test",
+                      "type": "local-service",
+                      "key": "service-readiness"
+                    }
+                  },
+                  "requires": [
+                    "approval"
+                  ]
+                },
+                {
+                  "kind": "operation",
+                  "id": "verify",
+                  "capability": "VERIFY",
+                  "params": {
+                    "resource": {
+                      "scope": "isolated-local-test",
+                      "type": "local-service",
+                      "key": "service-readiness"
+                    },
+                    "criteria": "recovered"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-run-evidence-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored independent evidence contract. Local fixtures do not promote cloud support."
+      ],
+      "guardrails": [
+        "Actual execution remains outside the compiler."
+      ]
+    }
+  }
+}
