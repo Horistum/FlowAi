@@ -1,0 +1,25 @@
+version: AI-A3-S2.2
+name: Scoped resource and operation outcome assessment
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 230cfe1608a8829814ae384163fd78ff36a473db
+authorization: Maintainer requested continuing development after the structured authoring implementation.
+objective: Assess independently declared operation outcomes against scoped resource identity and fresh authenticated observations of the accepted canonical graph.
+universalInvariant: A satisfied outcome requires the exact compiled resource binding, matching run and contract, successful operation evidence and fresh observed postconditions; declaration, ordering or a VERIFY node cannot replace observations or creation evidence.
+scope:
+- Strict versioned outcome requirements, scoped resource identities, observation trust and signed observations.
+- Bounded assessment over authorized compilation units from the existing frontends.
+- Separate operation result, resource binding, state observation and creation claims.
+- Installed product CLI, packaged schemas, cross-domain positive and adverse evidence.
+- Preserve existing Intent, AST, graph, fidelity and target authorization contracts.
+forbiddenScope:
+- No executor, scheduler, transport discovery, arbitrary commands or provider-specific dispatch.
+- No observation truth inferred from a signature, capability name, desired state or effect transition.
+- No execution permission, target promotion, live-model claim or workflow-runtime certification.
+- No implicit resource ownership, retry, compensation or failure-region implementation.
+completionEvidence:
+- Infrastructure reuse and creation, isolated data change and credential lifecycle share the same assessment path.
+- Wrong scope, stale or missing observations, failed operations, changed contracts, forged signatures and missing creation evidence cannot satisfy outcomes.
+- Intent and reviewed-AI inputs converge through the existing compiler; actual canonical value edges bind symbolic resources. Unannotated Flow Source remains explicitly unsupported rather than inferred from command text.
+- Full regression, conformance, installed product and final-head/merge-candidate CI pass.

@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.outcomes.schemas
+introducedIn: "AI-A3-S2.2"
+description: Independent resource and outcome requirements conform to their published interchange schema.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.outcomes.schemas
+  runtimeExecutionAssessed: false

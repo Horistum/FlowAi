@@ -1,0 +1,65 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-outcome-test",
+  "request": {
+    "userText": "Assess data-copy using independently declared outcomes.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "3.0",
+      "kind": "FlowIntentDocument",
+      "name": "data-copy",
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CUSTOM",
+          "body": [
+            {
+              "kind": "operation",
+              "id": "approval",
+              "capability": "APPROVE"
+            },
+            {
+              "kind": "operation",
+              "id": "copy",
+              "capability": "DATA_SYNC",
+              "params": {
+                "source": "retained-snapshot",
+                "destination": {
+                  "scope": "storage-test",
+                  "type": "dataset",
+                  "key": "isolated-copy"
+                }
+              },
+              "requires": [
+                "approval"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-fidelity-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored test fixture. No model, cloud or provider execution is claimed."
+      ],
+      "guardrails": [
+        "Compiler safety obligations remain independent of request-fidelity checks."
+      ]
+    }
+  }
+}

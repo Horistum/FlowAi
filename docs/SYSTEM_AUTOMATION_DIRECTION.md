@@ -87,11 +87,10 @@ before implementation; later rows are planned, not implicitly implemented by S1.
 | S4 — reusable implementation composition | Select or propose bounded operation implementations from discovered contracts and existing tooling | One implementation mechanism composes multiple independently chosen requests; no project-name switches or arbitrary shell fallback; preview and postcondition checking are separate |
 | S5 — integrated system automation | Request, discovery, decisions, plan, artifact, isolated execution and independent outcome assessment | Repeat live-agent trials across creation, operational change and retirement/recovery; report blocked cases and cost; accepted constraint violations block completion |
 
-The proposed first S2 implementation slice is [structured authoring and conditional
-fidelity (S2.1)](STRUCTURED_AUTHORING_PROPOSAL.md). It specifies reusable branches,
-local values, explicit joins and independent conditional obligations. Its contract
-versions and acceptance portfolio are a design proposal, not implemented support or
-a change to the active roadmap selection.
+The first S2 implementation slice, [structured authoring and conditional fidelity
+(S2.1)](STRUCTURED_AUTHORING.md), was merged in PR #261. It provides reusable branches,
+local values, explicit joins and independent conditional obligations. The original
+[design rationale](STRUCTURED_AUTHORING_PROPOSAL.md) remains available.
 
 S2 must start with an authored infrastructure/data example that cannot be represented
 today and trace the exact loss or rejection. Reuse the canonical graph and existing
@@ -157,5 +156,7 @@ change. The original 12-case AI-A3 corpus remains frozen; the broader system por
 is additive and its independent live exposure policy is still required.
 
 The bounded [S2.1 implementation](STRUCTURED_AUTHORING.md) adds structured authoring
-and independent conditional fidelity. Resource ownership, observation freshness,
-operation outcomes and partial-failure recovery remain subsequent S2 work.
+and independent conditional fidelity. [S2.2 operation outcome assessment](OPERATION_OUTCOMES.md)
+adds scoped resource identities and fresh authenticated observations over the same
+accepted graph. It is a post-run evidence assessment, not an executor or execution
+permission. Observer integrations, live evaluation and partial-failure recovery remain open.

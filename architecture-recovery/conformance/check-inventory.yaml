@@ -94,3 +94,6 @@ checks:
   - ai.structured.portfolio
   - ai.structured.control-mutation
   - ai.structured.schemas
+  - ai.outcomes.missing-observations
+  - ai.outcomes.wrong-resource
+  - ai.outcomes.schemas

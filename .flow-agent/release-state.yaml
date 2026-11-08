@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 133
+stateVersion: 134
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -17,6 +17,7 @@ versionBoundary:
     intent: "2.0"
     structuredIntent: "3.0"
     requestRequirements: "3"
+    operationOutcomes: "1"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"
@@ -33,7 +34,7 @@ toolchainState:
   offlineValidation: passed
 
 roadmapState:
-  roadmapVersion: 30
+  roadmapVersion: 31
   activeTrack: ""
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -917,6 +918,24 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  operationOutcomesFollowup:
+    selectedSlice: AI-A3-S2.2
+    workPackage: .flow-agent/work-packages/operation-outcomes-resources.yaml
+    report: .flow-agent/reports/operation-outcomes-resources.md
+    contract: docs/OPERATION_OUTCOMES.md
+    baselineMain: 230cfe1608a8829814ae384163fd78ff36a473db
+    validation: local-focused-jvm-python-conformance-passed-final-revision-ci-required
+    focusedJvmTests: 21
+    localPythonTests: 339
+    localConformanceChecks: 305
+    installedOutcomeCasesRequired: 27
+    scope: Independently declared operation postconditions, scoped resources and authenticated captured observations over the existing graph.
+    outcomeContractVersion: 1
+    nextSlice: S2-operation-failures-and-recovery-regions
+    runtimeExecution: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   structuredAuthoringFollowup:
     selectedSlice: AI-A3-S2.1
     workPackage: .flow-agent/work-packages/structured-authoring.yaml

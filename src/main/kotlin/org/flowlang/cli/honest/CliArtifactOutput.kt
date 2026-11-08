@@ -18,6 +18,7 @@ internal object CliArtifactOutput {
         val standaloneSchemas = mapOf("standard-diagnostic-catalog.json" to "schemas/standard-diagnostic-catalog.schema.json",
             "proposal-review.json" to "schemas/proposal-review.schema.json",
             "request-fidelity-review.json" to "schemas/request-fidelity-review.schema.json",
+            "operation-outcome-review.json" to "schemas/operation-outcome-review.schema.json",
             "standard-bundle-verification.json" to "schemas/standard-bundle-verification.schema.json")
         val contents = values.mapValues { (name, value) ->
             require(name.isNotBlank() && name != "." && name != ".." && '/' !in name && '\\' !in name) {

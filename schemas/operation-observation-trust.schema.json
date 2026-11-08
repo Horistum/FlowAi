@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-observation-trust.schema.json",
+  "title": "Operation Observation Trust v1",
+  "description": "Syntactic interchange only. The outcome reader and reviewer own semantic validity, graph binding, authentication and freshness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "grants"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "grants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "keyId",
+          "publicKey",
+          "scopes",
+          "resourceTypes",
+          "kinds"
+        ],
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "publicKey": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 257
+                }
+              }
+            ]
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "allOf": [
+                {
+                  "not": {
+                    "minLength": 1001
+                  }
+                }
+              ]
+            },
+            "minItems": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 65
+                }
+              }
+            ]
+          },
+          "resourceTypes": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "allOf": [
+                {
+                  "not": {
+                    "minLength": 1001
+                  }
+                }
+              ]
+            },
+            "minItems": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 65
+                }
+              }
+            ]
+          },
+          "kinds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "RESULT",
+                "STATE",
+                "CREATION",
+                "BINDING",
+                "OWNERSHIP"
+              ]
+            },
+            "minItems": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 6
+                }
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 1,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 65
+          }
+        }
+      ]
+    }
+  }
+}
