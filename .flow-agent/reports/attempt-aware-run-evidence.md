@@ -52,6 +52,12 @@ The complete merge-candidate proof passed, while the exact-head run exhausted it
 have a bounded 35-minute allowance; the isolation budget and every validation gate
 remain in place. Installed-host output is unbuffered for progress and failure evidence.
 
+A subsequent native cross-runtime check exposed non-deterministic JSON property
+order in the existing condition-composition fixture: `hasErrors` and `hasWarnings`
+swapped positions in otherwise identical manifests. Its evidence serializer now
+orders properties and map entries explicitly. Regression coverage checks both targets,
+preserved values and reordered maps; exact-byte comparison remains mandatory.
+
 Focused tests, full JVM regression, Python tooling, installed conformance, installed
 local runtime proof and final-head/merge-candidate CI are required. The PR records
 final revision receipts. Local validation uses the pinned toolchain with a temporary

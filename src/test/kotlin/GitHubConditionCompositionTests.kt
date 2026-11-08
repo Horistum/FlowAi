@@ -16,6 +16,22 @@ class GitHubConditionCompositionTests {
     private fun generated() = fixture.compile(root).let { compilation ->
         compilation to fixture.manifest(root, compilation, "github-actions") }
 
+    @Test fun nativeEvidenceBytesHaveStablePropertyAndMapOrderWithoutChangingValues() {
+        val (compilation, github) = generated()
+        val ordinaryMapper = com.fasterxml.jackson.module.kotlin.jacksonObjectMapper()
+        for (manifest in listOf(github, fixture.manifest(root, compilation, "jenkins"))) {
+            val original = manifest.copy(metadata = linkedMapOf("z-last" to "last", "a-first" to "first"))
+            val reordered = original.copy(metadata = linkedMapOf("a-first" to "first", "z-last" to "last"))
+            val bytes = fixture.mapper.writeValueAsBytes(original)
+            assertContentEquals(bytes, fixture.mapper.writeValueAsBytes(reordered))
+            val tree = ordinaryMapper.readTree(bytes)
+            assertEquals(ordinaryMapper.readTree(ordinaryMapper.writeValueAsBytes(original)), tree)
+            val names = tree.path("compatibility").fieldNames().asSequence().toList()
+            assertTrue("hasErrors" in names && "hasWarnings" in names)
+            assertEquals(names.sorted(), names)
+        }
+    }
+
     @Test fun bothAdaptersConsumeIdenticalCanonicalBranchesWithoutInventingSemanticEdges() {
         val (compilation, github) = generated()
         val digest = compilation.graphDigest
