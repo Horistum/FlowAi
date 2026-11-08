@@ -171,3 +171,7 @@ manually authored obligations. Its zero graph pins are placeholders: the verifie
 fills only the digest of the accepted compilation, then creates synthetic observations
 using an ephemeral test key. This is protocol and assessment evidence, not evidence
 that infrastructure, data or credentials were changed in an external system.
+
+Resource dispositions apply to the declared operation bindings. Unselected
+non-destructive operations remain unassessed; the report does not certify global
+immutability of every shared resource.

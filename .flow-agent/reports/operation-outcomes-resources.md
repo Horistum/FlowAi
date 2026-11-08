@@ -44,8 +44,11 @@ AI-A3, AR-06/AR-07, F-16/F-20 remain open and EF-09 remains paused.
   strict parsing, authentication and atomic publication.
 - Python tooling: 339 tests pass; agent structure and whitespace checks pass.
 - Installed conformance: all 305 checks pass, including the new three registered vectors.
-- The full installed authoring proof includes 27 new synthetic observer cases across
-  three domains; successful completion is required by both existing full-validation CI paths.
+- Installed authoring proof passes: 36 frozen corpus runs / 49 attempts, five rejected
+  clarification changes, six investigation cases, ten system cases, eleven structured
+  authoring cases and 27 new synthetic observer cases across three domains.
+- All six affected conformance/release regression classes and the remaining frontend,
+  module-contract, semantic-kernel, standard-artifact and reference-distribution suites pass.
 - Full JVM regression and final-head/merge-candidate GitHub checks remain required;
   the PR checks are the authoritative completion receipts.
 

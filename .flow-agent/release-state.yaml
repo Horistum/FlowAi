@@ -924,11 +924,11 @@ recoveryBoundedAuthoring:
     report: .flow-agent/reports/operation-outcomes-resources.md
     contract: docs/OPERATION_OUTCOMES.md
     baselineMain: 230cfe1608a8829814ae384163fd78ff36a473db
-    validation: local-focused-jvm-python-conformance-passed-final-revision-ci-required
+    validation: local-focused-jvm-regression-python-conformance-installed-proof-passed-final-revision-ci-required
     focusedJvmTests: 21
     localPythonTests: 339
     localConformanceChecks: 305
-    installedOutcomeCasesRequired: 27
+    installedOutcomeCases: 27
     scope: Independently declared operation postconditions, scoped resources and authenticated captured observations over the existing graph.
     outcomeContractVersion: 1
     nextSlice: S2-operation-failures-and-recovery-regions
