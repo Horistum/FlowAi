@@ -47,6 +47,11 @@ independent contracts and refuse to treat compilation as runtime evidence.
 
 ## Validation
 
+The complete merge-candidate proof passed, while the exact-head run exhausted its
+25-minute job budget after JVM tests and conformance had passed. Both full jobs now
+have a bounded 35-minute allowance; the isolation budget and every validation gate
+remain in place. Installed-host output is unbuffered for progress and failure evidence.
+
 Focused tests, full JVM regression, Python tooling, installed conformance, installed
 local runtime proof and final-head/merge-candidate CI are required. The PR records
 final revision receipts. Local validation uses the pinned toolchain with a temporary

@@ -125,14 +125,17 @@ validation is the preferred place for iterative failures before publication.
 
 ## Budgets and evidence
 
-Full-validation jobs have a 25-minute ceiling each. The shared isolation job
-has its own 20-minute ceiling and the cheap selector has a three-minute limit.
+Full-validation jobs have a 35-minute ceiling each. The combined JVM regression,
+conformance and installed-host/local-runtime proofs exceeded the former 25-minute
+ceiling on a slower runner after all JVM tests and conformance checks had passed.
+Installed-host output is unbuffered so each completed proof remains visible.
+The shared isolation job has its own 20-minute ceiling and the cheap selector has a three-minute limit.
 The full-validation ceiling includes the installed authoring-host and system
 lifecycle proofs. In PR #260's first run, exact-head validation completed in
 18 minutes 33 seconds, while the merge candidate reached the former 20-minute
 ceiling during the installed-host proof after passing tests and conformance.
-The five-minute reserve accommodates that observed runner variance; no check,
-revision boundary or failure propagation is removed.
+The 35-minute budget accommodates the larger installed proof and observed runner
+variance while retaining the checks, revision boundaries and failure propagation.
 These are separate bounded responsibilities, not a longer limit for one
 repeated-build job. Failure logs and all module JUnit reports are uploaded by
 the original full-validation jobs; `flow-isolation-<label>` artifacts own the

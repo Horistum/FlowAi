@@ -26,3 +26,4 @@ patchPlan:
 - Extend the existing outcome surface with opt-in version 2 and preserve version 1 readers and signing bytes.
 - Correlate caller-trusted run history with actual canonical regions and invocation-scoped resource claims.
 - Publish schemas, negative tests, cross-domain fixtures, installed local runtime proof and limitations.
+- Allow 35 minutes for each complete CI job after observed timeout, retaining all gates and emitting installed-host proof output without buffering.
