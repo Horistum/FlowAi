@@ -168,10 +168,22 @@ class ObservationHostTests(unittest.TestCase):
         self.append("OBSERVATION", dict(self.claim("OWNERSHIP", owner="owner"), observedAt=START), b"owned-before-start")
 
     def test_numeric_facts_do_not_silently_round_through_float(self):
-        self.start(); self.finish()
+        self.start(); self.finish(); self.close()
         for facts in [{"value": 9007199254740993.1}, {"value": None}, {"value": {"nested": True}}, {"value": 10 ** 100}]:
-            self.rejected("OBSERVATION", self.claim("STATE", facts=facts))
-        self.append("OBSERVATION", self.claim("STATE", facts={"value": 9007199254740993}), b"integer-state")
+            self.rejected("OBSERVATION", dict(self.claim("STATE", facts=facts), observedAt=FINAL))
+        self.append("OBSERVATION", dict(self.claim("STATE", facts={"value": 9007199254740993}), observedAt=FINAL), b"integer-state")
+
+    def test_premature_state_cannot_consume_the_final_observation_slot(self):
+        self.start(); self.finish()
+        self.rejected("OBSERVATION", self.claim("STATE", facts={"ready": False}))
+        self.close()
+        self.append("OBSERVATION", dict(self.claim("STATE", facts={"ready": True}), observedAt=FINAL), b"fresh-state")
+
+    def test_completion_cannot_predate_creation_already_observed_during_work(self):
+        self.start()
+        self.append("OBSERVATION", dict(self.claim("CREATION", created=True), observedAt=CLOSED), b"creation")
+        self.rejected("FINISH", dict(invocationId="first", completedAt=END, status="SUCCEEDED"))
+        self.append("FINISH", dict(invocationId="first", completedAt=FINAL, status="SUCCEEDED"), b"actual-result")
 
     def test_closed_run_accepts_late_bound_claims_and_fresh_state_but_never_more_work(self):
         self.start(); self.finish(); close = self.close()

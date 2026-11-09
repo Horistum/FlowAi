@@ -191,6 +191,9 @@ class History:
                 self.errors.add(data["errorId"])
             start = self.started[self.pending]
             require(self._time(data["completedAt"]) >= timestamp(start["startedAt"]), "Completion precedes invocation start")
+            require(all(timestamp(claim["observedAt"]) <= timestamp(data["completedAt"])
+                        for claim, _ in self.claims if claim["kind"] == "CREATION" and claim["invocationId"] == self.pending),
+                    "Completion precedes a captured creation")
             self.finished.append(dict(start, **{k: v for k, v in data.items() if k != "invocationId"}))
             self.last_time, self.pending = timestamp(data["completedAt"]), None
         elif kind == "CLOSE":
@@ -214,8 +217,9 @@ class History:
         keys(data["resource"], ("scope", "type", "key"))
         require(data["resource"] in [r["identity"] for r in self.req["resources"]], "Undeclared resource identity")
         at = self._time(data["observedAt"])
-        if self.closed is not None and data["kind"] == "STATE":
-            require(at >= timestamp(self.closed["completedAt"]), "Final state capture precedes run closure")
+        if data["kind"] == "STATE":
+            require(self.closed is not None and at >= timestamp(self.closed["completedAt"]),
+                    "Final state requires an explicitly closed run and a fresh capture")
         require((data["kind"] == "OWNERSHIP") == ("owner" in data) and (data["kind"] == "CREATION") == ("created" in data)
                 and (data["kind"] == "STATE" or "facts" not in data), "Invalid observation fields for its kind")
         if "owner" in data:

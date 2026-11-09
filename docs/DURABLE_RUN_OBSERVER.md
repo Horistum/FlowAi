@@ -24,7 +24,8 @@ are required. The Kotlin product and its public outcome contracts are unchanged.
    timeout. No subsequent START or FINISH is admitted.
 5. **Reconcile and export:** late result, ownership and creation captures may arrive for
    existing invocations, preserving their actual observation times. Final state captures
-   must be at or after run completion. Export a caller-selected checkpoint and assess it
+   are admitted only after explicit closure, with observation times at or after run completion.
+   Export a caller-selected checkpoint and assess it
    using the same installed `outcomes` command.
 
 The journal has three collection states: `OPEN`, `PENDING_INVOCATION` and `CLOSED`.
@@ -86,6 +87,10 @@ Capture bytes are never normalized. UTC timestamps preserve up to nine fractiona
 Facts accept bounded strings, Booleans and exact integers. Fractional numeric facts are
 rejected rather than rounded through a Python float; a string representation requires a
 matching independently declared string postcondition.
+
+Final `STATE` claims must follow `CLOSE`. Rejecting earlier state prevents a provisional
+capture from consuming the immutable final-observation slot. `CREATION` captures belong
+within their invocation interval; a later `FINISH` cannot predate an already recorded creation.
 
 Every append supplies the previous checkpoint. SQLite serializes the comparison and
 write in one transaction. Competing events cannot both extend one tip. An exact duplicate
