@@ -1,0 +1,299 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-observation.schema.json",
+  "title": "Operation Observation v1",
+  "description": "Syntactic interchange only. The outcome reader and reviewer own semantic validity, graph binding, authentication and freshness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "id",
+    "contractSha256",
+    "graphDigest",
+    "runId",
+    "challenge",
+    "kind",
+    "status",
+    "resource",
+    "observedAt",
+    "sourceSha256",
+    "sourceSizeBytes"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "contractSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "graphDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "challenge": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{32,128}$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "RESULT",
+        "STATE",
+        "CREATION",
+        "BINDING",
+        "OWNERSHIP"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "SUCCEEDED",
+        "FAILED",
+        "UNKNOWN"
+      ]
+    },
+    "nodeId": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "type",
+        "key"
+      ],
+      "properties": {
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        }
+      }
+    },
+    "observedAt": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    },
+    "sourceSha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceSizeBytes": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 65536
+    },
+    "facts": {
+      "type": "object",
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+      },
+      "additionalProperties": {
+        "oneOf": [
+          {
+            "type": "boolean"
+          },
+          {
+            "type": "string",
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 1001
+                }
+              }
+            ]
+          },
+          {
+            "type": "number"
+          }
+        ]
+      },
+      "allOf": [
+        {
+          "not": {
+            "minProperties": 33
+          }
+        }
+      ]
+    },
+    "created": {
+      "type": "boolean"
+    },
+    "binding": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "path": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "allOf": [
+          {
+            "not": {
+              "minLength": 129
+            }
+          }
+        ]
+      },
+      "minItems": 0,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 9
+          }
+        }
+      ]
+    },
+    "owner": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "CREATION"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "created"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "created"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "BINDING"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "binding"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "binding"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "OWNERSHIP"
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "owner"
+        ]
+      },
+      "else": {
+        "not": {
+          "required": [
+            "owner"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": {
+            "enum": [
+              "RESULT",
+              "STATE",
+              "CREATION",
+              "OWNERSHIP"
+            ]
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "nodeId"
+        ]
+      }
+    }
+  ]
+}

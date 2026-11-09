@@ -1,0 +1,10 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    "service-readiness",
+    "data-recovery",
+    "credential-recovery"
+  ],
+  "evidenceKind": "local-runtime-observer-test",
+  "cloudWorkExecuted": false
+}

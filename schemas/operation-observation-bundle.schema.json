@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-observation-bundle.schema.json",
+  "title": "Operation Observation Bundle v1",
+  "description": "Syntactic interchange only. The outcome reader and reviewer own semantic validity, graph binding, authentication and freshness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "observations"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "observations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "keyId",
+          "payload",
+          "signature",
+          "source"
+        ],
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "payload": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 90001
+                }
+              }
+            ]
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 88,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 89
+                }
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 90001
+                }
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 0,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 257
+          }
+        }
+      ]
+    }
+  }
+}

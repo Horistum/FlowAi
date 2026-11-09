@@ -85,6 +85,7 @@ org/flowlang/conformance/ExplicitMergeConformanceChecks.kt
 org/flowlang/conformance/ExportManifestVerifierChecks.kt
 org/flowlang/conformance/ExternalCorpusContracts.kt
 org/flowlang/conformance/ExternalCorpusLoader.kt
+org/flowlang/conformance/FailureRegionChecks.kt
 org/flowlang/conformance/FlowSensitiveConformanceChecks.kt
 org/flowlang/conformance/GitHubActionsCheckoutRuntimeCertification.kt
 org/flowlang/conformance/GitHubActionsConditionRuntimeCertification.kt
@@ -111,6 +112,7 @@ org/flowlang/conformance/LanguageIntegrityCompletion.kt
 org/flowlang/conformance/LanguageIntegrityIntegrationChecks.kt
 org/flowlang/conformance/LoopCompositionFixture.kt
 org/flowlang/conformance/MatchCompositionFixture.kt
+org/flowlang/conformance/OperationOutcomeChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyContracts.kt
 org/flowlang/conformance/OperationalDomainAdequacyRoadmapLifecycleAuthority.kt
@@ -131,6 +133,7 @@ org/flowlang/conformance/ReferenceSnapshotHonesty.kt
 org/flowlang/conformance/RequestFidelityActivation.kt
 org/flowlang/conformance/RequestFidelityCorpus.kt
 org/flowlang/conformance/RetryCompositionFixture.kt
+org/flowlang/conformance/RunEvidenceChecks.kt
 org/flowlang/conformance/ScenarioAndPlanChecks.kt
 org/flowlang/conformance/ScenarioPackQualityAnalyzer.kt
 org/flowlang/conformance/SchemaScenarioCatalogChecks.kt

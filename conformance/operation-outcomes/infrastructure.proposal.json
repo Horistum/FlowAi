@@ -1,0 +1,79 @@
+{
+  "formatVersion": 1,
+  "providerId": "manual-outcome-test",
+  "request": {
+    "userText": "Assess infrastructure using independently declared outcomes.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "3.0",
+      "kind": "FlowIntentDocument",
+      "name": "infrastructure",
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CUSTOM",
+          "body": [
+            {
+              "kind": "operation",
+              "id": "approval",
+              "capability": "APPROVE"
+            },
+            {
+              "kind": "operation",
+              "id": "create",
+              "capability": "PROVISION",
+              "params": {
+                "resource": {
+                  "scope": "tenant-a/subscription-test",
+                  "type": "network",
+                  "key": "temporary"
+                }
+              },
+              "requires": [
+                "approval"
+              ]
+            },
+            {
+              "kind": "operation",
+              "id": "inspect",
+              "capability": "VERIFY",
+              "params": {
+                "resource": {
+                  "scope": "tenant-a/subscription-test",
+                  "type": "network",
+                  "key": "shared"
+                }
+              },
+              "requires": [
+                "approval"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "manual-fidelity-fixture",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Manually authored test fixture. No model, cloud or provider execution is claimed."
+      ],
+      "guardrails": [
+        "Compiler safety obligations remain independent of request-fidelity checks."
+      ]
+    }
+  }
+}

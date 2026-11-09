@@ -19,7 +19,7 @@ object ExecutionPlanCanonicalTopologyAuthority {
         // Structured source provenance has a complete body preservation receipt.
         // Its topology is derived from the actual plan by PlanningTopologyAuthority.
         // Lowering receipt validation independently rejects a stripped/forged version.
-        if (source.intentVersion == org.flowlang.standard.FlowStandardVersions.STRUCTURED_INTENT_VERSION) return emptyList()
+        if (org.flowlang.standard.FlowStandardVersions.isStructuredIntentVersion(source.intentVersion)) return emptyList()
         val nodes = PlanDependencyRelations.flatten(plan.nodes)
         val approvalSourceIds = nodes.filterIsInstance<ApprovalNode>()
             .mapNotNull(ApprovalNode::sourceId)

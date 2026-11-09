@@ -150,6 +150,7 @@ fun executeCli(args: Array<String>, commands: CliCommandCatalog): CliExecutionRe
                         "intent" -> runIntentCommand(parsed, output, resources.root)
                         "normalize" -> runNormalizeCommand(parsed, output, resources.root)
                         "proposal" -> ProposalCommand.execute(parsed, output, resources.root)
+                        "outcomes" -> OutcomeCommand.execute(parsed, output, resources.root)
                         else -> {
                             if (command != "resources") StandardCliCommands.run(command, parsed, output, resources.root)
                             CliExecutionResult.Completed(output.snapshot())
@@ -937,11 +938,12 @@ private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String
     output.text("Contract commands use packaged resources; --contracts <root> explicitly replaces the complete resource set.")
     output.text("Target materialization requires --target. Rendering additionally requires --render.")
     output.text("proposal <request.json> [--requirements <reviewed-requirements.json>] [--out <new-directory>] [--target <target>] [--render] imports an external AI proposal; its request may also declare the explicit target.")
+    output.text("outcomes <source> --source-kind intent|proposal --requirements <file> [--observations <file> --trust <file>] [--evaluated-at <instant>] [--out <new-directory>] assesses declared operation postconditions; it does not execute work.")
 }
 
-private val contractCommands = setOf("intent", "normalize", "proposal", "flow", "targets", "modules", "resources")
+private val contractCommands = setOf("intent", "normalize", "proposal", "outcomes", "flow", "targets", "modules", "resources")
 
-private val productCommands = setOf("resources", "intent", "normalize", "proposal", "diagnostics", "standard-verify") +
+private val productCommands = setOf("resources", "intent", "normalize", "proposal", "outcomes", "diagnostics", "standard-verify") +
     StandardCliCommands.names
 
 private val knownJsonArtifacts = setOf(

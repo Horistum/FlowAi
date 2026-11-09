@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.outcomes.wrong-resource
+introducedIn: "AI-A3-S2.2"
+description: A mismatched scoped resource cannot satisfy an outcome even when the plan is accepted.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.outcomes.wrong-resource
+  runtimeExecutionAssessed: false

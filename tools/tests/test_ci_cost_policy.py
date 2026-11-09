@@ -106,7 +106,7 @@ class CiCostPolicyTests(unittest.TestCase):
         self.assertIn("EXPECTED_SHA: ${{ github.sha }}", merge)
         self.assertNotIn("ref:", named_step(merge, "Checkout Merge Candidate"))
         for job in (exact, merge):
-            self.assertIn("timeout-minutes: 25", job)
+            self.assertIn("timeout-minutes: 35", job)
             self.assertIn('actual_sha="$(git rev-parse HEAD)"', job)
             self.assertIn('if [ "$actual_sha" != "$EXPECTED_SHA" ]; then', job)
 

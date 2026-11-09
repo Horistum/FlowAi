@@ -6,7 +6,8 @@ import java.util.Collections
 enum class CliValueOption(val token: String) {
     CONTRACTS("--contracts"), OUT("--out"), TARGET("--target"), FILE("--file"), APP("--app"),
     ENVIRONMENT("--environment"), REPO("--repo"), CHANNEL("--channel"),
-    BUNDLE("--bundle"), INTENT("--intent"), SCENARIO_ID("--scenario-id"), TARGETS("--targets"), REQUIREMENTS("--requirements")
+    BUNDLE("--bundle"), INTENT("--intent"), SCENARIO_ID("--scenario-id"), TARGETS("--targets"), REQUIREMENTS("--requirements"),
+    SOURCE_KIND("--source-kind"), OBSERVATIONS("--observations"), TRUST("--trust"), EVALUATED_AT("--evaluated-at")
 }
 
 enum class CliFlagOption(val token: String) {
@@ -109,6 +110,8 @@ class CliArgumentSchema(
 internal object ProductCliArguments {
     private val targetFlags = setOf(CliFlagOption.STRICT, CliFlagOption.FAIL_ON_UNSUPPORTED, CliFlagOption.RENDER)
     private val schemas = mapOf(
+        "outcomes" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.REQUIREMENTS,
+            CliValueOption.SOURCE_KIND, CliValueOption.OBSERVATIONS, CliValueOption.TRUST, CliValueOption.EVALUATED_AT), minPositionals = 1, maxPositionals = 1),
         "proposal" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET, CliValueOption.REQUIREMENTS), targetFlags, minPositionals = 1, maxPositionals = 1),
         "intent" to CliArgumentSchema(setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET), targetFlags, maxPositionals = 1),
         "normalize" to CliArgumentSchema(

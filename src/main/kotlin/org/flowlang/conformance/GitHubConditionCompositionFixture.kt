@@ -1,6 +1,9 @@
 package org.flowlang.conformance
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.databind.MapperFeature
+import com.fasterxml.jackson.databind.SerializationFeature
+import com.fasterxml.jackson.databind.json.JsonMapper
+import com.fasterxml.jackson.module.kotlin.KotlinModule
 import java.io.File
 import org.flowlang.ast.*
 import org.flowlang.adapters.yaml.TargetRegistryYamlLoader
@@ -21,7 +24,14 @@ import org.flowlang.serialization.FlowYaml
 internal object GitHubConditionCompositionFixture {
     const val REVISION = "c6149ff9ba87f88e25cdc0905cfb86cb935f7756"
     const val WORKFLOW = ".github/workflows/github-condition-composition.yml"
-    val mapper = jacksonObjectMapper()
+    // Independent native jobs compare exact artifact bytes. Reflection order of
+    // computed properties (for example hasErrors/hasWarnings) is not stable.
+    val mapper = JsonMapper.builder()
+        .addModule(KotlinModule.Builder().build())
+        .enable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+        .disable(MapperFeature.SORT_CREATOR_PROPERTIES_FIRST)
+        .enable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS)
+        .build()
     fun checkout(name: String, vararg dependencies: String) = ActionNode(
         module = "git", action = "checkout", target = ReferenceNode(path = listOf("source")),
         params = mapOf("url" to StringLiteralNode(value = "https://github.com/Horistum/FlowAi.git"),

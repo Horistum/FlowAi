@@ -1,0 +1,30 @@
+version: AI-A3-S2.4
+name: Attempt-aware run and recovery evidence
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineHead: b1bc61b313e7e1bde3141cc1f82675dbb1780293
+deliveryPullRequest: 264
+deliveryBase: main
+authorization: Maintainer explicitly requested connecting actual attempts, failures and recovery to observed results.
+objective: Independently assess authenticated invocation history and post-recovery state against the existing accepted canonical graph.
+universalInvariant: A later successful result cannot erase an earlier failure, replace missing attempts, move a handler onto the happy path, or reuse pre-recovery state as proof of recovery.
+scope:
+- Version 2 outcome requirements, observation bundles, scoped trust, invocation claims and closed run assertions.
+- Bounded sequential trace assessment over canonical task, approval, read-only retry and root try nodes.
+- Explicit invocation identity, original error correlation, handler causality and final postcondition evidence.
+- Separate real local service, database and credential tests plus adversarial evidence mutations.
+forbiddenScope:
+- No runtime executor, external scheduling, arbitrary commands, automatic retry decisions or cleanup in production.
+- No external atomicity, native exception identity, global ownership or authorization claim.
+- No cloud support promotion, observer transport integration, parallel trace proof or live-model gate closure.
+completionEvidence:
+- Version 1 contracts and operation-local observation semantics retain compatibility.
+- Omitted attempts, invented paths, stale state, cross-run replay and failed recovery cannot be accepted.
+- Independent local runtime captures pass through the installed CLI with exact source and signature binding.
+- Full JVM regression, Python tooling, conformance and final-head and merge-candidate CI pass.
+patchPlan:
+- Extend the existing outcome surface with opt-in version 2 and preserve version 1 readers and signing bytes.
+- Correlate caller-trusted run history with actual canonical regions and invocation-scoped resource claims.
+- Publish schemas, negative tests, cross-domain fixtures, installed local runtime proof and limitations.
+- Allow 35 minutes for each complete CI job after observed timeout, retaining all gates and emitting installed-host proof output without buffering.

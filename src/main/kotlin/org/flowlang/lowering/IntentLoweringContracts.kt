@@ -81,7 +81,7 @@ object IntentLoweringAuthority {
                 stopOnError = intent.failure.stopOnError
             ),
             fields = fields,
-            intentVersion = intent.intentVersion.takeIf { it == IntentStructure.VERSION }
+            intentVersion = intent.intentVersion.takeIf { IntentStructure.isStructured(it) }
         )
     }
 
@@ -109,7 +109,7 @@ object IntentLoweringAuthority {
 
     private fun report(view: LoweringPlanView): IntentLoweringReport {
         val sourceIntent = view.sourceIntent
-        val structured = sourceIntent.intentVersion == IntentStructure.VERSION
+        val structured = IntentStructure.isStructured(sourceIntent.intentVersion)
         require(sourceIntent.intentVersion == null || structured) { "Unsupported lowering source version." }
         val bodyFields = sourceIntent.fields.filter { it.valueKind == "structured-body" }
         if (structured) {
@@ -181,7 +181,7 @@ object IntentLoweringAuthority {
         inputNames: Set<String>,
         expressions: IntentExpressionParser
     ): List<IntentSourceField> = buildList {
-        if (intent.intentVersion == IntentStructure.VERSION) add(preserved("intent/version", "$.intentVersion",
+        if (IntentStructure.isStructured(intent.intentVersion)) add(preserved("intent/version", "$.intentVersion",
             "plan/source-intent/version", "string", intent.intentVersion))
         add(preserved("intent/name", "$.name", "plan/flow/name", "string", intent.name))
         intent.description?.let {

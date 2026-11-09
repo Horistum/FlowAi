@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 133
+stateVersion: 137
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -16,7 +16,10 @@ versionBoundary:
   artifactContracts:
     intent: "2.0"
     structuredIntent: "3.0"
-    requestRequirements: "3"
+    recoveryIntent: "3.1"
+    requestRequirements: "4"
+    operationOutcomes: "1"
+    attemptAwareOperationOutcomes: "2"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"
@@ -33,7 +36,7 @@ toolchainState:
   offlineValidation: passed
 
 roadmapState:
-  roadmapVersion: 30
+  roadmapVersion: 33
   activeTrack: ""
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -917,6 +920,65 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  attemptAwareRunEvidenceFollowup:
+    selectedSlice: AI-A3-S2.4
+    workPackage: .flow-agent/work-packages/attempt-aware-run-evidence.yaml
+    report: .flow-agent/reports/attempt-aware-run-evidence.md
+    contract: docs/RUN_EVIDENCE.md
+    baselineHead: b1bc61b313e7e1bde3141cc1f82675dbb1780293
+    deliveryPullRequest: 264
+    deliveryBase: main
+    validation: candidate-full-regression-conformance-installed-local-runtime-and-final-ci-required
+    outcomeContractVersion: 2
+    scope: Authenticated bounded invocation history, exact attempts and failure causes, independently declared post-recovery state.
+    nextSlice: S2-durable-observer-integration-and-invocation-lineage
+    productionRuntimeExecution: false
+    localRuntimeEvidence: true
+    cloudRuntimeEvidence: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
+  failureRegionsFollowup:
+    selectedSlice: AI-A3-S2.3
+    workPackage: .flow-agent/work-packages/operation-failure-regions.yaml
+    report: .flow-agent/reports/operation-failure-regions.md
+    contract: docs/FAILURE_REGIONS.md
+    baselineHead: 7be072e6ae1e5190674a7bf9bd9f8f9ceea7d3d6
+    deliveryPullRequest: 264
+    deliveryBase: main
+    validation: focused-jvm-python-installed-proof-passed-full-regression-and-final-ci-required
+    focusedJvmTests: 17
+    localPythonTests: 340
+    installedFailureRegionCases: 15
+    intentVersion: "3.1"
+    requirementsVersion: 4
+    promptVersion: bounded-authoring/4
+    scope: Explicit failure-only handlers, preserved propagation or recovery, read-only retry bounds and exact independent region checks.
+    nextSlice: S2-attempt-aware-observation-and-recovery-evidence
+    runtimeExecution: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
+  operationOutcomesFollowup:
+    selectedSlice: AI-A3-S2.2
+    workPackage: .flow-agent/work-packages/operation-outcomes-resources.yaml
+    report: .flow-agent/reports/operation-outcomes-resources.md
+    contract: docs/OPERATION_OUTCOMES.md
+    baselineMain: 230cfe1608a8829814ae384163fd78ff36a473db
+    deliveryPullRequest: 264
+    deliveryBase: main
+    validation: local-focused-jvm-regression-python-conformance-installed-proof-passed-final-revision-ci-required
+    focusedJvmTests: 21
+    localPythonTests: 339
+    localConformanceChecks: 305
+    installedOutcomeCases: 27
+    scope: Independently declared operation postconditions, scoped resources and authenticated captured observations over the existing graph.
+    outcomeContractVersion: 1
+    nextSlice: S2-operation-failures-and-recovery-regions
+    runtimeExecution: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   structuredAuthoringFollowup:
     selectedSlice: AI-A3-S2.1
     workPackage: .flow-agent/work-packages/structured-authoring.yaml

@@ -1,0 +1,55 @@
+{
+  "formatVersion": 1,
+  "graphDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "runId": "fixture-infrastructure",
+  "challenge": "fixture-challenge-not-for-production-1234",
+  "startedAt": "2026-11-08T02:00:00Z",
+  "reviewerId": "manual-test-reviewer",
+  "resources": [
+    {
+      "id": "temporary",
+      "identity": {
+        "scope": "tenant-a/subscription-test",
+        "type": "network",
+        "key": "temporary"
+      },
+      "disposition": "CREATED_IN_RUN",
+      "creator": {
+        "capability": "PROVISION"
+      }
+    },
+    {
+      "id": "shared",
+      "identity": {
+        "scope": "tenant-a/subscription-test",
+        "type": "network",
+        "key": "shared"
+      },
+      "disposition": "SHARED"
+    }
+  ],
+  "operations": [
+    {
+      "id": "created",
+      "selector": {
+        "capability": "PROVISION"
+      },
+      "resource": "temporary",
+      "parameter": "resource",
+      "postconditions": {
+        "ready": true
+      }
+    },
+    {
+      "id": "shared-unchanged",
+      "selector": {
+        "capability": "VERIFY"
+      },
+      "resource": "shared",
+      "parameter": "resource",
+      "postconditions": {
+        "reachable": true
+      }
+    }
+  ]
+}

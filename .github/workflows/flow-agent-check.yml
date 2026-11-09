@@ -147,8 +147,8 @@ jobs:
     needs: [isolation-candidates, module-isolation]
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
-    # Full tests, conformance and installed-host/lifecycle proofs share this budget.
-    timeout-minutes: 25
+    # Full tests, conformance and installed-host/local runtime proofs share this budget.
+    timeout-minutes: 35
 
     steps:
       - name: Require Successful Module Isolation
@@ -228,7 +228,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python3 tools/verify_authoring_host.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/authoring-host.log
+          python3 -u tools/verify_authoring_host.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/authoring-host.log
           exit ${PIPESTATUS[0]}
 
       - name: Write CI Summary
@@ -322,8 +322,8 @@ jobs:
     needs: [isolation-candidates, module-isolation]
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
-    # Allow runner variance observed after adding the installed lifecycle proofs.
-    timeout-minutes: 25
+    # Match the exact-head budget, including observed runner variance in the full proofs.
+    timeout-minutes: 35
 
     steps:
       - name: Require Successful Module Isolation
@@ -402,7 +402,7 @@ jobs:
         shell: bash
         run: |
           set -o pipefail
-          python3 tools/verify_authoring_host.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/authoring-host.log
+          python3 -u tools/verify_authoring_host.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/authoring-host.log
           exit ${PIPESTATUS[0]}
 
       - name: Write Merge Candidate Summary

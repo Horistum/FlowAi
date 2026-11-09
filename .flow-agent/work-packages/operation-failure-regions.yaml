@@ -1,0 +1,31 @@
+version: AI-A3-S2.3
+name: Explicit failure regions and bounded observation retries
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineHead: 7be072e6ae1e5190674a7bf9bd9f8f9ceea7d3d6
+deliveryPullRequest: 264
+deliveryBase: main
+authorization: Maintainer requested continuing development after operation outcome assessment.
+objective: Preserve explicitly authored failure handling and bounded read-only retries through the existing canonical compiler and independently check their exact regions.
+universalInvariant: Failure-only work stays in the selected protected region, the declared failure disposition is preserved, and retry never implies that a changing operation is safe to repeat.
+scope:
+- Intent 3.1 attempt regions with explicit propagate or recover disposition and bounded read-only retries.
+- Requirements 4 checks over exact canonical protected and handler membership and retry policy.
+- Existing AST, canonical graph, availability and target gates remain the only execution meaning.
+- Independent infrastructure, data recovery and credential maintenance examples with adverse mutations.
+forbiddenScope:
+- No runtime executor, autonomous retry decision, implicit compensation or automatic deletion.
+- No retry of changing or unknown effects and no nested retry multiplication.
+- No claim that authored recovery succeeded, preserved external atomicity or established resource ownership.
+- No target support promotion, observer integration or closure of AI-A3, AR-06 or AR-07.
+completionEvidence:
+- Existing Intent 2.0 and 3.0 and requirements 1 through 3 retain their contracts.
+- Moving a handler onto the happy path, weakening failure propagation, changing retry bounds and substituting resources cannot satisfy the independent requirements.
+- Failed-region values cannot escape into recovery or successful continuation without the canonical availability proof.
+- Installed product, focused and complete regression, conformance and final branch and merge-candidate CI pass.
+patchPlan:
+- Extend Intent model, strict loader, source traversal, lowering and preservation evidence with versioned constructs.
+- Add bounded canonical failure and retry fidelity checks, schemas and host contract capture.
+- Add semantic negative tests, cross-domain fixtures, conformance vectors and installed CLI proof.
+- Document migration, unavailable semantics and validation receipts; update roadmap state after validation.

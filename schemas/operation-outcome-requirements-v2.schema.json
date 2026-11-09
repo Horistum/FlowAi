@@ -1,0 +1,730 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-outcome-requirements-v2.schema.json",
+  "title": "Operation Outcome Requirements v2",
+  "description": "Syntactic interchange only. The outcome reader and reviewer own semantic validity, graph binding, authentication and freshness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "graphDigest",
+    "runId",
+    "challenge",
+    "startedAt",
+    "reviewerId",
+    "resources",
+    "operations",
+    "execution"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 2
+    },
+    "graphDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "challenge": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{32,128}$"
+    },
+    "startedAt": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    },
+    "reviewerId": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    },
+    "resources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "identity",
+          "disposition"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "identity": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scope",
+              "type",
+              "key"
+            ],
+            "properties": {
+              "scope": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "disposition": {
+            "type": "string",
+            "enum": [
+              "SHARED",
+              "MANAGED",
+              "CREATED_IN_RUN"
+            ]
+          },
+          "creator": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "capability"
+            ],
+            "properties": {
+              "capability": {
+                "enum": [
+                  "CHECKOUT",
+                  "BUILD",
+                  "TEST",
+                  "PACKAGE",
+                  "BUILD_IMAGE",
+                  "PUSH_IMAGE",
+                  "DEPLOY",
+                  "VERIFY",
+                  "APPROVE",
+                  "ROLLBACK",
+                  "NOTIFY",
+                  "SYNC",
+                  "DATA_SYNC",
+                  "DATA_TRANSFORM",
+                  "TRANSFORM",
+                  "VALIDATE",
+                  "BACKUP",
+                  "RESTORE",
+                  "CLEANUP",
+                  "PROVISION",
+                  "DEPROVISION",
+                  "DATABASE_MIGRATE",
+                  "CERTIFICATE_RENEW",
+                  "CLUSTER_MAINTENANCE",
+                  "RUNBOOK",
+                  "INCIDENT",
+                  "SECRET_ROTATE",
+                  "POLICY_CHECK",
+                  "RUN_COMMAND",
+                  "CALL_API",
+                  "CUSTOM"
+                ]
+              },
+              "workflow": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                "allOf": [
+                  {
+                    "not": {
+                      "minProperties": 17
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "owner": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 1001
+                }
+              }
+            ]
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "disposition": {
+                  "const": "CREATED_IN_RUN"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "creator"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "creator"
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "disposition": {
+                  "const": "MANAGED"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "owner"
+              ]
+            },
+            "else": {
+              "not": {
+                "required": [
+                  "owner"
+                ]
+              }
+            }
+          }
+        ]
+      },
+      "minItems": 1,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 65
+          }
+        }
+      ]
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "selector",
+          "resource",
+          "parameter",
+          "postconditions",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "selector": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "capability"
+            ],
+            "properties": {
+              "capability": {
+                "enum": [
+                  "CHECKOUT",
+                  "BUILD",
+                  "TEST",
+                  "PACKAGE",
+                  "BUILD_IMAGE",
+                  "PUSH_IMAGE",
+                  "DEPLOY",
+                  "VERIFY",
+                  "APPROVE",
+                  "ROLLBACK",
+                  "NOTIFY",
+                  "SYNC",
+                  "DATA_SYNC",
+                  "DATA_TRANSFORM",
+                  "TRANSFORM",
+                  "VALIDATE",
+                  "BACKUP",
+                  "RESTORE",
+                  "CLEANUP",
+                  "PROVISION",
+                  "DEPROVISION",
+                  "DATABASE_MIGRATE",
+                  "CERTIFICATE_RENEW",
+                  "CLUSTER_MAINTENANCE",
+                  "RUNBOOK",
+                  "INCIDENT",
+                  "SECRET_ROTATE",
+                  "POLICY_CHECK",
+                  "RUN_COMMAND",
+                  "CALL_API",
+                  "CUSTOM"
+                ]
+              },
+              "workflow": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "parameters": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                "allOf": [
+                  {
+                    "not": {
+                      "minProperties": 17
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "resource": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "parameter": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "path": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "allOf": [
+                {
+                  "not": {
+                    "minLength": 129
+                  }
+                }
+              ]
+            },
+            "minItems": 0,
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 9
+                }
+              }
+            ]
+          },
+          "postconditions": {
+            "type": "object",
+            "propertyNames": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+            },
+            "additionalProperties": {
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "string",
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            },
+            "minProperties": 0,
+            "allOf": [
+              {
+                "not": {
+                  "minProperties": 33
+                }
+              }
+            ]
+          },
+          "maxAgeSeconds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 86400
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "status"
+            ],
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "SUCCEEDED",
+                  "FAILED",
+                  "COMPLETED"
+                ]
+              },
+              "presence": {
+                "type": "string",
+                "enum": [
+                  "REQUIRED",
+                  "WHEN_REACHED"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "minItems": 1,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 65
+          }
+        }
+      ]
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workflow",
+        "status"
+      ],
+      "properties": {
+        "workflow": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "COMPLETED"
+          ]
+        },
+        "recoveries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "protected",
+              "handler",
+              "disposition",
+              "expected"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+              },
+              "protected": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "capability"
+                  ],
+                  "properties": {
+                    "capability": {
+                      "enum": [
+                        "CHECKOUT",
+                        "BUILD",
+                        "TEST",
+                        "PACKAGE",
+                        "BUILD_IMAGE",
+                        "PUSH_IMAGE",
+                        "DEPLOY",
+                        "VERIFY",
+                        "APPROVE",
+                        "ROLLBACK",
+                        "NOTIFY",
+                        "SYNC",
+                        "DATA_SYNC",
+                        "DATA_TRANSFORM",
+                        "TRANSFORM",
+                        "VALIDATE",
+                        "BACKUP",
+                        "RESTORE",
+                        "CLEANUP",
+                        "PROVISION",
+                        "DEPROVISION",
+                        "DATABASE_MIGRATE",
+                        "CERTIFICATE_RENEW",
+                        "CLUSTER_MAINTENANCE",
+                        "RUNBOOK",
+                        "INCIDENT",
+                        "SECRET_ROTATE",
+                        "POLICY_CHECK",
+                        "RUN_COMMAND",
+                        "CALL_API",
+                        "CUSTOM"
+                      ]
+                    },
+                    "workflow": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "minLength": 1,
+                        "allOf": [
+                          {
+                            "not": {
+                              "minLength": 1001
+                            }
+                          }
+                        ]
+                      },
+                      "allOf": [
+                        {
+                          "not": {
+                            "minProperties": 17
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "minItems": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minItems": 33
+                    }
+                  }
+                ]
+              },
+              "handler": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "capability"
+                  ],
+                  "properties": {
+                    "capability": {
+                      "enum": [
+                        "CHECKOUT",
+                        "BUILD",
+                        "TEST",
+                        "PACKAGE",
+                        "BUILD_IMAGE",
+                        "PUSH_IMAGE",
+                        "DEPLOY",
+                        "VERIFY",
+                        "APPROVE",
+                        "ROLLBACK",
+                        "NOTIFY",
+                        "SYNC",
+                        "DATA_SYNC",
+                        "DATA_TRANSFORM",
+                        "TRANSFORM",
+                        "VALIDATE",
+                        "BACKUP",
+                        "RESTORE",
+                        "CLEANUP",
+                        "PROVISION",
+                        "DEPROVISION",
+                        "DATABASE_MIGRATE",
+                        "CERTIFICATE_RENEW",
+                        "CLUSTER_MAINTENANCE",
+                        "RUNBOOK",
+                        "INCIDENT",
+                        "SECRET_ROTATE",
+                        "POLICY_CHECK",
+                        "RUN_COMMAND",
+                        "CALL_API",
+                        "CUSTOM"
+                      ]
+                    },
+                    "workflow": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    },
+                    "parameters": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string",
+                        "minLength": 1,
+                        "allOf": [
+                          {
+                            "not": {
+                              "minLength": 1001
+                            }
+                          }
+                        ]
+                      },
+                      "allOf": [
+                        {
+                          "not": {
+                            "minProperties": 17
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "minItems": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minItems": 33
+                    }
+                  }
+                ]
+              },
+              "disposition": {
+                "type": "string",
+                "enum": [
+                  "PROPAGATE",
+                  "RECOVER"
+                ]
+              },
+              "expected": {
+                "type": "string",
+                "enum": [
+                  "NOT_NEEDED",
+                  "RECOVERED",
+                  "PROPAGATED",
+                  "RECOVER_IF_NEEDED",
+                  "PROPAGATE_IF_NEEDED"
+                ]
+              },
+              "verificationOperations": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "minItems": 0,
+                "allOf": [
+                  {
+                    "not": {
+                      "minItems": 33
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "minItems": 0,
+          "allOf": [
+            {
+              "not": {
+                "minItems": 33
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

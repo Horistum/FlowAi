@@ -13,6 +13,9 @@ object FlowStandardVersions {
     const val FLOW_STANDARD_VERSION = "0.8.0"
     const val INTENT_VERSION = "2.0" // Legacy default remains frozen.
     const val STRUCTURED_INTENT_VERSION = "3.0"
+    const val RECOVERY_INTENT_VERSION = "3.1"
+    fun isStructuredIntentVersion(version: String?): Boolean =
+        version == STRUCTURED_INTENT_VERSION || version == RECOVERY_INTENT_VERSION
     const val AST_VERSION = "2.2"
     const val EXECUTION_PLAN_VERSION = "2.4"
     const val WORKFLOW_EXECUTION_PLAN_SET_VERSION = "1.1"

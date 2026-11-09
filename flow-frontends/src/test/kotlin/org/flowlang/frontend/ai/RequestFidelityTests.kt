@@ -175,7 +175,7 @@ class RequestFidelityTests {
         val valid = tree("deployment-specified", "requirements").toString()
         val variants = listOf(
             valid.replaceFirst("{", "{\"formatVersion\":1,"), valid + "{}",
-            valid.replace("\"formatVersion\":1", "\"formatVersion\":4"),
+            valid.replace("\"formatVersion\":1", "\"formatVersion\":99"),
             valid.replace("\"CONFIRMED\"", "\"credential-do-not-echo\""),
             valid.replace("\"repository-test-oracle\"", "null"),
             valid.replace("\"capability-count\"", "\"arbitrary-check\""),

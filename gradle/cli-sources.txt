@@ -4,6 +4,7 @@ org/flowlang/cli/honest/CliCommandCatalog.kt
 org/flowlang/cli/honest/CliExecution.kt
 org/flowlang/cli/honest/CliTargetEvidenceAuthority.kt
 org/flowlang/cli/honest/HonestFlowCli.kt
+org/flowlang/cli/honest/OutcomeCommand.kt
 org/flowlang/cli/honest/ProposalCommand.kt
 org/flowlang/cli/honest/StandardCliCommands.kt
 org/flowlang/preview/PlanPreview.kt

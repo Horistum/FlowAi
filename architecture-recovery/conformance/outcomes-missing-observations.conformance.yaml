@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.outcomes.missing-observations
+introducedIn: "AI-A3-S2.2"
+description: Accepted cross-domain plans remain unresolved without authenticated outcome observations.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.outcomes.missing-observations
+  runtimeExecutionAssessed: false
