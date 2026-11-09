@@ -4,7 +4,8 @@ status: candidate
 stream: architecture-recovery
 parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
 baselineHead: b1bc61b313e7e1bde3141cc1f82675dbb1780293
-dependsOnPullRequest: 262
+deliveryPullRequest: 264
+deliveryBase: main
 authorization: Maintainer explicitly requested connecting actual attempts, failures and recovery to observed results.
 objective: Independently assess authenticated invocation history and post-recovery state against the existing accepted canonical graph.
 universalInvariant: A later successful result cannot erase an earlier failure, replace missing attempts, move a handler onto the happy path, or reuse pre-recovery state as proof of recovery.

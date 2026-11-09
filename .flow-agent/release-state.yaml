@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 136
+stateVersion: 137
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -926,7 +926,8 @@ recoveryBoundedAuthoring:
     report: .flow-agent/reports/attempt-aware-run-evidence.md
     contract: docs/RUN_EVIDENCE.md
     baselineHead: b1bc61b313e7e1bde3141cc1f82675dbb1780293
-    dependsOnPullRequest: 262
+    deliveryPullRequest: 264
+    deliveryBase: main
     validation: candidate-full-regression-conformance-installed-local-runtime-and-final-ci-required
     outcomeContractVersion: 2
     scope: Authenticated bounded invocation history, exact attempts and failure causes, independently declared post-recovery state.
@@ -943,7 +944,8 @@ recoveryBoundedAuthoring:
     report: .flow-agent/reports/operation-failure-regions.md
     contract: docs/FAILURE_REGIONS.md
     baselineHead: 7be072e6ae1e5190674a7bf9bd9f8f9ceea7d3d6
-    dependsOnPullRequest: 262
+    deliveryPullRequest: 264
+    deliveryBase: main
     validation: focused-jvm-python-installed-proof-passed-full-regression-and-final-ci-required
     focusedJvmTests: 17
     localPythonTests: 340
@@ -963,6 +965,8 @@ recoveryBoundedAuthoring:
     report: .flow-agent/reports/operation-outcomes-resources.md
     contract: docs/OPERATION_OUTCOMES.md
     baselineMain: 230cfe1608a8829814ae384163fd78ff36a473db
+    deliveryPullRequest: 264
+    deliveryBase: main
     validation: local-focused-jvm-regression-python-conformance-installed-proof-passed-final-revision-ci-required
     focusedJvmTests: 21
     localPythonTests: 339

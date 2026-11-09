@@ -1,7 +1,9 @@
 # Explicit failure regions and bounded observation retries
 
-Baseline: PR #262 head `7be072e6ae1e5190674a7bf9bd9f8f9ceea7d3d6`.
-PR #262 was still open when this follow-up was started; no merge is implied.
+Implementation baseline: PR #262 head `7be072e6ae1e5190674a7bf9bd9f8f9ceea7d3d6`.
+Delivery is consolidated in PR #264 against `main`, together with operation outcomes
+and attempt-aware run evidence. PR #262 is superseded; it does not need to merge first.
+The historical implementation baseline does not imply acceptance on `main`.
 Work package: [AI-A3-S2.3](../work-packages/operation-failure-regions.yaml).
 Contract and migration: [Failure regions](../../docs/FAILURE_REGIONS.md).
 

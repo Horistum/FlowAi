@@ -1,6 +1,8 @@
 version: AI-A3-S2.2
 name: Scoped resource and operation outcome assessment
 status: candidate
+deliveryPullRequest: 264
+deliveryBase: main
 stream: architecture-recovery
 parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
 baselineMain: 230cfe1608a8829814ae384163fd78ff36a473db

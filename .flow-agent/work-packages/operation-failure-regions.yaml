@@ -4,7 +4,8 @@ status: candidate
 stream: architecture-recovery
 parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
 baselineHead: 7be072e6ae1e5190674a7bf9bd9f8f9ceea7d3d6
-dependsOnPullRequest: 262
+deliveryPullRequest: 264
+deliveryBase: main
 authorization: Maintainer requested continuing development after operation outcome assessment.
 objective: Preserve explicitly authored failure handling and bounded read-only retries through the existing canonical compiler and independently check their exact regions.
 universalInvariant: Failure-only work stays in the selected protected region, the declared failure disposition is preserved, and retry never implies that a changing operation is safe to repeat.

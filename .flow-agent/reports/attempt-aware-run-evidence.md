@@ -1,7 +1,11 @@
 # Attempt-aware run and recovery evidence
 
-Baseline: `b1bc61b313e7e1bde3141cc1f82675dbb1780293`, the head of open PR #262
-after PR #263 was merged into that branch. This follow-up does not merge #262.
+Implementation baseline: `b1bc61b313e7e1bde3141cc1f82675dbb1780293`, PR #262's
+head after PR #263 was merged into that branch. Delivery is now consolidated in
+PR #264 against `main` at `230cfe1608a8829814ae384163fd78ff36a473db`.
+The complete operation-outcome and failure-region history is included, so PR #262
+is superseded and no separate prerequisite merge is required. This consolidation
+does not merge changes into `main`; the final head and new merge candidate require CI.
 Work package: [AI-A3-S2.4](../work-packages/attempt-aware-run-evidence.yaml).
 Public contract: [Run evidence](../../docs/RUN_EVIDENCE.md).
 
