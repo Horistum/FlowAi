@@ -1,0 +1,28 @@
+version: AI-A3-S2.5
+name: Durable external observer and interrupted capture reconciliation
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 309df5688a78a12ed35bb8d229d1121879e2ba9f
+predecessorPullRequest: 264
+deliveryBase: main
+authorization: Maintainer requested completing the next development PR after consolidated outcome and recovery evidence.
+objective: Persist actual invocation and resource captures across process interruption and export exact signed checkpoints to the existing evaluator.
+universalInvariant: A lost reply, restarted collector or late delivery never creates another invocation, invents completion or authorizes operation replay.
+scope:
+- External generic observer CLI and library with bounded SQLite transactions and explicit checkpoint compare-and-append.
+- Original source and independent requirements capture, installed compiler fingerprint and canonical target correlation.
+- Idempotent delivery, explicit pending invocations, late evidence reconciliation and caller-anchored rollback detection.
+- Caller-owned Ed25519 signing and atomic snapshot publication through the unchanged outcome version 2 assessment.
+- Actual process crashes, competing writers and independent service, data and credential integration proofs.
+forbiddenScope:
+- No workflow execution, command dispatch, automatic retry, recovery selection or execution permission.
+- No second execution graph, provider-specific observer, dynamic handle lineage or parallel trace certification.
+- No global replay registry, distributed consensus, dishonest-observer protection or cloud support promotion.
+completionEvidence:
+- Lost acknowledgements are idempotent; uncommitted writes do not survive; outstanding work remains pending after restart.
+- Stale checkpoints, changed context, altered captures and conflicting deliveries are rejected without losing prior records.
+- Fresh external collector processes reconcile actual repair results without repeating infrastructure work.
+- The same installed outcome evaluator assesses partial, recovered and violated snapshots across all three domains.
+- Full Python tooling, installed host proof and final-head and main merge-candidate CI pass.
+nextSlice: S2-producer-invocation-lineage-and-external-observer-deployment

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 137
+stateVersion: 138
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -36,7 +36,7 @@ toolchainState:
   offlineValidation: passed
 
 roadmapState:
-  roadmapVersion: 33
+  roadmapVersion: 34
   activeTrack: ""
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -920,6 +920,25 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  durableObserverFollowup:
+    selectedSlice: AI-A3-S2.5
+    workPackage: .flow-agent/work-packages/durable-run-observer.yaml
+    report: .flow-agent/reports/durable-run-observer.md
+    contract: docs/DURABLE_RUN_OBSERVER.md
+    baselineMain: 309df5688a78a12ed35bb8d229d1121879e2ba9f
+    predecessorPullRequest: 264
+    deliveryBase: main
+    validation: candidate-python-crash-concurrency-installed-integration-and-final-ci-required
+    observerProtocolVersion: 1
+    outcomeContractVersion: 2
+    scope: Durable external capture, exact checkpoint export and reconciliation of actual late results without operation replay.
+    nextSlice: S2-producer-invocation-lineage-and-external-observer-deployment
+    productionRuntimeExecution: false
+    localRuntimeEvidence: true
+    cloudRuntimeEvidence: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   attemptAwareRunEvidenceFollowup:
     selectedSlice: AI-A3-S2.4
     workPackage: .flow-agent/work-packages/attempt-aware-run-evidence.yaml

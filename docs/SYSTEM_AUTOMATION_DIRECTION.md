@@ -161,9 +161,14 @@ adds scoped resource identities and fresh authenticated observations over the sa
 accepted graph. It is a post-run evidence assessment, not an executor or execution
 permission. [S2.3 failure regions](FAILURE_REGIONS.md) adds explicit protected and handler bodies,
 propagation/recovery disposition, bounded read-only retries and independent region
-requirements. Observer integrations, attempt-aware runtime evidence, safe changing
-retries and autonomous partial-failure recovery remain open.
+requirements. Production observer deployment, safe changing retries and autonomous
+partial-failure recovery remain open.
 
 S2.4: [Attempt-aware run and recovery evidence](RUN_EVIDENCE.md) connects signed
 invocation history to existing canonical regions and final state obligations, with
 real isolated local service, data and credential integration proofs.
+
+S2.5: [Durable external observation](DURABLE_RUN_OBSERVER.md) retains actual captures
+across collector crashes and late delivery, then signs a caller-selected checkpoint
+for the same evaluator. Reconciliation never redispatches work. Dynamic resource
+producer-invocation lineage and production cloud observer deployment remain open.
