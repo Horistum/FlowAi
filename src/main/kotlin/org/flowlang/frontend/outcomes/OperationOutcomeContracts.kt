@@ -76,6 +76,16 @@ data class OperationObservationTrust(val formatVersion: Int, val grants: List<Ob
 
 data class OutcomeInputSource(val identity: String, val sha256: String, val sizeBytes: Int)
 enum class OperationOutcomeState { SATISFIED, VIOLATED, UNRESOLVED }
+/** The actual producer selected by the verified trace, never by a convenient matching address. */
+data class ResourceInvocationLineage(
+    val consumerInvocationId: String,
+    val producerInvocationId: String,
+    val producerNodeId: String,
+    val binding: String,
+    val path: List<String>,
+    val observationId: String,
+    val resource: ResourceIdentity
+)
 data class OperationOutcomeResult(
     val id: String,
     val nodeId: String?,
@@ -84,7 +94,9 @@ data class OperationOutcomeResult(
     val code: String,
     val observationIds: List<String> = emptyList(),
     @get:JsonInclude(JsonInclude.Include.NON_NULL) val invocationId: String? = null,
-    @get:JsonInclude(JsonInclude.Include.NON_NULL) val observedStatus: ObservationStatus? = null
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val observedStatus: ObservationStatus? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_EMPTY) val resourceLineage: List<ResourceInvocationLineage> = emptyList(),
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val creatorInvocationId: String? = null
 )
 data class OperationOutcomeReview(
     val formatVersion: Int = 1,

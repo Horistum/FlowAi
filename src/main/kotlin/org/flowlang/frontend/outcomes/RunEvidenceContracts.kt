@@ -1,5 +1,6 @@
 package org.flowlang.frontend.outcomes
 
+import com.fasterxml.jackson.annotation.JsonInclude
 import org.flowlang.frontend.ai.RequirementSelector
 import org.flowlang.frontend.ai.RequiredFailureDisposition
 
@@ -65,7 +66,9 @@ data class RecoveryEvidenceResult(
     val verificationOperationIds: List<String> = emptyList()
 )
 /** Digest-bound correlation targets, not an executable graph or permission to run. */
-data class InvocationTarget(val nodeId: String, val capability: String)
+data class InvocationTarget(val nodeId: String, val capability: String,
+    @get:JsonInclude(JsonInclude.Include.NON_EMPTY)
+    val outputs: List<String> = emptyList())
 data class RunEvidenceReview(
     val state: OperationOutcomeState,
     val code: String,

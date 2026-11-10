@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.run-evidence.output-correlation-schema
+introducedIn: "AI-A3-S2.6"
+description: Invocation targets retain canonical output bindings and the version 2 review conforms to its published schema.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.run-evidence.output-correlation-schema
+  runtimeExecutionAssessed: false

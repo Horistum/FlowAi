@@ -72,6 +72,8 @@ object OperationObservationAuthentication {
                 if (at < Instant.parse(requirements.startedAt) || at > now) throw UnresolvedOutcome("OUTCOME_OBSERVATION_TIME")
                 val node = observation.nodeId?.let { nodes[it] ?: throw UnresolvedOutcome("OUTCOME_UNKNOWN_NODE") }
                 if (observation.kind == ObservationKind.BINDING) {
+                    if (requirements.formatVersion == 2 && node !is CanonicalTaskNode)
+                        throw UnresolvedOutcome("OUTCOME_ATTEMPT_RESOURCE_BINDING_UNSUPPORTED")
                     val outputs = node?.let { outputBindings(graph, it) } ?: graph.inputs.map { it.name }.toSet()
                     if (observation.binding !in outputs) throw UnresolvedOutcome("OUTCOME_UNKNOWN_BINDING")
                 } else if (node !is CanonicalTaskNode) throw UnresolvedOutcome("OUTCOME_NOT_OPERATION")
@@ -83,7 +85,9 @@ object OperationObservationAuthentication {
               catch (_: Exception) { throw UnresolvedOutcome("OUTCOME_INVALID_OBSERVATION") }
         }
         if (observations.map { it.id }.distinct().size != observations.size || observations.map {
-            listOf(it.kind, it.nodeId, it.resource, it.binding, it.path, it.invocationId)
+            // A single output/path cannot attest two addresses in one invocation.
+            listOf(it.kind, it.nodeId, if (requirements.formatVersion == 2 && it.kind == ObservationKind.BINDING) null else it.resource,
+                it.binding, it.path, it.invocationId)
         }.distinct().size != observations.size) throw UnresolvedOutcome("OUTCOME_AMBIGUOUS_OBSERVATIONS")
         return observations
     }

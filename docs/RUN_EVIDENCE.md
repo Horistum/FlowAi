@@ -152,9 +152,12 @@ Branches, parallelism, loops, nested tries/retries, local aliases, workflow fail
 handlers and multiple workflows remain unresolved. Runtime interpretation does not
 expand canonical semantics or target admission.
 
-Version 2 currently requires literal exact resource addresses. Dynamic handles and
-bindings need a subsequent producer-invocation lineage proof; node-only version 1
-binding evidence cannot be reused across attempts. The public limit remains 64
+Version 2 admits literal exact resource addresses and canonical task-output handles
+with [producer-invocation lineage](RESOURCE_INVOCATION_LINEAGE.md). Each reached
+consumer is bound to the actual available successful producer and its exact output path;
+node-only version 1 evidence cannot be reused across attempts. Identities must still
+be independently declared before capture. Workflow-input handles and aliases remain
+unresolved in version 2. The public limit remains 64
 resources, 64 outcome operations, 256 resource claims and 64 KiB per signed payload
 and source. A run contains at most 256 invocations; at most 32 recovery obligations
 are admitted. Graph, selector, structure and fidelity work have bounded budgets.
@@ -190,6 +193,8 @@ observer deployment. The fixture approval explicitly claims no human approval.
 
 [S2.5 durable external observation](DURABLE_RUN_OBSERVER.md) now provides transactional
 capture, process-restart reconciliation and signed checkpoint export through this same
-evaluator. Producer-invocation lineage for dynamic handles and deployed production
-observers remain next boundaries. AI-A3, AR-06/AR-07, F-16/F-20 and live/render gates
+evaluator. [S2.6 resource lineage](RESOURCE_INVOCATION_LINEAGE.md) adds exact producer
+and creator invocation correlation. Deployed production observers, external checkpoint
+retention and runtime-allocated identity contracts remain next boundaries. AI-A3,
+AR-06/AR-07, F-16/F-20 and live/render gates
 remain open; EF-09 remains paused.
