@@ -188,6 +188,8 @@ These tests establish local runtime-to-observer-to-review integration; they do n
 certify an Azure/Jenkins provider, production recovery, a live model or an external
 observer deployment. The fixture approval explicitly claims no human approval.
 
-The next slice is an external observer integration with durable capture, partial-run
-reconciliation and producer-invocation lineage for dynamic handles. AI-A3, AR-06/AR-07,
-F-16/F-20 and live/render gates remain open; EF-09 remains paused.
+[S2.5 durable external observation](DURABLE_RUN_OBSERVER.md) now provides transactional
+capture, process-restart reconciliation and signed checkpoint export through this same
+evaluator. Producer-invocation lineage for dynamic handles and deployed production
+observers remain next boundaries. AI-A3, AR-06/AR-07, F-16/F-20 and live/render gates
+remain open; EF-09 remains paused.

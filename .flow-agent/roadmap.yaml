@@ -4,7 +4,7 @@
 # Human entry: .flow-agent/README.md#active-roadmap-route.
 # Historical decisionBasis receipts below are not current implementation claims.
 project: Flow
-roadmapVersion: 33
+roadmapVersion: 34
 currentTrack: ""
 primaryRoadmapStream: conformance
 
