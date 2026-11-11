@@ -170,7 +170,8 @@
             "RESULT",
             "STATE",
             "OWNERSHIP",
-            "CREATION"
+            "CREATION",
+            "BINDING"
           ]
         },
         "status": {
@@ -219,6 +220,18 @@
         },
         "created": {
           "type": "boolean"
+        },
+        "binding": {
+          "$ref": "#/$defs/id"
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "maxItems": 8
         }
       },
       "allOf": [
@@ -277,6 +290,36 @@
             "not": {
               "required": [
                 "created"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "BINDING"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "binding"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "binding"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
               ]
             }
           }

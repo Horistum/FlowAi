@@ -18,6 +18,7 @@ from verify_operation_outcomes import verify as verify_operation_outcomes
 from verify_failure_regions import verify as verify_failure_regions
 from verify_run_evidence import verify as verify_run_evidence
 from verify_observation_host import verify as verify_observation_host
+from verify_resource_lineage import verify as verify_resource_lineage
 
 
 def verify(root, cli):
@@ -162,6 +163,7 @@ def verify(root, cli):
     verify_failure_regions(root, cli)
     verify_run_evidence(root, cli)
     verify_observation_host(root, cli)
+    verify_resource_lineage(root, cli)
 
 
 if __name__ == "__main__":

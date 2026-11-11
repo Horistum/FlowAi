@@ -86,7 +86,12 @@ def _context(source_kind, source, requirements, review, compiler_fingerprint):
     require(isinstance(targets, list) and 0 < len(targets) <= 256, "Unsupported observer target inventory")
     nodes = {}
     for target in targets:
-        keys(target, ("nodeId", "capability")); text(target["nodeId"]); text(target["capability"])
+        keys(target, ("nodeId", "capability"), ("outputs",)); text(target["nodeId"]); text(target["capability"])
+        outputs = target.get("outputs", [])
+        require(isinstance(outputs, list) and len(outputs) <= 256, "Invalid observer output inventory")
+        for output in outputs:
+            text(output)
+        require(len(set(outputs)) == len(outputs), "Ambiguous observer output inventory")
         require(target["nodeId"] not in nodes and target["capability"] != "UNKNOWN", "Ambiguous observer targets")
         nodes[target["nodeId"]] = target["capability"]
     require(all(r.get("nodeId") in nodes for r in assessment["results"]), "Unresolved operation selectors")
@@ -154,8 +159,9 @@ def _event_digest(previous, raw, capture):
 
 
 class History:
-    def __init__(self, req, nodes):
+    def __init__(self, req, nodes, outputs):
         self.req, self.nodes = req, nodes
+        self.outputs = outputs
         self.started, self.finished, self.claims, self.closed = {}, [], [], None
         self.pending = None
         self.last_time = timestamp(req["startedAt"])
@@ -209,9 +215,9 @@ class History:
             raise HostError("Unknown observer event type")
 
     def _claim(self, data, capture):
-        keys(data, ("id", "kind", "status", "nodeId", "invocationId", "resource", "observedAt"), ("facts", "owner", "created"))
+        keys(data, ("id", "kind", "status", "nodeId", "invocationId", "resource", "observedAt"), ("facts", "owner", "created", "binding", "path"))
         identifier(data["id"]); identifier(data["invocationId"])
-        require(data["kind"] in ("RESULT", "STATE", "OWNERSHIP", "CREATION") and data["status"] in ("SUCCEEDED", "FAILED", "UNKNOWN"), "Unsupported observation claim")
+        require(data["kind"] in ("RESULT", "STATE", "OWNERSHIP", "CREATION", "BINDING") and data["status"] in ("SUCCEEDED", "FAILED", "UNKNOWN"), "Unsupported observation claim")
         require(data["invocationId"] in self.started and data["nodeId"] == self.started[data["invocationId"]]["nodeId"]
                 and self.nodes[data["nodeId"]] != "APPROVE", "Observation does not identify an actual operation invocation")
         keys(data["resource"], ("scope", "type", "key"))
@@ -221,7 +227,18 @@ class History:
             require(self.closed is not None and at >= timestamp(self.closed["completedAt"]),
                     "Final state requires an explicitly closed run and a fresh capture")
         require((data["kind"] == "OWNERSHIP") == ("owner" in data) and (data["kind"] == "CREATION") == ("created" in data)
-                and (data["kind"] == "STATE" or "facts" not in data), "Invalid observation fields for its kind")
+                and (data["kind"] == "STATE" or "facts" not in data)
+                and (data["kind"] == "BINDING") == ("binding" in data)
+                and (data["kind"] == "BINDING" or "path" not in data), "Invalid observation fields for its kind")
+        if data["kind"] == "BINDING":
+            identifier(data["binding"])
+            require(data["binding"] in self.outputs.get(data["nodeId"], []), "Binding is not a declared output of its producer")
+            path = data.get("path", [])
+            require(isinstance(path, list) and len(path) <= 8 and all(
+                isinstance(part, str) and 0 < len(part.strip()) and len(part) <= 128 for part in path), "Invalid output path")
+            result = next((i for i in self.finished if i["id"] == data["invocationId"]), None)
+            require(result is not None and data["status"] == result["status"] == "SUCCEEDED"
+                    and at == timestamp(result["completedAt"]), "Binding requires its producer's actual successful completion")
         if "owner" in data:
             text(data["owner"])
             require(at <= timestamp(self.started[data["invocationId"]]["startedAt"]), "Ownership was observed after invocation start")
@@ -240,7 +257,8 @@ class History:
         if data["kind"] == "RESULT":
             result = next((i for i in self.finished if i["id"] == data["invocationId"]), None)
             require(result is not None and data["status"] == result["status"] and at == timestamp(result["completedAt"]), "Result does not match the recorded completion")
-        slot = canonical([data["kind"], data["nodeId"], data["invocationId"], data["resource"]])
+        slot = canonical([data["kind"], data["nodeId"], data["invocationId"], data["binding"], data.get("path", [])]
+                         if data["kind"] == "BINDING" else [data["kind"], data["nodeId"], data["invocationId"], data["resource"]])
         require(bool(capture) and data["id"] not in self.claim_ids and slot not in self.slots and len(self.claims) < 256,
                 "Observation is empty, duplicated or over the limit")
         self.claim_ids.add(data["id"]); self.slots.add(slot)
@@ -257,7 +275,8 @@ def _read(db):
     require(binding == expected, "Observer context changed")
     session = digest(b"Horistum observer session\0v1\0" + canonical(binding))
     tip = dict(sessionId=session, sequence=0, digest=session)
-    history = History(req, nodes)
+    targets = loads(metadata["review"])["execution"]["invocationTargets"]
+    history = History(req, nodes, {target["nodeId"]: target.get("outputs", []) for target in targets})
     entries = db.execute("SELECT sequence, event_id, event, capture, digest FROM events ORDER BY sequence LIMIT ?", (MAX_EVENTS + 1,)).fetchall()
     require(len(entries) <= MAX_EVENTS, "Journal event limit exceeded")
     total, ids = sum(len(v) for v in metadata.values()), set()

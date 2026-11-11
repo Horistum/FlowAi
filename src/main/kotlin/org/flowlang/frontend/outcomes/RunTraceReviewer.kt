@@ -10,7 +10,20 @@ internal class RunTraceReviewer(private val graph: CanonicalExecutionGraph, val 
     private val nodes = graph.nodes.associateBy { it.id }
     private var cursor = 0
     private var work = 0
+    private val available = linkedMapOf<String, ObservedInvocation>()
+    private val sources = mutableMapOf<String, Map<String, ObservedInvocation>>()
+    private val valueEdges = graph.dependencyEdges.filter {
+        it.kind == CanonicalDependencyKind.VALUE && it.resolution == CanonicalDependencyResolution.RESOLVED
+    }.groupBy { it.targetNodeId }
     val recoveries = linkedMapOf<String, ObservedRecovery>()
+    /** Only the producer visible on this verified invocation path can supply its resource. */
+    fun producerFor(consumerInvocationId: String, producerNodeId: String): ObservedInvocation? =
+        sources[consumerInvocationId]?.get(producerNodeId)
+
+    private fun restore(entry: Map<String, ObservedInvocation>) {
+        available.clear()
+        available.putAll(entry)
+    }
     private fun unresolved(code: String): Nothing = throw UnresolvedOutcome(code)
     private fun charge() { if (++work > 10000) unresolved("OUTCOME_REVIEW_LIMIT") }
     private fun shape(ids: List<CanonicalNodeId>, depth: Int = 0, inTry: Boolean = false, inRetry: Boolean = false, handler: Boolean = false) {
@@ -75,6 +88,12 @@ internal class RunTraceReviewer(private val graph: CanonicalExecutionGraph, val 
                     val event = observation.invocations.getOrNull(cursor++) ?: unresolved("OUTCOME_INVOCATION_MISSING")
                     if (event.nodeId != id.value || event.attempt != attempt || event.causedBy != cause?.id)
                         unresolved("OUTCOME_INVOCATION_PATH")
+                    sources[event.id] = valueEdges[id].orEmpty().mapNotNull { edge ->
+                        edge.sourceNodeId?.value?.let { producer -> available[producer]?.let { producer to it } }
+                    }.toMap()
+                    // A failed invocation never publishes outputs, including values from an earlier retry.
+                    available.remove(id.value)
+                    if (node is CanonicalTaskNode && event.status == ObservationStatus.SUCCEEDED) available[id.value] = event
                     event.takeIf { it.status == ObservationStatus.FAILED }
                 }
                 is CanonicalRetryNode -> retry(node, cause)
@@ -87,6 +106,7 @@ internal class RunTraceReviewer(private val graph: CanonicalExecutionGraph, val 
         return null
     }
     private fun retry(node: CanonicalRetryNode, cause: ObservedInvocation?): ObservedInvocation? {
+        val entry = available.toMap()
         var last: ObservedInvocation? = null
         for (number in 1..node.max) {
             if (last != null) {
@@ -94,16 +114,21 @@ internal class RunTraceReviewer(private val graph: CanonicalExecutionGraph, val 
                 if (Instant.parse(next.startedAt) < Instant.parse(last.completedAt).plusSeconds(node.delay.dropLast(1).toLong()))
                     unresolved("OUTCOME_RETRY_DELAY")
             }
+            restore(entry)
             last = sequence(node.bodyNodeIds, number, cause) ?: return null
         }
+        restore(entry)
         return last
     }
     private fun attempt(node: CanonicalTryNode): ObservedInvocation? {
+        val entry = available.toMap()
         val original = sequence(node.bodyNodeIds)
         if (original == null) {
             recoveries[node.id.value] = ObservedRecovery(node.id.value, RecoveryPath.NOT_NEEDED, null, null, emptyList())
             return null
         }
+        // The handler enters with the pre-region environment, not a partially completed failed body.
+        restore(entry)
         val start = cursor
         val failure = sequence(node.errorHandlerNodeIds, cause = original)
         val path = when {

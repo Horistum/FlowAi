@@ -6,6 +6,7 @@ import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
 import org.flowlang.frontend.ai.*
 import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.Violation
+import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.ResourceOperand
 
 /** Version 2 assessment. Version 1 retains its operation-local historical semantics. */
 internal object AttemptOutcomeReviewer {
@@ -31,8 +32,9 @@ internal object AttemptOutcomeReviewer {
                 if (claim.nodeId != event.nodeId) throw UnresolvedOutcome("OUTCOME_INVOCATION_NODE")
                 if (claim.kind == ObservationKind.RESULT && (claim.status != event.status ||
                     Instant.parse(claim.observedAt) != Instant.parse(event.completedAt))) throw UnresolvedOutcome("OUTCOME_INVOCATION_RESULT")
-                // Dynamic output bindings need a producer-invocation proof, not just a node name.
-                if (claim.kind == ObservationKind.BINDING) throw UnresolvedOutcome("OUTCOME_ATTEMPT_RESOURCE_BINDING_UNSUPPORTED")
+                if (claim.kind == ObservationKind.BINDING && (event.status != ObservationStatus.SUCCEEDED ||
+                    claim.status != ObservationStatus.SUCCEEDED || Instant.parse(claim.observedAt) != Instant.parse(event.completedAt)))
+                    throw UnresolvedOutcome("OUTCOME_BINDING_COMPLETION")
             }
             trace = verified
         } catch (failure: UnresolvedOutcome) { diagnostics += failure.code }
@@ -43,11 +45,16 @@ internal object AttemptOutcomeReviewer {
             var node: CanonicalTaskNode? = null
             var last: ObservedInvocation? = null
             val used = linkedSetOf<String>()
+            val lineage = mutableListOf<ResourceInvocationLineage>()
+            var creatorInvocationId: String? = null
             try {
                 node = inspector.select(operation.selector)
                 if (diagnostics.isNotEmpty()) throw UnresolvedOutcome(diagnostics.first())
                 val active = requireNotNull(trace).observation
-                if (inspector.resource(node, operation, used, literalOnly = true) != resource.identity) throw Violation("OUTCOME_RESOURCE_MISMATCH")
+                val operand = inspector.operand(node, operation)
+                if (operand is ResourceOperand.Literal && operand.identity != resource.identity) throw Violation("OUTCOME_RESOURCE_MISMATCH")
+                if (operand is ResourceOperand.Output && graph.nodes.none { it is CanonicalTaskNode && it.id.value == operand.producerNodeId })
+                    throw UnresolvedOutcome("OUTCOME_ATTEMPT_RESOURCE_BINDING_UNSUPPORTED")
                 val effects = node.semantics.effects
                 if (effects.isEmpty() || effects.any { it.domain == EffectDomain.UNKNOWN || it.operation == EffectOperation.UNKNOWN })
                     throw UnresolvedOutcome("OUTCOME_UNKNOWN_EFFECTS")
@@ -61,6 +68,8 @@ internal object AttemptOutcomeReviewer {
                 if (resource.disposition == ResourceDisposition.SHARED && changes) throw Violation("OUTCOME_SHARED_RESOURCE_CHANGE")
                 last = events.last()
                 for (event in events) {
+                    if (resource(operand, operation, event, trace, inspector, used, lineage) != resource.identity)
+                        throw Violation("OUTCOME_RESOURCE_MISMATCH")
                     inspector.observation(ObservationKind.RESULT, node.id.value, resource.identity, operation.maxAgeSeconds, used, event.id)
                     if (resource.disposition == ResourceDisposition.MANAGED && changes) {
                         val ownership = inspector.observation(ObservationKind.OWNERSHIP, node.id.value, resource.identity, operation.maxAgeSeconds, used, event.id)
@@ -73,16 +82,18 @@ internal object AttemptOutcomeReviewer {
                     val creator = inspector.select(requireNotNull(resource.creator))
                     val declarations = contract.operations.filter { it.resource == resource.id && inspector.select(it.selector).id == creator.id }
                     if (declarations.isEmpty()) throw UnresolvedOutcome("OUTCOME_CREATOR_NOT_COVERED")
-                    if (declarations.any { inspector.resource(creator, it, used, literalOnly = true) != resource.identity })
-                        throw Violation("OUTCOME_CREATOR_RESOURCE_MISMATCH")
                     val event = active.invocations.singleOrNull { it.nodeId == creator.id.value } ?: throw UnresolvedOutcome("OUTCOME_CREATION_INVOCATION")
+                    if (declarations.any { resource(inspector.operand(creator, it), it, event, trace, inspector, used, mutableListOf()) != resource.identity })
+                        throw Violation("OUTCOME_CREATOR_RESOURCE_MISMATCH")
                     val creation = inspector.observation(ObservationKind.CREATION, creator.id.value, resource.identity, operation.maxAgeSeconds, used, event.id)
                     if (creation.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_CREATION_UNKNOWN")
                     if (creation.created != true) throw Violation("OUTCOME_RESOURCE_NOT_CREATED")
                     val at = Instant.parse(creation.observedAt)
                     if (at < Instant.parse(event.startedAt) || at > Instant.parse(event.completedAt)) throw UnresolvedOutcome("OUTCOME_CREATION_TIME")
-                    if (effects.any { it.operation == EffectOperation.DELETE } && at > Instant.parse(last.startedAt))
-                        throw UnresolvedOutcome("OUTCOME_CREATION_AFTER_REMOVAL")
+                    // Every consumer, including a read or the first failed retry, must follow creation.
+                    if (events.any { it.id != event.id && at > Instant.parse(it.startedAt) })
+                        throw UnresolvedOutcome("OUTCOME_CREATION_AFTER_CONSUMPTION")
+                    creatorInvocationId = event.id
                 }
                 if (policy.status != ExpectedOperationStatus.COMPLETED && policy.status.name != last.status.name)
                     throw Violation("OUTCOME_UNEXPECTED_OPERATION_STATUS")
@@ -97,11 +108,11 @@ internal object AttemptOutcomeReviewer {
                     }
                 }
                 OperationOutcomeResult(operation.id, node.id.value, resource.identity, OperationOutcomeState.SATISFIED, "OUTCOME_EXPECTATION_SATISFIED",
-                    used.toList(), last.id, last.status)
+                    used.toList(), last.id, last.status, lineage, creatorInvocationId)
             } catch (failure: Violation) {
-                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.VIOLATED, failure.code, used.toList(), last?.id, last?.status)
+                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.VIOLATED, failure.code, used.toList(), last?.id, last?.status, lineage, creatorInvocationId)
             } catch (failure: UnresolvedOutcome) {
-                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.UNRESOLVED, failure.code, used.toList(), last?.id, last?.status)
+                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.UNRESOLVED, failure.code, used.toList(), last?.id, last?.status, lineage, creatorInvocationId)
             }
         }
         // Complete history is not complete resource assessment. Require a declared operand for every task, even if skipped.
@@ -127,7 +138,7 @@ internal object AttemptOutcomeReviewer {
         }, run?.id, run?.status, run?.invocations.orEmpty(), recoveries, graph.nodes.mapNotNull { node ->
             when (node) {
                 is CanonicalApprovalNode -> InvocationTarget(node.id.value, "APPROVE")
-                is CanonicalTaskNode -> InvocationTarget(node.id.value, node.semantics.capability?.value ?: "UNKNOWN")
+                is CanonicalTaskNode -> InvocationTarget(node.id.value, node.semantics.capability?.value ?: "UNKNOWN", node.semantics.outputs)
                 else -> null
             }
         })
@@ -139,6 +150,21 @@ internal object AttemptOutcomeReviewer {
         unit.authorization.requireIntegrity()
         return OperationOutcomeReview(2, state, unit.graphDigest.value, unit.source, contract.runId, now.toString(), captured.source,
             observations?.source, trust?.source, results, diagnostics, execution)
+    }
+
+    private fun resource(operand: ResourceOperand, requirement: OperationOutcomeRequirement, consumer: ObservedInvocation,
+                         trace: RunTraceReviewer, inspector: OperationOutcomeReviewer.Inspector, used: MutableSet<String>,
+                         lineage: MutableList<ResourceInvocationLineage>): ResourceIdentity = when (operand) {
+        is ResourceOperand.Literal -> operand.identity
+        is ResourceOperand.Output -> {
+            val producer = operand.producerNodeId?.let { trace.producerFor(consumer.id, it) }
+                ?: throw UnresolvedOutcome("OUTCOME_RESOURCE_PRODUCER_UNAVAILABLE")
+            val claim = inspector.binding(operand, requirement.maxAgeSeconds, used, producer.id)
+            if (Instant.parse(claim.observedAt) > Instant.parse(consumer.startedAt))
+                throw UnresolvedOutcome("OUTCOME_BINDING_AFTER_CONSUMPTION")
+            lineage += ResourceInvocationLineage(consumer.id, producer.id, producer.nodeId, operand.binding, operand.path, claim.id, claim.resource)
+            claim.resource
+        }
     }
 
     private fun recovery(graph: CanonicalExecutionGraph, inspector: OperationOutcomeReviewer.Inspector, fidelity: RecoveryFidelityEvaluator, trace: RunTraceReviewer?,

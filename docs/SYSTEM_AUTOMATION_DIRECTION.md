@@ -170,5 +170,10 @@ real isolated local service, data and credential integration proofs.
 
 S2.5: [Durable external observation](DURABLE_RUN_OBSERVER.md) retains actual captures
 across collector crashes and late delivery, then signs a caller-selected checkpoint
-for the same evaluator. Reconciliation never redispatches work. Dynamic resource
-producer-invocation lineage and production cloud observer deployment remain open.
+for the same evaluator. Reconciliation never redispatches work.
+
+S2.6: [Resource invocation lineage](RESOURCE_INVOCATION_LINEAGE.md) checks the actual
+producer available to every consumer, including failed read retries, and separately
+confirms resource creation. Late captures extend the same durable observer protocol.
+Production observer deployment, external receipt retention and runtime-allocated
+identity contracts remain open.

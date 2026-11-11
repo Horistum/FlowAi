@@ -99,6 +99,22 @@ class RunEvidenceTests {
     @Test fun earlierSuccessCannotSurviveRecoveryAsFinalStateEvidence() = case {
         assertCode(review(claims=claims(run()).map {if(it.kind==ObservationKind.STATE) it.copy(observedAt=at(10)) else it}),"OUTCOME_STATE_BEFORE_RUN_COMPLETION")
     }
+    @Test fun unreachedDynamicHandlerDoesNotRequireInventedProducerEvidence() = case {
+        unit = compile(source.replace("\"resource\":${json(address)},\"criteria\":\"recovered\"",
+            "\"resource\":\"ref:repair\",\"criteria\":\"recovered\""))
+        contract = contract.copy(graphDigest = unit.graphDigest.value, operations = contract.operations.map {
+            if (it.id == "probe") it.copy(evidence = AttemptOutcomePolicy(ExpectedOperationStatus.COMPLETED))
+            else it.copy(evidence = it.evidence!!.copy(presence = OperationPresence.WHEN_REACHED)) },
+            execution = contract.execution!!.copy(recoveries = contract.execution!!.recoveries.map {
+                it.copy(expected = ExpectedRecoveryPath.RECOVER_IF_NEEDED) }))
+        val original = run()
+        val healthy = original.copy(invocations = listOf(original.invocations[0],
+            original.invocations[1].copy(status = ObservationStatus.SUCCEEDED, errorId = null)))
+        val result = review(healthy)
+        assertEquals(OperationOutcomeState.SATISFIED, result.state, result.toString())
+        assertEquals("OUTCOME_NOT_REACHED", result.results.single { it.id == "verify" }.code)
+        assertTrue(result.results.single { it.id == "verify" }.resourceLineage.isEmpty())
+    }
     @Test fun successfulLastAttemptCannotHideEarlierAttemptResults() = case {
         assertCode(review(claims=claims(run()).filter {it.invocationId!="probe-1"}),"OUTCOME_OBSERVATION_MISSING")
         val run=run(); assertCode(review(run.copy(invocations=run.invocations.filter {it.id!="probe-1"})),"OUTCOME_INVOCATION_PATH")

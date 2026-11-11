@@ -256,6 +256,127 @@
               "FAILED",
               "UNKNOWN"
             ]
+          },
+          "resourceLineage": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "consumerInvocationId",
+                "producerInvocationId",
+                "producerNodeId",
+                "binding",
+                "path",
+                "observationId",
+                "resource"
+              ],
+              "properties": {
+                "consumerInvocationId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "producerInvocationId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "producerNodeId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                "binding": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minLength": 129
+                        }
+                      }
+                    ]
+                  },
+                  "allOf": [
+                    {
+                      "not": {
+                        "minItems": 9
+                      }
+                    }
+                  ]
+                },
+                "observationId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "resource": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "scope",
+                    "type",
+                    "key"
+                  ],
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 257
+                }
+              }
+            ]
+          },
+          "creatorInvocationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
           }
         }
       },
@@ -563,6 +684,28 @@
               "capability": {
                 "type": "string",
                 "minLength": 1
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                "uniqueItems": true,
+                "allOf": [
+                  {
+                    "not": {
+                      "minItems": 257
+                    }
+                  }
+                ]
               }
             }
           },

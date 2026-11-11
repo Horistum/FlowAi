@@ -111,6 +111,10 @@ object OperationOutcomeReviewer {
         a.isNumber && b.isNumber -> a.decimalValue().compareTo(b.decimalValue()) == 0
         else -> a == b
     }
+    internal sealed interface ResourceOperand {
+        data class Literal(val identity: ResourceIdentity) : ResourceOperand
+        data class Output(val producerNodeId: String?, val binding: String, val path: List<String>) : ResourceOperand
+    }
     internal class Inspector(private val graph: CanonicalExecutionGraph, private val ledger: List<OperationObservation>, private val now: Instant) {
         private val workflows = graph.workflows.associateBy { it.id }
         private val selections = mutableMapOf<RequirementSelector, CanonicalTaskNode>()
@@ -165,7 +169,7 @@ object OperationOutcomeReviewer {
                 else -> false
             }
         }
-        fun resource(node: CanonicalTaskNode, operation: OperationOutcomeRequirement, used: MutableSet<String>, literalOnly: Boolean = false): ResourceIdentity {
+        fun operand(node: CanonicalTaskNode, operation: OperationOutcomeRequirement): ResourceOperand {
             val source = node.semantics.parameters[operation.parameter] ?: throw Violation("OUTCOME_RESOURCE_PARAMETER_MISSING")
             var value = expression(source)
             var pending = operation.path
@@ -178,9 +182,8 @@ object OperationOutcomeReviewer {
                 if (address.entries.keys != setOf("scope", "type", "key")) throw UnresolvedOutcome("OUTCOME_RESOURCE_SHAPE")
                 fun field(name: String) = (address.entries[name] as? StringLiteralNode)?.value
                     ?: throw UnresolvedOutcome("OUTCOME_DYNAMIC_RESOURCE_FIELD")
-                return ResourceIdentity(field("scope"), field("type"), field("key"))
+                return ResourceOperand.Literal(ResourceIdentity(field("scope"), field("type"), field("key")))
             }
-            if (literalOnly) throw UnresolvedOutcome("OUTCOME_ATTEMPT_RESOURCE_BINDING_UNSUPPORTED")
             // A direct text value may be rendered as a one-part string template. Its
             // actual owner must establish the type; never infer it from a shadowed name.
             if (value is TemplateStringNode && pending.isEmpty()) {
@@ -199,14 +202,24 @@ object OperationOutcomeReviewer {
                 edges.isEmpty() && graph.inputs.any { it.name == binding } -> null
                 else -> throw UnresolvedOutcome("OUTCOME_RESOURCE_VALUE_EDGE")
             }
+            return ResourceOperand.Output(producer, binding, path)
+        }
+        fun resource(node: CanonicalTaskNode, operation: OperationOutcomeRequirement, used: MutableSet<String>): ResourceIdentity =
+            when (val operand = operand(node, operation)) {
+                is ResourceOperand.Literal -> operand.identity
+                is ResourceOperand.Output -> binding(operand, operation.maxAgeSeconds, used).resource
+            }
+
+        fun binding(operand: ResourceOperand.Output, age: Int, used: MutableSet<String>, invocationId: String? = null): OperationObservation {
             charge(ledger.size)
             // Do not select the convenient expected identity out of multiple possible bindings.
-            val matches = ledger.filter { it.kind == ObservationKind.BINDING && it.nodeId == producer && it.binding == binding && it.path == path }
+            val matches = ledger.filter { it.kind == ObservationKind.BINDING && it.nodeId == operand.producerNodeId &&
+                it.binding == operand.binding && it.path == operand.path && it.invocationId == invocationId }
             if (matches.size != 1) throw UnresolvedOutcome("OUTCOME_RESOURCE_BINDING_MISSING_OR_AMBIGUOUS")
             val observed = matches.single()
             if (observed.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_RESOURCE_BINDING_UNKNOWN")
-            fresh(observed, operation.maxAgeSeconds); used += observed.id
-            return observed.resource
+            fresh(observed, age); used += observed.id
+            return observed
         }
     }
 }

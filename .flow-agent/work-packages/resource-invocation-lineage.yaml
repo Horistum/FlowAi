@@ -1,0 +1,28 @@
+version: AI-A3-S2.6
+name: Resource producer and creator invocation lineage
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 860f54d81939b17eddde5d88d0ded3c37841cfad
+predecessorPullRequest: 265
+deliveryBase: main
+authorization: Maintainer requested completing the next development PR after durable observer capture.
+objective: Bind each resource consumer to the actual available producer invocation and independently confirmed creator.
+universalInvariant: A matching address or a successful later attempt cannot replace the actual producer, missing creation evidence or an earlier failed consumer's lineage.
+scope:
+- Existing version 2 BINDING claims select one declared canonical output and exact producer invocation.
+- The verified sequential trace tracks availability across retries and failure-handler entry.
+- Every reached consumer has its own lineage; creation timing covers reads and all retry attempts.
+- Additive review fields expose producer, consumer and creator correlations without another execution graph.
+- Durable capture accepts late output bindings with explicit grants, exact completion times and immutable slots.
+- Installed product proofs create real local service, data and credential resources and reconcile captures without recreation.
+forbiddenScope:
+- No operation dispatch, write retry, recovery selection, cleanup permission or provider-specific observer.
+- No unknown runtime identity allocation, version 2 workflow-input binding, alias or parallel-trace admission.
+- No native-response truth inference, signed-fork prevention, cloud support promotion or milestone closure.
+completionEvidence:
+- Missing earlier or latest attempt lineage, wrong paths and conflicting output addresses cannot pass.
+- A failed producer cannot publish outputs even when partial creation is explicitly observed.
+- Unreached conditional handler work needs no invented resource binding.
+- Python, JVM, schema/conformance and installed runtime proofs pass on final head and main merge candidate.
+nextSlice: S2-deployed-observer-checkpoints-and-runtime-identity-contract

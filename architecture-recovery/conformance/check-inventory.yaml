@@ -102,4 +102,5 @@ checks:
   - ai.recovery.schemas
   - ai.run-evidence.missing-run
   - ai.run-evidence.wrong-region
+  - ai.run-evidence.output-correlation-schema
   - ai.run-evidence.schemas

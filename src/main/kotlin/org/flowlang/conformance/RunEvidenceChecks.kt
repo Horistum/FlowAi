@@ -5,6 +5,8 @@ import java.io.File
 import java.nio.file.Files
 import java.time.Instant
 import org.flowlang.compiler.CompilationResult
+import org.flowlang.compiler.CanonicalTaskNode
+import org.flowlang.cli.Json
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.ai.*
 import org.flowlang.frontend.outcomes.*
@@ -20,13 +22,14 @@ internal class RunEvidenceChecks(private val root: File) {
     fun checks(): List<ConformanceCheck> = listOf(
         check("ai.run-evidence.missing-run") { cases.forEach { verify(it, false) } },
         check("ai.run-evidence.wrong-region") { cases.forEach { verify(it, true) } },
+        check("ai.run-evidence.output-correlation-schema") { cases.forEach { verify(it, false, true) } },
         check("ai.run-evidence.schemas") {
             val schema = FlowJson.readTree(File(root,"schemas/operation-outcome-requirements-v2.schema.json"))
             cases.forEach { JsonSchemaSmokeValidator.validate(FlowJson.readTree(File(corpus,"$it.requirements.json")),schema) }
         }
     )
     private fun check(name: String, action: () -> Unit) = runCatching(action).let { ConformanceCheck(name,it.isSuccess,it.exceptionOrNull()?.message) }
-    private fun verify(id: String, wrong: Boolean) {
+    private fun verify(id: String, wrong: Boolean, correlation: Boolean = false) {
         val temp = Files.createTempDirectory("run-evidence-conformance-").toFile()
         try {
             val compiled = ReviewedAiProposalFrontend(compiler).compile(ExternalAiProposalReader.read(File(corpus,"$id.proposal.json")).proposal)
@@ -38,6 +41,13 @@ internal class RunEvidenceChecks(private val root: File) {
             val review = OperationOutcomeReviewer.evaluate(compiled.unit,OperationOutcomeReader.requirements(file),evaluatedAt=Instant.parse("2026-11-08T08:10:00Z"))
             require(review.state == if (wrong) OperationOutcomeState.VIOLATED else OperationOutcomeState.UNRESOLVED)
             require(!review.executionAuthorized && review.formatVersion == 2)
+            if (correlation) {
+                compiled.unit.graph.nodes.filterIsInstance<CanonicalTaskNode>().forEach { node ->
+                    require(review.execution!!.invocationTargets.single { it.nodeId == node.id.value }.outputs == node.semantics.outputs)
+                }
+                JsonSchemaSmokeValidator.validate(Json.mapper.valueToTree(review),
+                    FlowJson.readTree(File(root, "schemas/operation-outcome-review-v2.schema.json")))
+            }
         } finally {temp.deleteRecursively()}
     }
 }

@@ -60,7 +60,7 @@ python3 tools/observe.py export --journal run-01 --checkpoint next-checkpoint.js
 Initialization requires existing version 2 requirements with a real graph digest, run ID,
 fresh caller-established challenge and start time. It does not generate or weaken those
 requirements. The installed compiler accepts the source and selects the correlation targets.
-`status` publishes those digest-bound `invocationTargets` and `operationTargets`, alongside
+`status` publishes those digest-bound `invocationTargets` (including declared task `outputs`) and `operationTargets`, alongside
 the journal checkpoint. These are references into the existing graph, not a second plan.
 Without `--checkpoint`, status is a discovery/diagnostic read; it does not detect rollback
 to an older, internally valid prefix. Export always requires an exact retained checkpoint.
@@ -76,7 +76,7 @@ and events. A checkpoint is `{sessionId, sequence, digest}`. Each event contains
 | --- | --- | --- |
 | `START` | `invocationId`, `nodeId`, `attempt`, `startedAt`; optional `causedBy` | Record one pending invocation; only one may be outstanding |
 | `FINISH` | `invocationId`, `completedAt`, `status`; `errorId` for failure | Complete that invocation from an actual captured result |
-| `OBSERVATION` | `id`, `kind`, `status`, `nodeId`, `invocationId`, `resource`, `observedAt`; kind-specific facts/owner/creation | Add an immutable resource claim |
+| `OBSERVATION` | `id`, `kind`, `status`, `nodeId`, `invocationId`, `resource`, `observedAt`; kind-specific facts/owner/creation or binding/path | Add an immutable resource claim |
 | `CLOSE` | `completedAt`, `status`; `errorId` for failure | Explicit observer assertion that the run terminated |
 
 Use `observation_host.journal.event_for(checkpoint, id, type, data, capture)` and
@@ -91,6 +91,13 @@ matching independently declared string postcondition.
 Final `STATE` claims must follow `CLOSE`. Rejecting earlier state prevents a provisional
 capture from consuming the immutable final-observation slot. `CREATION` captures belong
 within their invocation interval; a later `FINISH` cannot predate an already recorded creation.
+
+[S2.6 output bindings](RESOURCE_INVOCATION_LINEAGE.md) use `kind: BINDING`, a declared
+`binding` and optional structured `path`. They must identify a completed successful
+producer invocation at its exact completion time. They may arrive after `CLOSE` under
+that original timestamp. One invocation/output/path can name only one resource; the
+independent trust grant must include `BINDING`. The installed compiler owns selection
+of the actual producer for each consumer, including read retries.
 
 Every append supplies the previous checkpoint. SQLite serializes the comparison and
 write in one transaction. Competing events cannot both extend one tip. An exact duplicate
@@ -164,7 +171,7 @@ same invocation and verifies the repair executed once. Separate cases cover miss
 results after closure, stale checkpoints, false final state and altered capture bytes.
 This proof is included in both full CI jobs through `verify_authoring_host.py`.
 
-Next: exact producer-invocation lineage for dynamic resource handles, independently
-deployed observers and durable external checkpoint retention. Cloud execution, distributed
+Next: independently deployed observers, durable external checkpoint retention and a
+bounded contract for runtime-allocated identities. Cloud execution, distributed
 observer transport, arbitrary parallel traces and autonomous recovery remain unproven.
 AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 remains paused.

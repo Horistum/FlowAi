@@ -46,10 +46,10 @@ class ObservationHostTests(unittest.TestCase):
         self.review = dict(formatVersion=2, graphDigest=self.req["graphDigest"], runId=self.req["runId"],
                            state="UNRESOLVED", executionAuthorized=False, requirementsSource={"sha256": digest(self.requirements)},
                            results=[{"id": "probe", "nodeId": "operation", "resource": self.resource}], execution={"invocationTargets": [
-                               {"nodeId": "operation", "capability": "VERIFY"}, {"nodeId": "repair", "capability": "RESTORE"}]})
+                               {"nodeId": "operation", "capability": "VERIFY", "outputs": ["handle"]}, {"nodeId": "repair", "capability": "RESTORE"}]})
         self.tip = journal._create(self.directory, "proposal", b"{}", self.requirements, canonical(self.review), "f" * 64)
         self.trust = dict(formatVersion=2, grants=[dict(keyId="observer", publicKey=base64.b64encode(self.public).decode(),
-                          scopes=["isolated-test"], resourceTypes=["generic-resource"], kinds=["RESULT", "STATE", "OWNERSHIP", "CREATION"], workflows=["main"])])
+                          scopes=["isolated-test"], resourceTypes=["generic-resource"], kinds=["RESULT", "STATE", "OWNERSHIP", "CREATION", "BINDING"], workflows=["main"])])
 
     def event(self, kind, data, capture=b"", event_id=None, tip=None):
         return journal.event_for(tip or self.tip, event_id or "event-" + str(self.tip["sequence"] + 1), kind, data, capture)
@@ -172,6 +172,46 @@ class ObservationHostTests(unittest.TestCase):
         for facts in [{"value": 9007199254740993.1}, {"value": None}, {"value": {"nested": True}}, {"value": 10 ** 100}]:
             self.rejected("OBSERVATION", dict(self.claim("STATE", facts=facts), observedAt=FINAL))
         self.append("OBSERVATION", dict(self.claim("STATE", facts={"value": 9007199254740993}), observedAt=FINAL), b"integer-state")
+
+    def test_output_binding_survives_restart_and_late_delivery_with_exact_invocation(self):
+        self.start(); self.finish(); self.close()
+        event = self.append("OBSERVATION", self.claim("BINDING", binding="handle", path=["nested"]), b"actual-output")
+        self.assertEqual(self.tip, journal.append(self.directory, canonical(event), b"actual-output"))
+        result = self.export()
+        bundle = json.loads((Path(result["directory"]) / "observations.json").read_bytes())
+        claim = json.loads(base64.b64decode(bundle["observations"][0]["payload"]))
+        self.assertEqual(("BINDING", "first", "handle", ["nested"]),
+                         (claim["kind"], claim["invocationId"], claim["binding"], claim["path"]))
+        self.assertEqual(b"actual-output", base64.b64decode(bundle["observations"][0]["source"]))
+
+    def test_binding_requires_a_known_successful_completed_producer_and_output(self):
+        self.start()
+        self.rejected("OBSERVATION", self.claim("BINDING", binding="handle"))
+        self.finish()
+        for changes in [{"binding": "other"}, {"status": "UNKNOWN"}, {"observedAt": CLOSED}, {"invocationId": "other"},
+                        {"path": ["x"] * 9}, {"path": [""]}, {"path": "nested"}]:
+            self.rejected("OBSERVATION", dict(self.claim("BINDING", binding="handle"), **changes))
+        self.append("OBSERVATION", self.claim("BINDING", binding="handle"), b"output")
+
+    def test_failed_producer_does_not_publish_output_bindings(self):
+        self.start(); self.finish("FAILED", errorId="failure")
+        self.rejected("OBSERVATION", self.claim("BINDING", binding="handle"))
+
+    def test_binding_slots_distinguish_paths_but_never_replace_the_same_output(self):
+        self.start(); self.finish()
+        self.append("OBSERVATION", self.claim("BINDING", binding="handle", path=["one"]), b"first-output")
+        self.append("OBSERVATION", dict(self.claim("BINDING", binding="handle", path=["two"]), id="second"), b"second-output")
+        self.rejected("OBSERVATION", dict(self.claim("BINDING", binding="handle", path=["one"]), id="conflict"))
+        self.rejected("OBSERVATION", self.claim("RESULT", binding="handle"))
+        self.rejected("OBSERVATION", self.claim("RESULT", path=[]))
+
+    def test_independent_binding_grant_is_required_for_export(self):
+        self.start(); self.finish()
+        self.append("OBSERVATION", self.claim("BINDING", binding="handle"), b"output")
+        trust = copy.deepcopy(self.trust)
+        trust["grants"][0]["kinds"].remove("BINDING")
+        with self.assertRaises(HostError):
+            self.export(trust=trust)
 
     def test_premature_state_cannot_consume_the_final_observation_slot(self):
         self.start(); self.finish()

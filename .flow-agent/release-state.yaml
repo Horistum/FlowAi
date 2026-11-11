@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 138
+stateVersion: 139
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -36,7 +36,7 @@ toolchainState:
   offlineValidation: passed
 
 roadmapState:
-  roadmapVersion: 34
+  roadmapVersion: 35
   activeTrack: ""
   completedItem: "0.9.7.10"
   completedItemName: "Bounded Semantic Closure Gate"
@@ -920,6 +920,25 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  resourceInvocationLineageFollowup:
+    selectedSlice: AI-A3-S2.6
+    workPackage: .flow-agent/work-packages/resource-invocation-lineage.yaml
+    report: .flow-agent/reports/resource-invocation-lineage.md
+    contract: docs/RESOURCE_INVOCATION_LINEAGE.md
+    baselineMain: 860f54d81939b17eddde5d88d0ded3c37841cfad
+    predecessorPullRequest: 265
+    deliveryBase: main
+    validation: candidate-full-regression-conformance-installed-lineage-and-final-ci-required
+    observerProtocolVersion: 1
+    outcomeContractVersion: 2
+    scope: Exact producer availability per consumer invocation, independently confirmed creation and durable late output capture.
+    nextSlice: S2-deployed-observer-checkpoints-and-runtime-identity-contract
+    productionRuntimeExecution: false
+    localRuntimeEvidence: true
+    cloudRuntimeEvidence: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   durableObserverFollowup:
     selectedSlice: AI-A3-S2.5
     workPackage: .flow-agent/work-packages/durable-run-observer.yaml
