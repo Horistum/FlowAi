@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 139
+stateVersion: 140
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -920,6 +920,28 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  deployedObserverFollowup:
+    selectedSlice: AI-A3-S2.7
+    workPackage: .flow-agent/work-packages/deployed-observer-checkpoints.yaml
+    report: .flow-agent/reports/deployed-observer-checkpoints.md
+    contract: docs/DEPLOYED_RUN_OBSERVER.md
+    identityProposal: docs/RUNTIME_RESOURCE_IDENTITY_PROPOSAL.md
+    baselineMain: a5eb8494bf1e1dd63b3684b49964b7db0e6bfae2
+    predecessorPullRequest: 266
+    deliveryBase: main
+    validation: candidate-full-regression-process-crash-installed-integration-and-final-ci-required
+    observerProtocolVersion: 1
+    observerServiceProtocolVersion: 1
+    outcomeContractVersion: 2
+    scope: Independent local collector and witness processes, exact retained prefixes and witnessed export.
+    nextSlice: S2-runtime-allocated-resource-identity-contract-implementation
+    dynamicIdentityImplementation: false
+    productionDeploymentCertified: false
+    localRuntimeEvidence: true
+    cloudRuntimeEvidence: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   resourceInvocationLineageFollowup:
     selectedSlice: AI-A3-S2.6
     workPackage: .flow-agent/work-packages/resource-invocation-lineage.yaml
