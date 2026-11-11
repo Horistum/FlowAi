@@ -16,7 +16,7 @@ and never restore the witness together with an old collector backup. This slice 
 independent directory restoration and process death; it does not certify power-loss hardware,
 network filesystems, cross-host transport, distributed consensus or a production installation.
 
-All peers use one trusted operating-system UID. Private parent directories, `0600` sockets
+All peers use one trusted operating-system UID. Private parent directories, owner-only sockets
 and Linux peer credentials restrict local access. They are not isolation between mutually
 hostile processes with that UID. The witness trusts its local callers to propose checkpoints;
 the collector verifies those checkpoints against the full journal. An authorized malicious
