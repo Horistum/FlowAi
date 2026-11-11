@@ -26,8 +26,8 @@ internal object CliArtifactOutput {
             }
             val schema = when {
                 name == "proposal-review.json" && value is ProposalReviewReport && value.formatVersion == 2 -> "schemas/proposal-review-v2.schema.json"
-                name == "operation-outcome-review.json" && value is org.flowlang.frontend.outcomes.OperationOutcomeReview && value.formatVersion == 2 ->
-                    "schemas/operation-outcome-review-v2.schema.json"
+                name == "operation-outcome-review.json" && value is org.flowlang.frontend.outcomes.OperationOutcomeReview && value.formatVersion in 2..3 ->
+                    "schemas/operation-outcome-review-v${value.formatVersion}.schema.json"
                 else -> schemas[name] ?: standaloneSchemas[name].orEmpty()
             }
             ArtifactContent.encode(name, value, schema).also { budget.add(it.bytes.size) }

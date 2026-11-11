@@ -1,0 +1,752 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-outcome-review-v3.schema.json",
+  "title": "Operation Outcome Review v3",
+  "description": "Syntactic interchange only. The outcome reader and reviewer own semantic validity, graph binding, authentication and freshness.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "state",
+    "graphDigest",
+    "runId",
+    "evaluatedAt",
+    "requirementsSource",
+    "results",
+    "diagnostics",
+    "scope",
+    "executionAuthorized",
+    "workflowExecutionCorrectness",
+    "observationTruth",
+    "reviewerAttribution",
+    "execution"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 3
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "SATISFIED",
+        "VIOLATED",
+        "UNRESOLVED"
+      ]
+    },
+    "graphDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "compilationSource": {
+      "type": "object"
+    },
+    "runId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "evaluatedAt": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    },
+    "requirementsSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "sha256",
+        "sizeBytes"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "observationsSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "sha256",
+        "sizeBytes"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "trustSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "sha256",
+        "sizeBytes"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "resource",
+          "state",
+          "code",
+          "observationIds"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "nodeId": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 1001
+                }
+              }
+            ]
+          },
+          "resource": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "scope",
+                  "type",
+                  "key"
+                ],
+                "properties": {
+                  "scope": {
+                    "type": "string",
+                    "minLength": 1,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minLength": 1001
+                        }
+                      }
+                    ]
+                  },
+                  "type": {
+                    "type": "string",
+                    "minLength": 1,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minLength": 1001
+                        }
+                      }
+                    ]
+                  },
+                  "key": {
+                    "type": "string",
+                    "minLength": 1,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minLength": 1001
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "SATISFIED",
+              "VIOLATED",
+              "UNRESOLVED"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "observationIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+            },
+            "minItems": 0,
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 257
+                }
+              }
+            ]
+          },
+          "invocationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "observedStatus": {
+            "type": "string",
+            "enum": [
+              "SUCCEEDED",
+              "FAILED",
+              "UNKNOWN"
+            ]
+          },
+          "resourceLineage": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "consumerInvocationId",
+                "producerInvocationId",
+                "producerNodeId",
+                "binding",
+                "path",
+                "observationId",
+                "resource"
+              ],
+              "properties": {
+                "consumerInvocationId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "producerInvocationId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "producerNodeId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                "binding": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "path": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "minLength": 1,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minLength": 129
+                        }
+                      }
+                    ]
+                  },
+                  "allOf": [
+                    {
+                      "not": {
+                        "minItems": 9
+                      }
+                    }
+                  ]
+                },
+                "observationId": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "resource": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "scope",
+                    "type",
+                    "key"
+                  ],
+                  "properties": {
+                    "scope": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    },
+                    "type": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    },
+                    "key": {
+                      "type": "string",
+                      "minLength": 1,
+                      "allOf": [
+                        {
+                          "not": {
+                            "minLength": 1001
+                          }
+                        }
+                      ]
+                    }
+                  }
+                },
+                "instanceId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                }
+              }
+            },
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 257
+                }
+              }
+            ]
+          },
+          "creatorInvocationId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "instanceId": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 1001
+                }
+              }
+            ]
+          }
+        }
+      },
+      "minItems": 1,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 65
+          }
+        }
+      ]
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+      },
+      "minItems": 0,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 257
+          }
+        }
+      ]
+    },
+    "scope": {
+      "const": "declared-run-and-operation-postconditions"
+    },
+    "executionAuthorized": {
+      "const": false
+    },
+    "workflowExecutionCorrectness": {
+      "const": "unassessed"
+    },
+    "observationTruth": {
+      "const": "trusted-observer-assertion"
+    },
+    "reviewerAttribution": {
+      "const": "caller-declared"
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "code",
+        "invocations",
+        "recoveries",
+        "traceTruth",
+        "scope",
+        "invocationTargets"
+      ],
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "SATISFIED",
+            "VIOLATED",
+            "UNRESOLVED"
+          ]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "observationId": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "UNKNOWN"
+          ]
+        },
+        "invocations": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "nodeId",
+              "attempt",
+              "startedAt",
+              "completedAt",
+              "status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+              },
+              "nodeId": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "attempt": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100
+              },
+              "startedAt": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "completedAt": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "status": {
+                "type": "string",
+                "enum": [
+                  "SUCCEEDED",
+                  "FAILED",
+                  "UNKNOWN"
+                ]
+              },
+              "errorId": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+              },
+              "causedBy": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+              }
+            }
+          },
+          "minItems": 0,
+          "allOf": [
+            {
+              "not": {
+                "minItems": 257
+              }
+            }
+          ]
+        },
+        "recoveries": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "state",
+              "code",
+              "verificationOperationIds"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+              },
+              "state": {
+                "type": "string",
+                "enum": [
+                  "SATISFIED",
+                  "VIOLATED",
+                  "UNRESOLVED"
+                ]
+              },
+              "code": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "observation": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "regionId",
+                  "path",
+                  "handlerInvocationIds"
+                ],
+                "properties": {
+                  "regionId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minLength": 1001
+                        }
+                      }
+                    ]
+                  },
+                  "path": {
+                    "type": "string",
+                    "enum": [
+                      "NOT_NEEDED",
+                      "RECOVERED",
+                      "PROPAGATED",
+                      "FAILED"
+                    ]
+                  },
+                  "triggeringInvocationId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                  },
+                  "errorId": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                  },
+                  "handlerInvocationIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                    },
+                    "minItems": 0,
+                    "allOf": [
+                      {
+                        "not": {
+                          "minItems": 257
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "verificationOperationIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+                },
+                "minItems": 0,
+                "allOf": [
+                  {
+                    "not": {
+                      "minItems": 33
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "minItems": 0,
+          "allOf": [
+            {
+              "not": {
+                "minItems": 33
+              }
+            }
+          ]
+        },
+        "traceTruth": {
+          "const": "trusted-observer-assertion"
+        },
+        "scope": {
+          "const": "bounded-sequential-trace-and-declared-recovery-postconditions"
+        },
+        "invocationTargets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "nodeId",
+              "capability"
+            ],
+            "properties": {
+              "nodeId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "capability": {
+                "type": "string",
+                "minLength": 1
+              },
+              "outputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "allOf": [
+                    {
+                      "not": {
+                        "minLength": 1001
+                      }
+                    }
+                  ]
+                },
+                "uniqueItems": true,
+                "allOf": [
+                  {
+                    "not": {
+                      "minItems": 257
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "allOf": [
+            {
+              "not": {
+                "minItems": 2001
+              }
+            }
+          ]
+        }
+      }
+    }
+  }
+}

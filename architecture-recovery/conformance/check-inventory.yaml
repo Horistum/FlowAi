@@ -97,6 +97,13 @@ checks:
   - ai.outcomes.missing-observations
   - ai.outcomes.wrong-resource
   - ai.outcomes.schemas
+  - ai.runtime-allocation.accepted
+  - ai.runtime-allocation.missing-allocation
+  - ai.runtime-allocation.missing-instance
+  - ai.runtime-allocation.replacement
+  - ai.runtime-allocation.conflict
+  - ai.runtime-allocation.wrong-scope
+  - ai.runtime-allocation.missing-grant
   - ai.recovery.portfolio
   - ai.recovery.disposition-mutation
   - ai.recovery.schemas

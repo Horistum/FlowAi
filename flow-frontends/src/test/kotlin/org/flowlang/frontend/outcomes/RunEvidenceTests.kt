@@ -53,7 +53,7 @@ class RunEvidenceTests {
                 RequiredFailureDisposition.RECOVER, ExpectedRecoveryPath.RECOVERED, listOf("verify")))))
         val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         val capture = "synthetic observer capture; no external work".toByteArray()
-        var trust = OperationObservationTrust(2, listOf(ObservationGrant("observer", b64(key.public.encoded), listOf(address.scope), listOf(address.type), ObservationKind.entries, listOf("main"))))
+        var trust = OperationObservationTrust(2, listOf(ObservationGrant("observer", b64(key.public.encoded), listOf(address.scope), listOf(address.type), ObservationKind.entries.filter { it != ObservationKind.ALLOCATION }, listOf("main"))))
         fun requirements() = OperationOutcomeReader.requirements(File(root,"requirements.json").apply { writeBytes(Json.mapper.writeValueAsBytes(contract)) })
         fun event(id: String, node: String, attempt: Int, second: Long, status: ObservationStatus = ObservationStatus.SUCCEEDED, cause: String? = null) =
             ObservedInvocation(id, node, attempt, at(second), at(second+1), status, if (status == ObservationStatus.FAILED) "error-$id" else null, cause)

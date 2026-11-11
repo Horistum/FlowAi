@@ -75,7 +75,7 @@ class ResourceInvocationLineageTests {
         private val key = KeyPairGenerator.getInstance("Ed25519").generateKeyPair()
         private val capture = "synthetic signed lineage assertion; no external work".toByteArray()
         var trust = OperationObservationTrust(2, listOf(ObservationGrant("observer", b64(key.public.encoded), listOf(address.scope),
-            listOf(address.type), ObservationKind.entries, listOf("main"))))
+            listOf(address.type), ObservationKind.entries.filter { it != ObservationKind.ALLOCATION }, listOf("main"))))
         fun requirements() = OperationOutcomeReader.requirements(File(root, "requirements.json").apply {
             writeBytes(Json.mapper.writeValueAsBytes(contract)) })
         private fun event(id: String, name: String, second: Long, attempt: Int = 1, failed: Boolean = false) = ObservedInvocation(id,

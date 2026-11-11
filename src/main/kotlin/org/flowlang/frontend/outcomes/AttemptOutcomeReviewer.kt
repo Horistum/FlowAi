@@ -8,7 +8,7 @@ import org.flowlang.frontend.ai.*
 import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.Violation
 import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.ResourceOperand
 
-/** Version 2 assessment. Version 1 retains its operation-local historical semantics. */
+/** Attempt-aware assessment for versions 2 and 3. Version 1 retains its operation-local historical semantics. */
 internal object AttemptOutcomeReviewer {
     fun evaluate(unit: CompilationUnit, captured: CapturedOutcomeInput<OperationOutcomeRequirements>,
                  observations: CapturedOutcomeInput<OperationObservationBundle>?, trust: CapturedOutcomeInput<OperationObservationTrust>?,
@@ -47,12 +47,21 @@ internal object AttemptOutcomeReviewer {
             val used = linkedSetOf<String>()
             val lineage = mutableListOf<ResourceInvocationLineage>()
             var creatorInvocationId: String? = null
+            var identity = resource.identity
+            var instanceId: String? = null
             try {
                 node = inspector.select(operation.selector)
                 if (diagnostics.isNotEmpty()) throw UnresolvedOutcome(diagnostics.first())
                 val active = requireNotNull(trace).observation
-                val operand = inspector.operand(node, operation)
-                if (operand is ResourceOperand.Literal && operand.identity != resource.identity) throw Violation("OUTCOME_RESOURCE_MISMATCH")
+                val allocation = if (contract.formatVersion == 3) RuntimeResourceResolution.resolve(resource, contract, active, ledger,
+                    inspector, operation.maxAgeSeconds, now, used) else null
+                if (allocation != null) { identity = allocation.identity; instanceId = allocation.instanceId }
+                val expectedIdentity = requireNotNull(identity)
+                val allocating = allocation?.creator?.id == node.id
+                val operand = if (allocating) null else inspector.operand(node, operation)
+                if (allocation != null && !allocating && operand !is ResourceOperand.Output)
+                    throw Violation("OUTCOME_ALLOCATION_VALUE_REQUIRED")
+                if (operand is ResourceOperand.Literal && operand.identity != identity) throw Violation("OUTCOME_RESOURCE_MISMATCH")
                 if (operand is ResourceOperand.Output && graph.nodes.none { it is CanonicalTaskNode && it.id.value == operand.producerNodeId })
                     throw UnresolvedOutcome("OUTCOME_ATTEMPT_RESOURCE_BINDING_UNSUPPORTED")
                 val effects = node.semantics.effects
@@ -62,17 +71,17 @@ internal object AttemptOutcomeReviewer {
                 val policy = requireNotNull(operation.evidence)
                 if (events.isEmpty()) {
                     if (policy.presence == OperationPresence.REQUIRED) throw Violation("OUTCOME_REQUIRED_OPERATION_NOT_REACHED")
-                    return@map OperationOutcomeResult(operation.id, node.id.value, resource.identity, OperationOutcomeState.SATISFIED, "OUTCOME_NOT_REACHED")
+                    return@map OperationOutcomeResult(operation.id, node.id.value, identity, OperationOutcomeState.SATISFIED, "OUTCOME_NOT_REACHED")
                 }
                 val changes = effects.any { it.operation != EffectOperation.READ }
                 if (resource.disposition == ResourceDisposition.SHARED && changes) throw Violation("OUTCOME_SHARED_RESOURCE_CHANGE")
                 last = events.last()
                 for (event in events) {
-                    if (resource(operand, operation, event, trace, inspector, used, lineage) != resource.identity)
+                    if ((if (allocating) expectedIdentity else resource(requireNotNull(operand), operation, event, trace, inspector, used, lineage, allocation?.let { resource.id to it.instanceId })) != expectedIdentity)
                         throw Violation("OUTCOME_RESOURCE_MISMATCH")
-                    inspector.observation(ObservationKind.RESULT, node.id.value, resource.identity, operation.maxAgeSeconds, used, event.id)
-                    if (resource.disposition == ResourceDisposition.MANAGED && changes) {
-                        val ownership = inspector.observation(ObservationKind.OWNERSHIP, node.id.value, resource.identity, operation.maxAgeSeconds, used, event.id)
+                    inspector.observation(ObservationKind.RESULT, node.id.value, expectedIdentity, operation.maxAgeSeconds, used, event.id, allocation?.let { resource.id })
+                    if ((resource.disposition == ResourceDisposition.MANAGED || allocation != null && !allocating) && changes) {
+                        val ownership = inspector.observation(ObservationKind.OWNERSHIP, node.id.value, expectedIdentity, operation.maxAgeSeconds, used, event.id, allocation?.let { resource.id })
                         if (ownership.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_OWNERSHIP_UNKNOWN")
                         if (ownership.owner != resource.owner) throw Violation("OUTCOME_OWNER_MISMATCH")
                         if (Instant.parse(ownership.observedAt) > Instant.parse(event.startedAt)) throw UnresolvedOutcome("OUTCOME_OWNERSHIP_AFTER_START")
@@ -83,9 +92,9 @@ internal object AttemptOutcomeReviewer {
                     val declarations = contract.operations.filter { it.resource == resource.id && inspector.select(it.selector).id == creator.id }
                     if (declarations.isEmpty()) throw UnresolvedOutcome("OUTCOME_CREATOR_NOT_COVERED")
                     val event = active.invocations.singleOrNull { it.nodeId == creator.id.value } ?: throw UnresolvedOutcome("OUTCOME_CREATION_INVOCATION")
-                    if (declarations.any { resource(inspector.operand(creator, it), it, event, trace, inspector, used, mutableListOf()) != resource.identity })
+                    if (allocation == null && declarations.any { resource(inspector.operand(creator, it), it, event, trace, inspector, used, mutableListOf()) != identity })
                         throw Violation("OUTCOME_CREATOR_RESOURCE_MISMATCH")
-                    val creation = inspector.observation(ObservationKind.CREATION, creator.id.value, resource.identity, operation.maxAgeSeconds, used, event.id)
+                    val creation = inspector.observation(ObservationKind.CREATION, creator.id.value, expectedIdentity, operation.maxAgeSeconds, used, event.id, allocation?.let { resource.id })
                     if (creation.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_CREATION_UNKNOWN")
                     if (creation.created != true) throw Violation("OUTCOME_RESOURCE_NOT_CREATED")
                     val at = Instant.parse(creation.observedAt)
@@ -93,12 +102,20 @@ internal object AttemptOutcomeReviewer {
                     // Every consumer, including a read or the first failed retry, must follow creation.
                     if (events.any { it.id != event.id && at > Instant.parse(it.startedAt) })
                         throw UnresolvedOutcome("OUTCOME_CREATION_AFTER_CONSUMPTION")
+                    if (allocation != null) {
+                        val ownership = inspector.observation(ObservationKind.OWNERSHIP, creator.id.value, expectedIdentity,
+                            operation.maxAgeSeconds, used, event.id, resource.id)
+                        if (ownership.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_OWNERSHIP_UNKNOWN")
+                        if (ownership.owner != resource.owner) throw Violation("OUTCOME_OWNER_MISMATCH")
+                        val ownedAt = Instant.parse(ownership.observedAt)
+                        if (ownedAt < at || ownedAt > Instant.parse(event.completedAt)) throw UnresolvedOutcome("OUTCOME_ALLOCATION_OWNERSHIP_TIME")
+                    }
                     creatorInvocationId = event.id
                 }
                 if (policy.status != ExpectedOperationStatus.COMPLETED && policy.status.name != last.status.name)
                     throw Violation("OUTCOME_UNEXPECTED_OPERATION_STATUS")
                 if (operation.postconditions.isNotEmpty()) {
-                    val state = inspector.observation(ObservationKind.STATE, node.id.value, resource.identity, operation.maxAgeSeconds, used, last.id)
+                    val state = inspector.observation(ObservationKind.STATE, node.id.value, expectedIdentity, operation.maxAgeSeconds, used, last.id, allocation?.let { resource.id })
                     if (state.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_STATE_UNKNOWN")
                     // A pre-recovery success cannot stand in for the state after compensation or later work.
                     if (Instant.parse(state.observedAt) < Instant.parse(active.completedAt)) throw UnresolvedOutcome("OUTCOME_STATE_BEFORE_RUN_COMPLETION")
@@ -107,12 +124,12 @@ internal object AttemptOutcomeReviewer {
                         if (!OperationOutcomeReviewer.equal(expected, actual)) throw Violation("OUTCOME_POSTCONDITION_FAILED")
                     }
                 }
-                OperationOutcomeResult(operation.id, node.id.value, resource.identity, OperationOutcomeState.SATISFIED, "OUTCOME_EXPECTATION_SATISFIED",
-                    used.toList(), last.id, last.status, lineage, creatorInvocationId)
+                OperationOutcomeResult(operation.id, node.id.value, identity, OperationOutcomeState.SATISFIED, "OUTCOME_EXPECTATION_SATISFIED",
+                    used.toList(), last.id, last.status, lineage, creatorInvocationId, instanceId)
             } catch (failure: Violation) {
-                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.VIOLATED, failure.code, used.toList(), last?.id, last?.status, lineage, creatorInvocationId)
+                OperationOutcomeResult(operation.id, node?.id?.value, identity, OperationOutcomeState.VIOLATED, failure.code, used.toList(), last?.id, last?.status, lineage, creatorInvocationId, instanceId)
             } catch (failure: UnresolvedOutcome) {
-                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.UNRESOLVED, failure.code, used.toList(), last?.id, last?.status, lineage, creatorInvocationId)
+                OperationOutcomeResult(operation.id, node?.id?.value, identity, OperationOutcomeState.UNRESOLVED, failure.code, used.toList(), last?.id, last?.status, lineage, creatorInvocationId, instanceId)
             }
         }
         // Complete history is not complete resource assessment. Require a declared operand for every task, even if skipped.
@@ -148,21 +165,23 @@ internal object AttemptOutcomeReviewer {
             else -> OperationOutcomeState.SATISFIED
         }
         unit.authorization.requireIntegrity()
-        return OperationOutcomeReview(2, state, unit.graphDigest.value, unit.source, contract.runId, now.toString(), captured.source,
+        return OperationOutcomeReview(contract.formatVersion, state, unit.graphDigest.value, unit.source, contract.runId, now.toString(), captured.source,
             observations?.source, trust?.source, results, diagnostics, execution)
     }
 
     private fun resource(operand: ResourceOperand, requirement: OperationOutcomeRequirement, consumer: ObservedInvocation,
                          trace: RunTraceReviewer, inspector: OperationOutcomeReviewer.Inspector, used: MutableSet<String>,
-                         lineage: MutableList<ResourceInvocationLineage>): ResourceIdentity = when (operand) {
+                         lineage: MutableList<ResourceInvocationLineage>, allocated: Pair<String, String>? = null): ResourceIdentity = when (operand) {
         is ResourceOperand.Literal -> operand.identity
         is ResourceOperand.Output -> {
             val producer = operand.producerNodeId?.let { trace.producerFor(consumer.id, it) }
                 ?: throw UnresolvedOutcome("OUTCOME_RESOURCE_PRODUCER_UNAVAILABLE")
             val claim = inspector.binding(operand, requirement.maxAgeSeconds, used, producer.id)
+            if (allocated != null && (claim.resourceId != allocated.first || claim.instanceId != allocated.second))
+                throw Violation("OUTCOME_RESOURCE_INSTANCE_MISMATCH")
             if (Instant.parse(claim.observedAt) > Instant.parse(consumer.startedAt))
                 throw UnresolvedOutcome("OUTCOME_BINDING_AFTER_CONSUMPTION")
-            lineage += ResourceInvocationLineage(consumer.id, producer.id, producer.nodeId, operand.binding, operand.path, claim.id, claim.resource)
+            lineage += ResourceInvocationLineage(consumer.id, producer.id, producer.nodeId, operand.binding, operand.path, claim.id, claim.resource, claim.instanceId)
             claim.resource
         }
     }

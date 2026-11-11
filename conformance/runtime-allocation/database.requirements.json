@@ -1,0 +1,59 @@
+{
+  "formatVersion": 3,
+  "graphDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "runId": "allocation-conformance",
+  "challenge": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "startedAt": "2026-11-11T07:00:00Z",
+  "reviewerId": "independent",
+  "resources": [
+    {
+      "id": "target",
+      "disposition": "CREATED_IN_RUN",
+      "creator": {
+        "capability": "PROVISION"
+      },
+      "owner": "tenant",
+      "allocation": {
+        "scope": "isolated",
+        "type": "database",
+        "binding": "make",
+        "path": [
+          "handle"
+        ],
+        "keyPrefix": "db-"
+      }
+    }
+  ],
+  "operations": [
+    {
+      "id": "make",
+      "selector": {
+        "capability": "PROVISION"
+      },
+      "resource": "target",
+      "parameter": "resource",
+      "postconditions": {},
+      "evidence": {
+        "status": "SUCCEEDED"
+      }
+    },
+    {
+      "id": "consume",
+      "selector": {
+        "capability": "VERIFY"
+      },
+      "resource": "target",
+      "parameter": "resource",
+      "postconditions": {
+        "ready": true
+      },
+      "evidence": {
+        "status": "SUCCEEDED"
+      }
+    }
+  ],
+  "execution": {
+    "workflow": "main",
+    "status": "SUCCEEDED"
+  }
+}

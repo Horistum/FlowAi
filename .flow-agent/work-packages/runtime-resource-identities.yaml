@@ -1,0 +1,27 @@
+version: AI-A3-S2.8
+name: Runtime allocated resource identity and instance evidence
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 59db8dafc74f4904291fb451f4bf4d4ab8ff65f9
+predecessorPullRequest: 267
+deliveryBase: main
+authorization: Maintainer requested continuation after merging the deployed observer and runtime identity proposal.
+objective: Review a newly allocated instance without replacing the independently frozen requirements with its returned address.
+universalInvariant: Allocation binds a frozen logical resource, scope, type and producer slot to one immutable address and instance; every consuming attempt and final observation must identify that instance.
+scope:
+- Version 3 requirements, observations, trust and signing domains; preserve versions 1 and 2.
+- Exact scope/type, bounded key prefix/length, one creator output/path per newly owned resource.
+- Independently granted allocation, creation, ownership and fresh postconditions using the existing sequential trace and VALUE edges.
+- Durable observer capture and independently retained export of version 3 evidence.
+- Installed proof with real service/database addresses allocated only after requirements capture, including negative and interrupted-capture cases.
+forbiddenScope:
+- No operation dispatch, resource replacement, provider-specific semantic rules or second execution graph.
+- No import, workflow input allocation, branch merge, parallel or nested recovery extension.
+- No automatic permission, cleanup or inference of stable instance identity from an address or timestamp.
+- No live-model, native provider truth, remote deployment or broader milestone closure claims.
+validationPlan:
+- Reader/schema/signature compatibility, negative semantics and conformance vectors.
+- Actual local allocation, every-attempt lineage and retained collector evidence through the installed compiler.
+- Python tooling, architecture checks, JVM tests, conformance, isolation and final exact-head/merge-candidate CI.
+nextSlice: S3-evidence-driven-system-discovery

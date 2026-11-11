@@ -183,3 +183,6 @@ individual attempts or the runtime correctness of that structure.
 [Attempt-aware run evidence](RUN_EVIDENCE.md) adds opt-in outcome contracts version 2
 for authenticated invocation history and post-recovery state. Version 1 retains its
 previous limits. Production cloud observer integration remains a separate gate.
+
+For addresses allocated only during creation, see [runtime resource identities](RUNTIME_RESOURCE_IDENTITIES.md).
+Outcome version 3 and observer event version 2 are explicit opt-ins; the historical contracts above retain their semantics.

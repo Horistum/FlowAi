@@ -80,3 +80,8 @@ Chat communication may use Czech or another user-preferred language.
 After merged PR #258, the [clarification-integrity followup](work-packages/authoring-clarification-integrity.yaml)
 protects established requirements across explicit continuation. The target-readiness
 correction is merged; live evaluation and executable held-out rendering remain open.
+
+The S2 continuation now includes [runtime resource identities](work-packages/runtime-resource-identities.yaml).
+Read the [version 3 contract](../docs/RUNTIME_RESOURCE_IDENTITIES.md) before collecting allocated
+resources. The next bounded slice is S3 evidence-driven system discovery; broader recovery and
+live-evaluation gates remain open.

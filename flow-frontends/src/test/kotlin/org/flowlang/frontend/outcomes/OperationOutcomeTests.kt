@@ -55,7 +55,7 @@ class OperationOutcomeTests {
             listOf(OperationOutcomeRequirement("outcome", RequirementSelector(capability), "resource", parameter,
                 postconditions = mapOf("ready" to json(true)))))
         var grants = OperationObservationTrust(1, listOf(ObservationGrant("observer", b64(key.public.encoded),
-            listOf(address.scope), listOf(address.type), ObservationKind.entries)))
+            listOf(address.scope), listOf(address.type), ObservationKind.entries.filter { it != ObservationKind.ALLOCATION })))
         val source = "captured observer response".toByteArray()
         fun requirements() = OperationOutcomeReader.requirements(File(root, "requirements.json").apply { writeBytes(Json.mapper.writeValueAsBytes(contract)) })
         fun claim(kind: ObservationKind, at: Instant = now.minusSeconds(10)) = OperationObservation(

@@ -41,7 +41,14 @@
           "const": "APPEND"
         },
         "event": {
-          "$ref": "protocol.schema.json#/$defs/event"
+          "oneOf": [
+            {
+              "$ref": "protocol.schema.json#/$defs/event"
+            },
+            {
+              "$ref": "protocol-v2.schema.json#/$defs/event"
+            }
+          ]
         },
         "capture": {
           "type": "string",

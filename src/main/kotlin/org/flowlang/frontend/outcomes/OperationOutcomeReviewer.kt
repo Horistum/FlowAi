@@ -21,7 +21,7 @@ object OperationOutcomeReviewer {
         if (contract.graphDigest != unit.graphDigest.value) throw OutcomeInputException("OUTCOME_GRAPH_MISMATCH")
         if (evaluatedAt < Instant.parse(contract.startedAt)) throw OutcomeInputException("OUTCOME_INVALID_EVALUATION_TIME")
         require(observations == null || trust != null) { "Observations require caller-owned trust." }
-        if (contract.formatVersion == 2) return AttemptOutcomeReviewer.evaluate(unit, requirements, observations, trust, evaluatedAt)
+        if (contract.formatVersion >= 2) return AttemptOutcomeReviewer.evaluate(unit, requirements, observations, trust, evaluatedAt)
         val graph = unit.graph
         val resources = contract.resources.associateBy { it.id }
         val diagnostics = mutableListOf<String>()
@@ -35,19 +35,20 @@ object OperationOutcomeReviewer {
         val inspector = Inspector(graph, ledger, evaluatedAt)
         val results = contract.operations.map { operation ->
             val resource = resources.getValue(operation.resource)
+            val expectedIdentity = requireNotNull(resource.identity)
             var node: CanonicalTaskNode? = null
             val used = linkedSetOf<String>()
             try {
                 node = inspector.select(operation.selector)
                 if (diagnostics.isNotEmpty()) throw UnresolvedOutcome(diagnostics.single())
                 val identity = inspector.resource(node, operation, used)
-                if (identity != resource.identity) throw Violation("OUTCOME_RESOURCE_MISMATCH")
+                if (identity != expectedIdentity) throw Violation("OUTCOME_RESOURCE_MISMATCH")
                 val effects = node.semantics.effects
                 if (effects.isEmpty() || effects.any { it.domain == EffectDomain.UNKNOWN || it.operation == EffectOperation.UNKNOWN })
                     throw UnresolvedOutcome("OUTCOME_UNKNOWN_EFFECTS")
                 val changes = effects.any { it.operation != EffectOperation.READ }
                 if (resource.disposition == ResourceDisposition.SHARED && changes) throw Violation("OUTCOME_SHARED_RESOURCE_CHANGE")
-                val result = inspector.observation(ObservationKind.RESULT, node.id.value, resource.identity, operation.maxAgeSeconds, used)
+                val result = inspector.observation(ObservationKind.RESULT, node.id.value, expectedIdentity, operation.maxAgeSeconds, used)
                 when (result.status) {
                     ObservationStatus.FAILED -> throw Violation("OUTCOME_OPERATION_FAILED")
                     ObservationStatus.UNKNOWN -> throw UnresolvedOutcome("OUTCOME_OPERATION_UNKNOWN")
@@ -57,7 +58,7 @@ object OperationOutcomeReviewer {
                     Instant.parse(it.observedAt) > Instant.parse(result.observedAt) })
                     throw UnresolvedOutcome("OUTCOME_BINDING_AFTER_RESULT")
                 if (resource.disposition == ResourceDisposition.MANAGED && changes) {
-                    val ownership = inspector.observation(ObservationKind.OWNERSHIP, node.id.value, resource.identity, operation.maxAgeSeconds, used)
+                    val ownership = inspector.observation(ObservationKind.OWNERSHIP, node.id.value, expectedIdentity, operation.maxAgeSeconds, used)
                     if (ownership.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_OWNERSHIP_UNKNOWN")
                     if (ownership.owner != resource.owner) throw Violation("OUTCOME_OWNER_MISMATCH")
                     if (Instant.parse(ownership.observedAt) > Instant.parse(result.observedAt))
@@ -68,27 +69,27 @@ object OperationOutcomeReviewer {
                     // A creator must itself be in the reviewed contract for this exact resource.
                     val declarations = contract.operations.filter { it.resource == resource.id && inspector.select(it.selector).id == creator.id }
                     if (declarations.isEmpty()) throw UnresolvedOutcome("OUTCOME_CREATOR_NOT_COVERED")
-                    if (declarations.any { inspector.resource(creator, it, used) != resource.identity })
+                    if (declarations.any { inspector.resource(creator, it, used) != expectedIdentity })
                         throw Violation("OUTCOME_CREATOR_RESOURCE_MISMATCH")
-                    val creation = inspector.observation(ObservationKind.CREATION, creator.id.value, resource.identity, operation.maxAgeSeconds, used)
+                    val creation = inspector.observation(ObservationKind.CREATION, creator.id.value, expectedIdentity, operation.maxAgeSeconds, used)
                     if (creation.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_CREATION_UNKNOWN")
                     if (creation.created != true) throw Violation("OUTCOME_RESOURCE_NOT_CREATED")
                     if (effects.any { it.operation == EffectOperation.DELETE } &&
                         Instant.parse(creation.observedAt) > Instant.parse(result.observedAt))
                         throw UnresolvedOutcome("OUTCOME_CREATION_AFTER_REMOVAL")
                 }
-                val state = inspector.observation(ObservationKind.STATE, node.id.value, resource.identity, operation.maxAgeSeconds, used)
+                val state = inspector.observation(ObservationKind.STATE, node.id.value, expectedIdentity, operation.maxAgeSeconds, used)
                 if (state.status != ObservationStatus.SUCCEEDED) throw UnresolvedOutcome("OUTCOME_STATE_UNKNOWN")
                 if (Instant.parse(state.observedAt) < Instant.parse(result.observedAt)) throw UnresolvedOutcome("OUTCOME_STATE_BEFORE_RESULT")
                 for ((fact, expected) in operation.postconditions) {
                     val observed = state.facts[fact] ?: throw UnresolvedOutcome("OUTCOME_FACT_MISSING")
                     if (!equal(expected, observed)) throw Violation("OUTCOME_POSTCONDITION_FAILED")
                 }
-                OperationOutcomeResult(operation.id, node.id.value, resource.identity, OperationOutcomeState.SATISFIED, "OUTCOME_SATISFIED", used.toList())
+                OperationOutcomeResult(operation.id, node.id.value, expectedIdentity, OperationOutcomeState.SATISFIED, "OUTCOME_SATISFIED", used.toList())
             } catch (failure: Violation) {
-                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.VIOLATED, failure.code, used.toList())
+                OperationOutcomeResult(operation.id, node?.id?.value, expectedIdentity, OperationOutcomeState.VIOLATED, failure.code, used.toList())
             } catch (failure: UnresolvedOutcome) {
-                OperationOutcomeResult(operation.id, node?.id?.value, resource.identity, OperationOutcomeState.UNRESOLVED, failure.code, used.toList())
+                OperationOutcomeResult(operation.id, node?.id?.value, expectedIdentity, OperationOutcomeState.UNRESOLVED, failure.code, used.toList())
             }
         }
         // A declared subset cannot hide another destructive operation in this accepted graph.
@@ -148,9 +149,9 @@ object OperationOutcomeReviewer {
             candidates.single()
         }
         fun observation(kind: ObservationKind, node: String?, resource: ResourceIdentity, age: Int,
-                        used: MutableSet<String>, invocationId: String? = null): OperationObservation {
+                        used: MutableSet<String>, invocationId: String? = null, resourceId: String? = null): OperationObservation {
             charge(ledger.size)
-            val match = ledger.singleOrNull { it.kind == kind && it.nodeId == node && it.resource == resource && it.invocationId == invocationId }
+            val match = ledger.singleOrNull { it.kind == kind && it.nodeId == node && it.resource == resource && it.invocationId == invocationId && (resourceId == null || it.resourceId == resourceId) }
                 ?: throw UnresolvedOutcome("OUTCOME_OBSERVATION_MISSING")
             fresh(match, age); used += match.id
             return match
@@ -168,6 +169,16 @@ object OperationOutcomeReviewer {
                     it.resultBinding == binding && it.valueType?.value == "text" }
                 else -> false
             }
+        }
+        fun allocationScope(node: CanonicalTaskNode, operation: OperationOutcomeRequirement, allocation: ResourceAllocation) {
+            var value = expression(node.semantics.parameters[operation.parameter] ?: throw Violation("OUTCOME_RESOURCE_PARAMETER_MISSING"))
+            for (part in operation.path) value = (value as? MapLiteralNode)?.entries?.get(part)
+                ?: throw UnresolvedOutcome("OUTCOME_ALLOCATION_REQUEST_SHAPE")
+            val fields = (value as? MapLiteralNode)?.entries ?: throw UnresolvedOutcome("OUTCOME_ALLOCATION_REQUEST_SHAPE")
+            fun field(name: String) = (fields[name] as? StringLiteralNode)?.value
+                ?: throw UnresolvedOutcome("OUTCOME_ALLOCATION_REQUEST_SCOPE_UNKNOWN")
+            if (field("scope") != allocation.scope || field("type") != allocation.type)
+                throw Violation("OUTCOME_ALLOCATION_REQUEST_SCOPE")
         }
         fun operand(node: CanonicalTaskNode, operation: OperationOutcomeRequirement): ResourceOperand {
             val source = node.semantics.parameters[operation.parameter] ?: throw Violation("OUTCOME_RESOURCE_PARAMETER_MISSING")

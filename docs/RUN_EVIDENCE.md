@@ -198,3 +198,6 @@ and creator invocation correlation. Deployed production observers, external chec
 retention and runtime-allocated identity contracts remain next boundaries. AI-A3,
 AR-06/AR-07, F-16/F-20 and live/render gates
 remain open; EF-09 remains paused.
+
+For addresses allocated only during creation, see [runtime resource identities](RUNTIME_RESOURCE_IDENTITIES.md).
+Outcome version 3 and observer event version 2 are explicit opt-ins; the historical contracts above retain their semantics.

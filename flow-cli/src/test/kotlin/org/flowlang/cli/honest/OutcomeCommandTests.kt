@@ -63,4 +63,21 @@ class OutcomeCommandTests {
         assertEquals("schemas/operation-outcome-review-v2.schema.json", receipt.coveredFiles.single { it.path == "operation-outcome-review.json" }.schema)
         assertFalse(result.review.executionAuthorized)
     }
+    @Test fun allocatedResourceReviewPublishesVersionThreeWithoutInventingAnAddress() = workspace { root ->
+        fun allocationFixture(name: String) = requireNotNull(javaClass.getResourceAsStream(
+            "/flow/reference-contracts/conformance/runtime-allocation/database.$name.json")).bufferedReader().use { it.readText() }
+        val source = File(root, "proposal.json").apply { writeText(allocationFixture("proposal")) }
+        val compiled = assertIs<ProposalCliResult>(executeCli(arrayOf("proposal", source.path)))
+        val contract = Json.mapper.readTree(allocationFixture("requirements")) as ObjectNode
+        contract.put("graphDigest", compiled.review.graphDigest)
+        val requirements = File(root, "requirements.json").apply { writeText(contract.toString()) }
+        val output = File(root, "review")
+        val result = assertIs<OutcomeCliResult>(executeCli(arrayOf("outcomes", source.path, "--source-kind", "proposal",
+            "--requirements", requirements.path, "--evaluated-at", "2026-11-11T07:00:10Z", "--out", output.path)))
+        assertEquals(3, result.exitCode)
+        assertEquals(3, result.review.formatVersion)
+        assertTrue(result.review.results.all { it.resource == null && it.instanceId == null })
+        val receipt = assertNotNull(ArtifactPublicationVerifier().verify(output).publication)
+        assertEquals("schemas/operation-outcome-review-v3.schema.json", receipt.coveredFiles.single { it.path == "operation-outcome-review.json" }.schema)
+    }
 }

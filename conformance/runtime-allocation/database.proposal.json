@@ -1,0 +1,72 @@
+{
+  "formatVersion": 1,
+  "providerId": "allocation-conformance",
+  "request": {
+    "userText": "Allocate an isolated database and verify that exact instance.",
+    "context": {},
+    "mode": "DRAFT"
+  },
+  "response": {
+    "normalizedIntent": {
+      "intentVersion": "3.1",
+      "kind": "FlowIntentDocument",
+      "name": "runtime-allocation",
+      "workflows": [
+        {
+          "name": "main",
+          "kind": "CUSTOM",
+          "body": [
+            {
+              "kind": "operation",
+              "id": "approval",
+              "capability": "APPROVE"
+            },
+            {
+              "kind": "operation",
+              "id": "make",
+              "capability": "PROVISION",
+              "params": {
+                "resource": {
+                  "scope": "isolated",
+                  "type": "database"
+                }
+              },
+              "requires": [
+                "approval"
+              ]
+            },
+            {
+              "kind": "operation",
+              "id": "consume",
+              "capability": "VERIFY",
+              "params": {
+                "resource": "ref:make.handle",
+                "criteria": "ready"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "report": {
+      "mode": "DRAFT",
+      "classification": {
+        "type": "allocation-conformance",
+        "confidence": 0
+      },
+      "confidence": {
+        "overall": 0,
+        "intentType": 0,
+        "entities": 0,
+        "dependencies": 0,
+        "safety": 0
+      },
+      "explanation": [
+        "Synthetic signed conformance evidence; no external work."
+      ],
+      "guardrails": [
+        "No execution authorization."
+      ]
+    }
+  }
+}
