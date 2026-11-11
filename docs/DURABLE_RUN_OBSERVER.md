@@ -175,3 +175,10 @@ Next: independently deployed observers, durable external checkpoint retention an
 bounded contract for runtime-allocated identities. Cloud execution, distributed
 observer transport, arbitrary parallel traces and autonomous recovery remain unproven.
 AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 remains paused.
+
+## Optional deployed collection
+
+[S2.7 deployed collection](DEPLOYED_RUN_OBSERVER.md) adds independent collector and
+checkpoint-witness services over private Unix sockets. Its acknowledgements require
+both durable records, and `export --witness-socket` requires the exact externally retained
+checkpoint. Existing direct commands retain the behavior documented above.

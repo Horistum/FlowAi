@@ -118,7 +118,7 @@ class LocalResource:
             self.reserved.close()
 
 
-def verify(root, cli):
+def verify(root, cli, deployment_factory=None):
     root, cli = Path(root).resolve(), Path(cli).resolve()
     rows = []
     with tempfile.TemporaryDirectory(prefix="flow-resource-lineage-") as temporary:
@@ -129,6 +129,7 @@ def verify(root, cli):
         for domain in ("service", "database", "credential"):
             folder = work / domain; folder.mkdir()
             local = LocalResource(domain, folder)
+            deployed = None
             try:
                 address = local.identity
                 def operation(identifier, capability, resource, **params):
@@ -164,13 +165,21 @@ def verify(root, cli):
                     scopes=[address["scope"]], resourceTypes=[address["type"]], kinds=["RESULT", "STATE", "CREATION", "BINDING"], workflows=["main"])])))
                 journal = folder / "journal"
 
-                def host(command, *args, directory=journal, expected=0):
+                def direct_host(command, *args, directory=journal, expected=0):
                     result = subprocess.run([sys.executable, str(root / "tools/observe.py"), command, "--journal", str(directory), *map(str, args)],
                         capture_output=True, timeout=150)
                     require(result.returncode == expected, f"Lineage observer {command} exit {result.returncode}, expected {expected}")
                     return json.loads(result.stdout or result.stderr)
 
-                tip = host("init", "--cli", cli, "--source", proposal_path, "--source-kind", "proposal", "--requirements", req)
+                tip = direct_host("init", "--cli", cli, "--source", proposal_path, "--source-kind", "proposal", "--requirements", req)
+                if deployment_factory:
+                    deployed = deployment_factory(root, folder, journal, tip, direct_host)
+
+                def host(command, *args, directory=journal, expected=0):
+                    if deployed and directory == journal:
+                        return deployed.host(command, *args, expected=expected)
+                    return direct_host(command, *args, directory=directory, expected=expected)
+
                 targets = host("status")
                 nodes = {target["id"]: target["nodeId"] for target in targets["operationTargets"]}
                 approval = next(t["nodeId"] for t in targets["invocationTargets"] if t["capability"] == "APPROVE")
@@ -260,9 +269,13 @@ def verify(root, cli):
                 require(probe_result["creatorInvocationId"] == "create-1" and [r["producerInvocationId"] for r in probe_result["resourceLineage"]] == ["resolve-1", "resolve-2"], "Exact producer or creator lineage was lost")
                 require(local.creations == 1 and accepted["executionAuthorized"] is False, "Observer replayed or authorized work")
                 rows.append(dict(case=domain, variant="late-lineage-and-creation", state=accepted["state"], creationExecutions=local.creations))
+                if deployed:
+                    rows.extend(dict(case=domain, **row) for row in deployed.finish_proof())
             finally:
+                if deployed:
+                    deployed.close()
                 local.close()
-    result = dict(status="PASS", evidenceKind="resource-invocation-lineage-integration-test", cases=rows,
+    result = dict(status="PASS", evidenceKind="deployed-observer-integration-test" if deployment_factory else "resource-invocation-lineage-integration-test", cases=rows,
                   localWorkExecuted=True, cloudWorkExecuted=False, liveModelEvaluated=False, targetSupportPromoted=False)
     print(json.dumps(result))
     return result

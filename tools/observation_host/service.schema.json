@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "observer-service-v1.schema.json",
+  "title": "External observer service requests version 1",
+  "$comment": "One length-prefixed request per private Unix connection. Structural schema only; service role, base64 bytes, frame/deadline limits, enrollment and retained-prefix continuity are checked by the host. No execution authorization.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formatVersion",
+        "operation",
+        "sessionId"
+      ],
+      "properties": {
+        "formatVersion": {
+          "const": 1
+        },
+        "operation": {
+          "const": "STATUS"
+        },
+        "sessionId": {
+          "$ref": "protocol.schema.json#/$defs/sha256"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formatVersion",
+        "operation",
+        "event",
+        "capture"
+      ],
+      "properties": {
+        "formatVersion": {
+          "const": 1
+        },
+        "operation": {
+          "const": "APPEND"
+        },
+        "event": {
+          "$ref": "protocol.schema.json#/$defs/event"
+        },
+        "capture": {
+          "type": "string",
+          "maxLength": 87384,
+          "contentEncoding": "base64"
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formatVersion",
+        "operation",
+        "previous",
+        "following"
+      ],
+      "properties": {
+        "formatVersion": {
+          "const": 1
+        },
+        "operation": {
+          "const": "ADVANCE"
+        },
+        "previous": {
+          "$ref": "protocol.schema.json#/$defs/checkpoint"
+        },
+        "following": {
+          "$ref": "protocol.schema.json#/$defs/checkpoint"
+        }
+      }
+    }
+  ]
+}

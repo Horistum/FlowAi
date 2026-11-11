@@ -112,3 +112,8 @@ state. Resource generation/replacement under an unchanged address is not modeled
 Next: independently deployed observers, external durable checkpoint retention, and a
 bounded contract for runtime-allocated identities. Production cloud execution and live-model
 evaluation remain unproven. AI-A3, AR-06/AR-07 and F-16/F-20 stay open; EF-09 stays paused.
+
+The [S2.7 deployed-observer continuation](DEPLOYED_RUN_OBSERVER.md) now provides bounded
+local service deployment and independent checkpoint retention. Its runtime identity
+[proposal](RUNTIME_RESOURCE_IDENTITY_PROPOSAL.md) remains design only; the exact predeclared
+resource requirement in this contract is unchanged.

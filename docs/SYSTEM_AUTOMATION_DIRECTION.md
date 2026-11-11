@@ -177,3 +177,9 @@ producer available to every consumer, including failed read retries, and separat
 confirms resource creation. Late captures extend the same durable observer protocol.
 Production observer deployment, external receipt retention and runtime-allocated
 identity contracts remain open.
+
+S2.7: [Deployed observer and independent checkpoint retention](DEPLOYED_RUN_OBSERVER.md)
+adds separate trusted-local collector/witness processes, explicit enrollment and
+witness-checked publication. Independent production storage and cloud deployment remain
+operator responsibilities. The [runtime identity proposal](RUNTIME_RESOURCE_IDENTITY_PROPOSAL.md)
+is design only; unknown runtime identities still require a separately versioned implementation.

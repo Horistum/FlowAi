@@ -1,0 +1,27 @@
+version: AI-A3-S2.7
+name: Deployed observer and independently retained checkpoints
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: a5eb8494bf1e1dd63b3684b49964b7db0e6bfae2
+predecessorPullRequest: 266
+deliveryBase: main
+authorization: Maintainer requested the proposed standalone observer, external checkpoint retention and bounded runtime-identity design.
+objective: Acknowledge captured events only after a separately operated checkpoint witness retains the corresponding journal prefix.
+universalInvariant: Restart, redelivery or loss of a collector reply cannot forget a witnessed prefix, select a conflicting history or dispatch the observed operation again.
+scope:
+- Separate bounded local observer and checkpoint-witness processes over private Unix sockets.
+- Explicit genesis enrollment, durable compare-and-advance receipts and pinned session identities.
+- Reconcile the journal/witness commit gap through identical event redelivery; preserve original duplicate receipts.
+- Require a witnessed exact checkpoint for deployed snapshot export, preserving the existing compiler and signatures.
+- Exercise independent process failure, restored journal prefixes, conflicting writers and actual local resource creation.
+- Design a versioned runtime-allocated identity contract without activating unknown identities in outcome version 2.
+forbiddenScope:
+- No workflow dispatch, write retries, automatic infrastructure repair, cloud observer or execution permission.
+- No second semantic graph, change to outcome version 2, provider-specific resource rules or target support promotion.
+- No claim of protection against a malicious storage owner, simultaneous witness rollback, remote authentication or native observation truth.
+validationPlan:
+- Process-level failure and protocol tests including lost replies at both persistence boundaries.
+- Installed compiler integration across service, database and credential creation, retaining exactly one creation per domain.
+- Full Python tooling, architecture validation, JVM regression, conformance and both final PR checkouts.
+nextSlice: S2-runtime-allocated-resource-identity-contract-implementation
