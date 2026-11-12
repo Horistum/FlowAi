@@ -12,6 +12,7 @@ from authoring_host.contracts import HostError, canonical, loads, read, require,
 from authoring_host.evaluation import evaluate
 from authoring_host.session import resume, start
 from verify_authoring_investigation import verify as verify_investigation
+from verify_system_discovery import verify as verify_system_discovery
 from verify_system_automation import verify as verify_system_automation
 from verify_structured_authoring import verify as verify_structured_authoring
 from verify_operation_outcomes import verify as verify_operation_outcomes
@@ -159,6 +160,7 @@ def verify(root, cli):
                           "processAttempts": attempts, "rejectedClarificationMutations": len(mutations), "faithfulCorpusPlans": 15, "heldOutSpecifiedRender": False,
                           "milestoneComplete": False}))
     verify_investigation(root, cli)
+    verify_system_discovery(root, cli)
     verify_system_automation(root, cli)
     verify_structured_authoring(root, cli)
     verify_operation_outcomes(root, cli)

@@ -34,6 +34,9 @@ def identifier(value):
 
 
 def validate(config):
+    if isinstance(config, dict) and type(config.get("formatVersion")) is int and config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.validate(config)
     keys(config, ("formatVersion", "sources", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords"))
     require(type(config["formatVersion"]) is int and config["formatVersion"] == 1,
             "Unsupported investigation configuration")
@@ -82,7 +85,10 @@ def source_bytes(source, limit):
         os.close(directory)
 
 
-def verify_sources(config, environment):
+def verify_sources(config, environment, ledger=None):
+    if config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.verify(config, environment, ledger)
     total = 0
     for source in config["sources"]:
         data = source_bytes(source, config["maxSourceBytes"])
@@ -92,6 +98,9 @@ def verify_sources(config, environment):
 
 
 def initial(config):
+    if config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.initial(config)
     return {"formatVersion": 1, "protocol": VERSION,
             "sources": [{k: s[k] for k in ("id", "sha256", "scope")} for s in config["sources"]],
             "observations": [], "findings": [], "unknowns": []}
@@ -140,12 +149,15 @@ def answer(ledger, answers, answer_file, limit):
 
 
 def enforce_records(ledger, limit):
-    require(sum(len(ledger[k]) for k in ("observations", "findings", "unknowns")) <= limit,
+    require(sum(len(ledger.get(k, [])) for k in ("observations", "facts", "findings", "unknowns")) <= limit,
             "Investigation record limit exceeded")
 
 
 def apply(ledger, action, config, environment, attempt_id):
     """Validate the entire update on a detached copy; no deletion or authority promotion."""
+    if config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.apply(ledger, action, config, environment, attempt_id)
     require(isinstance(action, dict), "Invalid investigation action")
     kind = action.get("kind")
     require(kind in ("investigate", "propose"), "Unknown investigation action")
@@ -155,7 +167,7 @@ def apply(ledger, action, config, environment, attempt_id):
                 "Invalid investigation records")
     result = copy.deepcopy(ledger)
     # References may only select observations already delivered to the model or earlier findings.
-    refs = {row["id"] for key in ("observations", "findings") for row in result[key]}
+    refs = {row["id"] for key in ("observations", "facts", "findings") for row in result.get(key, [])}
     for finding in action["findings"]:
         keys(finding, ("id", "statement", "evidenceRefs"))
         identifier(finding["id"])
@@ -221,7 +233,10 @@ def _references(value, refs, *, required):
             "Evidence references must identify delivered observations or earlier findings")
 
 
-def output_schema(response_schema):
+def output_schema(response_schema, config=None):
+    if config is not None and config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.output_schema(response_schema)
     def obj(properties):
         return {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties}
     text = {"type": "string", "minLength": 1, "maxLength": 1000}
@@ -237,3 +252,17 @@ def output_schema(response_schema):
         obj({"kind": {"const": "investigate"}, "readSources": {"type": "array", "items": ident,
              "maxItems": 32, "uniqueItems": True}, **common}),
         obj({"kind": {"const": "propose"}, "response": response, **common})]}
+
+
+def instructions(config):
+    if config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.INSTRUCTIONS
+    return INSTRUCTIONS
+
+
+def protocol(config):
+    if config["formatVersion"] == 2:
+        from . import discovery
+        return discovery.VERSION
+    return VERSION
