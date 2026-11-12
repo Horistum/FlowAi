@@ -1,45 +1,59 @@
-# Scoped workspace discovery and dependent evidence
+# Scoped discovery and compiler-enforced evidence bindings
 
 Baseline: merged PR #268 at `0977c8a778fbdce8226af6c8b76df9f7c7f8f8ae` on `main`.
 Work package: [AI-A3-S3.1](../work-packages/evidence-driven-system-discovery.yaml).
 Contract: [System discovery](../../docs/SYSTEM_DISCOVERY.md).
 
-## Result
+## Result and authority
 
-The existing external authoring loop accepts a versioned root grant and model-selected
-list/read operations. A provider can locate files and follow observed dependencies
-without an operator enumerating answer files. Exact JSON extraction is host-owned;
-interpretation and technical conclusions remain model-attributed, while only caller
-answers address decision unknowns. Independent requirements stay unchanged and private.
+A provider can list/read an operator-granted workspace and extract exact JSON values.
+Caller-owned binding requirements select eligible records and declare which operation
+parameters must equal those observations. The provider supplies references, not the
+binding policy. Missing references, wrong sources, incompatible types and ambiguous
+records block before compilation. Findings cannot substitute for source values.
+
+The host preserves original requirement bytes and creates a separate additive compiler
+input with existing literal-parameter checks. The existing canonical graph evaluator
+checks all selected operations. A correct operation cannot conceal a second incorrect
+one; no selected operation cannot satisfy a binding. A receipt connects the frozen
+policy, ledger, observation, extraction path, response and derived requirements to the
+compiler's assessed graph digest. No host-side operation evaluator or execution graph
+is added. Caller checks and policy remain immutable across clarification.
 
 Revalidation covers dispatch, response, pre-compilation and post-compilation. Changed
-observations invalidate their extracted values and transitive findings in a new
-retained ledger revision, reopen dependent technical unknowns and terminate the session.
-Unaffected records survive for inspection. Restoring old bytes cannot revive an
-invalidated session. Directory and file access, records, bytes and turns are bounded.
+observations invalidate dependent facts/findings, reopen technical unknowns and terminate
+the session. Restoring old bytes cannot revive it. Intermediate compiler artifacts from
+a source-changed session are not an accepted result or execution permission.
 
 ## Evidence
 
-Regression cases exercise path traversal, symbolic/hard links, special files, complete
-listing limits, total bytes, typed values, immutable references, root replacement,
-transitive invalidation, clarification and changes during compiler execution. Existing
-pinned-file investigation and non-investigating sessions preserve their contracts.
+Unit and session regressions cover omitted bindings, unrelated facts and paths, typed
+predicates, ambiguous candidates, limits, scope, immutable references, clarification,
+source changes during compilation and compiler receipts for another requirements input.
+Pinned-source v1 and non-investigating sessions retain their contracts.
 
-An adaptive deterministic provider process chooses observations from its request and
-host-returned evidence. The installed compiler proof generates random file paths and
-two layouts for infrastructure, data and credential inventories. Twenty-four variants
-require accepted exact-resource proposals, rejected resource substitution, blocked
-prerequisites and stale-evidence invalidation before compilation. No answer file,
-expected address, requirements or proposal template is supplied to the provider.
-The final PR records exact-head and merge-candidate validation receipts.
+The installed proof uses a deterministic process interpreting the public binding contract,
+then injects adversarial replies. Three structurally different input sets use resource
+arrays/connection maps, keyed datasets/store arrays, and nested credential/policy documents.
+Their plans exercise VERIFY, POLICY_CHECK and BACKUP. Twenty-four cases require correct
+acceptance or rejection for zero observations, missing bindings, wrong facts, contradictory
+parameters, additional contradictory operations, ambiguous records and stale sources.
+
+No source filenames or result addresses are supplied in the request or caller contracts.
+The expected parameter is resolved from delivered evidence, and failures must identify
+the generated compiler obligation. These checks do not depend on a pre-known exact-address
+oracle. Final PR metadata records exact-head and merge-candidate CI receipts.
 
 ## Remaining boundaries
 
-The fixture agent knows a small JSON inventory shape; its results do not establish
-live-model generalization. Extracted fields establish source content, not authenticated
-provider truth or upstream observation freshness. Multi-file atomicity, live system
-connectivity, unbounded inventory search and workflow execution remain outside this
-slice. The root grant is not an OS sandbox for configured provider executables.
+The operator still declares JSON selection semantics and the parameter obligations to
+check. The deterministic fixture is not proof of live-agent understanding of unfamiliar
+formats. Only declared bindings are enforced, and only exact string parameters use the
+existing literal-string check; no coercion or inference promotion is permitted. Compiler
+control-flow review requirements remain authoritative.
 
-S3, AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 stays paused. The next slice is
-managed-inventory provenance and independently reviewed live discovery evaluation.
+Evidence establishes selected workspace bytes, not authenticated provider truth,
+upstream freshness, discovery completeness, live connectivity or multi-file atomicity.
+The configured provider executable is trusted operator infrastructure, not sandboxed by
+the root grant. S3, AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 stays paused.
+Managed-inventory provenance and independently reviewed live discovery remain next.

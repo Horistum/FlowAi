@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 142
+stateVersion: 143
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -932,7 +932,7 @@ recoveryBoundedAuthoring:
     validation: candidate-python-installed-discovery-conformance-and-final-full-ci-required
     investigationProtocolVersion: 2
     authoringHostVersion: 3
-    scope: Root-scoped observation selection, exact source values and transitive evidence invalidation.
+    scope: Caller-owned discovery bindings enforced by canonical compiler checks, scoped observations and transitive evidence invalidation.
     nextSlice: S3-managed-inventory-provenance-and-live-discovery-evaluation
     liveModelEvaluated: false
     nativeProviderTruthEstablished: false

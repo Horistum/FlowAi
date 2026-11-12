@@ -44,7 +44,14 @@ def compiler():
     if marker == "input-error":
         report["diagnostics"] = [{"code": "TEST_INPUT_ERROR", "field": response["normalizedIntent"]["field"],
                                   "message": "Invalid input"}]
+    # Protocol-only receipt for host tests. Real binding semantics are exercised by
+    # verify_system_discovery.py using the installed product, never this mock.
+    report['graphDigest'] = 'a' * 64
     (out / "proposal-review.json").write_text(json.dumps(report))
+    (out / "request-fidelity-review.json").write_text(json.dumps({
+        'requirementsSource': {'sha256': hashlib.sha256(Path(args[args.index('--requirements')+1]).read_bytes()).hexdigest()},
+        'graphDigest': report['graphDigest'], 'requirements': [
+            {'id': item['id'], 'state': 'SATISFIED' if code == 0 else 'NOT_EVALUATED'} for item in requirements['requirements']]}))
     return code
 
 

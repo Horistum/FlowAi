@@ -195,6 +195,9 @@ actual automation request and managed scope, preserving independent requirements
 S3.1: [Scoped workspace discovery](SYSTEM_DISCOVERY.md) lets the existing authoring host
 follow model-selected bounded directory listings and reads, extract source-attributed
 JSON values and invalidate dependent conclusions when observed evidence changes.
-The installed proof uses a deterministic process agent across random inventory layouts.
+Caller-owned source predicates bind those values to declared operation parameters through
+existing canonical compiler fidelity checks. Original requirements remain retained unchanged.
+The installed proof uses distinct JSON structures and adversarial provider replies; no
+expected address is supplied in caller inputs. It remains a deterministic protocol test.
 Managed-inventory provenance, upstream freshness and live discovery evaluation remain
 open; this slice does not close S3 or certify autonomous system understanding.

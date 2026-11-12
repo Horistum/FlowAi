@@ -34,6 +34,9 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     contracts = public_contracts(config["compiler"]["contracts"])
     compiler_digest = compiler_fingerprint(config)
     contracts["capabilityCatalog"] = capability_catalog(config)
+    if investigation_config is not None and investigation_config["formatVersion"] == 2:
+        from . import discovery_bindings
+        discovery_bindings.validate_context(investigation_config["bindingRequirements"], loads(requirements_data), contracts["capabilityCatalog"])
     require(compiler_fingerprint(config) == compiler_digest, "Compiler distribution changed")
     root = Path(directory).absolute()
     # All retained inputs are checked before creating the evidence directory or spending quota.
@@ -119,6 +122,10 @@ def resume(directory, answers_data, requirements_data):
         preserve_requirements(prior_requirements, reviewed)
         config = validate_config(loads(read(root / "config.json")))
         environment = credentials(config)
+        if config.get("investigation", {}).get("formatVersion") == 2:
+            from . import discovery_bindings
+            discovery_bindings.validate_context(config["investigation"]["bindingRequirements"], reviewed,
+                loads(read(root / "contracts.json"))["capabilityCatalog"])
         if "investigation" in config:
             require(state["investigationSteps"] == sum(a["status"] == "investigated" for a in state["attempts"]),
                     "Investigation step ledger is inconsistent")
@@ -192,8 +199,9 @@ def _compile(root, state, config, attempt, proposal):
     prefix = attempt["directory"]
     save(root, prefix + "/proposal.json", canonical(proposal), state["files"])
     out = root / prefix / "review"
+    requirements_file = attempt.get("compilerRequirementsFile", state["requirementsFile"])
     command = config["compiler"]["argv"] + ["proposal", str(root / prefix / "proposal.json"),
-              "--requirements", str(root / state["requirementsFile"]), "--out", str(out)]
+              "--requirements", str(root / requirements_file), "--out", str(out)]
     if state["target"]:
         command += ["--target", state["target"]]
     if state["render"]:
@@ -212,7 +220,7 @@ def _compile(root, state, config, attempt, proposal):
         state["files"][str(path.relative_to(root))] = digest(path.read_bytes())
     attempt["review"] = review
     attempt["compilerLatencyMs"] = result["latencyMs"]
-    attempt["requirementsFile"] = state["requirementsFile"]
+    attempt["requirementsFile"] = requirements_file
     return review
 
 
@@ -361,6 +369,23 @@ def _advance(root, state, config, environment, kind):
                 if investigation.blocked(updated):
                     attempt["status"] = "investigation-blocked"
                     return _finish(root, state, "investigation-blocked")
+                if investigation_config["formatVersion"] == 2:
+                    from . import discovery_bindings
+                    original = loads(read(root / state["requirementsFile"]))
+                    discovery_bindings.validate_context(investigation_config["bindingRequirements"], original, contracts["capabilityCatalog"])
+                    derived, binding_assessment = discovery_bindings.resolve(investigation_config["bindingRequirements"],
+                        updated, action["bindings"], original, action["response"])
+                    binding_assessment["originalRequirementsFileSha256"] = state["files"][state["requirementsFile"]]
+                    name = attempt["directory"] + "/discovery-binding-assessment.json"
+                    save(root, name, canonical(binding_assessment), state["files"])
+                    attempt["discoveryBindingAssessment"] = name
+                    if derived is None:
+                        attempt["status"] = "discovery-binding-blocked"
+                        return _finish(root, state, "discovery-binding-blocked")
+                    name = attempt["directory"] + "/discovery-requirements.json"
+                    save(root, name, canonical(derived), state["files"])
+                    attempt["compilerRequirementsFile"] = name
+                    attempt["originalRequirementsFile"] = state["requirementsFile"]
             proposal = {"formatVersion": 1, "providerId": config["provider"]["id"], "request": request,
                         "response": value["result"]}
             response_digest = digest(canonical(value["result"]))
@@ -373,6 +398,15 @@ def _advance(root, state, config, environment, kind):
             review = _compile(root, state, config, attempt, proposal)
             if investigation_config is not None:
                 investigation.verify_sources(investigation_config, environment, investigation.load(root, state))
+            if "discoveryBindingAssessment" in attempt:
+                from . import discovery_bindings
+                name = attempt["directory"] + "/review/request-fidelity-review.json"
+                require(name in state["files"] or review["exitCode"] != 0, "Accepted proposal has no discovery fidelity receipt")
+                if name in state["files"]:
+                    bound = discovery_bindings.verify_compiler_receipt(binding_assessment, loads(read(root / name)), review)
+                    name = attempt["directory"] + "/discovery-binding-result.json"
+                    save(root, name, canonical(bound), state["files"])
+                    attempt["discoveryBindingResult"] = name
             attempt["status"] = "reviewed"
             if review["exitCode"] == 70 or any(d.get("field") == "$.requirements" for d in review["diagnostics"]):
                 return _finish(root, state, "compiler-error")

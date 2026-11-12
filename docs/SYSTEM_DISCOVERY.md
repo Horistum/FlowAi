@@ -1,63 +1,87 @@
-# Scoped workspace discovery and dependent evidence (AI-A3-S3.1)
+# Scoped discovery and evidence-bound proposal parameters (AI-A3-S3.1)
 
-The external authoring host can explore an operator-granted directory instead of
-receiving a preselected list of answer files. A provider chooses bounded directory
-listings and file reads from the original request and prior observations. It can
-follow references found in those bytes, extract exact JSON values and record
-inferences and unknowns before submitting a proposal to the existing compiler.
+The external authoring host explores an operator-granted directory without receiving
+an answer-file inventory. A provider chooses bounded listings and reads, extracts
+exact JSON values and submits a proposal. Caller-owned binding requirements define
+which observed records may supply particular operation parameters. The host resolves
+those requirements and the existing compiler enforces the resulting values on its
+canonical graph. A retained citation alone cannot authorize a different parameter.
 
-This is the first S3 slice. It provides discovery operations and evidence validity,
-not a general agent framework, provider-specific inventory adapter or execution graph.
-The existing request requirements remain independent, frozen and hidden from the
-provider. The compiler still owns plan acceptance and target authorization.
+This slice supplies observation access and enforcement of declared bindings. It does
+not establish arbitrary system understanding, live-model generalization or a new
+execution framework. Managed-system provenance and upstream freshness remain open.
 
 ## Configuration and migration
 
-Keep the outer host configuration at version 1. Select investigation version 2 to
-replace pinned `sources` with nonoverlapping `roots`. Versions cannot be mixed.
-Existing configurations without investigation and investigation version 1 retain
-their previous contracts and receipts. Discovery uses `bounded-authoring-host/3`
-and `authoring-investigation/2`; outcome versions and observer protocols are unchanged.
+Keep the outer host configuration at version 1. Investigation version 2 requires
+nonoverlapping roots and a nonempty `bindingRequirements` list. Original independent
+request requirements must explicitly use version 2, 3 or 4; the host never upgrades
+their version implicitly. Configurations without investigation and pinned-source
+investigation version 1 retain their previous contracts.
+
+The protocol is `authoring-investigation/2` and the host receipt is
+`bounded-authoring-host/3`. The earlier unmerged draft of v2 without binding requirements
+is intentionally rejected: restart those draft sessions with a complete contract.
+Observer protocols and outcome versions are unchanged.
+
+For a request containing `Verify the discovered service named payments`, the following
+investigation member selects the service by name without knowing its endpoint:
 
 ```json
 {
   "investigation": {
     "formatVersion": 2,
-    "roots": [
-      {
-        "id": "environment",
-        "path": "/absolute/nonsecret/environment-export",
-        "scope": "Selected development environment inventory"
-      }
-    ],
-    "maxSteps": 10,
+    "roots": [{
+      "id": "environment",
+      "path": "/absolute/nonsecret/environment-export",
+      "scope": "Selected development environment inventory"
+    }],
+    "maxSteps": 12,
     "maxSourceBytes": 16384,
     "maxTotalSourceBytes": 131072,
     "maxRecords": 96,
-    "maxEntries": 128
+    "maxEntries": 128,
+    "bindingRequirements": [{
+      "id": "service-endpoint",
+      "sourceQuote": "Verify the discovered service",
+      "source": {
+        "root": "environment",
+        "recordPath": ["services", "*"],
+        "where": [{"path": ["metadata", "name"], "equals": "payments"}],
+        "valuePath": ["status", "endpoint"]
+      },
+      "target": {
+        "selector": {"capability": "VERIFY"},
+        "parameter": "resource"
+      }
+    }]
   }
 }
 ```
 
+Merge this member into the [existing host configuration](BOUNDED_AUTHORING_HOST.md)
+and use the same `tools/author_proposal.py run` and `resume` commands. Every discovery
+turn consumes the existing call, token and cost reservations. No live provider is
+enabled implicitly; the frozen evaluation corpus still rejects extra source exposure.
+
+The operator owns this contract. The provider can propose fact references but cannot
+add, remove or rewrite the obligations. The predicates and target selectors are public
+to the provider; original independent requirements, reviewer identity and compiler
+fidelity results remain private. Source filenames and resulting parameter values are
+not part of the binding contract. JSON selectors are declarative input contracts, not
+provider-specific adapters or proof that the model understands an unfamiliar format.
+
 Granting a root authorizes disclosure of selected names and UTF-8 file content below
-it to the configured provider. Use a deliberately prepared nonsecret workspace or
-inventory export, and place the session output outside every granted root. No file
-names or digests need to be chosen in advance. Root paths stay in private retained
-configuration; the provider receives root IDs, declared scope and directory identity.
-Root identity is pinned at initialization and checked throughout the session.
+it. Prepare a nonsecret workspace and place retained session output outside all roots.
+Private root paths stay in captured configuration; the provider sees root IDs, declared
+scope and pinned directory identity. Root identity is rechecked throughout the session.
 
-Merge this member into the [existing host configuration](BOUNDED_AUTHORING_HOST.md).
-Use the same `tools/author_proposal.py run` and `resume` commands. Every discovery turn
-consumes the existing call, token and cost reservations. No live provider is enabled
-implicitly, and the frozen authoring corpus still rejects additional source exposure.
+## Observation and extraction
 
-## Observation and extraction protocol
-
-An investigation response requests up to eight observations. Paths are relative to
-a granted root; `.` identifies its root directory. The host returns complete bounded
-listings or exact file text, with selector, scope attribution, byte count, SHA-256,
-observation ID, timestamp and attempt attribution. Repeating an unchanged observation
-reuses its retained record and cannot manufacture progress.
+An `investigate` response requests up to eight observations. Paths are root-relative;
+`.` lists the root. The host returns complete bounded directory entries or exact file
+text with selector, scope attribution, byte count, SHA-256, observation ID, timestamp
+and attempt identity. Repeating an unchanged observation creates no new progress.
 
 ```json
 {
@@ -65,108 +89,137 @@ reuses its retained record and cannot manufacture progress.
   "observe": [{"kind": "list", "root": "environment", "path": "."}],
   "extractFacts": [],
   "findings": [],
-  "unknowns": [{
-    "id": "resource-location",
-    "question": "Which observed resource belongs to the requested scope?",
-    "category": "fact",
-    "blocking": true,
-    "status": "open",
-    "evidenceRefs": []
-  }]
+  "unknowns": []
 }
 ```
 
-A subsequent `read` can follow a discovered path. `extractFacts` selects an exact
-JSON path from an **already delivered** read observation. It cannot provide the
-value, invent an observation ID or cite a read requested in the same response.
-String path components select object members; integer components select array
-indices. Missing members are errors, not an inferred null or proof of absence.
+`extractFacts` selects an exact JSON path from an already delivered read observation.
+It cannot supply the value or cite a read requested in the same response. String path
+components select object members and integer components select array indices.
 
 ```json
 {
   "kind": "investigate",
   "observe": [],
   "extractFacts": [{
-    "id": "resource-owner",
+    "id": "endpoint",
     "observationId": "COPY_THE_DELIVERED_OBSERVATION_ID",
-    "path": ["resources", 0, "owner"]
+    "path": ["services", 0, "status", "endpoint"]
   }],
   "findings": [],
   "unknowns": []
 }
 ```
 
-The host publishes `fact:resource-owner` with the exact JSON value, observation ID,
-path, attempt and validity. Boolean, numeric, null and structured values remain
-distinct. Fact IDs cannot be repointed. JSON must satisfy the existing strict reader,
-including duplicate-key rejection; extracted values are limited to 4 KiB.
+The host retains `fact:endpoint` with its exact value, observation ID, path, attempt
+and validity. JSON duplicate keys are rejected; facts are limited to 4 KiB. Boolean,
+numeric, null and structured values retain their types. Fact IDs cannot be repointed.
+Findings remain model interpretations, including findings citing extracted facts.
 
-| Record | Attribution and meaning |
+## Binding facts to the compiled plan
+
+A `propose` envelope replaces `observe` with the complete `response` and includes
+`extractFacts`, `findings`, `unknowns`, and this additional member:
+
+```json
+{
+  "bindings": [{"requirementId": "service-endpoint", "factId": "fact:endpoint"}]
+}
+```
+
+For each independent obligation the host:
+
+1. Examines delivered strict-JSON reads from the declared root. `recordPath` traverses
+   the document; `*` expands array elements or object values. `where` tests typed JSON
+   equality relative to each record. Missing fields do not mean null or absence.
+2. Requires exactly one matching record among those delivered observations. Two matches
+   are ambiguous even if their values agree. This makes no uniqueness or completeness
+   claim about unread files, unvisited roots or the upstream system.
+3. Checks that the named current fact came from that observation and the exact
+   `recordPath` result plus `valuePath`. Equal bytes in another field or another root
+   do not satisfy the obligation. Missing, stale or invented facts block acceptance.
+4. Adds an existing `literal-parameter` check to a separate compiler requirements file.
+   The selector is operator-owned and may use capability, workflow and fixed parameter
+   filters. It cannot filter on the same parameter it constrains. The compiler checks
+   every selected operation, so adding one correct operation cannot conceal an incorrect
+   second operation. No selected operation also fails the compiler check.
+5. Verifies the compiler receipt names that exact derived requirements digest and the
+   same canonical graph, and that every generated obligation was assessed. Acceptance
+   requires every binding obligation to be satisfied.
+
+Original caller requirement bytes remain unchanged. Every original check is copied
+unchanged into the additive compiler input; bindings cannot replace or weaken them.
+The original request and confirmation metadata also remain unchanged. The inherited
+reviewer attribution concerns the caller requirements; it does not authenticate newly
+observed values. Separate binding receipts explicitly attribute policy to the operator
+and values to workspace observations. Clarification revalidates the same frozen policy
+and sources before dispatch and creates a fresh additive compiler input.
+
+Parameter binding currently supports exact JSON **strings** of at most 1,000 characters,
+matching the existing compiler's literal-string check. Other fact types, transformations
+and model inferences cannot be coerced into this authority. Dynamic references and
+conditional control flow remain subject to the compiler's existing proof/review rules;
+the host does not reinterpret the graph or override an unresolved compiler obligation.
+Only the declared parameter obligations are covered, not every value in the plan.
+
+Missing bindings, mismatched source records and ambiguous candidates terminate as
+`discovery-binding-blocked` before compilation. A structurally valid proposal with a
+contradictory parameter is rejected by compiler fidelity. Open technical unknowns and
+caller decisions retain the existing blocked and clarification behavior.
+
+## Retained evidence and changes
+
+| Record | Authority and purpose |
 | --- | --- |
-| Observation | `host-observed-bytes`: exact selected file bytes or complete directory entries |
-| Extracted fact | `host-extracted-json-value`: a value present at a retained JSON path |
-| Finding | `model-inferred`: interpretation citing observations, facts or earlier findings |
-| Technical unknown | Open or model-addressed, with retained supporting references |
-| Decision answer | `caller-answer-not-authenticated`: explicit caller response; never model approval |
+| Observation | Exact selected bytes or complete directory entries; operator-declared scope |
+| Extracted fact | Host-extracted JSON value with immutable source/path attribution |
+| Finding | Model interpretation citing retained evidence |
+| Binding assessment | Frozen policy, ledger and response digests; exact source/fact/path to compiler-check relationship |
+| Derived requirements | Original checks plus host-resolved literal constraints; original bytes retained separately |
+| Binding result | Assessed requirements digest and canonical graph digest, with each compiler obligation's state |
+| Decision answer | Explicit caller response; never model approval or authenticated provider truth |
 
-A JSON export saying that a resource is ready does not prove provider truth, a valid
-signature, freshness of the export's upstream source or current cloud state. Reading
-an outcome report as JSON does not reauthenticate it. Existing outcome/observer
-assessment remains the authority for authenticated run evidence.
+Before dispatch, after response, before compilation and after compilation, the host
+reopens retained selectors and compares content. Capture also checks for mutation during
+each read/list. A new immutable ledger revision invalidates changed observations and
+transitive facts/findings, reopens dependent technical unknowns and terminates the session
+as `source-changed`. Unaffected records and older snapshots remain inspectable.
+Restoring old bytes cannot revive an invalidated session.
 
-`kind: propose` replaces `observe` with the complete `response` and still includes
-`extractFacts`, `findings` and `unknowns`. Open blocking technical unknowns stop before
-compilation; caller decisions use the existing clarification/resume boundary.
-
-## Changes and invalidation
-
-Before provider dispatch, after its reply, before compilation and after compilation,
-the host reopens retained selectors and compares their content. Capture also checks
-for mutation during each read/list. It does not scan or claim knowledge of unread
-files. Listings represent names and entry kinds, not the contents of every child.
-
-Changed, missing or newly inaccessible evidence ends the session as `source-changed`.
-A new immutable ledger revision marks the changed observations, dependent extracted
-facts and transitive findings as `invalidated`. Dependent technical unknowns reopen;
-unaffected records keep their provenance and validity. Earlier ledger revisions are
-retained. Restoring old bytes cannot revive an already invalidated ledger.
-
-The terminal session cannot dispatch another provider call, resume into new evidence
-or accept a proposal. Start a new investigation with independently retained inputs.
-If change occurs during compiler execution, compiler output may be retained for
-inspection, but the session is not accepted. Consumers must check the terminal session
-status, not a convenient intermediate compiler result.
-
-This detects observed changes at validation boundaries. It is not an atomic snapshot
-of several live files, continuous monitoring, or a guarantee against changes after
-acceptance or a malicious storage owner restoring data between checks.
+If sources change during compilation, intermediate compiler artifacts may exist, but
+no accepted session or final binding result is published. Consumers must check terminal
+session status and the binding result rather than treating an intermediate review as
+execution permission. Validation is not an atomic multi-file snapshot, continuous
+monitoring or protection against a malicious storage owner reverting changes between
+checks. A JSON field claiming readiness is still only source content, not cloud truth.
 
 ## Bounds and verification
 
-There are at most eight roots, 16 investigation steps, eight observations per action,
-16 fact extractions per action and 128 total observation/fact/finding/unknown records.
-Limits also bound paths, directory entries, per-source bytes, total retained bytes
-and the complete ledger. Over-limit listings fail instead of truncating evidence.
-Descriptor-relative traversal rejects symlinks in roots and paths, special files and
-multiply linked regular files. The host exposes no shell, network or write operation.
-These are host access boundaries, not an OS sandbox for the operator-configured
-provider executable or protection from hostile mounts/storage administrators.
+Limits include eight roots, 16 investigation steps, eight observations/action, 16 fact
+extractions/action, 16 binding obligations, eight predicates/obligation, 128 expanded
+candidates and 128 retained investigation records. Paths, byte totals, directory entries,
+ledger size and provider reservations are bounded. Over-limit listings fail rather than
+truncate. Descriptor-relative traversal rejects symlinks, special files, multiply linked
+regular files and alternate root spellings. The host exposes no shell/network/write tool;
+these controls are not an OS sandbox for the configured provider executable.
 
 ```sh
 python3 -m unittest discover -s tools/tests -p 'test_authoring_discovery.py'
+python3 -m unittest discover -s tools/tests -p 'test_discovery_bindings.py'
 ./gradlew :flow-cli:installDist
 python3 tools/verify_system_discovery.py --cli flow-cli/build/install/flow-core/bin/flow-core
 ```
 
-The installed proof uses a deterministic process agent that knows a small JSON
-inventory shape. It receives no source filenames, expected address, proposal template
-or independent requirements. Random filenames, two layouts and infrastructure/data/
-credential inventories exercise request selection, listing, dependency reads, typed
-extraction and proposal compilation. Twenty-four variants cover acceptance, substituted
-addresses, unresolved prerequisites and changed source evidence. These fixtures measure
-the mechanism and compiler integration, not live-model reasoning or prompt-injection
-resistance. All twelve installed-host suites run in both full CI jobs.
+The installed proof uses a deterministic selector-interpreting provider, then injects
+hostile replies. It reads randomly named nested files with no answer index. Infrastructure
+uses resource arrays and connection maps with VERIFY/POLICY_CHECK; data uses keyed dataset
+records and a store array with BACKUP; credential policy uses nested documents with
+POLICY_CHECK. Endpoint values occur in neither the request nor either caller contract.
+Twenty-four cases cover correct proposals, zero observations, omitted bindings, wrong
+facts, contradictory parameters, an extra contradictory operation, ambiguous records and
+source changes. The compiler must reject the wrong values through the generated discovery
+checks themselves. The original exact-address oracle and label-only domain variants are
+not used. The fixture does not prove live-model reasoning or prompt-injection resistance.
 
-Next: managed-inventory observation contracts with explicit upstream provenance and
-freshness, and independently reviewed live-agent discovery across unfamiliar formats.
-S3, AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 remains paused.
+Next: managed-inventory provenance/freshness and independently reviewed live discovery
+across unfamiliar formats. S3, AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 stays paused.

@@ -9,6 +9,7 @@ import stat
 
 from .contracts import HostError, canonical, contains_credential, digest, integer, keys, loads, nonblank, require
 from . import investigation
+from . import discovery_bindings
 
 VERSION = "authoring-investigation/2"
 INSTRUCTIONS = """Use authoring-investigation/2. Choose bounded list/read observations
@@ -25,6 +26,15 @@ Return kind=propose with a complete response when ready. Blocking unknowns stop
 compilation. Changed observations invalidate their dependent facts and findings and
 end this session; no silent refresh or requirement rewrite is allowed. Independent
 requirements and all compiler, budget and target boundaries still apply."""
+INSTRUCTIONS += """
+investigation.bindingRequirements are caller-owned obligations. Resolve each by
+reading a qualifying JSON record and extracting its exact valuePath. On propose,
+include bindings with requirementId and factId for EVERY obligation. The host
+checks the source root, record predicates and exact extraction path, then asks the
+compiler to enforce the observed string on every operation selected by the caller.
+No reads, omitted bindings, unrelated facts and conflicting delivered records block
+acceptance. Do not select a convenient record or replace a value with an inference.
+These checks cover the declared obligations, not all plan parameters or unread data."""
 
 
 def relative(value, *, directory=False):
@@ -41,7 +51,7 @@ def relative(value, *, directory=False):
 
 
 def validate(config):
-    keys(config, ("formatVersion", "roots", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords", "maxEntries"))
+    keys(config, ("formatVersion", "roots", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords", "maxEntries", "bindingRequirements"))
     require(type(config["formatVersion"]) is int and config["formatVersion"] == 2, "Unsupported discovery configuration")
     integer(config["maxSteps"], 1, 16)
     integer(config["maxSourceBytes"], 1, 65536)
@@ -63,6 +73,7 @@ def validate(config):
         require(all(value != p and value not in p.parents and p not in value.parents for p in paths),
                 "Discovery roots must not overlap")
         paths.append(value)
+    discovery_bindings.validate(config["bindingRequirements"], ids)
 
 
 def check_output(config, directory):
@@ -97,6 +108,7 @@ def initial(config):
         finally:
             os.close(descriptor)
     return {"formatVersion": 2, "protocol": VERSION, "roots": roots,
+            "bindingRequirements": copy.deepcopy(config["bindingRequirements"]),
             "observations": [], "facts": [], "findings": [], "unknowns": []}
 
 
@@ -204,7 +216,8 @@ def apply(ledger, action, config, environment, attempt_id):
     verify(config, environment, ledger)
     kind = action.get("kind")
     require(kind in ("investigate", "propose"), "Unknown discovery action")
-    keys(action, ("kind", "findings", "unknowns", "extractFacts", "observe" if kind == "investigate" else "response"))
+    keys(action, ("kind", "findings", "unknowns", "extractFacts", "observe") if kind == "investigate" else
+         ("kind", "findings", "unknowns", "extractFacts", "response", "bindings"))
     result = copy.deepcopy(ledger)
     facts = action["extractFacts"]
     require(isinstance(facts, list) and len(facts) <= 16, "Invalid fact extraction inventory")
@@ -235,7 +248,7 @@ def apply(ledger, action, config, environment, attempt_id):
         else:
             result["facts"].append(row)
     # Reuse the existing finding, unknown and caller-decision authority without its pinned-file reads.
-    legacy = {k: v for k, v in action.items() if k not in ("observe", "extractFacts")}
+    legacy = {k: v for k, v in action.items() if k not in ("observe", "extractFacts", "bindings")}
     if kind == "investigate":
         legacy["readSources"] = []
     result = investigation.apply(result, legacy, {**config, "formatVersion": 1, "sources": []}, environment, attempt_id)
@@ -279,4 +292,8 @@ def output_schema(response_schema):
             option["required"].append("observe")
             option["properties"]["observe"] = {"type": "array", "maxItems": 8, "uniqueItems": True,
                 "items": obj({"kind": {"enum": ["list", "read"]}, "root": ident, "path": text})}
+        else:
+            option["required"].append("bindings")
+            option["properties"]["bindings"] = {"type": "array", "maxItems": 16,
+                "items": obj({"requirementId": ident, "factId": text})}
     return schema

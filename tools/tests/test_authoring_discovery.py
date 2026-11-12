@@ -17,13 +17,17 @@ import test_authoring_host as host_tests
 
 def config(root):
     return dict(formatVersion=2, roots=[dict(id='workspace', path=str(root), scope='Selected environment inventory')],
-                maxSteps=12, maxSourceBytes=4096, maxTotalSourceBytes=16384, maxRecords=64, maxEntries=32)
+                maxSteps=12, maxSourceBytes=4096, maxTotalSourceBytes=16384, maxRecords=64, maxEntries=32,
+                bindingRequirements=[dict(id='owner',sourceQuote='Verify',source=dict(root='workspace',recordPath=[],
+                    where=[dict(path=['owner'],equals='team')],valuePath=['owner']),
+                    target=dict(selector=dict(capability='VERIFY'),parameter='resource'))])
 
 
 def action(*observations, facts=(), findings=(), unknowns=(), propose=False, marker='accept'):
     result = dict(kind='propose' if propose else 'investigate', extractFacts=list(facts), findings=list(findings), unknowns=list(unknowns))
     if propose:
         result['response'] = dict(normalizedIntent=dict(marker=marker), report=dict(openQuestions=[]))
+        result['bindings'] = [dict(requirementId='owner',factId='fact:owner')]
     else:
         result['observe'] = [dict(kind=kind, root='workspace', path=path) for kind, path in observations]
     return result
@@ -239,13 +243,40 @@ class DiscoverySessionTests(unittest.TestCase):
         self.workspace=self.root/'workspace';self.workspace.mkdir()
         self.source=self.workspace/'state.json';self.source.write_text('{"owner":"team"}')
         self.config['investigation']=config(self.workspace)
+        self.requirements['formatVersion']=2
         self.config['budget'].update(maxCalls=8,maxTotalTokens=865536,maxCostMicrousd=2_000_000)
         selector=dict(kind='read',root='workspace',path='state.json')
         return 'observation:'+digest(canonical(selector))+':'+digest(self.source.read_bytes())
 
     def run_actions(self,values):return self.run_host([dict(response=v) for v in values])
 
-    def test_discovery_facts_reach_proposal_without_revealing_paths_or_requirements(self):
+    def test_no_observation_cannot_skip_the_caller_binding_contract(self):
+        self.configure()
+        state=self.run_actions([{**action(propose=True),'bindings':[]}])
+        self.assertEqual('discovery-binding-blocked',state['status'])
+        self.assertNotIn('review',state['attempts'][-1])
+        assessment=loads(read(self.out/state['attempts'][-1]['discoveryBindingAssessment']))
+        self.assertEqual('missing-binding',assessment['bindings'][0]['reason'])
+        verify_inventory(self.out,state)
+
+    def test_compiler_cannot_accept_using_a_different_requirements_receipt(self):
+        ref=self.configure()
+        from authoring_host.session import invoke as real_invoke
+        def wrong_receipt(argv,data,timeout,env):
+            result=real_invoke(argv,data,timeout,env)
+            if 'proposal' in argv:
+                file=Path(argv[argv.index('--out')+1])/'request-fidelity-review.json'
+                receipt=loads(read(file));receipt['requirementsSource']['sha256']='b'*64
+                file.write_bytes(canonical(receipt))
+            return result
+        with patch('authoring_host.session.invoke',wrong_receipt):
+            state=self.run_actions([action(('read','state.json')),
+                action(propose=True,facts=[dict(id='owner',observationId=ref,path=['owner'])])])
+        self.assertEqual('provider-or-compiler-error',state['status'])
+        self.assertEqual('compiler',state['attempts'][-1]['failurePhase'])
+        self.assertNotIn('discoveryBindingResult',state['attempts'][-1])
+
+    def test_discovery_resolves_additive_requirements_and_retains_compiler_receipt(self):
         ref=self.configure()
         state=self.run_actions([action(('list','.')),action(('read','state.json')),
             action(facts=[dict(id='owner',observationId=ref,path=['owner'])]),action(propose=True)])
@@ -255,6 +286,13 @@ class DiscoverySessionTests(unittest.TestCase):
         self.assertEqual('team',payload['input']['investigation']['facts'][0]['value'])
         self.assertNotIn(str(self.workspace),json.dumps(payload));self.assertNotIn('test-reviewer',json.dumps(payload))
         self.assertEqual(self.requirements,loads(read(self.out/'requirements-0.json')))
+        attempt=state['attempts'][-1]
+        resolved=loads(read(self.out/attempt['compilerRequirementsFile']))
+        self.assertEqual(self.requirements['requirements'],resolved['requirements'][:-1])
+        self.assertEqual('team',resolved['requirements'][-1]['check']['expected'])
+        receipt=loads(read(self.out/attempt['discoveryBindingResult']))
+        self.assertEqual('fact:owner',receipt['bindings'][0]['factId'])
+        self.assertEqual({'SATISFIED'},set(receipt['compilerAssessment'].values()))
         verify_inventory(self.out,state)
 
     def test_repeated_observation_stops_and_limits_consume_the_existing_budget(self):
@@ -287,13 +325,14 @@ class DiscoverySessionTests(unittest.TestCase):
         verify_inventory(self.out,state)
 
     def test_change_during_compilation_prevents_acceptance(self):
-        self.configure()
+        ref=self.configure()
         from authoring_host.session import invoke as real_invoke
         def changed(argv,data,timeout,env):
             result=real_invoke(argv,data,timeout,env)
             if 'proposal' in argv:self.source.write_text('{"owner":"replacement"}')
             return result
-        with patch('authoring_host.session.invoke',changed):state=self.run_actions([action(('read','state.json')),action(propose=True)])
+        with patch('authoring_host.session.invoke',changed):state=self.run_actions([action(('read','state.json')),
+            action(propose=True,facts=[dict(id='owner',observationId=ref,path=['owner'])])])
         self.assertEqual('source-changed',state['status']);self.assertEqual(0,state['attempts'][-1]['review']['exitCode'])
 
     def test_decisions_resume_only_when_evidence_stays_current(self):
@@ -317,9 +356,10 @@ class DiscoverySessionTests(unittest.TestCase):
             self.assertFalse(any('review' in a for a in state['attempts']))
 
     def test_current_evidence_survives_explicit_caller_clarification(self):
-        self.configure()
+        ref=self.configure()
         question=dict(id='choice',question='Approve the selected scope?',category='decision',blocking=True,status='open',evidenceRefs=[])
-        state=self.run_actions([action(('read','state.json')),action(propose=True,unknowns=[question]),action(propose=True)])
+        state=self.run_actions([action(('read','state.json')),
+            action(propose=True,unknowns=[question],facts=[dict(id='owner',observationId=ref,path=['owner'])]),action(propose=True)])
         answers=canonical(dict(runId=state['runId'],reviewerId='test-reviewer',answers=[dict(id='investigation:choice',answer='Approved scope')]))
         result=resume(self.out,answers,canonical(self.requirements))
         self.assertEqual('accepted',result['status'])

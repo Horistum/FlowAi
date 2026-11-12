@@ -7,14 +7,15 @@ baselineMain: 0977c8a778fbdce8226af6c8b76df9f7c7f8f8ae
 predecessorPullRequest: 268
 deliveryBase: main
 authorization: Maintainer requested completing the next development PR after runtime resource identity evidence.
-objective: Let the existing external authoring agent select bounded observations from a granted workspace and retain the evidence dependencies of its system-state interpretation.
-universalInvariant: A source value, model inference and caller decision retain distinct authority; changed evidence invalidates dependent conclusions and cannot silently refresh an accepted proposal.
+objective: Let the existing external authoring agent select bounded observations from a granted workspace and bind selected observed values to operation parameters through existing compiler fidelity checks.
+universalInvariant: A source value, model inference and caller decision retain distinct authority; declared observation bindings cannot be omitted or contradicted, and changed evidence invalidates dependent conclusions.
 scope:
 - Version 2 investigation protocol over declared roots, complete bounded listings and selected text reads.
 - Exact typed JSON extraction from delivered observations, immutable fact identities and existing finding/unknown semantics.
 - Descriptor-relative scope enforcement and bounded work without shell, network or write tools.
 - Source revalidation, retained transitive invalidation and terminal stale-evidence behavior across clarification and compilation.
-- Installed-compiler integration with adaptive deterministic process choices across random layouts and three inventory domains.
+- Operator-owned source predicates and semantic target selectors; additive compiler requirements preserve original checks and require exact observed string values.
+- Installed-compiler adversarial integration across resource arrays, keyed datasets, store lists and nested credential policy documents without answer addresses in caller inputs.
 forbiddenScope:
 - No provider-specific semantic adapter, alternative execution graph, operation dispatch or workflow execution permission.
 - No automatic promotion of exported fields to authenticated provider truth or upstream freshness.
@@ -22,6 +23,6 @@ forbiddenScope:
 - No S3, AI-A3 or architecture milestone closure; no frozen-corpus exposure change.
 validationPlan:
 - Legacy compatibility and discovery boundary, budget, typed extraction and dependent-invalidation regressions.
-- Actual provider-process discovery and installed compiler/fidelity assessment across 24 positive and negative variants.
+- Actual provider-process discovery and installed compiler assessment of 24 valid, missing, forged, contradictory, ambiguous and stale binding cases.
 - Python tooling, architecture checks, conformance, module isolation and final exact-head/merge-candidate full CI.
 nextSlice: S3-managed-inventory-provenance-and-live-discovery-evaluation
