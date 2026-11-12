@@ -1,0 +1,27 @@
+version: AI-A3-S3.1
+name: Scoped workspace discovery and dependent evidence
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 0977c8a778fbdce8226af6c8b76df9f7c7f8f8ae
+predecessorPullRequest: 268
+deliveryBase: main
+authorization: Maintainer requested completing the next development PR after runtime resource identity evidence.
+objective: Let the existing external authoring agent select bounded observations from a granted workspace and retain the evidence dependencies of its system-state interpretation.
+universalInvariant: A source value, model inference and caller decision retain distinct authority; changed evidence invalidates dependent conclusions and cannot silently refresh an accepted proposal.
+scope:
+- Version 2 investigation protocol over declared roots, complete bounded listings and selected text reads.
+- Exact typed JSON extraction from delivered observations, immutable fact identities and existing finding/unknown semantics.
+- Descriptor-relative scope enforcement and bounded work without shell, network or write tools.
+- Source revalidation, retained transitive invalidation and terminal stale-evidence behavior across clarification and compilation.
+- Installed-compiler integration with adaptive deterministic process choices across random layouts and three inventory domains.
+forbiddenScope:
+- No provider-specific semantic adapter, alternative execution graph, operation dispatch or workflow execution permission.
+- No automatic promotion of exported fields to authenticated provider truth or upstream freshness.
+- No live-model generalization, prompt-injection resistance, complete discovery or atomic filesystem snapshot claim.
+- No S3, AI-A3 or architecture milestone closure; no frozen-corpus exposure change.
+validationPlan:
+- Legacy compatibility and discovery boundary, budget, typed extraction and dependent-invalidation regressions.
+- Actual provider-process discovery and installed compiler/fidelity assessment across 24 positive and negative variants.
+- Python tooling, architecture checks, conformance, module isolation and final exact-head/merge-candidate full CI.
+nextSlice: S3-managed-inventory-provenance-and-live-discovery-evaluation

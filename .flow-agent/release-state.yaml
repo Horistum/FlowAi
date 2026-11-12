@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 141
+stateVersion: 142
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -921,6 +921,24 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  systemDiscoveryFollowup:
+    selectedSlice: AI-A3-S3.1
+    workPackage: .flow-agent/work-packages/evidence-driven-system-discovery.yaml
+    report: .flow-agent/reports/evidence-driven-system-discovery.md
+    contract: docs/SYSTEM_DISCOVERY.md
+    baselineMain: 0977c8a778fbdce8226af6c8b76df9f7c7f8f8ae
+    predecessorPullRequest: 268
+    deliveryBase: main
+    validation: candidate-python-installed-discovery-conformance-and-final-full-ci-required
+    investigationProtocolVersion: 2
+    authoringHostVersion: 3
+    scope: Root-scoped observation selection, exact source values and transitive evidence invalidation.
+    nextSlice: S3-managed-inventory-provenance-and-live-discovery-evaluation
+    liveModelEvaluated: false
+    nativeProviderTruthEstablished: false
+    workflowExecution: false
+    productionDeploymentCertified: false
+    supportPromotion: false
   runtimeResourceIdentityFollowup:
     selectedSlice: AI-A3-S2.8
     workPackage: .flow-agent/work-packages/runtime-resource-identities.yaml

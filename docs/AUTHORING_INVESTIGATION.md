@@ -1,5 +1,8 @@
 # Evidence-driven authoring investigation
 
+This document describes pinned-file investigation version 1. For root-scoped exploration,
+exact JSON fact extraction and dependent invalidation, see [System discovery](SYSTEM_DISCOVERY.md).
+
 The external Python authoring host can now investigate operator-selected local text
 sources before proposing an Intent. Enable this explicitly with `investigation` in
 the existing host configuration. The provider remains a data-only command process;
