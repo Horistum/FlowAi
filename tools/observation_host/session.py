@@ -44,15 +44,15 @@ def _review(cli, source_kind, directory, observations=False):
     require(not result["failure"] and result["returncode"] in (0, 3, 4), "Installed outcome assessment failed")
     review = read_bytes(root / "review" / "operation-outcome-review.json")
     value = loads(review)
-    require(value.get("executionAuthorized") is False and value.get("formatVersion") == 2 and
+    require(value.get("executionAuthorized") is False and value.get("formatVersion") == loads(read_bytes(root / "requirements.json"))["formatVersion"] and
             {"SATISFIED": 0, "UNRESOLVED": 3, "VIOLATED": 4}.get(value.get("state")) == result["returncode"],
             "Invalid installed outcome review")
     return review, result["returncode"]
 
 
 def initialize(directory, cli, source_kind, source, requirements):
-    require(source_kind in ("intent", "proposal") and loads(requirements).get("formatVersion") == 2,
-            "Observer requires a supported source and outcome requirements version 2")
+    require(source_kind in ("intent", "proposal") and loads(requirements).get("formatVersion") in (2, 3),
+            "Observer requires a supported source and outcome requirements version 2 or 3")
     require(0 < len(source) <= 2_000_000 and 0 < len(requirements) <= 2_000_000, "Observer input limit exceeded")
     before = fingerprint(cli)
     with tempfile.TemporaryDirectory(prefix="flow-observer-admission-") as temporary:
@@ -71,11 +71,12 @@ class Signer:
         private(private_key)
         self.key = read_bytes(private_key, 16384)
         self.key_id = key_id
+        self.version = requirements["formatVersion"]
         self.openssl = shutil.which("openssl")
         require(self.openssl is not None, "OpenSSL is required for Ed25519 signing")
         trust = loads(trust_bytes)
         keys(trust, ("formatVersion", "grants"))
-        require(type(trust["formatVersion"]) is int and trust["formatVersion"] == 2 and isinstance(trust["grants"], list)
+        require(type(trust["formatVersion"]) is int and trust["formatVersion"] == self.version and self.version in (2, 3) and isinstance(trust["grants"], list)
                 and 0 < len(trust["grants"]) <= 64, "Invalid caller-owned observer trust")
         grants = []
         for grant in trust["grants"]:
@@ -91,7 +92,7 @@ class Signer:
             raise ValueError("Invalid observer public key") from None
         require(len(public) == 44 and public.startswith(bytes.fromhex("302a300506032b6570032100")), "An Ed25519 public key is required")
         require(requirements["execution"]["workflow"] in grant.get("workflows", []) and all(
-            r["identity"]["scope"] in grant["scopes"] and r["identity"]["type"] in grant["resourceTypes"] for r in requirements["resources"]),
+            (r.get("identity") or r["allocation"])["scope"] in grant["scopes"] and (r.get("identity") or r["allocation"])["type"] in grant["resourceTypes"] for r in requirements["resources"]),
             "Observer grant does not cover the workflow and resources")
         require(all(c["kind"] in grant["kinds"] for c, _ in claims), "Observer grant does not cover the captured claim kinds")
         with tempfile.TemporaryDirectory(prefix="flow-observer-key-") as temporary:
@@ -104,7 +105,7 @@ class Signer:
     def sign(self, payload, source, run=False):
         encoded = canonical(payload)
         require(0 < len(encoded) <= MAX_CAPTURE and 0 < len(source) <= MAX_CAPTURE, "Signed observation size exceeded")
-        domain = b"Horistum operation run observation\0v2\0" if run else b"Horistum operation observation\0v2\0"
+        domain = (f"Horistum operation{' run' if run else ''} observation\0v{self.version}\0").encode("ascii")
         key_id = self.key_id.encode("ascii")
         message = domain + len(key_id).to_bytes(4, "big") + key_id + encoded
         with tempfile.TemporaryDirectory(prefix="flow-observer-sign-") as temporary:
@@ -123,15 +124,15 @@ def export(directory, expected, cli, trust, private_key, key_id, output):
     binding, req = loads(metadata["binding"]), loads(metadata["requirements"])
     require(fingerprint(cli) == binding["compilerFingerprint"], "Installed compiler changed since observer initialization")
     signer = Signer(private_key, key_id, trust, req, history.claims)
-    common = dict(formatVersion=2, contractSha256=digest(metadata["requirements"]), graphDigest=req["graphDigest"],
+    common = dict(formatVersion=req["formatVersion"], contractSha256=digest(metadata["requirements"]), graphDigest=req["graphDigest"],
                   runId=req["runId"], challenge=req["challenge"])
     observations = []
     for claim, source in history.claims:
         observations.append(signer.sign(dict(common, **claim, sourceSha256=digest(source), sourceSizeBytes=len(source)), source))
-    bundle = dict(formatVersion=2, observations=observations)
+    bundle = dict(formatVersion=req["formatVersion"], observations=observations)
     # No synthetic completion time or truncated run assertion is invented for open runs.
     if history.closed:
-        source = canonical(dict(observerProtocolVersion=1, checkpoint=expected, closed=True))
+        source = canonical(dict(observerProtocolVersion=2 if req["formatVersion"] == 3 else 1, checkpoint=expected, closed=True))
         run = dict(common, id="observer-run", workflow=req["execution"]["workflow"], startedAt=req["startedAt"],
                    complete=True, invocations=history.finished, sourceSha256=digest(source), sourceSizeBytes=len(source), **history.closed)
         bundle["execution"] = signer.sign(run, source, run=True)

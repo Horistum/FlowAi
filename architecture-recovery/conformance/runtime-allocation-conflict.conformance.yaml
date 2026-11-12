@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.runtime-allocation.conflict
+introducedIn: "AI-A3-S2.8"
+description: Version 3 allocation evidence and schema contract for the conflict case.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.runtime-allocation.conflict
+  runtimeExecutionAssessed: false

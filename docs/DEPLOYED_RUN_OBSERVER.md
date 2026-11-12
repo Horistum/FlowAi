@@ -158,3 +158,6 @@ The [runtime-allocated identity proposal](RUNTIME_RESOURCE_IDENTITY_PROPOSAL.md)
 next contract boundary. This PR does not activate it. AI-A3, AR-06/AR-07 and F-16/F-20 remain
 open; EF-09 remains paused. Live models, production cloud observers and general control-flow
 observation remain separate unproven gates.
+
+For addresses allocated only during creation, see [runtime resource identities](RUNTIME_RESOURCE_IDENTITIES.md).
+Outcome version 3 and observer event version 2 are explicit opt-ins; the historical contracts above retain their semantics.

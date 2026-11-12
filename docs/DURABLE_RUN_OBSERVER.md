@@ -182,3 +182,6 @@ AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 remains paused.
 checkpoint-witness services over private Unix sockets. Its acknowledgements require
 both durable records, and `export --witness-socket` requires the exact externally retained
 checkpoint. Existing direct commands retain the behavior documented above.
+
+For addresses allocated only during creation, see [runtime resource identities](RUNTIME_RESOURCE_IDENTITIES.md).
+Outcome version 3 and observer event version 2 are explicit opt-ins; the historical contracts above retain their semantics.

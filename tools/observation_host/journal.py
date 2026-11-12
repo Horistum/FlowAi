@@ -72,7 +72,7 @@ def _context(source_kind, source, requirements, review, compiler_fingerprint):
     require(source_kind in ("intent", "proposal"), "Unsupported observation source kind")
     require(all(isinstance(b, bytes) and 0 < len(b) <= 2_000_000 for b in (source, requirements, review)), "Observer input size exceeded")
     req, assessment = loads(requirements), loads(review)
-    require(req.get("formatVersion") == 2 and assessment.get("formatVersion") == 2, "Observer requires outcome contracts version 2")
+    require(req.get("formatVersion") in (2, 3) and assessment.get("formatVersion") == req["formatVersion"], "Observer requires matching outcome contracts version 2 or 3")
     require(assessment.get("state") == "UNRESOLVED" and assessment.get("executionAuthorized") is False,
             "Expected a pending, non-authorizing compiler review")
     require(assessment.get("graphDigest") == req["graphDigest"] and assessment["requirementsSource"]["sha256"] == digest(requirements)
@@ -145,10 +145,10 @@ def _connection(root, write=False):
             db.close()
 
 
-def event_for(tip, event_id, kind, data, capture=b""):
+def event_for(tip, event_id, kind, data, capture=b"", format_version=1):
     """Build a command using a caller-retained checkpoint, never an implicit latest tip."""
     checkpoint(tip)
-    return dict(formatVersion=1, sessionId=tip["sessionId"], sequence=tip["sequence"] + 1,
+    return dict(formatVersion=format_version, sessionId=tip["sessionId"], sequence=tip["sequence"] + 1,
                 previousDigest=tip["digest"], id=event_id, type=kind, data=data,
                 sourceSha256=digest(capture), sourceSizeBytes=len(capture))
 
@@ -174,6 +174,7 @@ class History:
 
     def apply(self, event, capture):
         kind, data = event["type"], event["data"]
+        require(event["formatVersion"] == (2 if self.req["formatVersion"] == 3 else 1), "Event version does not match its captured outcome contract")
         require(self.closed is None or kind == "OBSERVATION", "The run is already closed")
         if kind == "START":
             keys(data, ("invocationId", "nodeId", "attempt", "startedAt"), ("causedBy",))
@@ -215,22 +216,34 @@ class History:
             raise HostError("Unknown observer event type")
 
     def _claim(self, data, capture):
-        keys(data, ("id", "kind", "status", "nodeId", "invocationId", "resource", "observedAt"), ("facts", "owner", "created", "binding", "path"))
+        allocated = self.req["formatVersion"] == 3
+        keys(data, ("id", "kind", "status", "nodeId", "invocationId", "resource", "observedAt") + (("resourceId",) if allocated else ()),
+             ("facts", "owner", "created", "binding", "path") + (("instanceId",) if allocated else ()))
         identifier(data["id"]); identifier(data["invocationId"])
-        require(data["kind"] in ("RESULT", "STATE", "OWNERSHIP", "CREATION", "BINDING") and data["status"] in ("SUCCEEDED", "FAILED", "UNKNOWN"), "Unsupported observation claim")
+        require(data["kind"] in (("RESULT", "STATE", "OWNERSHIP", "CREATION", "BINDING", "ALLOCATION") if allocated else ("RESULT", "STATE", "OWNERSHIP", "CREATION", "BINDING")) and data["status"] in ("SUCCEEDED", "FAILED", "UNKNOWN"), "Unsupported observation claim")
         require(data["invocationId"] in self.started and data["nodeId"] == self.started[data["invocationId"]]["nodeId"]
                 and self.nodes[data["nodeId"]] != "APPROVE", "Observation does not identify an actual operation invocation")
         keys(data["resource"], ("scope", "type", "key"))
-        require(data["resource"] in [r["identity"] for r in self.req["resources"]], "Undeclared resource identity")
+        for value in data["resource"].values():
+            text(value)
+        if allocated:
+            identifier(data["resourceId"])
+            declaration = next((r for r in self.req["resources"] if r["id"] == data["resourceId"]), None)
+            require(declaration is not None and all(data["resource"][k] == declaration["allocation"][k] for k in ("scope", "type")),
+                    "Undeclared allocation scope or type")
+            if "instanceId" in data:
+                text(data["instanceId"])
+        else:
+            require(data["resource"] in [r["identity"] for r in self.req["resources"]], "Undeclared resource identity")
         at = self._time(data["observedAt"])
         if data["kind"] == "STATE":
             require(self.closed is not None and at >= timestamp(self.closed["completedAt"]),
                     "Final state requires an explicitly closed run and a fresh capture")
         require((data["kind"] == "OWNERSHIP") == ("owner" in data) and (data["kind"] == "CREATION") == ("created" in data)
                 and (data["kind"] == "STATE" or "facts" not in data)
-                and (data["kind"] == "BINDING") == ("binding" in data)
-                and (data["kind"] == "BINDING" or "path" not in data), "Invalid observation fields for its kind")
-        if data["kind"] == "BINDING":
+                and (data["kind"] in ("BINDING", "ALLOCATION")) == ("binding" in data)
+                and (data["kind"] in ("BINDING", "ALLOCATION") or "path" not in data), "Invalid observation fields for its kind")
+        if data["kind"] in ("BINDING", "ALLOCATION"):
             identifier(data["binding"])
             require(data["binding"] in self.outputs.get(data["nodeId"], []), "Binding is not a declared output of its producer")
             path = data.get("path", [])
@@ -241,7 +254,11 @@ class History:
                     and at == timestamp(result["completedAt"]), "Binding requires its producer's actual successful completion")
         if "owner" in data:
             text(data["owner"])
-            require(at <= timestamp(self.started[data["invocationId"]]["startedAt"]), "Ownership was observed after invocation start")
+            if allocated:
+                finish = next((i for i in self.finished if i["id"] == data["invocationId"]), None)
+                require(finish is None or at <= timestamp(finish["completedAt"]), "Ownership was observed after invocation completion")
+            else:
+                require(at <= timestamp(self.started[data["invocationId"]]["startedAt"]), "Ownership was observed after invocation start")
         if "created" in data:
             require(type(data["created"]) is bool, "Creation requires a Boolean observation")
             start = self.started[data["invocationId"]]
@@ -259,6 +276,8 @@ class History:
             require(result is not None and data["status"] == result["status"] and at == timestamp(result["completedAt"]), "Result does not match the recorded completion")
         slot = canonical([data["kind"], data["nodeId"], data["invocationId"], data["binding"], data.get("path", [])]
                          if data["kind"] == "BINDING" else [data["kind"], data["nodeId"], data["invocationId"], data["resource"]])
+        if data["kind"] == "ALLOCATION":
+            slot = canonical(["ALLOCATION", data["resourceId"]])
         require(bool(capture) and data["id"] not in self.claim_ids and slot not in self.slots and len(self.claims) < 256,
                 "Observation is empty, duplicated or over the limit")
         self.claim_ids.add(data["id"]); self.slots.add(slot)
@@ -298,7 +317,7 @@ def _validate_event(raw, capture):
     require(isinstance(raw, bytes) and 0 < len(raw) <= MAX_CAPTURE and isinstance(capture, bytes) and len(capture) <= MAX_CAPTURE, "Observer record size exceeded")
     event = loads(raw)
     keys(event, ("formatVersion", "sessionId", "sequence", "previousDigest", "id", "type", "data", "sourceSha256", "sourceSizeBytes"))
-    require(type(event["formatVersion"]) is int and event["formatVersion"] == 1, "Unsupported observer event version")
+    require(type(event["formatVersion"]) is int and event["formatVersion"] in (1, 2), "Unsupported observer event version")
     checkpoint(dict(sessionId=event["sessionId"], sequence=event["sequence"], digest=event["previousDigest"]))
     require(event["sequence"] > 0, "Invalid observer event sequence")
     identifier(event["id"])

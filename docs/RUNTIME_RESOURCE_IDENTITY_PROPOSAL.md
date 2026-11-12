@@ -1,9 +1,10 @@
 # Runtime-allocated resource identities: bounded contract proposal
 
-Status: design only, prepared with AI-A3-S2.7. No new wire fields, signing domains or
-runtime identities are admitted by this PR. Outcome version 2 still requires exact
-independently declared identities before capture. Implementation needs its own work package,
-versioned requirements/observation schemas, migration and independent acceptance evidence.
+Status: historical design prepared with AI-A3-S2.7 and implemented as the bounded
+[version 3 contract](RUNTIME_RESOURCE_IDENTITIES.md) in AI-A3-S2.8. Version 2 still requires
+exact independently declared identities before capture. The original design below records
+the representability gap and acceptance boundary; the implemented contract owns wire fields,
+signing domains, migration and diagnostic behavior.
 
 ## Concrete representability gap
 

@@ -1,0 +1,505 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "observer-protocol-v2.schema.json",
+  "title": "External observer protocol version 2 for outcome version 3",
+  "$comment": "Structural shape only. The host additionally checks exact capture bytes, checkpoint continuity, timestamps, invocation state, trust, resource scope, integer digit limits and bounded storage. No execution authorization.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/checkpoint"
+    },
+    {
+      "$ref": "#/$defs/event"
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "timestamp": {
+      "type": "string",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.[0-9]{1,9})?Z$"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scope",
+        "type",
+        "key"
+      ],
+      "properties": {
+        "scope": {
+          "$ref": "#/$defs/text"
+        },
+        "type": {
+          "$ref": "#/$defs/text"
+        },
+        "key": {
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
+    "checkpoint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sessionId",
+        "sequence",
+        "digest"
+      ],
+      "properties": {
+        "sessionId": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1024
+        },
+        "digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "start": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invocationId",
+        "nodeId",
+        "attempt",
+        "startedAt"
+      ],
+      "properties": {
+        "invocationId": {
+          "$ref": "#/$defs/id"
+        },
+        "nodeId": {
+          "$ref": "#/$defs/text"
+        },
+        "attempt": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "startedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "causedBy": {
+          "$ref": "#/$defs/id"
+        }
+      }
+    },
+    "finish": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "invocationId",
+        "completedAt",
+        "status"
+      ],
+      "properties": {
+        "invocationId": {
+          "$ref": "#/$defs/id"
+        },
+        "completedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "status": {
+          "enum": [
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        },
+        "errorId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "errorId"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "errorId"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "kind",
+        "status",
+        "nodeId",
+        "invocationId",
+        "resource",
+        "observedAt",
+        "resourceId"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "kind": {
+          "enum": [
+            "RESULT",
+            "STATE",
+            "OWNERSHIP",
+            "CREATION",
+            "BINDING",
+            "ALLOCATION"
+          ]
+        },
+        "status": {
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "UNKNOWN"
+          ]
+        },
+        "nodeId": {
+          "$ref": "#/$defs/text"
+        },
+        "invocationId": {
+          "$ref": "#/$defs/id"
+        },
+        "resource": {
+          "$ref": "#/$defs/resource"
+        },
+        "observedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "facts": {
+          "type": "object",
+          "maxProperties": 32,
+          "propertyNames": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string",
+                "maxLength": 1000
+              }
+            ]
+          }
+        },
+        "owner": {
+          "$ref": "#/$defs/text"
+        },
+        "created": {
+          "type": "boolean"
+        },
+        "binding": {
+          "$ref": "#/$defs/id"
+        },
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "maxItems": 8
+        },
+        "resourceId": {
+          "$ref": "#/$defs/id"
+        },
+        "instanceId": {
+          "$ref": "#/$defs/text"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "STATE"
+              }
+            }
+          },
+          "then": {},
+          "else": {
+            "not": {
+              "required": [
+                "facts"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "OWNERSHIP"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "owner"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "owner"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "const": "CREATION"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "created"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "created"
+              ]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "BINDING",
+                  "ALLOCATION"
+                ]
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "binding"
+            ]
+          },
+          "else": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "binding"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "close": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "completedAt",
+        "status"
+      ],
+      "properties": {
+        "completedAt": {
+          "$ref": "#/$defs/timestamp"
+        },
+        "status": {
+          "enum": [
+            "SUCCEEDED",
+            "FAILED"
+          ]
+        },
+        "errorId": {
+          "$ref": "#/$defs/id"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "const": "FAILED"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "errorId"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "errorId"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "event": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "formatVersion",
+        "sessionId",
+        "sequence",
+        "previousDigest",
+        "id",
+        "type",
+        "data",
+        "sourceSha256",
+        "sourceSizeBytes"
+      ],
+      "properties": {
+        "formatVersion": {
+          "const": 2
+        },
+        "sessionId": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sequence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024
+        },
+        "previousDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "type": {
+          "enum": [
+            "START",
+            "FINISH",
+            "OBSERVATION",
+            "CLOSE"
+          ]
+        },
+        "data": {
+          "type": "object"
+        },
+        "sourceSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sourceSizeBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 65536
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "START"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/start"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "FINISH"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/finish"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "OBSERVATION"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/observation"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "CLOSE"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "data": {
+                "$ref": "#/$defs/close"
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

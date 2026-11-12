@@ -118,7 +118,7 @@ class LocalResource:
             self.reserved.close()
 
 
-def verify(root, cli, deployment_factory=None):
+def verify(root, cli, deployment_factory=None, allocation_factory=None):
     root, cli = Path(root).resolve(), Path(cli).resolve()
     rows = []
     with tempfile.TemporaryDirectory(prefix="flow-resource-lineage-") as temporary:
@@ -126,16 +126,18 @@ def verify(root, cli, deployment_factory=None):
         key = work / "observer.pem"
         subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(key)], check=True, capture_output=True)
         public = subprocess.check_output(["openssl", "pkey", "-in", str(key), "-pubout", "-outform", "DER"])
-        for domain in ("service", "database", "credential"):
+        for domain in (("service", "database") if allocation_factory else ("service", "database", "credential")):
             folder = work / domain; folder.mkdir()
-            local = LocalResource(domain, folder)
+            local = (allocation_factory or LocalResource)(domain, folder)
             deployed = None
             try:
                 address = local.identity
+                request = local.request if allocation_factory else address
+                version = 3 if allocation_factory else 2
                 def operation(identifier, capability, resource, **params):
                     return dict(kind="operation", id=identifier, capability=capability, params=dict(resource=resource, **params))
 
-                create = operation("create", "PROVISION", address); create["requires"] = ["approval"]
+                create = operation("create", "PROVISION", request); create["requires"] = ["approval"]
                 resolve = operation("resolve", "VERIFY", {"target": "ref:create.handle"}, criteria="resolve")
                 probe = operation("probe", "VERIFY", {"target": "ref:resolve.handle"}, criteria="ready")
                 intent = dict(intentVersion="3.1", kind="FlowIntentDocument", name="resource-lineage-" + domain,
@@ -153,16 +155,22 @@ def verify(root, cli, deployment_factory=None):
                 graph = loads(read(folder / "compiled/proposal-review.json"))["graphDigest"]
                 selector = lambda capability, **params: dict(capability=capability, parameters=params)
                 create_selector = selector("PROVISION")
-                requirements = dict(formatVersion=2, graphDigest=graph, runId="lineage-" + domain, challenge=secrets.token_urlsafe(32),
+                requirements = dict(formatVersion=version, graphDigest=graph, runId="lineage-" + domain, challenge=secrets.token_urlsafe(32),
                     startedAt=timestamp(), reviewerId="independent-lineage-test", resources=[dict(id="created", identity=address,
                         disposition="CREATED_IN_RUN", creator=create_selector)], operations=[
                         dict(id="create", selector=create_selector, resource="created", parameter="resource", postconditions={}, evidence=dict(status="SUCCEEDED")),
                         dict(id="resolve", selector=selector("VERIFY", criteria="resolve"), resource="created", parameter="resource", path=["target"], postconditions={}, evidence=dict(status="SUCCEEDED")),
                         dict(id="probe", selector=selector("VERIFY", criteria="ready"), resource="created", parameter="resource", path=["target"], postconditions={"ready": True}, evidence=dict(status="SUCCEEDED"))],
                     execution=dict(workflow="main", status="SUCCEEDED"))
+                if allocation_factory:
+                    resource = requirements["resources"][0]
+                    del resource["identity"]
+                    resource.update(owner="fixture-tenant", allocation=dict(scope=local.scope, type=local.type, binding="create",
+                        path=["handle"], keyPrefix=local.key_prefix, maxKeyLength=1000))
                 req = folder / "requirements.json"; req.write_bytes(canonical(requirements))
-                trust = folder / "trust.json"; trust.write_bytes(canonical(dict(formatVersion=2, grants=[dict(keyId="observer", publicKey=base64.b64encode(public).decode(),
-                    scopes=[address["scope"]], resourceTypes=[address["type"]], kinds=["RESULT", "STATE", "CREATION", "BINDING"], workflows=["main"])])))
+                frozen_requirements = req.read_bytes()
+                trust = folder / "trust.json"; trust.write_bytes(canonical(dict(formatVersion=version, grants=[dict(keyId="observer", publicKey=base64.b64encode(public).decode(),
+                    scopes=[request["scope"]], resourceTypes=[request["type"]], kinds=["RESULT", "STATE", "CREATION", "BINDING"] + (["ALLOCATION", "OWNERSHIP"] if allocation_factory else []), workflows=["main"])])))
                 journal = folder / "journal"
 
                 def direct_host(command, *args, directory=journal, expected=0):
@@ -190,7 +198,7 @@ def verify(root, cli, deployment_factory=None):
                 def append(kind, data, capture=b"", directory=journal, retained=None, expected=0):
                     nonlocal tip, counter
                     counter += 1
-                    event = event_for(retained or tip, "event-" + str(counter), kind, data, capture)
+                    event = event_for(retained or tip, "event-" + str(counter), kind, data, capture, format_version=2 if allocation_factory else 1)
                     event_path, captured = folder / "event.json", folder / "capture.bin"
                     event_path.write_bytes(canonical(event)); captured.write_bytes(capture)
                     result = host("append", "--event", event_path, *(["--capture", captured] if capture else []), directory=directory, expected=expected)
@@ -200,15 +208,19 @@ def verify(root, cli, deployment_factory=None):
 
                 def claim(kind, invocation, name, at, **values):
                     return dict(id=kind.lower() + "-" + invocation, kind=kind, status="SUCCEEDED", invocationId=invocation,
-                        nodeId=nodes[name], resource=address, observedAt=at, **values)
+                        nodeId=nodes[name], resource=address, observedAt=at, **(dict(resourceId="created", instanceId=local.last_instance) if allocation_factory else {}), **values)
 
                 def observe(invocation, name, attempt, action):
+                    nonlocal address
                     node = approval if name == "approval" else nodes[name]
                     append("START", dict(invocationId=invocation, nodeId=node, attempt=attempt, startedAt=timestamp()))
                     try:
                         value = action(); status = "SUCCEEDED"; capture = canonical(dict(status=status, result=value))
                     except (OSError, RuntimeError, sqlite3.Error) as error:
-                        value = None; status = "FAILED"; capture = canonical(dict(status=status, errorType=type(error).__name__))
+                        value = None; status = "FAILED"; capture = canonical(dict(status=status, errorType=type(error).__name__,
+                            **(dict(instanceObservation=local.last_capture) if allocation_factory else {})))
+                    if allocation_factory and name == "create" and status == "SUCCEEDED":
+                        address = value["handle"]
                     end = timestamp()
                     finish = dict(invocationId=invocation, completedAt=end, status=status)
                     if status == "FAILED": finish["errorId"] = "error-" + invocation
@@ -226,6 +238,11 @@ def verify(root, cli, deployment_factory=None):
                 observe("approval", "approval", 1, lambda: dict(fixtureApproval=True, humanApprovalClaimed=False))
                 status, created, created_at, created_capture = observe("create-1", "create", 1, local.create)
                 require(status == "SUCCEEDED", "Actual local creation failed")
+                if allocation_factory:
+                    require(address["key"].encode() not in frozen_requirements and local.last_instance.encode() not in frozen_requirements,
+                            "Runtime identity was predeclared")
+                    append("OBSERVATION", claim("ALLOCATION", "create-1", "create", created_at, binding="create", path=["handle"]), created_capture)
+                    append("OBSERVATION", claim("OWNERSHIP", "create-1", "create", created_at, owner=created["owner"]), created_capture)
                 append("OBSERVATION", claim("BINDING", "create-1", "create", created_at, binding="create", path=["handle"]), created_capture)
                 for number in (1, 2):
                     status, resolved, end, capture = observe("resolve-" + str(number), "resolve", number, lambda: local.resolve(created["handle"]))
@@ -267,16 +284,22 @@ def verify(root, cli, deployment_factory=None):
                 accepted = export("late-lineage-and-creation", 0)
                 probe_result = next(r for r in accepted["results"] if r["id"] == "probe")
                 require(probe_result["creatorInvocationId"] == "create-1" and [r["producerInvocationId"] for r in probe_result["resourceLineage"]] == ["resolve-1", "resolve-2"], "Exact producer or creator lineage was lost")
+                require(req.read_bytes() == frozen_requirements, "Allocation changed the independently frozen requirements")
                 require(local.creations == 1 and accepted["executionAuthorized"] is False, "Observer replayed or authorized work")
                 rows.append(dict(case=domain, variant="late-lineage-and-creation", state=accepted["state"], creationExecutions=local.creations))
+                if allocation_factory:
+                    require(all(r["instanceId"] == local.last_instance for r in accepted["results"]), "Resolved instance was lost")
+                    from verify_runtime_identities import falsify
+                    rows.extend(falsify(root, cli, folder, local, key, frozen_requirements))
                 if deployed:
                     rows.extend(dict(case=domain, **row) for row in deployed.finish_proof())
             finally:
                 if deployed:
                     deployed.close()
                 local.close()
-    result = dict(status="PASS", evidenceKind="deployed-observer-integration-test" if deployment_factory else "resource-invocation-lineage-integration-test", cases=rows,
-                  localWorkExecuted=True, cloudWorkExecuted=False, liveModelEvaluated=False, targetSupportPromoted=False)
+    result = dict(status="PASS", evidenceKind="runtime-allocation-integration-test" if allocation_factory else ("deployed-observer-integration-test" if deployment_factory else "resource-invocation-lineage-integration-test"), cases=rows,
+                  localWorkExecuted=True, cloudWorkExecuted=False, liveModelEvaluated=False, targetSupportPromoted=False,
+                  **(dict(deployedObserver=bool(deployment_factory)) if allocation_factory else {}))
     print(json.dumps(result))
     return result
 

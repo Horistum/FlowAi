@@ -7,13 +7,17 @@ import org.flowlang.frontend.ai.RequirementSelector
 
 /** Exact managed address. No provider-specific normalization or ownership inference. */
 data class ResourceIdentity(val scope: String, val type: String, val key: String)
+/** Frozen allocation slot; its returned address is never written back into requirements. */
+data class ResourceAllocation(val scope: String, val type: String, val binding: String,
+    val path: List<String> = emptyList(), val keyPrefix: String, val maxKeyLength: Int = 1000)
 enum class ResourceDisposition { SHARED, MANAGED, CREATED_IN_RUN }
 data class OutcomeResource(
     val id: String,
-    val identity: ResourceIdentity,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val identity: ResourceIdentity? = null,
     val disposition: ResourceDisposition,
     val creator: RequirementSelector? = null,
-    val owner: String? = null
+    val owner: String? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val allocation: ResourceAllocation? = null
 )
 data class OperationOutcomeRequirement(
     val id: String,
@@ -37,7 +41,7 @@ data class OperationOutcomeRequirements(
     @get:JsonInclude(JsonInclude.Include.NON_NULL) val execution: RunEvidenceRequirement? = null
 )
 
-enum class ObservationKind { RESULT, STATE, CREATION, BINDING, OWNERSHIP }
+enum class ObservationKind { RESULT, STATE, CREATION, BINDING, OWNERSHIP, ALLOCATION }
 enum class ObservationStatus { SUCCEEDED, FAILED, UNKNOWN }
 data class OperationObservation(
     val formatVersion: Int,
@@ -58,7 +62,9 @@ data class OperationObservation(
     val binding: String? = null,
     val path: List<String> = emptyList(),
     val owner: String? = null,
-    @get:JsonInclude(JsonInclude.Include.NON_NULL) val invocationId: String? = null
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val invocationId: String? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val resourceId: String? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val instanceId: String? = null
 )
 /** Sign the original payload bytes; the separate source capture is bound by the signed digest. */
 data class SignedOperationObservation(val keyId: String, val payload: String, val signature: String, val source: String)
@@ -84,19 +90,21 @@ data class ResourceInvocationLineage(
     val binding: String,
     val path: List<String>,
     val observationId: String,
-    val resource: ResourceIdentity
+    val resource: ResourceIdentity,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val instanceId: String? = null
 )
 data class OperationOutcomeResult(
     val id: String,
     val nodeId: String?,
-    val resource: ResourceIdentity,
+    @get:JsonInclude(JsonInclude.Include.ALWAYS) val resource: ResourceIdentity?,
     val state: OperationOutcomeState,
     val code: String,
     val observationIds: List<String> = emptyList(),
     @get:JsonInclude(JsonInclude.Include.NON_NULL) val invocationId: String? = null,
     @get:JsonInclude(JsonInclude.Include.NON_NULL) val observedStatus: ObservationStatus? = null,
     @get:JsonInclude(JsonInclude.Include.NON_EMPTY) val resourceLineage: List<ResourceInvocationLineage> = emptyList(),
-    @get:JsonInclude(JsonInclude.Include.NON_NULL) val creatorInvocationId: String? = null
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val creatorInvocationId: String? = null,
+    @get:JsonInclude(JsonInclude.Include.NON_NULL) val instanceId: String? = null
 )
 data class OperationOutcomeReview(
     val formatVersion: Int = 1,
@@ -112,7 +120,7 @@ data class OperationOutcomeReview(
     val diagnostics: List<String> = emptyList(),
     @get:JsonInclude(JsonInclude.Include.NON_NULL) val execution: RunEvidenceReview? = null
 ) {
-    val scope: String get() = if (formatVersion == 2) "declared-run-and-operation-postconditions" else "declared-operation-postconditions"
+    val scope: String get() = if (formatVersion >= 2) "declared-run-and-operation-postconditions" else "declared-operation-postconditions"
     val executionAuthorized: Boolean get() = false
     val workflowExecutionCorrectness: String get() = "unassessed"
     val observationTruth: String get() = "trusted-observer-assertion"

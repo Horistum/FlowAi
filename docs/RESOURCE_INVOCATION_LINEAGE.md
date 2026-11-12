@@ -117,3 +117,6 @@ The [S2.7 deployed-observer continuation](DEPLOYED_RUN_OBSERVER.md) now provides
 local service deployment and independent checkpoint retention. Its runtime identity
 [proposal](RUNTIME_RESOURCE_IDENTITY_PROPOSAL.md) remains design only; the exact predeclared
 resource requirement in this contract is unchanged.
+
+For addresses allocated only during creation, see [runtime resource identities](RUNTIME_RESOURCE_IDENTITIES.md).
+Outcome version 3 and observer event version 2 are explicit opt-ins; the historical contracts above retain their semantics.

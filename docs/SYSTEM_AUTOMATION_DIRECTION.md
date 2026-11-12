@@ -183,3 +183,11 @@ adds separate trusted-local collector/witness processes, explicit enrollment and
 witness-checked publication. Independent production storage and cloud deployment remain
 operator responsibilities. The [runtime identity proposal](RUNTIME_RESOURCE_IDENTITY_PROPOSAL.md)
 is design only; unknown runtime identities still require a separately versioned implementation.
+
+
+S2.8 implements [runtime resource identities](RUNTIME_RESOURCE_IDENTITIES.md): frozen logical
+allocation obligations, distinct address/instance evidence, per-attempt consumers and retained
+observer capture. Local service/database proofs obtain addresses after planning. This closes
+the bounded dynamic-identity slice, not provider truth, production readiness or AI-A3. The next
+selected slice is S3 evidence-driven system discovery: choose bounded observations from the
+actual automation request and managed scope, preserving independent requirements and trust.

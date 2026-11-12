@@ -62,28 +62,41 @@ object OperationOutcomeReader {
     }
     internal fun requirements(bytes: ByteArray): OperationOutcomeRequirements = guarded {
         decode(bytes, OperationOutcomeRequirements::class.java).also { d ->
-            require(d.formatVersion in 1..2 && digestPattern.matches(d.graphDigest))
+            require(d.formatVersion in 1..3 && digestPattern.matches(d.graphDigest))
             if (d.formatVersion == 1) legacyFields(bytes, "execution", "operations", "evidence")
-            require((d.formatVersion == 2) == (d.execution != null))
+            require((d.formatVersion >= 2) == (d.execution != null))
             require(id.matches(d.runId) && Regex("[A-Za-z0-9_-]{32,128}").matches(d.challenge))
             Instant.parse(d.startedAt); text(d.reviewerId)
             require(d.resources.size in 1..64 && d.operations.size in 1..64)
             require(d.resources.map { it.id }.distinct().size == d.resources.size)
-            require(d.resources.map { it.identity }.distinct().size == d.resources.size)
+            if (d.formatVersion < 3) {
+                legacyFields(bytes, null, "resources", "allocation")
+                require(d.resources.map { it.identity }.distinct().size == d.resources.size)
+            } else {
+                legacyFields(bytes, null, "resources", "identity")
+                require(d.resources.map { it.creator to it.allocation?.let { a -> a.binding to a.path } }.distinct().size == d.resources.size)
+            }
             require(d.operations.map { it.id }.distinct().size == d.operations.size)
             d.resources.forEach { r ->
-                require(id.matches(r.id)); identity(r.identity)
+                require(id.matches(r.id))
+                if (d.formatVersion < 3) identity(requireNotNull(r.identity)) else {
+                    require(r.identity == null && r.disposition == ResourceDisposition.CREATED_IN_RUN)
+                    val a = requireNotNull(r.allocation)
+                    text(a.scope); text(a.type); path(a.path)
+                    require(id.matches(a.binding) && a.keyPrefix.length <= 1000 && a.maxKeyLength in 1..1000 && a.keyPrefix.length <= a.maxKeyLength)
+                }
                 require((r.disposition == ResourceDisposition.CREATED_IN_RUN) == (r.creator != null))
-                require((r.disposition == ResourceDisposition.MANAGED) == (r.owner != null))
+                require((r.disposition == ResourceDisposition.MANAGED || d.formatVersion == 3) == (r.owner != null))
                 r.owner?.let(::text)
                 r.creator?.let(::selector)
             }
             val resources = d.resources.map { it.id }.toSet()
+            if (d.formatVersion == 3) require(resources.all { resource -> d.operations.any { it.resource == resource } })
             d.operations.forEach { op ->
                 require(id.matches(op.id) && op.resource in resources && id.matches(op.parameter))
                 selector(op.selector); path(op.path); facts(op.postconditions)
-                require((d.formatVersion == 2) == (op.evidence != null))
-                require((d.formatVersion == 2 || op.postconditions.isNotEmpty()) && op.maxAgeSeconds in 1..86400)
+                require((d.formatVersion >= 2) == (op.evidence != null))
+                require((d.formatVersion >= 2 || op.postconditions.isNotEmpty()) && op.maxAgeSeconds in 1..86400)
             }
             d.execution?.let { execution ->
                 text(execution.workflow)
@@ -112,15 +125,15 @@ object OperationOutcomeReader {
     }
     private fun observations(bytes: ByteArray): OperationObservationBundle = guarded {
         decode(bytes, OperationObservationBundle::class.java).also { d ->
-            require(d.formatVersion in 1..2 && d.observations.size <= MAX_RECORDS)
+            require(d.formatVersion in 1..3 && d.observations.size <= MAX_RECORDS)
             if (d.formatVersion == 1) legacyFields(bytes, "execution")
-            require(d.formatVersion == 2 || d.execution == null)
+            require(d.formatVersion >= 2 || d.execution == null)
             (d.observations + listOfNotNull(d.execution)).forEach(::envelope)
         }
     }
     private fun trust(bytes: ByteArray): OperationObservationTrust = guarded {
         decode(bytes, OperationObservationTrust::class.java).also { d ->
-            require(d.formatVersion in 1..2 && d.grants.size in 1..64 && d.grants.map { it.keyId }.distinct().size == d.grants.size)
+            require(d.formatVersion in 1..3 && d.grants.size in 1..64 && d.grants.map { it.keyId }.distinct().size == d.grants.size)
             if (d.formatVersion == 1) legacyFields(bytes, null, "grants", "workflows")
             d.grants.forEach { g ->
                 require(id.matches(g.keyId) && g.publicKey.length in 1..256)
@@ -129,8 +142,9 @@ object OperationOutcomeReader {
                 require(g.scopes.size in 1..64 && g.resourceTypes.size in 1..64 && g.kinds.isNotEmpty())
                 require(g.scopes.distinct().size == g.scopes.size && g.resourceTypes.distinct().size == g.resourceTypes.size && g.kinds.distinct().size == g.kinds.size)
                 (g.scopes + g.resourceTypes).forEach(::text)
+                require(d.formatVersion == 3 || ObservationKind.ALLOCATION !in g.kinds)
                 require(g.workflows.size <= 64 && g.workflows.distinct().size == g.workflows.size)
-                require(d.formatVersion == 2 || g.workflows.isEmpty())
+                require(d.formatVersion >= 2 || g.workflows.isEmpty())
                 g.workflows.forEach(::text)
             }
         }
@@ -138,19 +152,27 @@ object OperationOutcomeReader {
     internal fun observation(bytes: ByteArray): OperationObservation = guarded {
         require(bytes.size <= MAX_PAYLOAD)
         decode(bytes, OperationObservation::class.java).also { o ->
-            require(o.formatVersion in 1..2 && id.matches(o.id) && id.matches(o.runId))
+            require(o.formatVersion in 1..3 && id.matches(o.id) && id.matches(o.runId))
             if (o.formatVersion == 1) legacyFields(bytes, "invocationId")
             require(if (o.formatVersion == 1) o.invocationId == null else o.invocationId != null)
             o.invocationId?.let { require(id.matches(it)) }
+            if (o.formatVersion < 3) {
+                legacyFields(bytes, "resourceId"); legacyFields(bytes, "instanceId")
+                require(o.kind != ObservationKind.ALLOCATION)
+            } else {
+                require(o.resourceId != null && id.matches(o.resourceId))
+                require(!mapper.readTree(BoundedIo.decodeUtf8(bytes)).path("instanceId").isNull)
+                o.instanceId?.let(::text)
+            }
             require(digestPattern.matches(o.graphDigest) && digestPattern.matches(o.contractSha256) && digestPattern.matches(o.sourceSha256))
             require(Regex("[A-Za-z0-9_-]{32,128}").matches(o.challenge))
             require(o.sourceSizeBytes in 1..MAX_PAYLOAD)
             identity(o.resource); Instant.parse(o.observedAt); facts(o.facts); path(o.path)
             o.nodeId?.let(::text)
             require(o.nodeId != null || o.kind == ObservationKind.BINDING)
-            require((o.kind == ObservationKind.BINDING) == (o.binding != null))
+            require((o.kind in setOf(ObservationKind.BINDING, ObservationKind.ALLOCATION)) == (o.binding != null))
             o.binding?.let { require(id.matches(it)) }
-            require(o.path.isEmpty() || o.kind == ObservationKind.BINDING)
+            require(o.path.isEmpty() || o.kind in setOf(ObservationKind.BINDING, ObservationKind.ALLOCATION))
             require(o.kind == ObservationKind.STATE || o.facts.isEmpty())
             require((o.kind == ObservationKind.CREATION) == (o.created != null))
             require((o.kind == ObservationKind.OWNERSHIP) == (o.owner != null))
@@ -168,7 +190,7 @@ object OperationOutcomeReader {
     internal fun runObservation(bytes: ByteArray): OperationRunObservation = guarded {
         require(bytes.size <= MAX_PAYLOAD)
         decode(bytes, OperationRunObservation::class.java).also { o ->
-            require(o.formatVersion == 2 && id.matches(o.id) && id.matches(o.runId))
+            require(o.formatVersion in 2..3 && id.matches(o.id) && id.matches(o.runId))
             require(digestPattern.matches(o.graphDigest) && digestPattern.matches(o.contractSha256) && digestPattern.matches(o.sourceSha256))
             require(Regex("[A-Za-z0-9_-]{32,128}").matches(o.challenge) && o.sourceSizeBytes in 1..MAX_PAYLOAD)
             text(o.workflow); Instant.parse(o.startedAt); Instant.parse(o.completedAt)

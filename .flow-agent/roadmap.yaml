@@ -21,6 +21,7 @@ versionBoundary:
     requestRequirements: "4"
     operationOutcomes: "1"
     attemptAwareOperationOutcomes: "2"
+    allocatedResourceOperationOutcomes: "3"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"

@@ -1,0 +1,41 @@
+{
+  "formatVersion": 1,
+  "evidenceKind": "synthetic-signed-conformance",
+  "cases": [
+    {
+      "id": "accepted",
+      "state": "SATISFIED",
+      "code": "OUTCOME_EXPECTATION_SATISFIED"
+    },
+    {
+      "id": "missing-allocation",
+      "state": "UNRESOLVED",
+      "code": "OUTCOME_ALLOCATION_MISSING"
+    },
+    {
+      "id": "missing-instance",
+      "state": "UNRESOLVED",
+      "code": "OUTCOME_INSTANCE_MISSING"
+    },
+    {
+      "id": "replacement",
+      "state": "VIOLATED",
+      "code": "OUTCOME_RESOURCE_INSTANCE_MISMATCH"
+    },
+    {
+      "id": "conflict",
+      "state": "VIOLATED",
+      "code": "OUTCOME_ALLOCATION_CONFLICT"
+    },
+    {
+      "id": "wrong-scope",
+      "state": "VIOLATED",
+      "code": "OUTCOME_ALLOCATION_SCOPE"
+    },
+    {
+      "id": "missing-grant",
+      "state": "UNRESOLVED",
+      "code": "OUTCOME_OBSERVER_SCOPE"
+    }
+  ]
+}

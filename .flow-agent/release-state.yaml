@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 140
+stateVersion: 141
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -20,6 +20,7 @@ versionBoundary:
     requestRequirements: "4"
     operationOutcomes: "1"
     attemptAwareOperationOutcomes: "2"
+    allocatedResourceOperationOutcomes: "3"
     ast: "2.2"
     executionPlan: "2.4"
     workflowExecutionPlanSet: "1.1"
@@ -920,6 +921,27 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  runtimeResourceIdentityFollowup:
+    selectedSlice: AI-A3-S2.8
+    workPackage: .flow-agent/work-packages/runtime-resource-identities.yaml
+    report: .flow-agent/reports/runtime-resource-identities.md
+    contract: docs/RUNTIME_RESOURCE_IDENTITIES.md
+    baselineMain: 59db8dafc74f4904291fb451f4bf4d4ab8ff65f9
+    predecessorPullRequest: 267
+    deliveryBase: main
+    validation: local-focused-jvm-conformance-installed-direct-passed-final-full-and-deployed-ci-required
+    observerProtocolVersion: 2
+    observerServiceProtocolVersion: 1
+    outcomeContractVersion: 3
+    scope: Frozen logical allocation obligations, stable instance evidence, actual consumer lineage and retained capture.
+    nextSlice: S3-evidence-driven-system-discovery
+    dynamicIdentityImplementation: true
+    productionDeploymentCertified: false
+    localRuntimeEvidence: true
+    cloudRuntimeEvidence: false
+    executionAuthorization: false
+    liveModelEvaluated: false
+    supportPromotion: false
   deployedObserverFollowup:
     selectedSlice: AI-A3-S2.7
     workPackage: .flow-agent/work-packages/deployed-observer-checkpoints.yaml
