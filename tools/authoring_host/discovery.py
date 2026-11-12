@@ -57,7 +57,7 @@ def validate(config):
         ids.add(root["id"])
         path = root["path"]
         require(isinstance(path, str) and len(path) <= 4096 and len(Path(path).parts) <= 64 and Path(path).is_absolute() and path != "/" and
-                "\0" not in path and str(Path(path)) == path and ".." not in Path(path).parts,
+                "\0" not in path and not path.startswith("//") and str(Path(path)) == path and ".." not in Path(path).parts,
                 "Discovery root must be a normalized absolute directory")
         value = Path(path)
         require(all(value != p and value not in p.parents and p not in value.parents for p in paths),

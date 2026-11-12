@@ -193,10 +193,11 @@ class DiscoveryTests(unittest.TestCase):
         for field,value in [('formatVersion',True),('maxSteps',17),('maxEntries',0),('roots',[])]:
             c=copy.deepcopy(self.config);c[field]=value;invalid.append(c)
         c=copy.deepcopy(self.config);c['roots'].append(dict(id='nested',path=str(self.root/'nested'),scope='other'));invalid.append(c)
-        c=copy.deepcopy(self.config);c['roots'][0]['path']='/';invalid.append(c)
+        for path in ('/', '//', '/' + str(self.root), '/' + str(self.root/'nested')):
+            c=copy.deepcopy(self.config);c['roots'][0]['path']=path;invalid.append(c)
         c=copy.deepcopy(self.config);c['shell']=True;invalid.append(c)
         for c in invalid:
-            with self.assertRaises(HostError):discovery.validate(c)
+            with self.subTest(config=c),self.assertRaises(HostError):discovery.validate(c)
         with self.assertRaises(HostError):discovery.check_output(self.config,self.root/'output')
         discovery.check_output(self.config,self.root.with_name('output'))
 
