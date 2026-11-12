@@ -97,10 +97,10 @@ def verify_sources(config, environment, ledger=None):
         require(not contains_credential(data, environment), "A credential appears in an investigation source")
 
 
-def initial(config):
+def initial(config, environment=None):
     if config["formatVersion"] == 2:
         from . import discovery
-        return discovery.initial(config)
+        return discovery.initial(config, environment)
     return {"formatVersion": 1, "protocol": VERSION,
             "sources": [{k: s[k] for k in ("id", "sha256", "scope")} for s in config["sources"]],
             "observations": [], "findings": [], "unknowns": []}
@@ -109,6 +109,13 @@ def initial(config):
 def load(root, state):
     require(state["investigationFile"] in state["files"], "Investigation revision is not retained")
     return loads(read(root / state["investigationFile"]))
+
+
+def public(ledger):
+    """Keep raw attestations for independent review, not as a provider answer index."""
+    result = copy.deepcopy(ledger)
+    result.pop("inventoryAttestations", None)
+    return result
 
 
 def persist(root, state, ledger, name):

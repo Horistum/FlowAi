@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 143
+stateVersion: 144
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -921,6 +921,26 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  managedInventoryFollowup:
+    selectedSlice: AI-A3-S3.2
+    workPackage: .flow-agent/work-packages/managed-inventory-provenance.yaml
+    report: .flow-agent/reports/managed-inventory-provenance.md
+    contract: docs/MANAGED_INVENTORY_PROVENANCE.md
+    baselineMain: bb4a26d58009292d147b23451656d42e8fb03994
+    predecessorPullRequest: 269
+    deliveryBase: main
+    validation: candidate-python-installed-collector-discovery-and-final-full-ci-required
+    inventoryAttestationVersion: 1
+    investigationProtocolVersion: 2
+    authoringHostVersion: 4
+    scope: Independently granted collector provenance, exact scoped exports, bounded collection age and post-compilation binding receipts.
+    nextSlice: S3-reviewed-live-discovery-evaluation
+    liveModelEvaluated: false
+    nativeProviderTruthEstablished: false
+    upstreamFreshnessEstablished: false
+    workflowExecution: false
+    productionDeploymentCertified: false
+    supportPromotion: false
   systemDiscoveryFollowup:
     selectedSlice: AI-A3-S3.1
     workPackage: .flow-agent/work-packages/evidence-driven-system-discovery.yaml

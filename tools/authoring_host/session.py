@@ -29,6 +29,9 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
         nonblank(target)
     environment = credentials(config)
     investigation_config = config.get("investigation")
+    if investigation_config is not None and investigation_config["formatVersion"] == 2:
+        from .inventory_provenance import validate_context
+        validate_context(investigation_config, request)
     if investigation_config is not None:
         investigation.verify_sources(investigation_config, environment)
     contracts = public_contracts(config["compiler"]["contracts"])
@@ -75,9 +78,12 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     for name, data in snapshots.items():
         save(root, name, data, state["files"])
     if investigation_config is not None:
-        state.update(hostVersion="bounded-authoring-host/3" if investigation_config["formatVersion"] == 2 else "bounded-authoring-host/2",
+        host_version = "bounded-authoring-host/3" if investigation_config["formatVersion"] == 2 else "bounded-authoring-host/2"
+        if any("inventory" in r for r in investigation_config.get("roots", [])):
+            host_version = "bounded-authoring-host/4"
+        state.update(hostVersion=host_version,
                      investigationSteps=0, investigationProtocol=investigation.protocol(investigation_config))
-        investigation.persist(root, state, investigation.initial(investigation_config), "investigation-initial.json")
+        investigation.persist(root, state, investigation.initial(investigation_config, environment), "investigation-initial.json")
     checkpoint(root, state)
     return _locked_advance(root, state, config, environment, "initial")
 
@@ -88,7 +94,7 @@ def resume(directory, answers_data, requirements_data):
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         state = loads(read(root / "state.json"))
         require(state.get("formatVersion") == 1 and state.get("hostVersion") in
-                ("bounded-authoring-host/1", "bounded-authoring-host/2", "bounded-authoring-host/3"),
+                ("bounded-authoring-host/1", "bounded-authoring-host/2", "bounded-authoring-host/3", "bounded-authoring-host/4"),
                 "Unsupported captured host version")
         verify_inventory(root, state)
         require(state["status"] == "awaiting-user", "Only an explicit clarification can resume; interrupted calls never replay")
@@ -124,6 +130,8 @@ def resume(directory, answers_data, requirements_data):
         environment = credentials(config)
         if config.get("investigation", {}).get("formatVersion") == 2:
             from . import discovery_bindings
+            from .inventory_provenance import validate_context
+            validate_context(config["investigation"], loads(read(root / "request.json")))
             discovery_bindings.validate_context(config["investigation"]["bindingRequirements"], reviewed,
                 loads(read(root / "contracts.json"))["capabilityCatalog"])
         if "investigation" in config:
@@ -296,7 +304,7 @@ def _advance(root, state, config, environment, kind):
                                "required": ["id", "model", "request_id"], "properties": {
                                    k: {"type": "string"} for k in ("id", "model", "request_id")}}}}}
         if investigation_config is not None:
-            payload["input"]["investigation"] = investigation.load(root, state)
+            payload["input"]["investigation"] = investigation.public(investigation.load(root, state))
         data = canonical(payload)
         # Conservative byte bound; token caps must additionally be enforced by the configured adapter.
         if len(data) > budget["maxInputTokensPerCall"]:
@@ -396,14 +404,17 @@ def _advance(root, state, config, environment, kind):
             if investigation_config is not None:
                 investigation.verify_sources(investigation_config, environment, investigation.load(root, state))
             review = _compile(root, state, config, attempt, proposal)
+            inventory_validation = None
             if investigation_config is not None:
-                investigation.verify_sources(investigation_config, environment, investigation.load(root, state))
+                inventory_validation = investigation.verify_sources(investigation_config, environment, investigation.load(root, state))
             if "discoveryBindingAssessment" in attempt:
                 from . import discovery_bindings
                 name = attempt["directory"] + "/review/request-fidelity-review.json"
                 require(name in state["files"] or review["exitCode"] != 0, "Accepted proposal has no discovery fidelity receipt")
                 if name in state["files"]:
                     bound = discovery_bindings.verify_compiler_receipt(binding_assessment, loads(read(root / name)), review)
+                    if inventory_validation is not None:
+                        bound["inventoryValidation"] = inventory_validation
                     name = attempt["directory"] + "/discovery-binding-result.json"
                     save(root, name, canonical(bound), state["files"])
                     attempt["discoveryBindingResult"] = name

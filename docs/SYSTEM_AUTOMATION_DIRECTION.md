@@ -201,3 +201,11 @@ The installed proof uses distinct JSON structures and adversarial provider repli
 expected address is supplied in caller inputs. It remains a deterministic protocol test.
 Managed-inventory provenance, upstream freshness and live discovery evaluation remain
 open; this slice does not close S3 or certify autonomous system understanding.
+
+S3.2: [Managed inventory provenance](MANAGED_INVENTORY_PROVENANCE.md) adds a separate,
+operator-configured collection process, independent signer/scope grants and signed
+request-bound exports. Discovery checks exact exported bytes and bounded collection
+age through clarification and compilation, retaining the provenance of accepted
+parameter bindings. This authenticates a collector's claim, not current remote truth.
+The next slice is independently reviewed live discovery evaluation; S3 and AI-A3 remain
+open, with no cloud execution or target support promotion.

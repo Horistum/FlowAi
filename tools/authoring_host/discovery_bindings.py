@@ -158,6 +158,9 @@ def resolve(bindings, ledger, choices, original, response):
             row.update(status="resolved", factId=fact["id"], observationId=observation["id"],
                        sourceSha256=observation["sha256"], sourceSelector=observation["selector"], sourcePath=value_path,
                        valueSha256=digest(canonical(value)), compilerRequirementId=identifier)
+            root = next(r for r in ledger["roots"] if r["id"] == binding["source"]["root"])
+            if "provenance" in root:
+                row["inventoryProvenance"] = root["provenance"]
         except HostError as error:
             row["reason"] = str(error)
             assessment["status"] = "blocked"
