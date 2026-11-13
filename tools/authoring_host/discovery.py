@@ -57,8 +57,9 @@ def relative(value, *, directory=False):
 
 
 def validate(config):
-    keys(config, ("formatVersion", "roots", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords", "maxEntries", "bindingRequirements"))
-    require(type(config["formatVersion"]) is int and config["formatVersion"] == 2, "Unsupported discovery configuration")
+    fields = ("formatVersion", "roots", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords", "maxEntries")
+    keys(config, fields + (("bindingRequirements",) if config.get("formatVersion") == 2 else ()))
+    require(type(config["formatVersion"]) is int and config["formatVersion"] in (2, 3), "Unsupported discovery configuration")
     integer(config["maxSteps"], 1, 16)
     integer(config["maxSourceBytes"], 1, 65536)
     integer(config["maxTotalSourceBytes"], config["maxSourceBytes"], 262144)
@@ -86,7 +87,8 @@ def validate(config):
             attestation = Path(root["inventory"]["attestationFile"])
             require(all(path != attestation and path not in attestation.parents for path in paths),
                     "Inventory attestations must be outside discovery roots")
-    discovery_bindings.validate(config["bindingRequirements"], ids)
+    if config["formatVersion"] == 2:
+        discovery_bindings.validate(config["bindingRequirements"], ids)
 
 
 def check_output(config, directory):
@@ -125,9 +127,10 @@ def initial(config, environment=None):
             roots.append(row)
         finally:
             os.close(descriptor)
-    result = {"formatVersion": 2, "protocol": VERSION, "roots": roots,
-            "bindingRequirements": copy.deepcopy(config["bindingRequirements"]),
+    result = {"formatVersion": config["formatVersion"], "protocol": investigation.protocol(config), "roots": roots,
             "observations": [], "facts": [], "findings": [], "unknowns": []}
+    if config["formatVersion"] == 2:
+        result["bindingRequirements"] = copy.deepcopy(config["bindingRequirements"])
     if attestations:
         result["inventoryAttestations"] = attestations
     return result
@@ -259,7 +262,8 @@ def apply(ledger, action, config, environment, attempt_id):
     kind = action.get("kind")
     require(kind in ("investigate", "propose"), "Unknown discovery action")
     keys(action, ("kind", "findings", "unknowns", "extractFacts", "observe") if kind == "investigate" else
-         ("kind", "findings", "unknowns", "extractFacts", "response", "bindings"))
+         ("kind", "findings", "unknowns", "extractFacts", "response",
+          "interpretation" if config["formatVersion"] == 3 else "bindings"))
     result = copy.deepcopy(ledger)
     facts = action["extractFacts"]
     require(isinstance(facts, list) and len(facts) <= 16, "Invalid fact extraction inventory")
@@ -290,7 +294,7 @@ def apply(ledger, action, config, environment, attempt_id):
         else:
             result["facts"].append(row)
     # Reuse the existing finding, unknown and caller-decision authority without its pinned-file reads.
-    legacy = {k: v for k, v in action.items() if k not in ("observe", "extractFacts", "bindings")}
+    legacy = {k: v for k, v in action.items() if k not in ("observe", "extractFacts", "bindings", "interpretation")}
     if kind == "investigate":
         legacy["readSources"] = []
     result = investigation.apply(result, legacy, {**config, "formatVersion": 1, "sources": []}, environment, attempt_id)

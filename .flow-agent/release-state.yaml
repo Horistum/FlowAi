@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 144
+stateVersion: 145
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -931,10 +931,13 @@ recoveryBoundedAuthoring:
     deliveryBase: main
     validation: candidate-python-installed-collector-discovery-and-final-full-ci-required
     inventoryAttestationVersion: 1
-    investigationProtocolVersion: 2
-    authoringHostVersion: 4
-    scope: Independently granted collector provenance, exact scoped exports, bounded collection age and post-compilation binding receipts.
-    nextSlice: S3-reviewed-live-discovery-evaluation
+    investigationProtocolVersion: 3
+    authoringHostVersion: 5
+    scope: Agent-proposed interpretation without caller mapping, separate review of the exact plan and unchanged compiler constraints; optional managed inventory provenance.
+    discoveryContract: docs/REVIEWED_DISCOVERY.md
+    callerBindingMapRequired: false
+    liveDiscoveryAcceptance: open
+    nextSlice: S3-live-task-driven-discovery-evaluation
     liveModelEvaluated: false
     nativeProviderTruthEstablished: false
     upstreamFreshnessEstablished: false

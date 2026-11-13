@@ -1,8 +1,26 @@
-# Managed inventory provenance and collection age
+# Reviewed discovery interpretation and supporting inventory provenance
 
 Baseline: merged PR #269 at `bb4a26d58009292d147b23451656d42e8fb03994`.
 Work package: [AI-A3-S3.2](../work-packages/managed-inventory-provenance.yaml).
 Contract and migration: [Managed inventory provenance](../../docs/MANAGED_INVENTORY_PROVENANCE.md).
+
+## Product scope correction
+
+PR #270 originally prioritized signed exports while the caller still supplied the
+source-to-operation mapping. That was insufficient progress toward the requested
+ability to solve unfamiliar complex tasks. [Discovery v3](../../docs/REVIEWED_DISCOVERY.md)
+now lets the external agent propose the interpretation and complete structured plan.
+A separate caller review confirms the exact candidate before unchanged independent
+compiler constraints and additive observed-value checks are applied. The agent cannot
+supply its own approval. V2 remains compatible; provenance is optional supporting work.
+
+Sixteen manually authored transcript cases exercise infrastructure readiness and
+isolated database recovery with two source schemas each. They reject wrong values,
+flattened handlers and an old plan under a changed inspection-only goal. Unit tests
+cover approval identity, interruption, evidence changes and unknowns. These are protocol
+and installed-compiler tests, not proof that a live model understands the goal. Live
+unfamiliar-system and runtime-outcome acceptance remain open. Final CI receipts belong
+in the PR metadata and must correspond to the published revision.
 
 ## Change and ownership
 
@@ -46,5 +64,5 @@ Cached provider responses, source completeness, production key custody/revocatio
 the collector's read-only credentials are not certified by this mechanism. The process
 fixture is deterministic, with no live-model generalization claim.
 
-S3-reviewed-live-discovery-evaluation is the next slice. AI-A3, S3, AR-06/AR-07 and the
+S3-live-task-driven-discovery-evaluation is the next slice. AI-A3, S3, AR-06/AR-07 and the
 existing live/held-out gates remain open; EF-09 stays paused.

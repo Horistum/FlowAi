@@ -1,29 +1,29 @@
 version: AI-A3-S3.2
-name: Authenticated managed inventory collection and bounded freshness
+name: Agent-proposed discovery interpretation with separate review
 status: candidate
 stream: architecture-recovery
 parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
 baselineMain: bb4a26d58009292d147b23451656d42e8fb03994
 predecessorPullRequest: 269
 deliveryBase: main
-authorization: Maintainer confirmed PR 269 was merged and requested the next roadmap implementation PR.
-objective: Bind discovery inputs to an independently trusted collector, exact managed scope, original request, actual collection interval and immutable exported bytes.
-universalInvariant: A model cannot choose its inventory authority, replay another capture request, replace attested bytes or use expired collection evidence to obtain accepted operation bindings.
+authorization: Maintainer requested correction within PR 270 after identifying the mismatch with task-driven complex system automation.
+objective: Remove caller-authored source-to-operation mapping by admitting evidence-backed agent interpretations and complete structured plans through separate review and existing compiler constraints.
+universalInvariant: A proposed interpretation cannot approve itself, replace independent constraints or transfer approval to another request, evidence set or plan.
 scope:
-- Caller-prepared capture challenge and independent Ed25519 scope grant.
-- Single bounded operator-configured collector process, durable attempt reservation and atomic signed export publication.
-- Optional versioned inventory policy on discovery roots, whole-export validation and unchanged existing compiler fidelity authority.
-- Provenance and collection-age checks at admission, dispatch, response, clarification and compilation boundaries.
-- Retained raw attestations for review, provider-safe provenance receipts and dependent invalidation.
-- Independent read-only source process and installed compiler proofs across multiple inventory structures.
+- Investigation v3 starts with goal, allowed roots, public contracts and confirmed independent constraints; no caller binding map.
+- Agent-proposed interpretation names evidence-backed selectors and explains their meaning and operation use.
+- Exact observed-value validation and immutable review packet containing the complete plan.
+- Separate accept or reject decision bound to run and packet; no provider call or automatic repair after approval.
+- Existing compiler checks original constraints plus additive observed-value obligations, including structured failure and dependency checks.
+- Optional signed collector provenance and collection-age enforcement retained as supporting infrastructure.
 forbiddenScope:
-- No model-selected commands, workflow executor, new semantic graph, platform-specific semantic adapter or arbitrary shell fallback.
-- No claim that a trusted collector signature establishes native provider truth, source completeness or upstream freshness.
-- No automatic retry, refreshed evidence within an existing session, trust discovery or key revocation service.
-- No live-model generalization, frozen-corpus exposure change, support promotion or S3/AI-A3 closure.
+- No new semantic graph, workflow executor, platform-specific semantic adapter or arbitrary shell fallback.
+- No automatic promotion of model interpretations into independent authority.
+- No claim of live-model generalization, source completeness, upstream freshness or real recovery from deterministic transcript tests.
+- No S3, AI-A3, AR-06 or AR-07 closure; EF-09 remains paused.
 validationPlan:
-- Signature domain, key, issuer, scope, request replay, file/tree mutation, limits, credential leakage and timing regressions.
-- Admission and clarification rejection, expiry after successful compilation and complete final provenance receipts.
-- Twelve real collector-process and installed-compiler integration cases across infrastructure, data and credential policy.
-- Full Python tooling, architecture validation, source isolation, conformance and exact-head/merge-candidate GitHub CI.
-nextSlice: S3-reviewed-live-discovery-evaluation
+- Missing or ambiguous facts, self-approval, packet substitution, changed goals, rejected review, interrupted compilation and changed sources.
+- Sixteen installed-compiler transcript cases across infrastructure and isolated data recovery with two source schemas each.
+- Independent rejection of wrong values, flattened failure handlers and old plans reused for inspection-only requests.
+- Existing provenance and discovery proofs, Python tooling, architecture validation and exact-head/merge-candidate GitHub CI.
+nextSlice: S3-live-task-driven-discovery-evaluation

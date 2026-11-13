@@ -209,3 +209,11 @@ age through clarification and compilation, retaining the provenance of accepted
 parameter bindings. This authenticates a collector's claim, not current remote truth.
 The next slice is independently reviewed live discovery evaluation; S3 and AI-A3 remain
 open, with no cloud execution or target support promotion.
+
+S3.2 scope correction (PR #270): [reviewed discovery interpretation](REVIEWED_DISCOVERY.md)
+removes caller-authored source selectors and operation bindings from v3 configuration.
+The external agent proposes them from observations together with a complete structured
+plan. Separate review is bound to the exact request, evidence and candidate; existing
+compiler constraints remain independent. Provenance is supporting infrastructure.
+Deterministic lifecycle transcripts validate this boundary but do not close live-agent
+reasoning, unfamiliar-schema generalization or runtime-outcome acceptance.
