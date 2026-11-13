@@ -36,9 +36,9 @@ class DiscoveryEvaluationTests(unittest.TestCase):
     def write_suite(self):
         self.suite_path.write_bytes(canonical(self.manifest))
 
-    def capture(self, repetitions=1, actions=None):
+    def capture(self, repetitions=1, actions=None, **options):
         self.responses.write_bytes(canonical([dict(response=a) for a in (actions or self.actions)*len(self.manifest['cases'])*repetitions]))
-        return evaluation.capture(self.config, self.suite_path, self.out, repetitions=repetitions, max_cost_microusd=100_000_000)
+        return evaluation.capture(self.config, self.suite_path, self.out, repetitions=repetitions, max_cost_microusd=100_000_000, **options)
 
     def reviews(self, report, **assessment):
         rows = []
@@ -93,6 +93,14 @@ class DiscoveryEvaluationTests(unittest.TestCase):
             result = evaluation.review(self.out, canonical(reviews))
         self.assertEqual('discovery-review-rejected', result['runs'][0]['status'])
         self.assertEqual(0, result['compilerAccepted'])
+
+    def test_target_block_does_not_erase_a_faithful_plan_or_claim_an_artifact(self):
+        self.suite(cases=1); report = self.capture(target='github-actions', render=True)
+        result = evaluation.review(self.out, canonical(self.reviews(report)))
+        self.assertEqual('target-blocked', result['runs'][0]['status'])
+        self.assertEqual(1, result['compilerAccepted']); self.assertEqual(1, result['callerAssessedSuccesses'])
+        self.assertEqual(0, result['runAccepted']); self.assertEqual(0, result['renderAuthorizedRuns'])
+        self.assertFalse(result['milestoneComplete'])
 
     def test_review_is_bound_to_evaluation_run_state_packet_and_reviewer(self):
         self.suite(cases=1); report = self.capture(); valid = self.reviews(report)

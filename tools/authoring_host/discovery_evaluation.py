@@ -258,7 +258,13 @@ def _summarize(root, evaluation):
             entry = next(i for i in record["runs"] if i["run"] == run["id"])
             require(record["reviewerId"] == run["reviewerId"] and entry["assessment"] == assessment and
                     entry["stateSha256"] == run["assessedInputStateSha256"], "Independent assessment changed")
-        accepted = state["status"] == "accepted"
+        final = reviews[-1] if reviews else {}
+        # A faithful canonical plan remains accepted when its selected target
+        # cannot materialize it. Invalidated/failed compiler evidence never does.
+        accepted = (state['status'] in ('accepted', 'target-blocked') and
+                    final.get('semanticAcceptance') == 'accepted' and
+                    final.get('requestFidelity') == 'requirements-satisfied' and
+                    not any(i['severity'] in ('REQUIRED', 'HIGH') for i in final.get('reviewItems', [])))
         success = bool(assessment and assessment["constraints"] == "respected" and assessment["discovery"] == "sufficient" and
                        ((accepted and assessment["goal"] == "fulfilled") or
                         (state["status"] in STOPPED and assessment["goal"] == "appropriate-stop")))
@@ -266,6 +272,7 @@ def _summarize(root, evaluation):
         unknowns = [u for u in ledger['unknowns'] if u['status'] == 'open']
         estimates = [a["estimatedCostMicrousd"] for a in attempts if "estimatedCostMicrousd" in a]
         row.update(stateSha256=run["stateSha256"], status=state["status"], compilerAccepted=accepted,
+                   runAccepted=state['status']=='accepted', targetDisposition=final.get('targetDisposition'),
                    capturedStateFile=run['capturedStateFile'],
                    callerAssessment=assessment, callerAssessedSuccess=success,
                    acceptedConstraintViolation=bool(accepted and assessment and assessment["constraints"] == "violated"),
@@ -280,7 +287,7 @@ def _summarize(root, evaluation):
                    reportedProviderCalls=sum('provider' in a for a in attempts),
                    unreportedCalls=sum('provider' not in a for a in attempts),
                    graphDigest=reviews[-1].get("graphDigest") if reviews else None,
-                   renderAuthorized=bool(reviews and reviews[-1].get("renderAuthorized")),
+                   renderAuthorized=bool(accepted and final.get("renderAuthorized")),
                    reservedTokens=state["reservedTokens"], reservedCostMicrousd=state["reservedCostMicrousd"],
                    reportedUsage=state["reportedUsage"], estimatedReportedCostMicrousd=sum(estimates) if estimates else None,
                    reportedCostComplete=bool(attempts) and len(estimates) == len(attempts),
@@ -308,10 +315,13 @@ def _summarize(root, evaluation):
         evidenceKind=evaluation["evidenceKind"], providerAttribution="operator-configured-and-adapter-reported-not-attested",
         provider={k: evaluation['provider'][k] for k in ('id', 'model', 'version')},
         commonSettings=evaluation['commonSettings'],
+        target=evaluation['target'], renderRequested=evaluation['render'],
         compilerCommit=evaluation["compilerCommit"], compilerDigest=evaluation["compilerDigest"],
         suiteSha256=evaluation["files"]["suite.json"], runs=rows, domains=domains, taskComparisons=comparisons,
         completedRuns=sum(r["phase"] in ("captured", "reviewed") for r in rows), expectedRuns=len(rows),
         reviewedRuns=sum(r["phase"] == "reviewed" for r in rows), compilerAccepted=sum(r["compilerAccepted"] for r in rows),
+        runAccepted=sum(r.get('runAccepted', False) for r in rows),
+        renderAuthorizedRuns=sum(r.get('renderAuthorized', False) for r in rows),
         callerAssessedSuccesses=sum(r["callerAssessedSuccess"] for r in rows),
         acceptedConstraintViolations=sum(r.get("acceptedConstraintViolation", False) for r in rows),
         reservedSuiteCostMicrousd=evaluation["reservedSuiteCostMicrousd"],

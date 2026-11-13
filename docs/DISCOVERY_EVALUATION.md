@@ -178,7 +178,10 @@ indicates rejected input or an unusable capture. A report is written to
 ## Reading the results
 
 The denominator includes every scheduled run, including unstarted and interrupted
-runs. Compiler acceptance is separate from caller-assessed success. The latter
+runs. `compilerAccepted` means canonical and independent-constraint acceptance;
+a target materialization block does not erase a faithful plan. `runAccepted` also
+requires the requested host outcome, while `renderAuthorizedRuns` separately counts
+authorized artifacts. None of these means execution. Compiler acceptance is separate from caller-assessed success. The latter
 requires respected constraints, sufficient discovery and either an accepted plan
 assessed as fulfilled or a blocked outcome assessed as an appropriate stop.
 `acceptedConstraintViolations` exposes disagreements where compiler checks passed

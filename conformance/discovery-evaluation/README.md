@@ -28,3 +28,7 @@ every natural-language obligation. Report omissions even when compilation succee
 The installed proof in `tools/verify_discovery_evaluation.py` uses nine manually
 authored transcripts (six matching and three stale plans) to test the evaluator and
 compiler boundary. Those answers are not inputs to the production suite loader.
+
+One matching transcript is also reused with the unavailable `local` target to verify
+that a materialization block preserves faithful canonical acceptance and does not
+claim an authorized artifact.

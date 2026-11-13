@@ -129,8 +129,25 @@ def verify(root, cli):
         require(counter.read_text()=='36' and final['reportedLiveCalls']==0 and not final['milestoneComplete'],
                 'Review dispatched provider calls or overstated evidence')
         require(evaluation.summarize(out)==final, 'Report is not reproducible from captured evidence')
+        # A real target-materialization failure must retain canonical acceptance.
+        manifest['cases'] = [cases[0]]
+        (suite/'suite.json').write_bytes(canonical(manifest))
+        source.write_bytes(canonical(transcript(root,suite,cases[0]))); counter.unlink()
+        target_out = work/'target-evaluation'
+        target_capture = evaluation.capture(config,suite/'suite.json',target_out,repetitions=1,
+                                            max_cost_microusd=2_000_000,target='local',render=True)
+        row = target_capture['runs'][0]
+        target_review = copy.deepcopy(reviews); target_review['evaluationId'] = target_capture['evaluationId']
+        target_review['runs'] = [target_review['runs'][0]]
+        item = target_review['runs'][0]; item['stateSha256'] = row['stateSha256']
+        item['decision'].update(runId=row['runId'],packetSha256=row['reviewPacketSha256'])
+        target_result = evaluation.review(target_out,canonical(target_review))
+        require(target_result['runs'][0]['status']=='target-blocked' and target_result['compilerAccepted']==1 and
+                target_result['callerAssessedSuccesses']==1 and target_result['runAccepted']==0 and
+                target_result['renderAuthorizedRuns']==0, 'Target failure erased canonical acceptance or claimed an artifact')
         print(json.dumps(dict(status='PASS',evidenceKind='manual-transcript-installed-compiler-test',suiteRuns=9,
-                              domains=3,accepted=6,stalePlansRejected=3,liveModelEvaluated=False,milestoneComplete=False)))
+                              domains=3,accepted=6,stalePlansRejected=3,targetBlockedFaithfulPlans=1,
+                              liveModelEvaluated=False,milestoneComplete=False)))
 
 
 if __name__ == '__main__':

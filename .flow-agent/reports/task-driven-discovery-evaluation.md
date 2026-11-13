@@ -38,17 +38,15 @@ Local and exact-head/merge-candidate CI results are recorded in the pull request
 The implementation remains a candidate until final CI completes; no full-validation
 claim is inferred from protocol-only tests.
 
-Local validation: 506 Python tests ran; 494 passed, including all 20 new evaluator
+Local validation: 509 Python tests ran; 497 passed, including all 23 new evaluator
 tests. The twelve failures are the existing deployed-observer service tests whose
-Unix-socket service cannot start in this workspace; none were disabled or changed.
-Architecture metadata validation and the six public requirements-v5 schema checks
-passed. Installed compiler and full JVM validation require GitHub CI in this environment.
-
-Final review added two bounded-size regressions: directory enumeration stops before
-collecting excess entries, and a maximum 96-run report references complete ledgers
-instead of duplicating long observation selectors. The focused evaluator suite now
-has 22 tests. The initial GitHub tooling job passed all 506 tests before these two
-additions; final-head CI must validate the resulting 508-test suite.
+Unix-socket service cannot start in this workspace; none were disabled or removed.
+Architecture metadata validation and all six requirements-v5 schema checks passed.
+The new regressions cover bounded directory enumeration, a 96-run report with long
+observation selectors, and separate canonical, host and artifact acceptance when a
+target is blocked. The latter also has an additional installed-compiler trial using
+the unavailable `local` projection. Full JVM and installed-product validation require
+final-head GitHub CI in this environment; results are recorded in the pull request.
 
 ## Limits and next work
 
