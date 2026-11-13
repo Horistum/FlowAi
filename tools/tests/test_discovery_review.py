@@ -26,7 +26,7 @@ class DiscoveryReviewTests(unittest.TestCase):
         self.config['investigation'].update(formatVersion=3)
         del self.config['investigation']['bindingRequirements']
         self.config['budget'].update(maxCalls=8, maxTotalTokens=865536, maxCostMicrousd=2_000_000)
-        self.requirements['formatVersion'] = 2
+        self.requirements['formatVersion'] = 5
         selector = dict(kind='read', root='workspace', path='inventory.json')
         ref = 'observation:' + digest(canonical(selector)) + ':' + digest(self.source.read_bytes())
         self.binding = dict(id='service', sourceQuote='Verify',
@@ -162,6 +162,18 @@ class DiscoveryReviewTests(unittest.TestCase):
         self.configure(); self.requirements['confirmation'] = 'PROVISIONAL'
         with self.assertRaisesRegex(HostError, 'confirmed independent constraints'): self.run_actions()
         self.assertFalse(self.counter.exists())
+
+    def test_older_requirements_cannot_be_laundered_by_implicit_version_upgrade(self):
+        self.configure()
+        for version in range(1, 5):
+            self.requirements['formatVersion'] = version
+            # This field is invalid in the claimed version; v3 must not turn it valid.
+            self.requirements['requirements'][0]['check']['evaluationScope'] = 'SELECTED_OPERATIONS'
+            with self.subTest(version=version), self.assertRaisesRegex(HostError, 'constraints version 5'):
+                self.run_actions()
+            self.assertFalse(self.counter.exists())
+            with self.assertRaisesRegex(HostError, 'implicit migration'):
+                discovery_review.prepare(self.proposal, {}, self.requirements, [], 'run')
 
     def test_changed_goal_requires_a_new_packet_even_for_identical_candidate(self):
         self.configure(); first = self.run_actions(); prior = self.decision(first)

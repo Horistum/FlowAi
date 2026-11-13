@@ -23,6 +23,8 @@ def scenario(root, domain, layout, address, vault):
     corpus = root / 'conformance/failure-regions'
     proposal = loads(read(corpus / (case + '.proposal.json')))
     requirements = loads(read(corpus / (case + '.requirements.json')))
+    # The caller explicitly selects v5; the host must never upgrade a frozen input.
+    requirements['formatVersion'] = 5
     replacements = {'test-worker': address} if domain == 'infrastructure' else {'isolated-orders': address, 'recovery-vault': vault}
     def replace(node):
         if isinstance(node, dict): return {k: replace(v) for k, v in node.items()}
@@ -55,7 +57,6 @@ def scenario(root, domain, layout, address, vault):
         targets = [('backup-database', value_path, 'BACKUP', 'subject'), ('backup-vault', vault_path, 'BACKUP', 'destination'),
                    ('migrate-database', value_path, 'DATABASE_MIGRATE', 'database'), ('restore-database', value_path, 'RESTORE', 'subject'),
                    ('verify-database', value_path, 'VERIFY', 'resource')]
-        requirements['formatVersion'] = 5
         requirements['requirements'].append(dict(id='restore-captured-baseline', sourceQuote='restore its captured baseline',
             check=dict(kind='value-from', consumer=dict(capability='RESTORE'), parameter='recoveryPoint', producer=dict(capability='BACKUP'), evaluationScope='SELECTED_OPERATIONS')))
     # Concrete extraction paths are authored into the replay, never caller policy.

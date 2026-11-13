@@ -28,6 +28,8 @@ an explicit selected-operation scope for parameter values and resolved producer
 edges. Original activation/count/path/failure obligations remain independent. Eight
 JVM regressions cover legacy refusal, version freezing, contradictory/absent nodes,
 producer ambiguity, failure placement and schema/reader agreement.
+Discovery v3 requires an explicitly selected requirements v5 input. It does not
+silently upgrade frozen legacy inputs or make formerly invalid fields acceptable.
 
 ## Change and ownership
 

@@ -50,7 +50,7 @@ Use the existing provider/compiler/budget configuration with:
 ```
 
 There is no `bindingRequirements` field; supplying one is rejected. Independent
-requirements must use version 2 or later and be confirmed before dispatch. Neither
+requirements must explicitly use version 5 and be confirmed before dispatch. Neither
 their expected values nor reviewer identity is sent to the provider. Human goal and
 constraints still need an independently reviewed compiler representation; this slice
 does not solve complete natural-language requirement extraction.
@@ -135,13 +135,15 @@ It does **not** establish that any selected operation executes, how often it run
 or which failure path activates it. Independent path/failure/retry obligations
 remain necessary and are never rewritten by the host.
 
-V3 discovery translates its derived compiler input to requirements v5 and explicitly
-uses this scope only for new observed-value checks. Original caller checks keep
+V3 discovery requires an explicit requirements v5 input and uses this scope only
+for new observed-value checks. It never upgrades an older document, which would
+risk accepting fields forbidden by that document's claimed version. Original caller checks keep
 their default scope and exact content; original requirement bytes remain retained.
 Callers can independently use the v5 producer check to require a recovery handler
 to consume a pre-attempt backup. Readers reject the new field in versions 1-4,
-including explicit uses of the legacy `EXECUTION` default. Old captured runs require
-no migration. This versioned compiler extension fixes the first installed-proof
+including explicit uses of the legacy `EXECUTION` default. Old v1/v2 discovery runs
+require no migration. Moving to discovery v3 requires the caller to select requirements
+v5 in a new session. This versioned compiler extension fixes the first installed-proof
 failure; changing the fixture to a flat plan or treating review-required as success
 would not solve that contract mismatch.
 

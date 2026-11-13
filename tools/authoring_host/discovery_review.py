@@ -41,6 +41,8 @@ Changed sources invalidate this run. No shell, network or write tool is availabl
 
 
 def prepare(action, ledger, original, catalog, run_id):
+    require(original["formatVersion"] == 5,
+            "Reviewed discovery requires explicit requirements version 5; implicit migration is forbidden")
     interpretation = action["interpretation"]
     keys(interpretation, ("summary", "bindings"))
     nonblank(interpretation["summary"])
@@ -60,7 +62,6 @@ def prepare(action, ledger, original, catalog, run_id):
     if derived is not None:
         # V5 adds node-wise parameter assertions without claiming unconditional execution.
         # Existing caller checks retain their original evaluation scope and meaning.
-        derived["formatVersion"] = 5
         for item in derived["requirements"][len(original["requirements"]):]:
             item["check"]["evaluationScope"] = "SELECTED_OPERATIONS"
         assessment["compilerRequirementsSha256"] = digest(canonical(derived))
