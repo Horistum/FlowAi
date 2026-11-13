@@ -43,7 +43,10 @@ object RequestRequirementsReader {
         val document = mapper.treeToValue(tree, RequestRequirementsDocument::class.java)
         require(document.formatVersion in 1..5 && document.request.userText.isNotBlank())
         // Presence is forbidden in frozen versions, even when it spells the legacy default.
-        if (document.formatVersion < 5) require(tree.path("requirements").findValues("evaluationScope").isEmpty())
+        if (document.formatVersion < 5) require(tree.path("requirements").all { item ->
+            val check = item.path("check")
+            !check.has("evaluationScope") && !check.path("check").has("evaluationScope")
+        })
         // Version 1 remains frozen, including explicit empty/null uses of new fields.
         if (document.formatVersion == 1) require(tree.path("requirements").findValues("parameters").isEmpty())
         require(document.requirements.isNotEmpty() && document.requirements.size <= 256)

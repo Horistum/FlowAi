@@ -100,6 +100,15 @@ class FailureRegionTests {
             val file = File(root, "requirements.json").apply { writeText(r.toString()) }
             assertFailsWith<RequestRequirementsException> { RequestRequirementsReader.read(file) }
         }
+        // A selector parameter named evaluationScope is data, not the new check field.
+        for (version in 2..4) {
+            val r = parameterRequirements(tree(), selectedLiteral, version)
+            val check = obj(r["requirements"][0]["check"])
+            check.remove("evaluationScope")
+            obj(check["selector"]).putObject("parameters").put("evaluationScope", "legacy-value")
+            val file = File(root, "requirements.json").apply { writeText(r.toString()) }
+            RequestRequirementsReader.read(file)
+        }
     }
     @Test fun unknownNullAndPathNestedSelectedScopesAreRejected() = workspace { root ->
         val checks = listOf(selectedLiteral.replace("SELECTED_OPERATIONS", "anything"),
