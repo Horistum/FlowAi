@@ -9,6 +9,10 @@ This corrects the product focus of PR #270. Signed inventory remains optional
 supporting infrastructure. Authentication alone does not make the agent understand
 an unfamiliar environment or solve a complex request.
 
+For repeated tasks, use the [discovery evaluation workflow](DISCOVERY_EVALUATION.md),
+which captures complete exposure snapshots and routes every candidate through this
+same separate review boundary before aggregating compiler and human assessments.
+
 ## Responsibility and acceptance
 
 | Participant | Responsibility |

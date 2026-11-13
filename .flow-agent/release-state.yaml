@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 147
+stateVersion: 148
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -921,6 +921,28 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  taskDrivenDiscoveryEvaluationFollowup:
+    selectedSlice: AI-A3-S3.3
+    workPackage: .flow-agent/work-packages/task-driven-discovery-evaluation.yaml
+    report: .flow-agent/reports/task-driven-discovery-evaluation.md
+    contract: docs/DISCOVERY_EVALUATION.md
+    baselineMain: 611e688bcd9ac6e63d6a52de33d33bdae8e46dbf
+    predecessorPullRequest: 270
+    deliveryBase: main
+    validation: candidate-python-installed-evaluation-and-final-full-ci-required
+    suiteFormatVersion: 1
+    investigationProtocolVersion: 3
+    authoringHostVersion: 5
+    publicDevelopmentTasks: 6
+    publicDevelopmentDomains: 3
+    callerBindingMapRequired: false
+    independentQualityAssessment: caller-declared-not-authenticated
+    liveDiscoveryAcceptance: open-provider-and-independent-trials-required
+    nextSlice: S3-independent-live-trials-and-discovery-gap-remediation
+    liveModelEvaluated: false
+    unfamiliarEnvironmentGeneralizationEstablished: false
+    workflowExecution: false
+    supportPromotion: false
   managedInventoryFollowup:
     selectedSlice: AI-A3-S3.2
     workPackage: .flow-agent/work-packages/managed-inventory-provenance.yaml

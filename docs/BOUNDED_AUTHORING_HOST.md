@@ -248,6 +248,10 @@ natural-language accuracy.
 
 ## Current evidence boundary
 
+Task-driven discovery has a separate [evaluation and review workflow](DISCOVERY_EVALUATION.md).
+It accepts caller-selected exposure directories and requirements-v5 suites; the
+legacy frozen-corpus evaluator above remains unchanged.
+
 The implementation has no configured live provider credentials in its development
 environment. Deterministic peer tests and `tools/verify_authoring_host.py` prove host
 behavior and installed compiler integration only. They do not measure model quality.

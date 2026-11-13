@@ -1,0 +1,14 @@
+{
+  "policies": [
+    {
+      "role": "test-worker",
+      "criterion": "ready",
+      "meaning": "The allocated worker is healthy after creation."
+    },
+    {
+      "role": "production-worker",
+      "criterion": "available",
+      "meaning": "Production is outside the selected change scope."
+    }
+  ]
+}

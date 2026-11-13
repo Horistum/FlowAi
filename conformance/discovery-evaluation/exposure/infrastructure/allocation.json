@@ -1,0 +1,27 @@
+{
+  "environments": {
+    "laboratory": {
+      "reservations": [
+        {
+          "role": "test-worker",
+          "lifecycle": "allocated-not-created",
+          "identity": {
+            "resource": "resource://lab/test-worker-17"
+          },
+          "ownership": "platform-team"
+        }
+      ]
+    },
+    "production": {
+      "resources": [
+        {
+          "role": "worker",
+          "identity": {
+            "resource": "resource://production/worker-82"
+          },
+          "lifecycle": "active"
+        }
+      ]
+    }
+  }
+}

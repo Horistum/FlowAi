@@ -1,0 +1,5 @@
+{
+  "userText": "Back up the isolated database, migrate it to v42 and verify schema-v42 with at most two attempts and zero delay. On failure restore its captured baseline and verify recovery before continuing. Never deprovision resources.",
+  "context": {},
+  "mode": "DRAFT"
+}
