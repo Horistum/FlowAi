@@ -133,6 +133,8 @@ def resume(directory, answers_data, requirements_data):
                 "Requirements still contain unanswered decisions")
         preserve_requirements(prior_requirements, reviewed)
         config = validate_config(loads(read(root / "config.json")))
+        if config.get("investigation", {}).get("formatVersion") == 3:
+            require(reviewed["formatVersion"] == 5, "Reviewed discovery requires explicit requirements version 5")
         environment = credentials(config)
         if config.get("investigation", {}).get("formatVersion") in (2, 3):
             from . import discovery_bindings

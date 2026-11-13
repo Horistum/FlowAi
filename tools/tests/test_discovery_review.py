@@ -212,6 +212,11 @@ class DiscoveryReviewTests(unittest.TestCase):
         self.assertEqual('awaiting-user', state['status'])
         answers = dict(runId=state['runId'], reviewerId='test-reviewer',
                        answers=[dict(id='investigation:owner', answer='Use it for verification only.')])
+        for version in range(1, 5):
+            downgraded = dict(self.requirements, formatVersion=version)
+            with self.subTest(version=version), self.assertRaisesRegex(HostError, 'explicit requirements version 5'):
+                resume(self.out, canonical(answers), canonical(downgraded))
+            self.assertEqual('3', self.counter.read_text())
         state = resume(self.out, canonical(answers), canonical(self.requirements))
         self.assertEqual('awaiting-discovery-review', state['status'])
         self.assertFalse(any('review' in a for a in state['attempts']))
