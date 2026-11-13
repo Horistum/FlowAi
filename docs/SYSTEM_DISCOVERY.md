@@ -9,7 +9,8 @@ canonical graph. A retained citation alone cannot authorize a different paramete
 
 This slice supplies observation access and enforcement of declared bindings. It does
 not establish arbitrary system understanding, live-model generalization or a new
-execution framework. Managed-system provenance and upstream freshness remain open.
+execution framework. Optional [S3.2 managed inventory provenance](MANAGED_INVENTORY_PROVENANCE.md)
+authenticates collector/scope claims and collection age. Upstream freshness remains open.
 
 ## Configuration and migration
 
@@ -221,5 +222,8 @@ source changes. The compiler must reject the wrong values through the generated 
 checks themselves. The original exact-address oracle and label-only domain variants are
 not used. The fixture does not prove live-model reasoning or prompt-injection resistance.
 
-Next: managed-inventory provenance/freshness and independently reviewed live discovery
-across unfamiliar formats. S3, AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 stays paused.
+Version 3: [agent-proposed interpretation and separate review](REVIEWED_DISCOVERY.md)
+removes the caller binding map. Live discovery acceptance across unfamiliar formats remains
+open, using optional
+[managed-inventory provenance and collection-age enforcement](MANAGED_INVENTORY_PROVENANCE.md).
+S3, AI-A3, AR-06/AR-07 and F-16/F-20 remain open; EF-09 stays paused.

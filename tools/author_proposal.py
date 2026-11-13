@@ -6,7 +6,7 @@ import sys
 
 from authoring_host.contracts import HostError, loads, read
 from authoring_host.evaluation import evaluate, summarize
-from authoring_host.session import resume, start
+from authoring_host.session import resume, review_discovery, start
 
 
 def main(argv=None):
@@ -23,6 +23,9 @@ def main(argv=None):
     continuation.add_argument("--run", required=True)
     continuation.add_argument("--answers", required=True)
     continuation.add_argument("--requirements", required=True)
+    discovery_review = commands.add_parser("review-discovery", help="Accept or reject one captured interpretation and plan")
+    discovery_review.add_argument("--run", required=True)
+    discovery_review.add_argument("--review", required=True)
     corpus = commands.add_parser("evaluate", help="Capture at least three fixed-setting corpus repetitions")
     corpus.add_argument("--config", required=True)
     corpus.add_argument("--corpus", required=True)
@@ -39,6 +42,8 @@ def main(argv=None):
                           target=args.target, render=args.render)
         elif args.command == "resume":
             value = resume(args.run, read(args.answers), read(args.requirements))
+        elif args.command == "review-discovery":
+            value = review_discovery(args.run, read(args.review))
         elif args.command == "evaluate":
             value = evaluate(loads(read(args.config)), args.corpus, args.out, repetitions=args.repetitions,
                              target=args.target, max_cost_microusd=args.max_cost_microusd)
@@ -48,7 +53,7 @@ def main(argv=None):
             print(json.dumps({k: value[k] for k in ("completedRuns", "expectedRuns", "milestoneComplete")}))
             return 3  # Descriptive measurements always require independent quality review.
         print(json.dumps({k: value[k] for k in ("runId", "status", "repairCount", "clarificationCount")}))
-        return 0 if value["status"] == "accepted" else 3 if value["status"] == "awaiting-user" else 4
+        return 0 if value["status"] == "accepted" else 3 if value["status"] in ("awaiting-user", "awaiting-discovery-review") else 4
     except HostError as failure:
         # HostError carries only bounded, host-authored public diagnostics.
         print(f"Authoring host rejected input: {failure}", file=sys.stderr)

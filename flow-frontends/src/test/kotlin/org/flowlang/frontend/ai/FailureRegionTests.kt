@@ -18,6 +18,8 @@ import org.flowlang.planner.TryPlanNode
 import org.flowlang.planner.RetryGroupNode
 
 class FailureRegionTests {
+    private val selectedLiteral = """{"kind":"literal-parameter","selector":{"capability":"VERIFY"},"parameter":"resource","expected":"test-worker","evaluationScope":"SELECTED_OPERATIONS"}"""
+    private val selectedProducer = """{"kind":"value-from","producer":{"capability":"BACKUP"},"consumer":{"capability":"RESTORE"},"parameter":"recoveryPoint","evaluationScope":"SELECTED_OPERATIONS"}"""
     private val corpus = File("conformance/failure-regions")
     private val compiler = FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File("modules")))
     private val cases = listOf("infrastructure-readiness", "isolated-data-recovery", "credential-maintenance")
@@ -40,6 +42,82 @@ class FailureRegionTests {
         val unit = assertIs<CompilationResult.Accepted>(compile(root, p), p.toString()).unit
         val source = File(root, "requirements.json").apply { writeText(r.toString()) }
         return RequestFidelityEvaluator.evaluate(RequestRequirementsReader.read(source), unit)
+    }
+    private fun parameterRequirements(p: ObjectNode, check: String, version: Int = 5): ObjectNode {
+        val r = tree(suffix = "requirements").put("formatVersion", version)
+        r.set<JsonNode>("request", p["request"].deepCopy())
+        r.putArray("requirements").addObject().put("id", "parameter-source")
+            .put("sourceQuote", p["request"]["userText"].asText()).set<JsonNode>("check", Json.mapper.readTree(check))
+        return r
+    }
+    @Test fun selectedParameterChecksCoverRetryBodiesWithoutChangingLegacyExecutionMeaning() = workspace { root ->
+        val p = tree()
+        assertEquals(RequestFidelityState.REQUIREMENTS_SATISFIED, review(root, p, parameterRequirements(p, selectedLiteral)).state)
+        for (version in listOf(4, 5)) {
+            val legacy = parameterRequirements(p, selectedLiteral, version)
+            obj(legacy["requirements"][0]["check"]).remove("evaluationScope")
+            assertEquals(RequestFidelityState.REVIEW_REQUIRED, review(root, p, legacy).state)
+        }
+    }
+    @Test fun selectedParameterChecksRejectWrongMissingAndExtraContradictoryNodes() = workspace { root ->
+        val wrong = tree().also { obj(retry(it)["body"][0]["params"]).put("resource", "unrelated") }
+        val extra = tree().also {
+            body(it).addObject().put("kind", "operation").put("id", "extra").put("capability", "VERIFY")
+                .putObject("params").put("resource", "unrelated")
+        }
+        for (p in listOf(wrong, extra)) {
+            assertEquals(RequestFidelityState.VIOLATED, review(root, p, parameterRequirements(p, selectedLiteral)).state)
+        }
+        val absent = selectedLiteral.replace("VERIFY", "RESTORE")
+        assertEquals(RequestFidelityState.VIOLATED, review(root, tree(), parameterRequirements(tree(), absent)).state)
+    }
+    @Test fun selectedParameterScopeDoesNotCertifyFailurePlacement() = workspace { root ->
+        val p = tree(); val region = attempt(p).deepCopy()
+        body(p).remove(body(p).size() - 1)
+        body(p).addAll(array(region["body"])); body(p).addAll(array(region["onFailure"]))
+        assertEquals(RequestFidelityState.REQUIREMENTS_SATISFIED, review(root, p, parameterRequirements(p, selectedLiteral)).state)
+        assertEquals(RequestFidelityState.VIOLATED, review(root, p).state)
+    }
+    @Test fun selectedProducerChecksUseResolvedEdgesIntoTheRecoveryHandler() = workspace { root ->
+        val p = tree("isolated-data-recovery")
+        assertEquals(RequestFidelityState.REQUIREMENTS_SATISFIED, review(root, p, parameterRequirements(p, selectedProducer)).state)
+        val legacy = parameterRequirements(p, selectedProducer)
+        obj(legacy["requirements"][0]["check"]).remove("evaluationScope")
+        assertEquals(RequestFidelityState.REVIEW_REQUIRED, review(root, p, legacy).state)
+        obj(attempt(p)["onFailure"][0]["params"]).put("recoveryPoint", "unrelated-baseline")
+        assertEquals(RequestFidelityState.VIOLATED, review(root, p, parameterRequirements(p, selectedProducer)).state)
+    }
+    @Test fun selectedProducerAmbiguityCannotBeHiddenByOneMatchingEdge() = workspace { root ->
+        val p = tree("isolated-data-recovery")
+        body(p).insert(0, obj(body(p)[0]).deepCopy().put("id", "another-backup").also {
+            it.putArray("produces").add("another-baseline")
+        })
+        assertEquals(RequestFidelityState.REVIEW_REQUIRED, review(root, p, parameterRequirements(p, selectedProducer)).state)
+    }
+    @Test fun oldVersionsRejectExplicitScopeIncludingTheLegacyDefault() = workspace { root ->
+        for (version in 1..4) for (scope in listOf("EXECUTION", "SELECTED_OPERATIONS")) {
+            val r = parameterRequirements(tree(), selectedLiteral.replace("SELECTED_OPERATIONS", scope), version)
+            val file = File(root, "requirements.json").apply { writeText(r.toString()) }
+            assertFailsWith<RequestRequirementsException> { RequestRequirementsReader.read(file) }
+        }
+        // A selector parameter named evaluationScope is data, not the new check field.
+        for (version in 2..4) {
+            val r = parameterRequirements(tree(), selectedLiteral, version)
+            val check = obj(r["requirements"][0]["check"])
+            check.remove("evaluationScope")
+            obj(check["selector"]).putObject("parameters").put("evaluationScope", "legacy-value")
+            val file = File(root, "requirements.json").apply { writeText(r.toString()) }
+            RequestRequirementsReader.read(file)
+        }
+    }
+    @Test fun unknownNullAndPathNestedSelectedScopesAreRejected() = workspace { root ->
+        val checks = listOf(selectedLiteral.replace("SELECTED_OPERATIONS", "anything"),
+            selectedLiteral.replace("\"SELECTED_OPERATIONS\"", "null"),
+            """{"kind":"on-path","scope":[{"predicate":"allowed"}],"check":$selectedLiteral}""")
+        for (check in checks) {
+            val file = File(root, "requirements.json").apply { writeText(parameterRequirements(tree(), check).toString()) }
+            assertFailsWith<RequestRequirementsException> { RequestRequirementsReader.read(file) }
+        }
     }
     @Test fun threeDomainsPreserveCanonicalRegionsThroughBothFrontends() = workspace { root ->
         for (id in cases) {

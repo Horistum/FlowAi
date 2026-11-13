@@ -4,7 +4,7 @@
 # Human entry: .flow-agent/README.md#active-roadmap-route.
 # Historical decisionBasis receipts below are not current implementation claims.
 project: Flow
-roadmapVersion: 35
+roadmapVersion: 36
 currentTrack: ""
 primaryRoadmapStream: conformance
 
@@ -18,7 +18,7 @@ versionBoundary:
     intent: "2.0"
     structuredIntent: "3.0"
     recoveryIntent: "3.1"
-    requestRequirements: "4"
+    requestRequirements: "5"
     operationOutcomes: "1"
     attemptAwareOperationOutcomes: "2"
     allocatedResourceOperationOutcomes: "3"

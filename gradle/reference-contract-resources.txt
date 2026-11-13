@@ -170,6 +170,7 @@ schemas/request-fidelity-review.schema.json
 schemas/request-requirements-v2.schema.json
 schemas/request-requirements-v3.schema.json
 schemas/request-requirements-v4.schema.json
+schemas/request-requirements-v5.schema.json
 schemas/request-requirements.schema.json
 schemas/scenario-pack.schema.json
 schemas/standard-bundle-verification.schema.json

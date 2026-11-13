@@ -5,6 +5,37 @@ import kotlin.io.path.createTempDirectory
 import kotlin.test.*
 
 class RequestFidelityConformanceTests {
+    @Test fun versionFiveExplicitParameterScopeIsFrozenOutOfEarlierSchemasAndReaders() {
+        val mapper = org.flowlang.serialization.FlowJson
+        val schema = mapper.readTree(File("schemas/request-requirements-v5.schema.json"))
+        val legacy = mapper.readTree(File("schemas/request-requirements-v4.schema.json"))
+        val root = createTempDirectory("requirements-v5-").toFile()
+        try {
+            for (kind in listOf("literal-parameter", "value-from")) {
+                val value = mapper.readTree(File("conformance/failure-regions/infrastructure-readiness.requirements.json")) as com.fasterxml.jackson.databind.node.ObjectNode
+                value.put("formatVersion", 5)
+                val entry = value.putArray("requirements").addObject().put("id", "parameter")
+                    .put("sourceQuote", value["request"]["userText"].asText())
+                val check = entry.putObject("check").put("kind", kind).put("parameter", "resource")
+                    .put("evaluationScope", "SELECTED_OPERATIONS")
+                if (kind == "literal-parameter") {
+                    check.putObject("selector").put("capability", "VERIFY"); check.put("expected", "worker")
+                } else {
+                    check.putObject("producer").put("capability", "PROVISION")
+                    check.putObject("consumer").put("capability", "VERIFY")
+                }
+                org.flowlang.artifacts.ArtifactSchemaValidator.validate(value, schema)
+                val file = File(root, "requirements.json").apply { writeText(value.toString()) }
+                org.flowlang.frontend.ai.RequestRequirementsReader.read(file)
+                value.put("formatVersion", 4)
+                assertFailsWith<IllegalArgumentException> { org.flowlang.artifacts.ArtifactSchemaValidator.validate(value, legacy) }
+                file.writeText(value.toString())
+                assertFailsWith<org.flowlang.frontend.ai.RequestRequirementsException> {
+                    org.flowlang.frontend.ai.RequestRequirementsReader.read(file)
+                }
+            }
+        } finally { root.deleteRecursively() }
+    }
     @Test fun versionTwoSchemaAndReaderAgreeOnSystemRequirementsAndBounds() {
         val mapper = org.flowlang.serialization.FlowJson
         val schema = mapper.readTree(File("schemas/request-requirements-v2.schema.json"))

@@ -111,7 +111,8 @@ object RequestFidelityEvaluator {
                     if (nodes.isEmpty() || values.any { it == null }) boolean(false)
                     else {
                         val literals = values.map { runCatching { ExpressionParser.parseSource(requireNotNull(it)) as? StringLiteralNode }.getOrNull() }
-                        if (literals.any { it == null } || !flat(nodes)) review()
+                        if (literals.any { it == null } ||
+                            check.evaluationScope == ParameterEvaluationScope.EXECUTION && !flat(nodes)) review()
                         else boolean(literals.all { it!!.value == check.expected })
                     }
                 }
@@ -131,7 +132,8 @@ object RequestFidelityEvaluator {
                     when {
                         producers.isEmpty() || consumers.isEmpty() -> boolean(false)
                         producers.size != 1 -> result(FidelityRequirementState.REVIEW_REQUIRED, "FIDELITY_AMBIGUOUS_PRODUCER")
-                        consumers.size > 256 || !flat(producers + consumers) -> review()
+                        consumers.size > 256 ||
+                            check.evaluationScope == ParameterEvaluationScope.EXECUTION && !flat(producers + consumers) -> review()
                         else -> {
                             val producer = producers.single()
                             val results = consumers.map { consumer ->

@@ -1,0 +1,30 @@
+version: AI-A3-S3.2
+name: Agent-proposed discovery interpretation with separate review
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: bb4a26d58009292d147b23451656d42e8fb03994
+predecessorPullRequest: 269
+deliveryBase: main
+authorization: Maintainer requested correction within PR 270 after identifying the mismatch with task-driven complex system automation.
+objective: Remove caller-authored source-to-operation mapping by admitting evidence-backed agent interpretations and complete structured plans through separate review and existing compiler constraints.
+universalInvariant: A proposed interpretation cannot approve itself, replace independent constraints or transfer approval to another request, evidence set or plan.
+scope:
+- Investigation v3 starts with goal, allowed roots, public contracts and confirmed independent constraints; no caller binding map.
+- Agent-proposed interpretation names evidence-backed selectors and explains their meaning and operation use.
+- Exact observed-value validation and immutable review packet containing the complete plan.
+- Separate accept or reject decision bound to run and packet; no provider call or automatic repair after approval.
+- Existing compiler checks original constraints plus additive observed-value obligations, including structured failure and dependency checks.
+- Requirements v5 explicitly distinguishes selected-node parameter and producer assertions from unconditional execution claims; legacy scopes remain frozen.
+- Optional signed collector provenance and collection-age enforcement retained as supporting infrastructure.
+forbiddenScope:
+- No new semantic graph, workflow executor, platform-specific semantic adapter or arbitrary shell fallback.
+- No automatic promotion of model interpretations into independent authority.
+- No claim of live-model generalization, source completeness, upstream freshness or real recovery from deterministic transcript tests.
+- No S3, AI-A3, AR-06 or AR-07 closure; EF-09 remains paused.
+validationPlan:
+- Missing or ambiguous facts, self-approval, packet substitution, changed goals, rejected review, interrupted compilation and changed sources.
+- Sixteen installed-compiler transcript cases across infrastructure and isolated data recovery with two source schemas each.
+- Independent rejection of wrong values, flattened failure handlers and old plans reused for inspection-only requests.
+- Existing provenance and discovery proofs, Python tooling, architecture validation and exact-head/merge-candidate GitHub CI.
+nextSlice: S3-live-task-driven-discovery-evaluation
