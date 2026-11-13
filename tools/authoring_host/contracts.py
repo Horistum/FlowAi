@@ -170,7 +170,7 @@ def reservation(config):
 def requirements(data, request):
     value = loads(data)
     keys(value, ("formatVersion", "request", "origin", "confirmation", "requirements"), ("reviewerId",))
-    require(type(value["formatVersion"]) is int and value["formatVersion"] in (1, 2, 3, 4) and value["request"] == request,
+    require(type(value["formatVersion"]) is int and value["formatVersion"] in (1, 2, 3, 4, 5) and value["request"] == request,
             "Requirements must retain the complete original request")
     require(value["confirmation"] in ("CONFIRMED", "PROVISIONAL") and
             value["origin"] in ("REVIEWER_AUTHORED", "MODEL_EXTRACTED"), "Invalid requirements provenance")
@@ -228,7 +228,7 @@ def public_contracts(root):
                        for name, file in (("intent", "intent.schema.json"), ("structuredIntent", "intent-v3.schema.json"), ("recoveryIntent", "intent-v3.1.schema.json"))}
     modules = {p.name: p.read_text(encoding="utf-8") for p in sorted((root / "modules").glob("*.yaml"))}
     require(bool(modules), "Public module contracts are missing")
-    result = {"outputSchema": schema, "modules": modules, "proposalSchemaVersion": 1, "reviewSchemaVersion": 2, "intentVersions": ["2.0", "3.0", "3.1"], "requirementsVersions": [1, 2, 3, 4]}
+    result = {"outputSchema": schema, "modules": modules, "proposalSchemaVersion": 1, "reviewSchemaVersion": 2, "intentVersions": ["2.0", "3.0", "3.1"], "requirementsVersions": [1, 2, 3, 4, 5]}
     require(len(canonical(result)) <= MAX_BYTES, "Public contracts exceed host limit")
     return result
 

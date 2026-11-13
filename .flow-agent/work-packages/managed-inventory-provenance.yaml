@@ -15,6 +15,7 @@ scope:
 - Exact observed-value validation and immutable review packet containing the complete plan.
 - Separate accept or reject decision bound to run and packet; no provider call or automatic repair after approval.
 - Existing compiler checks original constraints plus additive observed-value obligations, including structured failure and dependency checks.
+- Requirements v5 explicitly distinguishes selected-node parameter and producer assertions from unconditional execution claims; legacy scopes remain frozen.
 - Optional signed collector provenance and collection-age enforcement retained as supporting infrastructure.
 forbiddenScope:
 - No new semantic graph, workflow executor, platform-specific semantic adapter or arbitrary shell fallback.

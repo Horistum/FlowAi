@@ -55,8 +55,9 @@ def scenario(root, domain, layout, address, vault):
         targets = [('backup-database', value_path, 'BACKUP', 'subject'), ('backup-vault', vault_path, 'BACKUP', 'destination'),
                    ('migrate-database', value_path, 'DATABASE_MIGRATE', 'database'), ('restore-database', value_path, 'RESTORE', 'subject'),
                    ('verify-database', value_path, 'VERIFY', 'resource')]
+        requirements['formatVersion'] = 5
         requirements['requirements'].append(dict(id='restore-captured-baseline', sourceQuote='restore its captured baseline',
-            check=dict(kind='value-from', consumer=dict(capability='RESTORE'), parameter='recoveryPoint', producer=dict(capability='BACKUP'))))
+            check=dict(kind='value-from', consumer=dict(capability='RESTORE'), parameter='recoveryPoint', producer=dict(capability='BACKUP'), evaluationScope='SELECTED_OPERATIONS')))
     # Concrete extraction paths are authored into the replay, never caller policy.
     prefix = ['resources', 0] if domain == 'infrastructure' and layout == 0 else (
         ['environments', 'dev', 'services', 'worker'] if domain == 'infrastructure' else ['datasets', 'primary'] if layout == 0 else [0])
@@ -132,6 +133,11 @@ def verify(root, cli):
                     require(final['status']==expected, f'Unexpected reviewed outcome {domain}/{layout}/{variant}: {final["status"]}: {final["attempts"][-1]}')
                     require(counter.read_text()=='4' and final['repairCount']==0, 'Review caused an unapproved replacement')
                     require(loads(read(out/'requirements-0.json'))==requirements, 'Independent requirements changed')
+                    derived = loads(read(out/final['attempts'][-1]['compilerRequirementsFile']))
+                    require(derived['formatVersion']==5 and derived['requirements'][:len(requirements['requirements'])]==requirements['requirements'],
+                            'V5 translation changed an independent obligation')
+                    require(all(r['check']['evaluationScope']=='SELECTED_OPERATIONS' for r in derived['requirements'][len(requirements['requirements']):]),
+                            'Observed-value checks claimed unconditional execution')
                     verify_inventory(out,final)
                     results.append(dict(domain=domain,layout=layout,variant=variant,status=final['status']))
     print(json.dumps(dict(status='PASS',evidenceKind='manual-transcript-installed-compiler-test',cases=results,

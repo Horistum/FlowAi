@@ -69,8 +69,10 @@ class DiscoveryReviewTests(unittest.TestCase):
         self.assertEqual(self.requirements, loads(read(self.out / 'requirements-0.json')))
         attempt = reviewed['attempts'][-1]
         derived = loads(read(self.out / attempt['compilerRequirementsFile']))
+        self.assertEqual(5, derived['formatVersion'])
         self.assertEqual(self.requirements['requirements'], derived['requirements'][:-1])
         self.assertEqual('resource://orders', derived['requirements'][-1]['check']['expected'])
+        self.assertEqual('SELECTED_OPERATIONS', derived['requirements'][-1]['check']['evaluationScope'])
         receipt = loads(read(self.out / attempt['discoveryBindingResult']))
         self.assertEqual('model-proposed-caller-reviewed-not-authenticated', receipt['policyAttribution'])
         self.assertEqual(packet['responseSha256'], attempt['proposalResponseSha256'])

@@ -22,6 +22,13 @@ and installed-compiler tests, not proof that a live model understands the goal. 
 unfamiliar-system and runtime-outcome acceptance remain open. Final CI receipts belong
 in the PR metadata and must correspond to the published revision.
 
+The first installed run exposed a compiler contract mismatch: legacy literal/value
+checks intentionally refuse structured operation regions. Requirements v5 now adds
+an explicit selected-operation scope for parameter values and resolved producer
+edges. Original activation/count/path/failure obligations remain independent. Eight
+JVM regressions cover legacy refusal, version freezing, contradictory/absent nodes,
+producer ambiguity, failure placement and schema/reader agreement.
+
 ## Change and ownership
 
 An unchanged local export could previously supply accepted bindings regardless of

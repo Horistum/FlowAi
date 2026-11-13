@@ -57,6 +57,13 @@ def prepare(action, ledger, original, catalog, run_id):
     discovery_bindings.validate(bindings, {r["id"] for r in ledger["roots"]})
     discovery_bindings.validate_context(bindings, original, catalog)
     derived, assessment = discovery_bindings.resolve(bindings, ledger, choices, original, action["response"])
+    if derived is not None:
+        # V5 adds node-wise parameter assertions without claiming unconditional execution.
+        # Existing caller checks retain their original evaluation scope and meaning.
+        derived["formatVersion"] = 5
+        for item in derived["requirements"][len(original["requirements"]):]:
+            item["check"]["evaluationScope"] = "SELECTED_OPERATIONS"
+        assessment["compilerRequirementsSha256"] = digest(canonical(derived))
     assessment.update(scope="reviewed-agent-proposed-bindings-only", policyAttribution="model-proposed-unreviewed")
     packet = dict(formatVersion=1, runId=run_id, request=original["request"],
                   originalRequirementsSha256=digest(canonical(original)),

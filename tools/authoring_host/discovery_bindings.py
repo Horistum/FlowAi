@@ -88,7 +88,7 @@ def validate(bindings, roots):
 
 
 def validate_context(bindings, requirements, catalog):
-    require(requirements["formatVersion"] in (2, 3, 4), "Discovery bindings require an explicit requirements version 2 or later")
+    require(requirements["formatVersion"] in (2, 3, 4, 5), "Discovery bindings require an explicit requirements version 2 or later")
     require(len(requirements["requirements"]) + len(bindings) <= 256, "Derived requirements exceed compiler limit")
     existing = {r["id"] for r in requirements["requirements"]}
     capabilities = {r["capability"] for r in catalog}

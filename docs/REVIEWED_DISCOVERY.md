@@ -121,6 +121,30 @@ executed infrastructure or demonstrated recovery.
 
 ## Compatibility and evidence
 
+The compiler's original `literal-parameter` and `value-from` checks conservatively
+require flat execution. Applying them to an operation inside an attempt, retry or
+failure handler yields review-required, even if its value is known. They retain
+that meaning in versions 1-4 and by default in version 5.
+
+[Requirements v5](../schemas/request-requirements-v5.schema.json) adds an explicit
+`evaluationScope: SELECTED_OPERATIONS` option to these two checks. It constrains
+every matching node's literal parameter or resolved producer VALUE edge, including
+nodes inside structured regions. It requires a nonempty selection, rejects wrong
+values and retains review-required for dynamic selection or ambiguous producers.
+It does **not** establish that any selected operation executes, how often it runs,
+or which failure path activates it. Independent path/failure/retry obligations
+remain necessary and are never rewritten by the host.
+
+V3 discovery translates its derived compiler input to requirements v5 and explicitly
+uses this scope only for new observed-value checks. Original caller checks keep
+their default scope and exact content; original requirement bytes remain retained.
+Callers can independently use the v5 producer check to require a recovery handler
+to consume a pre-attempt backup. Readers reject the new field in versions 1-4,
+including explicit uses of the legacy `EXECUTION` default. Old captured runs require
+no migration. This versioned compiler extension fixes the first installed-proof
+failure; changing the fixture to a flat plan or treating review-required as success
+would not solve that contract mismatch.
+
 V1 pinned investigation and v2 caller-owned discovery remain unchanged. V3 sessions use
 `bounded-authoring-host/5`; in-place migration of a captured run is unsupported. Optional
 [managed inventory provenance](MANAGED_INVENTORY_PROVENANCE.md) works with either v2 or v3.

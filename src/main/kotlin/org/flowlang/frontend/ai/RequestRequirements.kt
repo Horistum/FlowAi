@@ -50,14 +50,18 @@ data class CapabilityCount(val selector: RequirementSelector, val minimum: Int =
 data class ForbiddenCapability(val capability: StandardCapability) : FidelityCheck
 data class ForbiddenEffect(val domain: EffectDomain, val operation: EffectOperation, val resource: String? = null) : FidelityCheck
 data class RequiredEffect(val selector: RequirementSelector, val domain: EffectDomain, val operation: EffectOperation, val resource: String? = null) : FidelityCheck
-data class LiteralParameter(val selector: RequirementSelector, val parameter: String, val expected: String) : FidelityCheck
+/** SELECTED_OPERATIONS constrains node parameters, not activation or execution counts. */
+enum class ParameterEvaluationScope { EXECUTION, SELECTED_OPERATIONS }
+data class LiteralParameter(val selector: RequirementSelector, val parameter: String, val expected: String,
+                            val evaluationScope: ParameterEvaluationScope = ParameterEvaluationScope.EXECUTION) : FidelityCheck
 data class RequiredOrdering(val before: RequirementSelector, val after: RequirementSelector) : FidelityCheck
 /** The named consumer parameter must directly read an output owned by the selected producer. */
 data class RequiredValueFrom(
     val producer: RequirementSelector,
     val consumer: RequirementSelector,
     val parameter: String,
-    val path: List<String> = emptyList()
+    val path: List<String> = emptyList(),
+    val evaluationScope: ParameterEvaluationScope = ParameterEvaluationScope.EXECUTION
 ) : FidelityCheck
 /** Predicates name public Boolean inputs, not candidate-chosen statement IDs. */
 data class RequirementGuard(val predicate: String, val positive: Boolean = true)

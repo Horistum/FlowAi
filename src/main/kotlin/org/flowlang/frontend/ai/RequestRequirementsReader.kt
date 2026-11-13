@@ -41,7 +41,9 @@ object RequestRequirementsReader {
     internal fun decode(bytes: ByteArray): RequestRequirementsDocument = guarded {
         val tree = FlowJson.readTree(BoundedIo.decodeUtf8(bytes), "<request-requirements>")
         val document = mapper.treeToValue(tree, RequestRequirementsDocument::class.java)
-        require(document.formatVersion in 1..4 && document.request.userText.isNotBlank())
+        require(document.formatVersion in 1..5 && document.request.userText.isNotBlank())
+        // Presence is forbidden in frozen versions, even when it spells the legacy default.
+        if (document.formatVersion < 5) require(tree.path("requirements").findValues("evaluationScope").isEmpty())
         // Version 1 remains frozen, including explicit empty/null uses of new fields.
         if (document.formatVersion == 1) require(tree.path("requirements").findValues("parameters").isEmpty())
         require(document.requirements.isNotEmpty() && document.requirements.size <= 256)
@@ -69,7 +71,10 @@ object RequestRequirementsReader {
                 is ForbiddenCapability -> Unit
                 is ForbiddenEffect -> require(check.resource == null || check.resource.isNotBlank())
                 is RequiredEffect -> { selector(check.selector); require(check.resource == null || check.resource.isNotBlank()) }
-                is LiteralParameter -> { selector(check.selector); require(check.parameter.matches(parameterPattern)) }
+                is LiteralParameter -> {
+                    selector(check.selector); require(check.parameter.matches(parameterPattern))
+                    require(!nested || check.evaluationScope == ParameterEvaluationScope.EXECUTION)
+                }
                 is RequiredOrdering -> { selector(check.before); selector(check.after) }
                 is RequiredValueFrom -> {
                     require(document.formatVersion >= 2)
@@ -94,13 +99,13 @@ object RequestRequirementsReader {
                     }
                 }
                 is RetryRegion -> {
-                    require(document.formatVersion == 4 && !nested)
+                    require(document.formatVersion >= 4 && !nested)
                     require(check.operations.size in 1..32 && check.operations.distinct().size == check.operations.size)
                     check.operations.forEach(::selector)
                     require(check.maxAttempts in 1..100 && check.delaySeconds in 0..3600)
                 }
                 is FailureRegion -> {
-                    require(document.formatVersion == 4 && !nested)
+                    require(document.formatVersion >= 4 && !nested)
                     require(check.protected.size in 1..32 && check.handler.size in 1..32)
                     val selections = check.protected + check.handler
                     require(selections.distinct().size == selections.size)

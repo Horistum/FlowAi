@@ -30,7 +30,7 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     environment = credentials(config)
     investigation_config = config.get("investigation")
     if investigation_config is not None and investigation_config["formatVersion"] == 3:
-        require(original_requirements["formatVersion"] in (2, 3, 4) and
+        require(original_requirements["formatVersion"] in (2, 3, 4, 5) and
                 original_requirements["confirmation"] == "CONFIRMED",
                 "Reviewed discovery requires confirmed independent constraints version 2 or later")
     if investigation_config is not None and investigation_config["formatVersion"] in (2, 3):
