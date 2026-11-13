@@ -185,8 +185,10 @@ assessed as fulfilled or a blocked outcome assessed as an appropriate stop.
 but the reviewer found a hard constraint violation. Such a disagreement blocks
 acceptance of the overall model evaluation.
 
-Per-run evidence includes read selectors and hashes, open unknowns, facts,
-investigation steps, canonical graph digest, target authorization, provider and
+Per-run evidence includes the linked complete investigation ledger with read selectors,
+hashes, facts and open unknowns. The report carries read-set digests, observation
+counts and unknown counts by category instead of duplicating potentially large
+ledgers across repetitions. It also includes investigation steps, canonical graph digest, target authorization, provider and
 compiler latency, call reservations, adapter-reported calls and reported usage/cost.
 Unreported dispatches are separate from reported calls; interrupted runs retain the
 whole suite reservation and never acquire a success label. No usage is inferred

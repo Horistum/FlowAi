@@ -27,8 +27,12 @@ def snapshot(directory):
     def visit(fd, prefix):
         nonlocal total
         before = os.fstat(fd)
-        names = sorted(os.listdir(fd))
-        require(len(names) <= 256 and len(directories) <= MAX_FILES, "Exposure directory limit exceeded")
+        names = []
+        with os.scandir(fd) as entries:
+            for entry in entries:
+                require(len(names) < 256, 'Exposure directory limit exceeded')
+                names.append(entry.name)
+        names.sort()
         for name in names:
             path = "/".join([*prefix, name])
             relative(path)

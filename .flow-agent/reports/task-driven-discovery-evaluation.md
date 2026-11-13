@@ -44,6 +44,12 @@ Unix-socket service cannot start in this workspace; none were disabled or change
 Architecture metadata validation and the six public requirements-v5 schema checks
 passed. Installed compiler and full JVM validation require GitHub CI in this environment.
 
+Final review added two bounded-size regressions: directory enumeration stops before
+collecting excess entries, and a maximum 96-run report references complete ledgers
+instead of duplicating long observation selectors. The focused evaluator suite now
+has 22 tests. The initial GitHub tooling job passed all 506 tests before these two
+additions; final-head CI must validate the resulting 508-test suite.
+
 ## Limits and next work
 
 No live provider credentials were configured during development and no live model

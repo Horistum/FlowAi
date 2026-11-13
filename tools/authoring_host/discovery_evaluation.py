@@ -263,13 +263,18 @@ def _summarize(root, evaluation):
                        ((accepted and assessment["goal"] == "fulfilled") or
                         (state["status"] in STOPPED and assessment["goal"] == "appropriate-stop")))
         observed = [dict(selector=o["selector"], sha256=o["sha256"]) for o in ledger["observations"] if o["selector"]["kind"] == "read"]
+        unknowns = [u for u in ledger['unknowns'] if u['status'] == 'open']
         estimates = [a["estimatedCostMicrousd"] for a in attempts if "estimatedCostMicrousd" in a]
         row.update(stateSha256=run["stateSha256"], status=state["status"], compilerAccepted=accepted,
                    capturedStateFile=run['capturedStateFile'],
                    callerAssessment=assessment, callerAssessedSuccess=success,
                    acceptedConstraintViolation=bool(accepted and assessment and assessment["constraints"] == "violated"),
-                   readObservations=observed, requestSha256=evaluation["files"][case["request"]],
-                   openUnknowns=[{k: u[k] for k in ("id", "category", "blocking", "status")} for u in ledger["unknowns"] if u["status"] == "open"],
+                   investigationFile=f"runs/{run['id']}/" + state['investigationFile'],
+                   readObservationCount=len(observed), readSetSha256=digest(canonical(sorted(observed, key=canonical))),
+                   requestSha256=evaluation["files"][case["request"]],
+                   openUnknownsByCategory={category: sum(u['category']==category for u in unknowns)
+                                          for category in ('fact', 'decision', 'capability', 'conflict')},
+                   blockingOpenUnknowns=sum(u['blocking'] for u in unknowns),
                    extractedFacts=len(ledger["facts"]), dispatchedCalls=len(attempts),
                    investigationSteps=state['investigationSteps'],
                    reportedProviderCalls=sum('provider' in a for a in attempts),
@@ -296,7 +301,7 @@ def _summarize(root, evaluation):
         group = [r for r in rows if r["environment"] == environment and "requestSha256" in r]
         comparisons.append(dict(environment=environment, cases=sorted({r["case"] for r in group}),
             distinctRequests=len({r["requestSha256"] for r in group}),
-            distinctReadSets=len({digest(canonical(sorted(r["readObservations"], key=lambda v: canonical(v)))) for r in group}),
+            distinctReadSets=len({r['readSetSha256'] for r in group}),
             distinctAcceptedGraphs=len({r["graphDigest"] for r in group if r["compilerAccepted"]}),
             qualityRequiresIndependentAssessment=True))
     result = dict(formatVersion=1, evaluationId=evaluation["evaluationId"], status=evaluation["status"],

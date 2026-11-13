@@ -123,7 +123,8 @@ class DiscoveryEvaluationTests(unittest.TestCase):
                                         blocking=True, status='open', evidenceRefs=[])]
         report = self.capture()
         self.assertEqual('awaiting-user', report['runs'][0]['status'])
-        self.assertEqual('decision', report['runs'][0]['openUnknowns'][0]['category'])
+        self.assertEqual(1, report['runs'][0]['openUnknownsByCategory']['decision'])
+        self.assertEqual(1, report['runs'][0]['blockingOpenUnknowns'])
         reviews = self.reviews(report, goal='appropriate-stop')
         self.assertNotIn('decision', reviews['runs'][0])
         result = evaluation.review(self.out, canonical(reviews))
@@ -237,6 +238,41 @@ class DiscoveryEvaluationTests(unittest.TestCase):
             self.assertEqual(2, len({c['request'] for c in group}))
             self.assertEqual(1, len({c['exposureSha256'] for c in group}))
         self.assertTrue(all(c['exposure']=='public-development' for c in manifest['cases']))
+
+    def test_report_keeps_large_observation_sets_in_linked_evidence(self):
+        self.suite(cases=1); self.capture()
+        state = loads(read(self.out/'state.json')); run = state['runs'][0]
+        directory, captured = evaluation._run_state(self.out, state, run)
+        # Exercise the report's largest scheduled count with long selectors. Session
+        # integrity is verified separately; do not spawn 96 processes for formatting.
+        ledger = loads(read(directory/captured['investigationFile']))
+        ledger['facts'] = []
+        ledger['observations'] = [dict(selector=dict(kind='read',root='workspace',path='a'*240+'/'+'b'*230+str(i)),sha256='b'*64) for i in range(64)]
+        ledger['unknowns'] = [dict(id='unknown-'+str(i),category='fact',blocking=True,status='open') for i in range(64)]
+        (directory/captured['investigationFile']).write_bytes(canonical(ledger))
+        state['cases'] = [dict(state['cases'][0], id='case-'+str(i)) for i in range(12)]
+        state['runs'] = [dict(run,id=f"repeat-{r}-{c['id']}",case=c['id'],repetition=r)
+                         for r in range(1,9) for c in state['cases']]
+        state.update(expectedRuns=96,repetitions=8,reservedSuiteCostMicrousd=192_000_000,maxSuiteCostMicrousd=192_000_000)
+        with patch('authoring_host.discovery_evaluation._run_state', return_value=(directory,captured)):
+            result = evaluation._summarize(self.out,state)
+        self.assertEqual(96,result['completedRuns'])
+        self.assertEqual(64,result['runs'][0]['readObservationCount'])
+        self.assertEqual(64,result['runs'][0]['blockingOpenUnknowns'])
+        self.assertLess(len(canonical(result)),300_000)
+        self.assertEqual(64,len(loads(read(self.out/result['runs'][0]['investigationFile']))['observations']))
+
+    def test_directory_enumeration_stops_at_the_entry_limit(self):
+        self.suite(cases=1)
+        class Entries:
+            def __enter__(self): return self
+            def __exit__(self,*args): pass
+            def __iter__(self):
+                from types import SimpleNamespace
+                for i in range(257): yield SimpleNamespace(name='file-'+str(i))
+                raise AssertionError('Enumeration must stop before reading an unbounded directory')
+        with patch('authoring_host.discovery_suite.os.scandir', return_value=Entries()), self.assertRaisesRegex(HostError,'directory limit'):
+            discovery_suite.snapshot(self.workspace)
 
     def test_cli_exposes_discovery_commands_and_review_returns_descriptive_exit_code(self):
         from author_proposal import main
