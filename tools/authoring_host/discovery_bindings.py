@@ -184,15 +184,23 @@ def resolve(bindings, ledger, choices, original, response):
 def verify_compiler_receipt(assessment, fidelity, review):
     require(fidelity["requirementsSource"]["sha256"] == assessment["compilerRequirementsSha256"],
             "Compiler did not assess the resolved discovery requirements")
-    require(fidelity["graphDigest"] == review.get("graphDigest"), "Discovery compiler graph receipt mismatch")
+    graph_digest = fidelity.get("graphDigest")
+    require(graph_digest == review.get("graphDigest"), "Discovery compiler graph receipt mismatch")
     checked = {r["id"]: r for r in fidelity["requirements"]}
     identifiers = [row["compilerRequirementId"] for row in assessment["bindings"]]
     identifiers += [identifier for row in assessment.get("decisions", []) for identifier in row["compilerRequirementIds"]]
     require(all(identifier in checked for identifier in identifiers),
             "Compiler omitted a discovery obligation")
+    if graph_digest is None:
+        # Rejection before canonicalization has no graph. Retain that rejection,
+        # but never turn absent graph evidence into evaluated/satisfied obligations.
+        require(review["exitCode"] != 0 and review.get("semanticAcceptance") == "rejected" and
+                review.get("requestFidelity") == "not-evaluated" and fidelity.get("state") == "NOT_EVALUATED" and
+                all(checked[identifier]["state"] == "NOT_EVALUATED" for identifier in identifiers),
+                "Missing graph is valid only for unevaluated compiler rejection")
     if review["exitCode"] == 0:
-        require(isinstance(fidelity["graphDigest"], str) and re.fullmatch(r"[a-f0-9]{64}", fidelity["graphDigest"])
+        require(isinstance(graph_digest, str) and re.fullmatch(r"[a-f0-9]{64}", graph_digest)
                 and all(checked[identifier]["state"] == "SATISFIED" for identifier in identifiers),
                 "Compiler did not satisfy every discovery obligation")
-    return dict(assessment, compilerGraphDigest=fidelity["graphDigest"],
+    return dict(assessment, compilerGraphDigest=graph_digest,
                 compilerAssessment={identifier: checked[identifier]["state"] for identifier in identifiers})

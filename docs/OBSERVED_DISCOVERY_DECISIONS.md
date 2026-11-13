@@ -14,7 +14,9 @@ canonical compiler evaluates selected requirements, dependencies and control reg
 Select `investigation.formatVersion: 4` in the existing host configuration. Independent
 requirements must explicitly be confirmed version 5. Public requirements-v5 check
 schemas are included in the provider output contract, without caller expectations.
-Version 3 remains available with its original wire shape and meaning.
+Version 3 remains available with its original wire shape and meaning. The additional
+public schema counts toward the existing conservative input reservation. Configure
+an adequate explicit budget; the host never raises it automatically.
 
 `interpretation` contains `summary`, `bindings` and `decisions`. Bindings use the v3
 contract and may be empty when decisions are present. Each decision contains:

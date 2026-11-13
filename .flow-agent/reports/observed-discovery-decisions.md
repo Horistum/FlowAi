@@ -25,7 +25,7 @@ facts, case ambiguity, complete input coverage, old protocol rejection, unchange
 independent requirements, source mutation before/during compilation, explicit caller
 continuation, compiler receipt omissions and public schema references.
 
-The full local Python suite contains 501 tests: 489 passed; 12 existing deployed
+The full local Python suite contains 503 tests: 491 passed; 12 existing deployed
 observer tests cannot start Unix-socket services in this workspace. Those tests
 remain enabled in CI. `tools/flow_agent_validate.py` passes. No JVM or installed-CLI
 pass is asserted locally because the required Gradle distribution cannot be fetched
@@ -43,3 +43,12 @@ quality, complete multi-resource infrastructure lifecycle, execution-time precon
 partial allocation reconciliation, native provider ownership and real recovery
 outcomes remain unproven here. No executor, provider SDK or scenario-specific
 production adapter is added. S3, AI-A3, AR-06 and AR-07 stay open; EF-09 stays paused.
+
+The first installed run exposed a real receipt-handling defect: canonical scope
+rejection omits `graphDigest`, but the host assumed it always existed and mislabeled
+the rejected candidate as a compiler failure. The correction retains only explicit
+`NOT_EVALUATED` obligations when both compiler reports identify rejection without a
+graph. Accepted or evaluated claims still require graph evidence. The test peer now
+matches that product shape, and dedicated regressions reject inconsistent claims.
+Negative installed cases require the expected fidelity/scope rejection; a compiler
+crash or unrelated failure cannot count as successful falsification.

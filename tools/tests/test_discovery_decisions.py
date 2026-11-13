@@ -173,6 +173,26 @@ class ObservedDecisionTests(unittest.TestCase):
         with self.assertRaisesRegex(HostError,'omitted'):
             discovery_bindings.verify_compiler_receipt(assessment,fidelity,dict(graphDigest='a'*64,exitCode=0))
 
+    def test_precanonical_rejection_retains_unevaluated_obligations_without_a_graph(self):
+        self.configure();self.proposal['response']['normalizedIntent']['marker']='reject'
+        state=self.run_actions();final=review_discovery(self.out,canonical(self.decision(state)))
+        self.assertEqual('discovery-candidate-rejected',final['status'])
+        receipt=loads(read(self.out/final['attempts'][-1]['discoveryBindingResult']))
+        self.assertIsNone(receipt['compilerGraphDigest'])
+        self.assertTrue(all(v=='NOT_EVALUATED' for v in receipt['compilerAssessment'].values()))
+        self.assertEqual('3',self.counter.read_text())
+
+    def test_missing_graph_cannot_certify_evaluated_or_accepted_plan(self):
+        assessment=dict(compilerRequirementsSha256='b'*64,bindings=[],decisions=[dict(compilerRequirementIds=['selected'])])
+        fidelity=dict(requirementsSource=dict(sha256='b'*64),state='NOT_EVALUATED',requirements=[dict(id='selected',state='NOT_EVALUATED')])
+        review=dict(exitCode=4,semanticAcceptance='rejected',requestFidelity='not-evaluated')
+        for field,value in [('exitCode',0),('semanticAcceptance','accepted'),('requestFidelity','requirements-satisfied')]:
+            with self.subTest(field=field),self.assertRaises(HostError):
+                discovery_bindings.verify_compiler_receipt(assessment,fidelity,dict(review,**{field:value}))
+        for mutation in (dict(fidelity,state='REQUIREMENTS_SATISFIED'),
+                         dict(fidelity,requirements=[dict(id='selected',state='SATISFIED')])):
+            with self.assertRaises(HostError):discovery_bindings.verify_compiler_receipt(assessment,mutation,review)
+
     def test_schema_references_public_checks_and_never_admits_model_approval(self):
         self.configure();contracts=public_contracts(host_tests.ROOT,observed_decisions=True)
         schema=investigation.output_schema(contracts['outputSchema'],self.config['investigation'],contracts['decisionRequirementsSchema'])

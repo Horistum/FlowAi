@@ -115,8 +115,15 @@ def verify(root, cli):
                 require(packet['bindingAssessment']['decisions'][0]['selectedCase']==selected,'Host followed candidate rather than observed state')
                 approval=dict(formatVersion=1,runId=state['runId'],packetSha256=state['attempts'][-1]['discoveryReviewPacketSha256'],reviewerId='manual-test-reviewer',decision='accept',rationale='Explicit protocol-test review; canonical compiler must still reject invalid plans.')
                 state=review_discovery(out,canonical(approval))
-                require((state['status']=='accepted') == (variant=='matching'),f'{label}: unexpected {state["status"]}: {state["attempts"][-1]}')
-                require(state['status'] not in ('provider-or-compiler-error','budget-exhausted','caller-input-error'),f'{label}: invalid test execution: {state}')
+                # A crashed compiler or unrelated blocker is not a successful falsification.
+                # The misplaced allocation may fail canonical scope admission before fidelity.
+                expected = {'accepted'} if variant == 'matching' else (
+                    {'fidelity-violation', 'discovery-candidate-rejected'} if variant == 'allocation-inside-recovery'
+                    else {'fidelity-violation'})
+                require(state['status'] in expected,f'{label}: unexpected {state["status"]}: {state["attempts"][-1]}')
+                if variant == 'allocation-inside-recovery' and state['status'] == 'discovery-candidate-rejected':
+                    require(any(d['code']=='STRUCTURED_DEPENDENCY_SCOPE' for d in state['attempts'][-1]['review']['diagnostics']),
+                            'Misplaced allocation was rejected for an unrelated reason')
                 if variant=='stale-plan':
                     receipt=loads(read(out/state['attempts'][-1]['discoveryBindingResult']))
                     ids=receipt['decisions'][0]['compilerRequirementIds']
