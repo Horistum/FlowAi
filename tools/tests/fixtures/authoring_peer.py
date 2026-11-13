@@ -51,8 +51,7 @@ def compiler():
     (out / "request-fidelity-review.json").write_text(json.dumps({
         'requirementsSource': {'sha256': hashlib.sha256(Path(args[args.index('--requirements')+1]).read_bytes()).hexdigest()},
         'graphDigest': report['graphDigest'], 'requirements': [
-            {'id': item['id'], 'state': 'SATISFIED' if semantic == 'accepted' and fidelity == 'requirements-satisfied' else 'NOT_EVALUATED'}
-            for item in requirements['requirements']]}))
+            {'id': item['id'], 'state': 'SATISFIED' if code == 0 else 'NOT_EVALUATED'} for item in requirements['requirements']]}))
     return code
 
 

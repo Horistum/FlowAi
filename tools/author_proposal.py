@@ -6,7 +6,6 @@ import sys
 
 from authoring_host.contracts import HostError, loads, read
 from authoring_host.evaluation import evaluate, summarize
-from authoring_host import discovery_evaluation
 from authoring_host.session import resume, review_discovery, start
 
 
@@ -36,19 +35,6 @@ def main(argv=None):
     corpus.add_argument("--max-cost-microusd", type=int, required=True)
     report = commands.add_parser("summarize", help="Recheck captured evidence and report descriptive metrics")
     report.add_argument("--evaluation", required=True)
-    discovery = commands.add_parser('evaluate-discovery', help='Capture task-driven discovery with private independent expectations')
-    discovery.add_argument('--config', required=True)
-    discovery.add_argument('--suite', required=True)
-    discovery.add_argument('--out', required=True)
-    discovery.add_argument('--repetitions', type=int, default=3)
-    discovery.add_argument('--max-cost-microusd', type=int, required=True)
-    discovery.add_argument('--target')
-    discovery.add_argument('--render', action='store_true')
-    assessment = commands.add_parser('review-discovery-evaluation', help='Review captured candidates and assess task quality without model calls')
-    assessment.add_argument('--evaluation', required=True)
-    assessment.add_argument('--reviews', required=True)
-    discovery_report = commands.add_parser('summarize-discovery-evaluation', help='Recheck captured discovery evidence and descriptive metrics')
-    discovery_report.add_argument('--evaluation', required=True)
     args = parser.parse_args(argv)
     try:
         if args.command == "run":
@@ -61,13 +47,6 @@ def main(argv=None):
         elif args.command == "evaluate":
             value = evaluate(loads(read(args.config)), args.corpus, args.out, repetitions=args.repetitions,
                              target=args.target, max_cost_microusd=args.max_cost_microusd)
-        elif args.command == 'evaluate-discovery':
-            value = discovery_evaluation.capture(loads(read(args.config)), args.suite, args.out,
-                repetitions=args.repetitions, max_cost_microusd=args.max_cost_microusd, target=args.target, render=args.render)
-        elif args.command == 'review-discovery-evaluation':
-            value = discovery_evaluation.review(args.evaluation, read(args.reviews))
-        elif args.command == 'summarize-discovery-evaluation':
-            value = discovery_evaluation.summarize(args.evaluation)
         else:
             value = summarize(args.evaluation)
         if "completedRuns" in value:

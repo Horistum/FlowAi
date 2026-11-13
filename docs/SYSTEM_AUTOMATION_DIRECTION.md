@@ -218,12 +218,13 @@ compiler constraints remain independent. Provenance is supporting infrastructure
 Deterministic lifecycle transcripts validate this boundary but do not close live-agent
 reasoning, unfamiliar-schema generalization or runtime-outcome acceptance.
 
-S3.3: [Task-driven discovery evaluation](DISCOVERY_EVALUATION.md) makes repeated
-v3 trials executable across caller-selected original goals and complete exposure
-snapshots. A six-task public development portfolio covers infrastructure, data and
-credentials, with two different goals per environment. Candidate review remains
-separate; the evaluator retains compiler outcomes, independent quality assessments,
-incomplete runs and cost reservations without feeding expectations to the agent.
-Scripted installed-product tests validate this machinery only. The next step still
-requires explicitly configured live-provider trials, independently supplied unfamiliar
-environments and reviewed discovery failures; S3 and AI-A3 remain open.
+
+S3.3: [Observed discovery decisions](OBSERVED_DISCOVERY_DECISIONS.md) connect typed
+facts to separately reviewed lifecycle alternatives. The host selects exactly one
+case and appends its existing requirements-v5 obligations; the canonical compiler
+checks dependencies, bounded retries and recovery structure. Infrastructure reuse
+versus creation and database inspection versus migration exercise the same mechanism.
+Unknown/partial state blocks selection, and changed evidence invalidates approval.
+This is authoring-time plan fidelity, not remote ownership or execution proof. Live
+reasoning, runtime precondition revalidation and the full multi-resource lifecycle
+remain open; no roadmap milestone is closed by these scripted compiler tests.

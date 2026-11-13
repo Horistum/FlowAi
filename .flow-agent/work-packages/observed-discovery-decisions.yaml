@@ -1,0 +1,27 @@
+version: AI-A3-S3.3
+name: Observed decisions constrained by the canonical compiler
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 611e688bcd9ac6e63d6a52de33d33bdae8e46dbf
+predecessorPullRequest: 270
+deliveryBase: main
+authorization: Maintainer requested repair of PR 271 to connect observed facts to plan decisions, dependencies and recovery across domains.
+objective: Derive reviewed, additive plan obligations from typed observed facts and reject stale decisions, unsafe cleanup and broken recovery dependencies through the existing compiler.
+universalInvariant: Observation selects a reviewed decision case; only the canonical compiler evaluates its plan obligations. A snapshot never proves future remote state or runtime ownership.
+scope:
+- Add opt-in investigation v4 for agent-proposed decisions with exact observed inputs, explicit alternatives and existing requirements-v5 checks.
+- Require exactly one matching alternative with type-sensitive equality; retain missing, conflicting and unsupported observations as blocked results.
+- Bind the selected case and all alternatives to the existing separate review packet; preserve independent requirements and source freshness through compilation.
+- Demonstrate infrastructure reuse versus creation with cleanup scoped after successful creation, and data recovery with producer-consumer continuity, using the same production mechanism.
+- Exercise clarification, stale evidence, changed observations, unsafe alternative plans and real installed-compiler rejection.
+- Remove the evaluation-only wrapper from this PR; live-model evaluation remains an independent open gate.
+forbiddenScope:
+- No second semantic graph, executor, generic expression engine, domain-specific production adapter or implicit contract migration.
+- No automatic approval, inferred absence from missing records, partial-allocation cleanup claim or runtime-success claim.
+- No S3, AI-A3, AR-06 or AR-07 closure; EF-09 remains paused.
+validationPlan:
+- Unit protocol and source-integrity tests, including legacy v3 preservation and caller clarification continuation.
+- Cross-domain installed-compiler acceptance and falsification of stale alternatives, ownership, retry and value dependencies.
+- Full tooling, architecture, conformance and exact-head/merge-candidate CI.
+nextSlice: S3-live-discovery-and-runtime-precondition-revalidation

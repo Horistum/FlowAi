@@ -1,0 +1,5 @@
+{
+  "userText": "Prepare the development network. Reuse the shared network when it exists; otherwise allocate the requested new network. Check readiness at most three times with five seconds delay. On readiness failure remove only the allocation returned by successful creation and propagate failure; preserve shared networks. Do not rotate secrets.",
+  "context": {},
+  "mode": "DRAFT"
+}

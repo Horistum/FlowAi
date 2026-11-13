@@ -1,0 +1,11 @@
+{
+  "datasets": {
+    "orders": {
+      "role": "orders",
+      "schemaRevision": 42,
+      "isolation": "isolated",
+      "database": "isolated-orders",
+      "vault": "recovery-vault"
+    }
+  }
+}

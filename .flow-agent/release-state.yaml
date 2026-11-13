@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 148
+stateVersion: 149
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -921,28 +921,27 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
-  taskDrivenDiscoveryEvaluationFollowup:
+  observedDecisionsFollowup:
     selectedSlice: AI-A3-S3.3
-    workPackage: .flow-agent/work-packages/task-driven-discovery-evaluation.yaml
-    report: .flow-agent/reports/task-driven-discovery-evaluation.md
-    contract: docs/DISCOVERY_EVALUATION.md
+    workPackage: .flow-agent/work-packages/observed-discovery-decisions.yaml
+    report: .flow-agent/reports/observed-discovery-decisions.md
+    contract: docs/OBSERVED_DISCOVERY_DECISIONS.md
     baselineMain: 611e688bcd9ac6e63d6a52de33d33bdae8e46dbf
     predecessorPullRequest: 270
     deliveryBase: main
-    validation: candidate-python-installed-evaluation-and-final-full-ci-required
-    suiteFormatVersion: 1
-    investigationProtocolVersion: 3
-    authoringHostVersion: 5
-    publicDevelopmentTasks: 6
-    publicDevelopmentDomains: 3
+    validation: current-revision-python-installed-compiler-and-full-ci-required
+    investigationProtocolVersion: 4
+    authoringHostVersion: 6
+    reviewPacketVersion: 2
+    requirementsVersion: 5
+    scope: Typed observations select reviewed additive compiler obligations; no second plan model or runtime evaluator.
     callerBindingMapRequired: false
-    independentQualityAssessment: caller-declared-not-authenticated
-    liveDiscoveryAcceptance: open-provider-and-independent-trials-required
-    nextSlice: S3-independent-live-trials-and-discovery-gap-remediation
+    installedCompilerCases: 22
     liveModelEvaluated: false
-    unfamiliarEnvironmentGeneralizationEstablished: false
     workflowExecution: false
+    remoteOwnershipProven: false
     supportPromotion: false
+    nextSlice: S3-live-discovery-and-runtime-precondition-revalidation
   managedInventoryFollowup:
     selectedSlice: AI-A3-S3.2
     workPackage: .flow-agent/work-packages/managed-inventory-provenance.yaml

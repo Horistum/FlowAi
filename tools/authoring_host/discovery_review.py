@@ -44,10 +44,11 @@ def prepare(action, ledger, original, catalog, run_id):
     require(original["formatVersion"] == 5,
             "Reviewed discovery requires explicit requirements version 5; implicit migration is forbidden")
     interpretation = action["interpretation"]
-    keys(interpretation, ("summary", "bindings"))
+    decisions = ledger.get("formatVersion") == 4
+    keys(interpretation, ("summary", "bindings", "decisions") if decisions else ("summary", "bindings"))
     nonblank(interpretation["summary"])
     rows = interpretation["bindings"]
-    require(isinstance(rows, list) and 1 <= len(rows) <= 16,
+    require(isinstance(rows, list) and (0 if decisions else 1) <= len(rows) <= 16,
             "Discovery interpretation requires evidence-backed bindings")
     bindings, choices = [], []
     for row in rows:
@@ -56,7 +57,8 @@ def prepare(action, ledger, original, catalog, run_id):
         require(isinstance(row["requirement"], dict), "Invalid proposed discovery requirement")
         bindings.append(row["requirement"])
         choices.append(dict(requirementId=row["requirement"].get("id"), factId=row["factId"]))
-    discovery_bindings.validate(bindings, {r["id"] for r in ledger["roots"]})
+    if bindings:
+        discovery_bindings.validate(bindings, {r["id"] for r in ledger["roots"]})
     discovery_bindings.validate_context(bindings, original, catalog)
     derived, assessment = discovery_bindings.resolve(bindings, ledger, choices, original, action["response"])
     if derived is not None:
@@ -66,7 +68,12 @@ def prepare(action, ledger, original, catalog, run_id):
             item["check"]["evaluationScope"] = "SELECTED_OPERATIONS"
         assessment["compilerRequirementsSha256"] = digest(canonical(derived))
     assessment.update(scope="reviewed-agent-proposed-bindings-only", policyAttribution="model-proposed-unreviewed")
-    packet = dict(formatVersion=1, runId=run_id, request=original["request"],
+    if decisions:
+        from . import discovery_decisions
+        derived = discovery_decisions.resolve(interpretation["decisions"], ledger, original, derived, assessment)
+        assessment["formatVersion"] = 2
+        assessment["policySha256"] = digest(canonical(dict(bindings=bindings, decisions=interpretation["decisions"])))
+    packet = dict(formatVersion=2 if decisions else 1, runId=run_id, request=original["request"],
                   originalRequirementsSha256=digest(canonical(original)),
                   investigationSha256=digest(canonical(ledger)),
                   responseSha256=digest(canonical(action["response"])),
@@ -89,7 +96,7 @@ def validate_decision(value, packet, packet_sha):
     require(value["decision"] in ("accept", "reject"), "Discovery review must accept or reject")
 
 
-def output_schema(response_schema):
+def output_schema(response_schema, *, version=3, requirement_schema=None):
     from .discovery import output_schema as discovery_schema
     schema = discovery_schema(response_schema)
     text = {"type": "string", "minLength": 1, "maxLength": 1000}
@@ -110,4 +117,7 @@ def output_schema(response_schema):
     proposal["properties"]["interpretation"] = obj({"summary": text,
         "bindings": dict(type="array", minItems=1, maxItems=16,
                          items=obj({"meaning": text, "rationale": text, "requirement": requirement, "factId": text}))})
+    if version == 4:
+        from . import discovery_decisions
+        return discovery_decisions.output_schema(schema, requirement_schema)
     return schema

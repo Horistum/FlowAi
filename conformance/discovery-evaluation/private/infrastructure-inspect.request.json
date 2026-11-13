@@ -1,5 +1,0 @@
-{
-  "userText": "Inspect the test worker for readiness only. Do not provision, rotate credentials, migrate, back up, restore or delete anything. Report a missing or conflicting identity instead of guessing.",
-  "context": {},
-  "mode": "DRAFT"
-}

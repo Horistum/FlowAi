@@ -15,7 +15,7 @@ from verify_authoring_investigation import verify as verify_investigation
 from verify_system_discovery import verify as verify_system_discovery
 from verify_managed_inventory import verify as verify_managed_inventory
 from verify_discovery_review import verify as verify_discovery_review
-from verify_discovery_evaluation import verify as verify_discovery_evaluation
+from verify_discovery_decisions import verify as verify_discovery_decisions
 from verify_system_automation import verify as verify_system_automation
 from verify_structured_authoring import verify as verify_structured_authoring
 from verify_operation_outcomes import verify as verify_operation_outcomes
@@ -166,7 +166,7 @@ def verify(root, cli):
     verify_system_discovery(root, cli)
     verify_managed_inventory(root, cli)
     verify_discovery_review(root, cli)
-    verify_discovery_evaluation(root, cli)
+    verify_discovery_decisions(root, cli)
     verify_system_automation(root, cli)
     verify_structured_authoring(root, cli)
     verify_operation_outcomes(root, cli)

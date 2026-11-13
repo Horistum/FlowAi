@@ -1,5 +1,9 @@
 # Agent-proposed discovery interpretation
 
+For typed observed-state decisions and conditional plan obligations, opt into
+[discovery version 4](OBSERVED_DISCOVERY_DECISIONS.md). This document retains the
+version 3 binding contract.
+
 Discovery version 3 removes the caller-owned JSON-to-operation map. The caller
 supplies the original goal, authorized roots, public compiler contracts and confirmed
 independent constraints. The external agent chooses observations, extracts values,
@@ -8,10 +12,6 @@ proposes their meaning and use, and authors a complete Intent 3.0/3.1 plan.
 This corrects the product focus of PR #270. Signed inventory remains optional
 supporting infrastructure. Authentication alone does not make the agent understand
 an unfamiliar environment or solve a complex request.
-
-For repeated tasks, use the [discovery evaluation workflow](DISCOVERY_EVALUATION.md),
-which captures complete exposure snapshots and routes every candidate through this
-same separate review boundary before aggregating compiler and human assessments.
 
 ## Responsibility and acceptance
 

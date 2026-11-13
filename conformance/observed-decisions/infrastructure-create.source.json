@@ -1,0 +1,10 @@
+{
+  "resources": [
+    {
+      "role": "network",
+      "exists": false,
+      "ownership": "unallocated",
+      "address": "resource://requested-network"
+    }
+  ]
+}

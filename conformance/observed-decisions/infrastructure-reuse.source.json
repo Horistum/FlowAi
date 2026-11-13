@@ -1,0 +1,10 @@
+{
+  "resources": [
+    {
+      "role": "network",
+      "exists": true,
+      "ownership": "shared",
+      "address": "resource://shared-network"
+    }
+  ]
+}

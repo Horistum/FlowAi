@@ -53,6 +53,17 @@ def requirement_id(binding):
     return "discovery-" + digest(canonical(binding["id"]))[:32]
 
 
+def validate_source(source, roots):
+    """One source selector contract for parameter bindings and observed decisions."""
+    keys(source, ("root", "recordPath", "where", "valuePath"))
+    require(isinstance(source["root"], str) and source["root"] in roots, "Binding source root is not granted")
+    path(source["recordPath"], pattern=True); path(source["valuePath"])
+    require(isinstance(source["where"], list) and 1 <= len(source["where"]) <= 8, "Binding requires bounded record predicates")
+    for predicate in source["where"]:
+        keys(predicate, ("path", "equals")); path(predicate["path"])
+        require(len(canonical(predicate["equals"])) <= 4096, "Binding predicate exceeds byte limit")
+
+
 def validate(bindings, roots):
     require(isinstance(bindings, list) and 1 <= len(bindings) <= 16, "Discovery requires caller-owned binding requirements")
     ids = set()
@@ -63,14 +74,7 @@ def validate(bindings, roots):
         require(isinstance(identifier, str) and re.fullmatch(r"[a-z][a-z0-9-]{0,63}", identifier) and identifier not in ids,
                 "Invalid or duplicate discovery binding identity")
         ids.add(identifier)
-        source = binding["source"]
-        keys(source, ("root", "recordPath", "where", "valuePath"))
-        require(isinstance(source["root"], str) and source["root"] in roots, "Binding source root is not granted")
-        path(source["recordPath"], pattern=True); path(source["valuePath"])
-        require(isinstance(source["where"], list) and 1 <= len(source["where"]) <= 8, "Binding requires bounded record predicates")
-        for predicate in source["where"]:
-            keys(predicate, ("path", "equals")); path(predicate["path"])
-            require(len(canonical(predicate["equals"])) <= 4096, "Binding predicate exceeds byte limit")
+        validate_source(binding["source"], roots)
         target = binding["target"]
         keys(target, ("selector", "parameter"))
         selector = target["selector"]
@@ -121,6 +125,25 @@ def candidates(binding, ledger):
     return found
 
 
+def observed(source, ledger, fact_id):
+    """Resolve exact typed content; never select a convenient duplicate or infer absence."""
+    fact = next((f for f in ledger["facts"] if f["id"] == fact_id), None)
+    require(fact is not None and fact["validity"] == "current", "missing-current-fact")
+    found = candidates(dict(source=source), ledger)
+    require(len(found) == 1, "missing-or-ambiguous-source-record")
+    observation, value_path, value = found[0]
+    require(observation["validity"] == "current" and fact["observationId"] == observation["id"]
+            and canonical(fact["path"]) == canonical(value_path) and canonical(fact["value"]) == canonical(value),
+            "fact-does-not-match-required-source")
+    receipt = dict(factId=fact["id"], observationId=observation["id"],
+                   sourceSha256=observation["sha256"], sourceSelector=observation["selector"], sourcePath=value_path,
+                   valueSha256=digest(canonical(value)))
+    root = next(r for r in ledger["roots"] if r["id"] == source["root"])
+    if "provenance" in root:
+        receipt["inventoryProvenance"] = root["provenance"]
+    return value, receipt
+
+
 def resolve(bindings, ledger, choices, original, response):
     """Produce an additive compiler input and a retained source-to-check receipt."""
     keys_by_id = {b["id"]: b for b in bindings}
@@ -141,26 +164,14 @@ def resolve(bindings, ledger, choices, original, response):
         row = dict(requirementId=binding["id"], target=binding["target"], status="blocked")
         try:
             require(binding["id"] in selected, "missing-binding")
-            fact = next((f for f in ledger["facts"] if f["id"] == selected[binding["id"]]), None)
-            require(fact is not None and fact["validity"] == "current", "missing-current-fact")
-            found = candidates(binding, ledger)
-            require(len(found) == 1, "missing-or-ambiguous-source-record")
-            observation, value_path, value = found[0]
-            require(observation["validity"] == "current" and fact["observationId"] == observation["id"]
-                    and canonical(fact["path"]) == canonical(value_path) and canonical(fact["value"]) == canonical(value),
-                    "fact-does-not-match-required-source")
+            value, receipt = observed(binding["source"], ledger, selected[binding["id"]])
             # The existing compiler literal-parameter check is string-typed. Never coerce JSON types.
             require(isinstance(value, str) and 0 < len(value) <= 1000, "unsupported-binding-value-type")
             identifier = requirement_id(binding)
             require(all(r["id"] != identifier for r in derived["requirements"]), "discovery-requirement-id-conflict")
             derived["requirements"].append(dict(id=identifier, sourceQuote=binding["sourceQuote"],
                 check=dict(kind="literal-parameter", **binding["target"], expected=value)))
-            row.update(status="resolved", factId=fact["id"], observationId=observation["id"],
-                       sourceSha256=observation["sha256"], sourceSelector=observation["selector"], sourcePath=value_path,
-                       valueSha256=digest(canonical(value)), compilerRequirementId=identifier)
-            root = next(r for r in ledger["roots"] if r["id"] == binding["source"]["root"])
-            if "provenance" in root:
-                row["inventoryProvenance"] = root["provenance"]
+            row.update(status="resolved", **receipt, compilerRequirementId=identifier)
         except HostError as error:
             row["reason"] = str(error)
             assessment["status"] = "blocked"
@@ -175,11 +186,13 @@ def verify_compiler_receipt(assessment, fidelity, review):
             "Compiler did not assess the resolved discovery requirements")
     require(fidelity["graphDigest"] == review.get("graphDigest"), "Discovery compiler graph receipt mismatch")
     checked = {r["id"]: r for r in fidelity["requirements"]}
-    require(all(row["compilerRequirementId"] in checked for row in assessment["bindings"]),
+    identifiers = [row["compilerRequirementId"] for row in assessment["bindings"]]
+    identifiers += [identifier for row in assessment.get("decisions", []) for identifier in row["compilerRequirementIds"]]
+    require(all(identifier in checked for identifier in identifiers),
             "Compiler omitted a discovery obligation")
     if review["exitCode"] == 0:
         require(isinstance(fidelity["graphDigest"], str) and re.fullmatch(r"[a-f0-9]{64}", fidelity["graphDigest"])
-                and all(checked[row["compilerRequirementId"]]["state"] == "SATISFIED" for row in assessment["bindings"]),
+                and all(checked[identifier]["state"] == "SATISFIED" for identifier in identifiers),
                 "Compiler did not satisfy every discovery obligation")
     return dict(assessment, compilerGraphDigest=fidelity["graphDigest"],
-                compilerAssessment={row["compilerRequirementId"]: checked[row["compilerRequirementId"]]["state"] for row in assessment["bindings"]})
+                compilerAssessment={identifier: checked[identifier]["state"] for identifier in identifiers})

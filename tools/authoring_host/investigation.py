@@ -34,7 +34,7 @@ def identifier(value):
 
 
 def validate(config):
-    if isinstance(config, dict) and type(config.get("formatVersion")) is int and config["formatVersion"] in (2, 3):
+    if isinstance(config, dict) and type(config.get("formatVersion")) is int and config["formatVersion"] in (2, 3, 4):
         from . import discovery
         return discovery.validate(config)
     keys(config, ("formatVersion", "sources", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords"))
@@ -86,7 +86,7 @@ def source_bytes(source, limit):
 
 
 def verify_sources(config, environment, ledger=None):
-    if config["formatVersion"] in (2, 3):
+    if config["formatVersion"] in (2, 3, 4):
         from . import discovery
         return discovery.verify(config, environment, ledger)
     total = 0
@@ -98,7 +98,7 @@ def verify_sources(config, environment, ledger=None):
 
 
 def initial(config, environment=None):
-    if config["formatVersion"] in (2, 3):
+    if config["formatVersion"] in (2, 3, 4):
         from . import discovery
         return discovery.initial(config, environment)
     return {"formatVersion": 1, "protocol": VERSION,
@@ -162,7 +162,7 @@ def enforce_records(ledger, limit):
 
 def apply(ledger, action, config, environment, attempt_id):
     """Validate the entire update on a detached copy; no deletion or authority promotion."""
-    if config["formatVersion"] in (2, 3):
+    if config["formatVersion"] in (2, 3, 4):
         from . import discovery
         return discovery.apply(ledger, action, config, environment, attempt_id)
     require(isinstance(action, dict), "Invalid investigation action")
@@ -240,12 +240,12 @@ def _references(value, refs, *, required):
             "Evidence references must identify delivered observations or earlier findings")
 
 
-def output_schema(response_schema, config=None):
-    if config is not None and config["formatVersion"] in (2, 3):
+def output_schema(response_schema, config=None, requirement_schema=None):
+    if config is not None and config["formatVersion"] in (2, 3, 4):
         from . import discovery
-        if config["formatVersion"] == 3:
+        if config["formatVersion"] in (3, 4):
             from . import discovery_review
-            return discovery_review.output_schema(response_schema)
+            return discovery_review.output_schema(response_schema, version=config["formatVersion"], requirement_schema=requirement_schema)
         return discovery.output_schema(response_schema)
     def obj(properties):
         return {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties}
@@ -265,20 +265,26 @@ def output_schema(response_schema, config=None):
 
 
 def instructions(config):
-    if config["formatVersion"] in (2, 3):
+    if config["formatVersion"] in (2, 3, 4):
         from . import discovery
-        if config["formatVersion"] == 3:
+        if config["formatVersion"] in (3, 4):
             from . import discovery_review
+            if config["formatVersion"] == 4:
+                from . import discovery_decisions
+                return discovery_review.INSTRUCTIONS.replace(discovery_review.VERSION, discovery_decisions.VERSION) + "\n" + discovery_decisions.INSTRUCTIONS
             return discovery_review.INSTRUCTIONS
         return discovery.INSTRUCTIONS
     return INSTRUCTIONS
 
 
 def protocol(config):
-    if config["formatVersion"] in (2, 3):
+    if config["formatVersion"] in (2, 3, 4):
         from . import discovery
-        if config["formatVersion"] == 3:
+        if config["formatVersion"] in (3, 4):
             from . import discovery_review
+            if config["formatVersion"] == 4:
+                from . import discovery_decisions
+                return discovery_decisions.VERSION
             return discovery_review.VERSION
         return discovery.VERSION
     return VERSION

@@ -1,0 +1,92 @@
+{
+  "normalizedIntent": {
+    "intentVersion": "3.1",
+    "kind": "FlowIntentDocument",
+    "name": "infrastructure-observed-choice",
+    "workflows": [
+      {
+        "name": "main",
+        "kind": "CUSTOM",
+        "body": [
+          {
+            "kind": "operation",
+            "id": "approval",
+            "capability": "APPROVE"
+          },
+          {
+            "kind": "operation",
+            "id": "allocate",
+            "capability": "PROVISION",
+            "params": {
+              "resource": "resource://requested-network"
+            },
+            "produces": [
+              "allocatedNetwork"
+            ],
+            "requires": [
+              "approval"
+            ]
+          },
+          {
+            "kind": "attempt",
+            "id": "configure",
+            "disposition": "propagate",
+            "body": [
+              {
+                "kind": "retry",
+                "id": "readiness",
+                "maxAttempts": 3,
+                "delaySeconds": 5,
+                "body": [
+                  {
+                    "kind": "operation",
+                    "id": "ready",
+                    "capability": "VERIFY",
+                    "params": {
+                      "resource": "ref:allocatedNetwork",
+                      "criteria": "ready"
+                    }
+                  }
+                ]
+              }
+            ],
+            "onFailure": [
+              {
+                "kind": "operation",
+                "id": "remove-owned",
+                "capability": "DEPROVISION",
+                "params": {
+                  "target": "ref:allocatedNetwork"
+                },
+                "requires": [
+                  "approval",
+                  "allocate"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "report": {
+    "mode": "DRAFT",
+    "classification": {
+      "type": "manual-fidelity-fixture",
+      "confidence": 0
+    },
+    "confidence": {
+      "overall": 0,
+      "intentType": 0,
+      "entities": 0,
+      "dependencies": 0,
+      "safety": 0
+    },
+    "explanation": [
+      "Manually authored integration candidate; no model was called. Oracle expectations are in a separate reviewed document."
+    ],
+    "guardrails": [
+      "Compiler safety obligations remain independent of request-fidelity checks."
+    ]
+  }
+}

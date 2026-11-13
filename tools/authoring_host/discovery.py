@@ -59,7 +59,7 @@ def relative(value, *, directory=False):
 def validate(config):
     fields = ("formatVersion", "roots", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords", "maxEntries")
     keys(config, fields + (("bindingRequirements",) if config.get("formatVersion") == 2 else ()))
-    require(type(config["formatVersion"]) is int and config["formatVersion"] in (2, 3), "Unsupported discovery configuration")
+    require(type(config["formatVersion"]) is int and config["formatVersion"] in (2, 3, 4), "Unsupported discovery configuration")
     integer(config["maxSteps"], 1, 16)
     integer(config["maxSourceBytes"], 1, 65536)
     integer(config["maxTotalSourceBytes"], config["maxSourceBytes"], 262144)
@@ -263,7 +263,7 @@ def apply(ledger, action, config, environment, attempt_id):
     require(kind in ("investigate", "propose"), "Unknown discovery action")
     keys(action, ("kind", "findings", "unknowns", "extractFacts", "observe") if kind == "investigate" else
          ("kind", "findings", "unknowns", "extractFacts", "response",
-          "interpretation" if config["formatVersion"] == 3 else "bindings"))
+          "interpretation" if config["formatVersion"] in (3, 4) else "bindings"))
     result = copy.deepcopy(ledger)
     facts = action["extractFacts"]
     require(isinstance(facts, list) and len(facts) <= 16, "Invalid fact extraction inventory")

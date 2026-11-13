@@ -1,5 +1,0 @@
-{
-  "userText": "Provision a test worker and check readiness with at most three attempts and five seconds delay. Notify on failure and propagate the original failure. Never deprovision resources.",
-  "context": {},
-  "mode": "DRAFT"
-}
