@@ -1,0 +1,2 @@
+# Optional stdio transport, isolated from the compiler and existing stdlib host.
+mcp==2.3.0

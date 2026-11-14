@@ -29,21 +29,16 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
         nonblank(target)
     environment = credentials(config)
     investigation_config = config.get("investigation")
-    if investigation_config is not None and investigation_config["formatVersion"] in (3, 4):
+    if investigation_config is not None and investigation_config["formatVersion"] == 3:
         require(original_requirements["formatVersion"] == 5 and
                 original_requirements["confirmation"] == "CONFIRMED",
                 "Reviewed discovery requires confirmed independent constraints version 5")
-    task = investigation_config.get("task") if investigation_config is not None else None
-    if task is not None:
-        require(original_requirements["origin"] == "REVIEWER_AUTHORED",
-                "Goal discovery requires caller-authored constraints before dispatch")
-    if investigation_config is not None and investigation_config["formatVersion"] in (2, 3, 4):
+    if investigation_config is not None and investigation_config["formatVersion"] in (2, 3):
         from .inventory_provenance import validate_context
         validate_context(investigation_config, request)
     if investigation_config is not None:
         investigation.verify_sources(investigation_config, environment)
-    contracts = public_contracts(config["compiler"]["contracts"],
-                                 observed_decisions=investigation_config is not None and investigation_config["formatVersion"] == 4)
+    contracts = public_contracts(config["compiler"]["contracts"])
     compiler_digest = compiler_fingerprint(config)
     contracts["capabilityCatalog"] = capability_catalog(config)
     if investigation_config is not None and investigation_config["formatVersion"] == 2:
@@ -57,7 +52,7 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
                  "instructions.txt": INSTRUCTIONS.encode()}
     if investigation_config is not None:
         snapshots["instructions.txt"] += ("\n\n" + investigation.instructions(investigation_config)).encode()
-        if investigation_config["formatVersion"] in (2, 3, 4):
+        if investigation_config["formatVersion"] in (2, 3):
             from .discovery import check_output
             check_output(investigation_config, root)
     settings = {"configSha256": digest(snapshots["config.json"]), "contractsSha256": digest(snapshots["contracts.json"]),
@@ -90,13 +85,10 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
         host_version = "bounded-authoring-host/3" if investigation_config["formatVersion"] == 2 else "bounded-authoring-host/2"
         if any("inventory" in r for r in investigation_config.get("roots", [])):
             host_version = "bounded-authoring-host/4"
-        if investigation_config["formatVersion"] in (3, 4):
-            host_version = "bounded-authoring-host/6" if investigation_config["formatVersion"] == 4 else "bounded-authoring-host/5"
+        if investigation_config["formatVersion"] == 3:
+            host_version = "bounded-authoring-host/5"
         state.update(hostVersion=host_version,
                      investigationSteps=0, investigationProtocol=investigation.protocol(investigation_config))
-        if task is not None:
-            from . import goal_context
-            state.update(hostVersion="bounded-authoring-host/7", goalEvidence=goal_context.evidence_status(task))
         investigation.persist(root, state, investigation.initial(investigation_config, environment), "investigation-initial.json")
     checkpoint(root, state)
     return _locked_advance(root, state, config, environment, "initial")
@@ -108,7 +100,7 @@ def resume(directory, answers_data, requirements_data):
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         state = loads(read(root / "state.json"))
         require(state.get("formatVersion") == 1 and state.get("hostVersion") in
-                ("bounded-authoring-host/1", "bounded-authoring-host/2", "bounded-authoring-host/3", "bounded-authoring-host/4", "bounded-authoring-host/5", "bounded-authoring-host/6", "bounded-authoring-host/7"),
+                ("bounded-authoring-host/1", "bounded-authoring-host/2", "bounded-authoring-host/3", "bounded-authoring-host/4", "bounded-authoring-host/5"),
                 "Unsupported captured host version")
         verify_inventory(root, state)
         require(state["status"] == "awaiting-user", "Only an explicit clarification can resume; interrupted calls never replay")
@@ -141,12 +133,10 @@ def resume(directory, answers_data, requirements_data):
                 "Requirements still contain unanswered decisions")
         preserve_requirements(prior_requirements, reviewed)
         config = validate_config(loads(read(root / "config.json")))
-        if "task" in config.get("investigation", {}):
-            require(reviewed["origin"] == "REVIEWER_AUTHORED", "Goal constraints must remain caller-authored")
-        if config.get("investigation", {}).get("formatVersion") in (3, 4):
+        if config.get("investigation", {}).get("formatVersion") == 3:
             require(reviewed["formatVersion"] == 5, "Reviewed discovery requires explicit requirements version 5")
         environment = credentials(config)
-        if config.get("investigation", {}).get("formatVersion") in (2, 3, 4):
+        if config.get("investigation", {}).get("formatVersion") in (2, 3):
             from . import discovery_bindings
             from .inventory_provenance import validate_context
             validate_context(config["investigation"], loads(read(root / "request.json")))
@@ -189,7 +179,7 @@ def review_discovery(directory, review_data):
     with (root / "lock").open("a+b") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         state = loads(read(root / "state.json"))
-        require(state.get("formatVersion") == 1 and state.get("hostVersion") in ("bounded-authoring-host/5", "bounded-authoring-host/6", "bounded-authoring-host/7") and
+        require(state.get("formatVersion") == 1 and state.get("hostVersion") == "bounded-authoring-host/5" and
                 state.get("status") == "awaiting-discovery-review", "No discovery candidate awaits review")
         verify_inventory(root, state)
         attempt = state["attempts"][-1]
@@ -199,7 +189,7 @@ def review_discovery(directory, review_data):
         require(state["files"][name] == attempt["discoveryReviewPacketSha256"], "Review packet digest changed")
         discovery_review.validate_decision(decision, packet, state["files"][name])
         config = validate_config(loads(read(root / "config.json")))
-        require(config["investigation"]["formatVersion"] in (3, 4) and packet["runId"] == state["runId"] and
+        require(config["investigation"]["formatVersion"] == 3 and packet["runId"] == state["runId"] and
                 packet["settings"] == state["settings"] and packet["target"] == state["target"] and
                 packet["render"] == state["render"], "Discovery review context changed")
         environment = credentials(config)
@@ -209,7 +199,7 @@ def review_discovery(directory, review_data):
         require(original["request"] == loads(read(root / "request.json")), "Discovery request changed")
         action = dict(interpretation=packet["interpretation"], response=packet["response"])
         derived, assessment, expected = discovery_review.prepare(action, ledger, original,
-            loads(read(root / "contracts.json"))["capabilityCatalog"], state["runId"], task=config["investigation"].get("task"))
+            loads(read(root / "contracts.json"))["capabilityCatalog"], state["runId"])
         expected.update(target=state["target"], render=state["render"], settings=state["settings"])
         require(canonical(expected) == canonical(packet) and derived is not None, "Discovery review evidence changed")
         if decision["decision"] == "accept":
@@ -351,7 +341,7 @@ def _advance(root, state, config, environment, kind):
     request = loads(read(root / "request.json"))
     previous, feedback = None, None
     investigation_config = config.get("investigation")
-    output_schema = (investigation.output_schema(contracts["outputSchema"], investigation_config, contracts.get("decisionRequirementsSchema"))
+    output_schema = (investigation.output_schema(contracts["outputSchema"], investigation_config)
                      if investigation_config is not None else contracts["outputSchema"])
     if state["attempts"]:
         last = state["attempts"][-1]
@@ -400,9 +390,6 @@ def _advance(root, state, config, environment, kind):
                                    k: {"type": "string"} for k in ("id", "model", "request_id")}}}}}
         if investigation_config is not None:
             payload["input"]["investigation"] = investigation.public(investigation.load(root, state))
-            if "task" in investigation_config:
-                from . import goal_context
-                payload["input"]["task"] = goal_context.public(config, request, state)
         data = canonical(payload)
         # Conservative byte bound; token caps must additionally be enforced by the configured adapter.
         if len(data) > budget["maxInputTokensPerCall"]:
@@ -475,11 +462,11 @@ def _advance(root, state, config, environment, kind):
                 if investigation.blocked(updated):
                     attempt["status"] = "investigation-blocked"
                     return _finish(root, state, "investigation-blocked")
-                if investigation_config["formatVersion"] in (3, 4):
+                if investigation_config["formatVersion"] == 3:
                     from . import discovery_review
                     original = loads(read(root / state["requirementsFile"]))
                     derived, assessment, packet = discovery_review.prepare(action, updated, original,
-                        contracts["capabilityCatalog"], state["runId"], task=investigation_config.get("task"))
+                        contracts["capabilityCatalog"], state["runId"])
                     packet.update(target=state["target"], render=state["render"], settings=state["settings"])
                     name = attempt["directory"] + "/discovery-review-packet.json"
                     save(root, name, canonical(packet), state["files"])
@@ -555,15 +542,7 @@ def _compile_observed(root, state, config, environment, attempt, proposal, bindi
         name = attempt["directory"] + "/review/request-fidelity-review.json"
         require(name in state["files"] or review["exitCode"] != 0, "Accepted proposal has no discovery fidelity receipt")
         if name in state["files"]:
-            fidelity = loads(read(root / name))
-            bound = discovery_bindings.verify_compiler_receipt(binding_assessment, fidelity, review)
-            if "task" in investigation_config:
-                from . import goal_context
-                evidence = goal_context.compiler_evidence(
-                    loads(read(root / attempt["originalRequirementsFile"])),
-                    loads(read(root / attempt["compilerRequirementsFile"])), fidelity, review, investigation_config["task"])
-                state["goalEvidence"] = evidence
-                bound["goalEvidence"] = evidence
+            bound = discovery_bindings.verify_compiler_receipt(binding_assessment, loads(read(root / name)), review)
             if inventory_validation is not None:
                 bound["inventoryValidation"] = inventory_validation
             name = attempt["directory"] + "/discovery-binding-result.json"

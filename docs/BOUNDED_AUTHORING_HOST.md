@@ -265,6 +265,9 @@ selection alone cannot resolve it. Concrete certificate integration needs an exp
 architecture and binding decision that preserves the original request; the corpus,
 requirements and executable-readiness policy are unchanged.
 
-[Observed discovery decisions](OBSERVED_DISCOVERY_DECISIONS.md) opt into investigation
-v4: exact typed facts select reviewed requirements for the existing canonical compiler,
-including lifecycle dependencies and recovery. Earlier investigation contracts remain supported.
+## Interactive tools for an existing agent
+
+For a tool-using agent that owns its investigation loop, use the optional
+[agent planning MCP server](AGENT_PLANNING_TOOLS.md). It exposes capability lookup,
+public contracts and iterative canonical draft checks without launching a model or
+changing this data-only provider protocol. Final caller review remains separate.

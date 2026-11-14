@@ -1,5 +1,0 @@
-{
-  "userText": "Inspect the isolated database schema. If it is at revision 41, back up the database, migrate to revision 42 and verify at most twice with zero delay. On failure restore the captured backup and verify recovery before continuing. If it is already at revision 42, verify without backup, migration or restore. Never deprovision resources.",
-  "context": {},
-  "mode": "DRAFT"
-}

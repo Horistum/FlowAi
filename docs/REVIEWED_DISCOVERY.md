@@ -1,9 +1,5 @@
 # Agent-proposed discovery interpretation
 
-For typed observed-state decisions and conditional plan obligations, opt into
-[discovery version 4](OBSERVED_DISCOVERY_DECISIONS.md). This document retains the
-version 3 binding contract.
-
 Discovery version 3 removes the caller-owned JSON-to-operation map. The caller
 supplies the original goal, authorized roots, public compiler contracts and confirmed
 independent constraints. The external agent chooses observations, extracts values,

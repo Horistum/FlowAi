@@ -214,7 +214,7 @@ def contains_credential(data, environment):
     return any(secret.encode() in candidate for secret in environment.values() for candidate in candidates)
 
 
-def public_contracts(root, *, observed_decisions=False):
+def public_contracts(root):
     root = Path(root)
     proposal = loads(read(root / "schemas/ai-proposal.schema.json"))
     def rebase(value, name):
@@ -229,8 +229,6 @@ def public_contracts(root, *, observed_decisions=False):
     modules = {p.name: p.read_text(encoding="utf-8") for p in sorted((root / "modules").glob("*.yaml"))}
     require(bool(modules), "Public module contracts are missing")
     result = {"outputSchema": schema, "modules": modules, "proposalSchemaVersion": 1, "reviewSchemaVersion": 2, "intentVersions": ["2.0", "3.0", "3.1"], "requirementsVersions": [1, 2, 3, 4, 5]}
-    if observed_decisions:
-        result["decisionRequirementsSchema"] = rebase(loads(read(root / "schemas/request-requirements-v5.schema.json")), "decisionRequirements")
     require(len(canonical(result)) <= MAX_BYTES, "Public contracts exceed host limit")
     return result
 

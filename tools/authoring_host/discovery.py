@@ -58,27 +58,17 @@ def relative(value, *, directory=False):
 
 def validate(config):
     fields = ("formatVersion", "roots", "maxSteps", "maxSourceBytes", "maxTotalSourceBytes", "maxRecords", "maxEntries")
-    keys(config, fields + (("bindingRequirements",) if config.get("formatVersion") == 2 else ()),
-         ("task",) if config.get("formatVersion") == 4 else ())
-    require(type(config["formatVersion"]) is int and config["formatVersion"] in (2, 3, 4), "Unsupported discovery configuration")
+    keys(config, fields + (("bindingRequirements",) if config.get("formatVersion") == 2 else ()))
+    require(type(config["formatVersion"]) is int and config["formatVersion"] in (2, 3), "Unsupported discovery configuration")
     integer(config["maxSteps"], 1, 16)
     integer(config["maxSourceBytes"], 1, 65536)
     integer(config["maxTotalSourceBytes"], config["maxSourceBytes"], 262144)
     integer(config["maxRecords"], 1, 128)
     integer(config["maxEntries"], 1, 256)
-    goal_mode = "task" in config
-    if goal_mode:
-        from . import goal_context
-        goal_context.validate(config["task"])
     require(isinstance(config["roots"], list) and 0 < len(config["roots"]) <= 8, "Invalid discovery roots")
     ids, paths = set(), []
     for root in config["roots"]:
-        keys(root, ("id", "path", "scope") + (("observations",) if goal_mode else ()), ("inventory",))
-        if goal_mode:
-            grants = root["observations"]
-            require(isinstance(grants, list) and 0 < len(grants) <= 2 and
-                    all(v in ("list", "read") for v in grants) and len(set(grants)) == len(grants),
-                    "Each goal environment requires explicit observation grants")
+        keys(root, ("id", "path", "scope"), ("inventory",))
         investigation.identifier(root["id"]); nonblank(root["scope"])
         require(root["id"] not in ids, "Duplicate discovery root")
         ids.add(root["id"])
@@ -131,8 +121,6 @@ def initial(config, environment=None):
         descriptor = _directory(root["path"])
         try:
             row = {"id": root["id"], "scope": root["scope"], "identity": _identity(os.fstat(descriptor))}
-            if "task" in config:
-                row["observations"] = list(root["observations"])
             if "inventory" in root:
                 raw, row["provenance"] = inventory_provenance.assess(root, config, environment or {})
                 attestations[root["id"]] = raw.decode("utf-8")
@@ -154,30 +142,10 @@ def _selector(value, config):
     require(isinstance(value["root"], str), "Invalid discovery root identity")
     root = next((r for r in config["roots"] if r["id"] == value["root"]), None)
     require(root is not None, "Observation root is not granted")
-    if "task" in config:
-        require(value["kind"] in root["observations"], "Observation kind is not granted for this root")
     return root, relative(value["path"], directory=value["kind"] == "list")
 
 
 def capture(selector, config, environment):
-    """A failed authorized lookup is usable discovery evidence, never global absence.
-
-Only goal mode retains bounded OS lookup failures. Invalid selectors, symlinks,
-changed sources and integrity/limit failures still fail closed. Verification uses
-the same capture path: a missing file appearing later invalidates the snapshot.
-"""
-    _selector(selector, config)  # Reject ungranted access before touching the filesystem.
-    try:
-        return _capture(selector, config, environment)
-    except (FileNotFoundError, PermissionError) as error:
-        if "task" not in config:
-            raise
-        failure = "not-found" if isinstance(error, FileNotFoundError) else "not-accessible"
-        data = canonical(dict(failure=failure))
-        return dict(sha256=digest(data), sizeBytes=len(data), failure=failure)
-
-
-def _capture(selector, config, environment):
     root, parts = _selector(selector, config)
     listing = selector["kind"] == "list"
     descriptor = _directory(root["path"], parts if listing else parts[:-1])
@@ -278,8 +246,7 @@ def verify(config, environment, ledger=None):
         try:
             current = capture(observation["selector"], config, environment)
             inventory_provenance.check_capture(observation["selector"], observation, ledger)
-            unchanged = (current["sha256"] == observation["sha256"] and current["sizeBytes"] == observation["sizeBytes"]
-                         and current.get("failure") == observation.get("failure"))
+            unchanged = current["sha256"] == observation["sha256"] and current["sizeBytes"] == observation["sizeBytes"]
         except (HostError, OSError, UnicodeError):
             unchanged = False
         if not unchanged:
@@ -296,7 +263,7 @@ def apply(ledger, action, config, environment, attempt_id):
     require(kind in ("investigate", "propose"), "Unknown discovery action")
     keys(action, ("kind", "findings", "unknowns", "extractFacts", "observe") if kind == "investigate" else
          ("kind", "findings", "unknowns", "extractFacts", "response",
-          "interpretation" if config["formatVersion"] in (3, 4) else "bindings"))
+          "interpretation" if config["formatVersion"] == 3 else "bindings"))
     result = copy.deepcopy(ledger)
     facts = action["extractFacts"]
     require(isinstance(facts, list) and len(facts) <= 16, "Invalid fact extraction inventory")
@@ -306,8 +273,7 @@ def apply(ledger, action, config, environment, attempt_id):
         investigation.identifier(fact["id"])
         require(isinstance(fact["observationId"], str), "Invalid fact source")
         source = observations.get(fact["observationId"])
-        require(source is not None and source["selector"]["kind"] == "read" and "failure" not in source,
-                "Facts require a successful delivered read observation")
+        require(source is not None and source["selector"]["kind"] == "read", "Facts require a delivered read observation")
         path = fact["path"]
         require(isinstance(path, list) and len(path) <= 16 and all(
             (isinstance(p, str) and 0 < len(p) <= 128) or (type(p) is int and 0 <= p <= 10000) for p in path), "Invalid fact path")
@@ -353,11 +319,10 @@ def apply(ledger, action, config, environment, attempt_id):
             root = next(r for r in config["roots"] if r["id"] == selector["root"])
             observation = {"id": "observation:" + digest(canonical(selector)) + ":" + captured["sha256"],
                 "selector": selector, **captured, "scope": root["scope"], "scopeAttribution": "operator-declared",
-                "attribution": "host-observed-lookup-failure" if "failure" in captured else "host-observed-bytes",
-                "validity": "current", "attemptId": attempt_id,
+                "attribution": "host-observed-bytes", "validity": "current", "attemptId": attempt_id,
                 "observedAt": datetime.now(timezone.utc).isoformat()}
             provenance = next(r for r in result["roots"] if r["id"] == root["id"]).get("provenance")
-            if provenance and "failure" not in captured:
+            if provenance:
                 observation["inventoryAttestationSha256"] = provenance["attestationSha256"]
             result["observations"].append(observation)
     investigation.enforce_records(result, config["maxRecords"])

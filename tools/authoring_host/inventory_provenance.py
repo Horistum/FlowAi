@@ -206,12 +206,6 @@ def check_capture(selector, captured, ledger):
                 "Managed root lost its retained inventory attestation")
         return
     payload = loads(decode(loads(raw)["payload"], 65536))
-    if "failure" in captured:
-        # Failed discovery outside the authenticated export is a host lookup result,
-        # not collector-attested content. A missing attested member is corruption.
-        require(selector["path"] not in {e["path"] for e in payload["files"]} and
-                selector["path"] not in directory_entries(payload), "Authenticated inventory member became unavailable")
-        return
     if selector["kind"] == "read":
         entry = next((e for e in payload["files"] if e["path"] == selector["path"]), None)
         require(entry is not None and captured["sha256"] == entry["sha256"] and captured["sizeBytes"] == entry["sizeBytes"],
@@ -228,15 +222,12 @@ def assess(root, config, environment):
     raw = read_regular(root["inventory"]["attestationFile"], MAX_ATTESTATION_BYTES)
     require(not contains_credential(raw, environment), "A credential appears in inventory provenance")
     payload, receipt = verify_envelope(raw, root["inventory"])
-    # Internal integrity verification must read the full authenticated export even
-    # when the model has only a subset of observation grants. It exposes no bytes.
-    verification_config = {k: v for k, v in config.items() if k != "task"}
     for entry in payload["files"]:
-        observed = capture(dict(kind="read", root=root["id"], path=entry["path"]), verification_config, environment)
+        observed = capture(dict(kind="read", root=root["id"], path=entry["path"]), config, environment)
         require(observed["sha256"] == entry["sha256"] and observed["sizeBytes"] == entry["sizeBytes"],
                 "Inventory file differs from its attestation")
     for path, children in directory_entries(payload).items():
-        observed = capture(dict(kind="list", root=root["id"], path=path), verification_config, environment)
+        observed = capture(dict(kind="list", root=root["id"], path=path), config, environment)
         require(observed["entries"] == children,
                 "Inventory directory differs from its attestation")
     return raw, receipt

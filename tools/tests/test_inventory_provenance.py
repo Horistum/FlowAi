@@ -66,35 +66,6 @@ class InventoryProvenanceTests(unittest.TestCase):
         self.assertNotIn('nested/state.json',json.dumps(investigation.public(ledger)))
         self.assertEqual(before,self.db.read_bytes())
 
-    def goal_config(self, grants):
-        self.config.update(formatVersion=4, task=dict(constraints=['Read-only inventory assessment.'],
-            successCriteria=[dict(id='assessment', description='Identify relevant evidence and remaining unknowns.')]))
-        del self.config['bindingRequirements']
-        self.config['roots'][0]['observations'] = grants
-        discovery.validate(self.config)
-
-    def test_integrity_verification_does_not_expand_model_observation_grants(self):
-        self.goal_config(['read'])
-        ledger = discovery.initial(self.config)
-        ledger = investigation.apply(ledger, action(('read', 'nested/state.json')), self.config, {}, 'read')
-        self.assertIn('inventoryAttestationSha256', ledger['observations'][0])
-        with self.assertRaisesRegex(HostError, 'not granted'):
-            investigation.apply(ledger, action(('list', '.')), self.config, {}, 'list')
-        # Unread authenticated content is still checked by the host.
-        (self.workspace/'other.json').write_text('{}')
-        with self.assertRaises(investigation.SourceChanged): discovery.verify(self.config, {}, ledger)
-
-    def test_failed_lookup_outside_export_is_not_collector_attested(self):
-        self.goal_config(['read'])
-        ledger = discovery.initial(self.config)
-        ledger = investigation.apply(ledger, action(('read', 'missing.json')), self.config, {}, 'read')
-        self.assertEqual('not-found', ledger['observations'][0]['failure'])
-        self.assertNotIn('inventoryAttestationSha256', ledger['observations'][0])
-        discovery.verify(self.config, {}, ledger)
-        captured = dict(failure='not-found', sha256='a'*64, sizeBytes=1)
-        with self.assertRaisesRegex(HostError, 'unavailable'):
-            provenance.check_capture(dict(kind='read', root='workspace', path='nested/state.json'), captured, ledger)
-
     def test_actual_source_update_needs_a_new_collection_not_a_relabelled_old_export(self):
         with sqlite3.connect(self.db) as connection:
             connection.execute('UPDATE documents SET content=? WHERE path=?',('{"owner":"replacement"}','nested/state.json'))

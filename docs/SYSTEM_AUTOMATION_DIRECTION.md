@@ -218,21 +218,11 @@ compiler constraints remain independent. Provenance is supporting infrastructure
 Deterministic lifecycle transcripts validate this boundary but do not close live-agent
 reasoning, unfamiliar-schema generalization or runtime-outcome acceptance.
 
+### S3.3: callable planning feedback
 
-S3.3 now starts with [goal-first discovery](GOAL_FIRST_DISCOVERY.md): the original
-goal, permitted environment, enforced observation grants, public constraints and
-frozen success criteria precede exploration. A complete evidence-linked plan needs
-no binding map or decision table. Independent caller checks, agent-proposed checks,
-natural-language goal acceptance and runtime outcomes remain separate. The input-only
-infrastructure/recovery portfolio contains no prepared solutions; live-model validation
-is still required.
-
-Optional [observed discovery decisions](OBSERVED_DISCOVERY_DECISIONS.md) connect typed
-facts to separately reviewed lifecycle alternatives. The host selects exactly one
-case and appends its existing requirements-v5 obligations; the canonical compiler
-checks dependencies, bounded retries and recovery structure. Infrastructure reuse
-versus creation and database inspection versus migration exercise the same mechanism.
-Unknown/partial state blocks selection, and changed evidence invalidates approval.
-This is authoring-time plan fidelity, not remote ownership or execution proof. Live
-reasoning, runtime precondition revalidation and the full multi-resource lifecycle
-remain open; no roadmap milestone is closed by these scripted compiler tests.
+The [agent planning tools](AGENT_PLANNING_TOOLS.md) give an existing agent actual
+capability lookup, contract inspection and compiler feedback during plan formation.
+The same interface supports infrastructure and data recovery without solution maps.
+The agent host owns environment discovery and access control. Canonical draft
+acceptance remains separate from original-goal review and observed runtime outcomes.
+Host observation integration and live model evaluation remain open S3 work.
