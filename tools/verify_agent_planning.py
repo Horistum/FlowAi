@@ -33,9 +33,9 @@ async def verify(root, cli):
             async with stdio_client(server) as (reader, writer):
                 async with ClientSession(reader, writer, read_timeout_seconds=150) as client:
                     await client.initialize()
-                    async def call(name, **args):
-                        result = await client.call_tool(name, args)
-                        require(not result.is_error, f'{case}/{name}: {result.content}')
+                    async def call(tool_name, **args):
+                        result = await client.call_tool(tool_name, args)
+                        require(not result.is_error, f'{case}/{tool_name}: {result.content}')
                         require(isinstance(result.structured_content, dict), 'Tool omitted structured result')
                         return result.structured_content
 
