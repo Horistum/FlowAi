@@ -1,5 +1,9 @@
 # Observed decisions in authoring
 
+For goal-first authoring without mandatory tables, use the opt-in
+[goal context](GOAL_FIRST_DISCOVERY.md). Decisions described here are optional in that
+mode; their checks remain model-derived consistency checks, not independent evidence.
+
 Investigation version 4 connects typed observed state to obligations on a candidate
 plan. For example, `exists: true` plus `ownership: "shared"` selects reuse constraints;
 `exists: false` plus `ownership: "unallocated"` selects creation and recovery constraints.
@@ -97,7 +101,8 @@ python3 -m unittest discover -s tools/tests -p 'test_discovery_decisions.py'
 python3 tools/verify_discovery_decisions.py --cli flow-cli/build/install/flow-core/bin/flow-core
 ```
 
-The installed proof includes 22 cases: eight matching plans across two domains and
+The installed proof includes 30 cases: eight matching plans across two domains and
 two layouts, four stale alternatives, four wrong observed values, four recovery faults
-and two unsupported states. These are scripted protocol/compiler proofs, not an AI
+and two unsupported states, plus four map-free goal plans and four independent-constraint
+violations. These are scripted protocol/compiler proofs, not an AI
 benchmark. Existing compiler, conformance and runtime evidence tests remain mandatory.

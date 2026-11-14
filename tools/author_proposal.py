@@ -12,6 +12,10 @@ from authoring_host.session import resume, review_discovery, start
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    preparation = commands.add_parser("prepare-goal", help="Materialize an input-only goal case without calling a model")
+    preparation.add_argument("--config", required=True, help="Owner-selected provider/compiler/budget; no investigation")
+    preparation.add_argument("--case", required=True)
+    preparation.add_argument("--out", required=True)
     run = commands.add_parser("run", help="Create a new bounded authoring session")
     run.add_argument("--config", required=True)
     run.add_argument("--request", required=True)
@@ -37,6 +41,10 @@ def main(argv=None):
     report.add_argument("--evaluation", required=True)
     args = parser.parse_args(argv)
     try:
+        if args.command == "prepare-goal":
+            from authoring_host.goal_case import prepare
+            print(json.dumps(prepare(loads(read(args.config)), read(args.case), args.out)))
+            return 0
         if args.command == "run":
             value = start(loads(read(args.config)), read(args.request), read(args.requirements), args.out,
                           target=args.target, render=args.render)
@@ -52,7 +60,10 @@ def main(argv=None):
         if "completedRuns" in value:
             print(json.dumps({k: value[k] for k in ("completedRuns", "expectedRuns", "milestoneComplete")}))
             return 3  # Descriptive measurements always require independent quality review.
-        print(json.dumps({k: value[k] for k in ("runId", "status", "repairCount", "clarificationCount")}))
+        summary = {k: value[k] for k in ("runId", "status", "repairCount", "clarificationCount")}
+        if "goalEvidence" in value:
+            summary["goalEvidence"] = value["goalEvidence"]
+        print(json.dumps(summary))
         return 0 if value["status"] == "accepted" else 3 if value["status"] in ("awaiting-user", "awaiting-discovery-review") else 4
     except HostError as failure:
         # HostError carries only bounded, host-authored public diagnostics.

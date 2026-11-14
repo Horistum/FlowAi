@@ -1,10 +1,14 @@
 # Observed lifecycle decisions
 
 These are manually authored public development fixtures, not model evaluation.
+The separate [goal-discovery portfolio](../goal-discovery/) contains input-only
+environments for real provider trials, with no candidate responses or solution maps.
 Caller inputs are the request, independent requirements and allowed inventory root.
 The decision, bindings and responses are scripted provider outputs, not caller hints.
 `tools/verify_discovery_decisions.py` randomizes addresses and filenames and tests two
 source layouts through the real installed compiler.
+It also exercises map-free goal mode and independent-constraint violations; compiler
+acceptance intentionally leaves natural-language goal satisfaction unassessed.
 
 | Observed state | Selected obligations | Rejected counterexample |
 | --- | --- | --- |

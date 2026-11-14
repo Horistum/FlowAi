@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 149
+stateVersion: 150
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -931,12 +931,17 @@ recoveryBoundedAuthoring:
     deliveryBase: main
     validation: current-revision-python-installed-compiler-and-full-ci-required
     investigationProtocolVersion: 4
-    authoringHostVersion: 6
+    authoringHostVersion: 7
     reviewPacketVersion: 2
     requirementsVersion: 5
-    scope: Typed observations select reviewed additive compiler obligations; no second plan model or runtime evaluator.
+    scope: Goal-first discovery with explicit observation grants, map-free evidence-linked plans and separate independent versus proposed checks; no second plan model or runtime evaluator.
+    goalContract: docs/GOAL_FIRST_DISCOVERY.md
+    inputOnlyPortfolio: conformance/goal-discovery
+    inputOnlyCases: 8
     callerBindingMapRequired: false
-    installedCompilerCases: 22
+    goalModeDecisionTableRequired: false
+    naturalLanguageGoalAssessed: false
+    installedCompilerCases: 30
     liveModelEvaluated: false
     workflowExecution: false
     remoteOwnershipProven: false

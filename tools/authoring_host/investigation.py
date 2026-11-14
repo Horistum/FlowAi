@@ -245,7 +245,8 @@ def output_schema(response_schema, config=None, requirement_schema=None):
         from . import discovery
         if config["formatVersion"] in (3, 4):
             from . import discovery_review
-            return discovery_review.output_schema(response_schema, version=config["formatVersion"], requirement_schema=requirement_schema)
+            return discovery_review.output_schema(response_schema, version=config["formatVersion"],
+                requirement_schema=requirement_schema, goal_mode="task" in config)
         return discovery.output_schema(response_schema)
     def obj(properties):
         return {"type": "object", "additionalProperties": False, "required": list(properties), "properties": properties}
@@ -271,6 +272,10 @@ def instructions(config):
             from . import discovery_review
             if config["formatVersion"] == 4:
                 from . import discovery_decisions
+                if "task" in config:
+                    from . import goal_context
+                    return (discovery_review.INSTRUCTIONS.replace(discovery_review.VERSION, discovery_decisions.VERSION) +
+                            "\n" + goal_context.INSTRUCTIONS)
                 return discovery_review.INSTRUCTIONS.replace(discovery_review.VERSION, discovery_decisions.VERSION) + "\n" + discovery_decisions.INSTRUCTIONS
             return discovery_review.INSTRUCTIONS
         return discovery.INSTRUCTIONS

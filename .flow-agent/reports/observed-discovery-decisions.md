@@ -1,9 +1,11 @@
 # Observed decisions constrained by the canonical compiler
 
-PR 271 adds a functional authoring boundary: typed source facts select reviewed
-lifecycle obligations, which the existing compiler checks on its canonical graph.
-The earlier evaluation-only wrapper is removed from this PR. Independent live-model
-evaluation remains open and is not replaced by a scripted success metric.
+PR 271 now adds a goal-first mode to the existing authoring host. Its initial input
+contains the goal, permitted environment, actual observation grants, constraints and
+frozen success criteria. An agent can investigate and propose an evidence-linked
+complete Intent without a binding map or decision table. The earlier typed observed
+decisions remain optional helpers. Independent live-model evaluation stays open;
+scripted success cannot close it.
 
 ## Implemented behavior
 
@@ -17,6 +19,18 @@ evaluation remains open and is not replaced by a scripted success metric.
   No host traversal of the Intent or independent semantic graph is introduced.
 - Existing clarification can continue to candidate review and compilation. Approval
   never follows a changed source, replacement candidate or interrupted compilation.
+- Opt-in `investigation.task` records host/7, explicit per-root list/read grants and
+  pre-generation public criteria. Grants are enforced before filesystem access.
+- Failed authorized lookups become bounded observations in goal mode. They cannot
+  become extracted facts or global absence, and changed results invalidate review.
+- Map-free interpretation requires current evidence references. Inferences and open
+  unknowns retain their existing attribution and blocking behavior.
+- Every original and derived compiler check must occur exactly once in the receipt.
+  Results are partitioned into caller-authored constraints and proposed consistency
+  checks. Neither fills natural-language goal or runtime evidence.
+- `prepare-goal` materializes eight input-only cases using the owner's transport and
+  budget without calling a provider. Infrastructure and recovery variants contain no
+  solution maps, proposed plans, expected query sequence or approval records.
 
 ## Verification and limits
 
@@ -25,17 +39,21 @@ facts, case ambiguity, complete input coverage, old protocol rejection, unchange
 independent requirements, source mutation before/during compilation, explicit caller
 continuation, compiler receipt omissions and public schema references.
 
-The full local Python suite contains 503 tests: 491 passed; 12 existing deployed
+The full local Python suite contains 526 tests: 514 passed; 12 existing deployed
 observer tests cannot start Unix-socket services in this workspace. Those tests
 remain enabled in CI. `tools/flow_agent_validate.py` passes. No JVM or installed-CLI
 pass is asserted locally because the required Gradle distribution cannot be fetched
 in this environment. Exact-head and merge-candidate CI remain required.
 
 The installed compiler proof is integrated into `verify_authoring_host.py` and
-contains 22 positive/adversarial cases over infrastructure and data. It checks stale
+contains 30 positive/adversarial cases over infrastructure and data. It checks stale
 alternative plans, unrelated observed addresses, cleanup of a shared address,
 allocation inside its own recovery region, flattened cleanup and an unrelated
 recovery point. Two distinct source layouts exercise the same generic resolution.
+Eight added cases exercise four map-free plans and four violations of independent
+constraints through the actual compiler. The input-only live portfolio is separate
+from these deterministic transcripts. No live model adapter or provider credential
+was configured in this workspace, so no live reasoning result is claimed.
 
 These transcripts are manually authored and never supplied as caller hints to the
 provider. They establish protocol and compiler behavior only. The model's discovery

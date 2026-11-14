@@ -107,7 +107,8 @@ def candidates(binding, ledger):
     source = binding["source"]
     found = []
     for observation in ledger["observations"]:
-        if observation["selector"]["kind"] != "read" or observation["selector"]["root"] != source["root"]:
+        if (observation["selector"]["kind"] != "read" or observation["selector"]["root"] != source["root"]
+                or "failure" in observation):
             continue
         try:
             document = loads(observation["text"].encode("utf-8"))

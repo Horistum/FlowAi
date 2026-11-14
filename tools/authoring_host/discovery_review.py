@@ -40,13 +40,18 @@ Changed sources invalidate this run. No shell, network or write tool is availabl
 """
 
 
-def prepare(action, ledger, original, catalog, run_id):
+def prepare(action, ledger, original, catalog, run_id, *, task=None):
     require(original["formatVersion"] == 5,
             "Reviewed discovery requires explicit requirements version 5; implicit migration is forbidden")
     interpretation = action["interpretation"]
     decisions = ledger.get("formatVersion") == 4
-    keys(interpretation, ("summary", "bindings", "decisions") if decisions else ("summary", "bindings"))
+    keys(interpretation, (("summary", "bindings", "decisions") if decisions else ("summary", "bindings")) +
+         (("evidenceRefs",) if task is not None else ()))
     nonblank(interpretation["summary"])
+    if task is not None:
+        from . import goal_context
+        require(decisions, "Goal context requires investigation v4")
+        goal_context.validate_basis(interpretation["evidenceRefs"], ledger)
     rows = interpretation["bindings"]
     require(isinstance(rows, list) and (0 if decisions else 1) <= len(rows) <= 16,
             "Discovery interpretation requires evidence-backed bindings")
@@ -70,7 +75,8 @@ def prepare(action, ledger, original, catalog, run_id):
     assessment.update(scope="reviewed-agent-proposed-bindings-only", policyAttribution="model-proposed-unreviewed")
     if decisions:
         from . import discovery_decisions
-        derived = discovery_decisions.resolve(interpretation["decisions"], ledger, original, derived, assessment)
+        derived = discovery_decisions.resolve(interpretation["decisions"], ledger, original, derived, assessment,
+                                              allow_empty=task is not None)
         assessment["formatVersion"] = 2
         assessment["policySha256"] = digest(canonical(dict(bindings=bindings, decisions=interpretation["decisions"])))
     packet = dict(formatVersion=2 if decisions else 1, runId=run_id, request=original["request"],
@@ -83,6 +89,9 @@ def prepare(action, ledger, original, catalog, run_id):
                   limitations=["Observed values do not prove the proposed meaning or source completeness.",
                                "Acceptance checks declared constraints, not every natural-language obligation.",
                                "Plan acceptance does not establish runtime outcomes or execution authority."])
+    if task is not None:
+        packet["task"] = copy.deepcopy(task)
+        packet["goalEvidence"] = goal_context.evidence_status(task)
     require(len(canonical(packet)) <= MAX_BYTES - 4096, "Discovery review packet exceeds host byte limit")
     return derived, assessment, packet
 
@@ -96,7 +105,7 @@ def validate_decision(value, packet, packet_sha):
     require(value["decision"] in ("accept", "reject"), "Discovery review must accept or reject")
 
 
-def output_schema(response_schema, *, version=3, requirement_schema=None):
+def output_schema(response_schema, *, version=3, requirement_schema=None, goal_mode=False):
     from .discovery import output_schema as discovery_schema
     schema = discovery_schema(response_schema)
     text = {"type": "string", "minLength": 1, "maxLength": 1000}
@@ -119,5 +128,11 @@ def output_schema(response_schema, *, version=3, requirement_schema=None):
                          items=obj({"meaning": text, "rationale": text, "requirement": requirement, "factId": text}))})
     if version == 4:
         from . import discovery_decisions
-        return discovery_decisions.output_schema(schema, requirement_schema)
+        schema = discovery_decisions.output_schema(schema, requirement_schema)
+        if goal_mode:
+            interpretation = schema["oneOf"][1]["properties"]["interpretation"]
+            interpretation["properties"]["decisions"]["minItems"] = 0
+            interpretation["required"].append("evidenceRefs")
+            interpretation["properties"]["evidenceRefs"] = dict(type="array", minItems=1, maxItems=128,
+                                                                  uniqueItems=True, items=text)
     return schema

@@ -45,9 +45,10 @@ def scalar(value):
             isinstance(value, str) and len(value) <= 1000)
 
 
-def validate(decisions, ledger, original):
+def validate(decisions, ledger, original, *, allow_empty=False):
     """Validate the bounded interpretation envelope; the compiler owns check semantics."""
-    require(isinstance(decisions, list) and 1 <= len(decisions) <= 8, "Expected 1..8 observed decisions")
+    require(isinstance(decisions, list) and (0 if allow_empty else 1) <= len(decisions) <= 8,
+            "Invalid observed decision inventory")
     ids, total = set(), 0
     roots = {r["id"] for r in ledger["roots"]}
     for decision in decisions:
@@ -85,9 +86,9 @@ def validate(decisions, ledger, original):
                 nonblank(obligation["check"].get("kind"))
 
 
-def resolve(decisions, ledger, original, derived, assessment):
+def resolve(decisions, ledger, original, derived, assessment, *, allow_empty=False):
     """Retain selection evidence and append checks, never inspect or repair the Intent."""
-    validate(decisions, ledger, original)
+    validate(decisions, ledger, original, allow_empty=allow_empty)
     result = copy.deepcopy(derived if derived is not None else original)
     assessment["decisions"] = []
     assessment["scope"] = "reviewed-agent-proposed-bindings-and-observed-decisions-only"

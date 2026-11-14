@@ -219,7 +219,15 @@ Deterministic lifecycle transcripts validate this boundary but do not close live
 reasoning, unfamiliar-schema generalization or runtime-outcome acceptance.
 
 
-S3.3: [Observed discovery decisions](OBSERVED_DISCOVERY_DECISIONS.md) connect typed
+S3.3 now starts with [goal-first discovery](GOAL_FIRST_DISCOVERY.md): the original
+goal, permitted environment, enforced observation grants, public constraints and
+frozen success criteria precede exploration. A complete evidence-linked plan needs
+no binding map or decision table. Independent caller checks, agent-proposed checks,
+natural-language goal acceptance and runtime outcomes remain separate. The input-only
+infrastructure/recovery portfolio contains no prepared solutions; live-model validation
+is still required.
+
+Optional [observed discovery decisions](OBSERVED_DISCOVERY_DECISIONS.md) connect typed
 facts to separately reviewed lifecycle alternatives. The host selects exactly one
 case and appends its existing requirements-v5 obligations; the canonical compiler
 checks dependencies, bounded retries and recovery structure. Infrastructure reuse
