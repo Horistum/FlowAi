@@ -41,6 +41,16 @@ automatic repeated model turn. The existing profile and commissioning gate remai
   isolation, the existing MCP/authoring proofs and the new worker proof. The two
   full jobs now install the pinned optional worker and run its tests explicitly.
 
+The first CI attempt at `55922089` passed the complete merge candidate, including
+all 495 Python, 20 worker, 2,573 JVM tests, 319 conformance checks and 16 installed
+worker cases. The exact-head job passed those same groups but exceeded the 35-minute
+job limit during the final existing allocation proof. GitHub explicitly reported
+`The job has exceeded the maximum execution time of 35m0s`; no test assertion failed.
+Both full-job budgets are now 45 minutes to retain the entire expanded suite on
+slower runners. Individual compiler/worker bounds and every test remain unchanged.
+Final-revision CI must still pass; the timed-out attempt is not accepted evidence
+of full exact-head completion.
+
 These are scripted protocol/compiler checks, not live model reasoning or executed
 infrastructure recovery. Private fixture attestations are ephemeral and are not
 deployment commissioning evidence.

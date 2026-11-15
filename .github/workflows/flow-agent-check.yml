@@ -148,7 +148,8 @@ jobs:
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     # Full tests, conformance and installed-host/local runtime proofs share this budget.
-    timeout-minutes: 35
+    # Full compiler plus installed-host proofs need margin for slower runners.
+    timeout-minutes: 45
 
     steps:
       - name: Require Successful Module Isolation
@@ -341,7 +342,8 @@ jobs:
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     # Match the exact-head budget, including observed runner variance in the full proofs.
-    timeout-minutes: 35
+    # Keep the exact-head and merge-candidate validation budgets identical.
+    timeout-minutes: 45
 
     steps:
       - name: Require Successful Module Isolation
