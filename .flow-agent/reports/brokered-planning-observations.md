@@ -50,6 +50,9 @@ Both full-job budgets are now 45 minutes to retain the entire expanded suite on
 slower runners. Individual compiler/worker bounds and every test remain unchanged.
 Final-revision CI must still pass; the timed-out attempt is not accepted evidence
 of full exact-head completion.
+The CI cost policy document and its existing finite-budget regression now pin the
+same 45-minute ceiling. Revision selection, mandatory gates, cache restrictions and
+failure propagation remain checked by the complete local CI-policy test suite.
 
 These are scripted protocol/compiler checks, not live model reasoning or executed
 infrastructure recovery. Private fixture attestations are ephemeral and are not
