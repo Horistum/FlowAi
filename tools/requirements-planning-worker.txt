@@ -1,0 +1,2 @@
+# Optional existing worker implementation; no new model transport is bundled.
+gitops-agent-control-core @ git+https://github.com/Horistum/gitops-agent-control-plane.git@92a664b7ce894b48ce0fdcb35283c43a5fed661e
