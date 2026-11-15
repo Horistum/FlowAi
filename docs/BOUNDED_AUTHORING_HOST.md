@@ -264,3 +264,10 @@ The required executable held-out render therefore remains open. A different targ
 selection alone cannot resolve it. Concrete certificate integration needs an explicit
 architecture and binding decision that preserves the original request; the corpus,
 requirements and executable-readiness policy are unchanged.
+
+## Interactive tools for an existing agent
+
+For a tool-using agent that owns its investigation loop, use the optional
+[agent planning MCP server](AGENT_PLANNING_TOOLS.md). It exposes capability lookup,
+public contracts and iterative canonical draft checks without launching a model or
+changing this data-only provider protocol. Final caller review remains separate.

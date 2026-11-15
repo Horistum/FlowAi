@@ -14,7 +14,8 @@ def compiler():
     args = sys.argv[2:]
     data = Path(args[1]).read_bytes()
     proposal = json.loads(data)
-    requirements = json.loads(Path(args[args.index("--requirements") + 1]).read_bytes())
+    requirements = (json.loads(Path(args[args.index("--requirements") + 1]).read_bytes())
+                    if "--requirements" in args else None)
     out = Path(args[args.index("--out") + 1])
     out.mkdir()
     response = proposal["response"]
@@ -28,9 +29,9 @@ def compiler():
         fidelity = "unassessed"
     elif marker == "input-error":
         code, semantic, fidelity, stage = 2, "not-evaluated", "unassessed", "INPUT"
-    elif any(i["check"]["kind"] == "unsupported" for i in requirements["requirements"]):
+    elif requirements is not None and any(i["check"]["kind"] == "unsupported" for i in requirements["requirements"]):
         code, fidelity, stage = 4, "unsupported", "REQUEST_FIDELITY"
-    elif requirements["confirmation"] != "CONFIRMED":
+    elif requirements is not None and requirements["confirmation"] != "CONFIRMED":
         code, fidelity, stage = 3, "review-required", "REQUEST_FIDELITY"
     elif any(q.get("severity") == "REQUIRED" for q in response.get("report", {}).get("openQuestions", [])):
         code = 3
@@ -46,11 +47,18 @@ def compiler():
                                   "message": "Invalid input"}]
     # Protocol-only receipt for host tests. Real binding semantics are exercised by
     # verify_system_discovery.py using the installed product, never this mock.
-    report['graphDigest'] = 'a' * 64
+    if semantic != 'rejected':
+        report['graphDigest'] = 'a' * 64
+    if requirements is None:
+        report.update(formatVersion=1, requestFidelity='unassessed', renderRequested=False)
+        (out / 'proposal-review.json').write_text(json.dumps(report))
+        if code == 0:
+            (out / 'canonical-execution-plan.json').write_text(json.dumps({'testOnly': True}))
+        return code
     (out / "proposal-review.json").write_text(json.dumps(report))
     (out / "request-fidelity-review.json").write_text(json.dumps({
         'requirementsSource': {'sha256': hashlib.sha256(Path(args[args.index('--requirements')+1]).read_bytes()).hexdigest()},
-        'graphDigest': report['graphDigest'], 'requirements': [
+        **({'state': 'NOT_EVALUATED'} if semantic == 'rejected' else {'graphDigest': report['graphDigest']}), 'requirements': [
             {'id': item['id'], 'state': 'SATISFIED' if code == 0 else 'NOT_EVALUATED'} for item in requirements['requirements']]}))
     return code
 

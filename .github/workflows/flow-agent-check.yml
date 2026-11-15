@@ -224,6 +224,15 @@ jobs:
           ./build/install/flow-core/bin/flow-core conformance 2>&1 | tee ci-logs/gradle-conformance.log
           exit ${PIPESTATUS[0]}
 
+      - name: Verify Agent Planning Tools Through MCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/flow-mcp-venv
+          /tmp/flow-mcp-venv/bin/python -m pip install -r tools/requirements-agent-planning.txt
+          /tmp/flow-mcp-venv/bin/python -m unittest discover -s tools/tests_mcp -v
+          /tmp/flow-mcp-venv/bin/python -u tools/verify_agent_planning.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/agent-planning.log
+
       - name: Verify Bounded Authoring Host With Installed Product
         shell: bash
         run: |
@@ -397,6 +406,15 @@ jobs:
           set -o pipefail
           ./build/install/flow-core/bin/flow-core conformance 2>&1 | tee ci-logs/merge-candidate-conformance.log
           exit ${PIPESTATUS[0]}
+
+      - name: Verify Agent Planning Tools Through MCP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/flow-mcp-venv
+          /tmp/flow-mcp-venv/bin/python -m pip install -r tools/requirements-agent-planning.txt
+          /tmp/flow-mcp-venv/bin/python -m unittest discover -s tools/tests_mcp -v
+          /tmp/flow-mcp-venv/bin/python -u tools/verify_agent_planning.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/agent-planning.log
 
       - name: Verify Bounded Authoring Host With Installed Product
         shell: bash

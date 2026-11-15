@@ -1,0 +1,28 @@
+version: AI-A3-S3.3
+name: Callable planning tools for an existing agent
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 611e688bcd9ac6e63d6a52de33d33bdae8e46dbf
+predecessorPullRequest: 270
+deliveryBase: main
+authorization: Maintainer requested replacing descriptive PR 271 additions with functional tools that an agent can actually call while discovering and repairing a plan.
+objective: Expose public capability contracts and iterative canonical compiler feedback through a runnable MCP stdio server, with the existing agent host owning exploration and execution authority.
+universalInvariant: The original goal and caller boundaries remain fixed; a draft can be revised after compiler diagnostics but cannot approve itself or establish observed runtime success.
+scope:
+- Replace the unmerged goal-case generator and model-authored decision-table layer with a small callable planning interface.
+- Expose the caller task, searchable compiler catalog, exact public contracts, and draft compilation through the official MCP transport.
+- Compile complete Intent proposals using the existing CLI; return its diagnostics and canonical plan artifacts, with no Python semantic graph or domain solution mapping.
+- Capture each exact proposal and compiler result for a separate caller review; never expose approval, rendering or workflow execution as agent tools.
+- Keep process paths, limits, original request and public boundary information operator-owned at server startup.
+- Demonstrate infrastructure and data recovery through the same interface, including invalid drafts, diagnostic-driven correction, dependencies and recovery.
+forbiddenScope:
+- No new model runner, executor, arbitrary command tool, domain adapter or implicit control-plane integration.
+- No self-authored independent oracle, automatic approval, runtime-success claim or live-model quality claim from scripted tests.
+- No S3, AI-A3, AR-06 or AR-07 closure; EF-09 remains paused.
+validationPlan:
+- Test real MCP stdio discovery and calls using the official client, including recoverable invalid tool inputs.
+- Test immutable caller context, bounded compiler processes and outputs, exact proposal receipts and compiler distribution identity.
+- Run installed-compiler infrastructure and data-recovery repair sessions through MCP; falsify incomplete and unsafe proposals.
+- Run tooling, architecture, conformance and exact-head/merge-candidate CI.
+nextSlice: S3-agent-host-observation-integration-and-runtime-precondition-revalidation

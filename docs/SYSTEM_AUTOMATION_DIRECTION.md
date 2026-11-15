@@ -217,3 +217,12 @@ plan. Separate review is bound to the exact request, evidence and candidate; exi
 compiler constraints remain independent. Provenance is supporting infrastructure.
 Deterministic lifecycle transcripts validate this boundary but do not close live-agent
 reasoning, unfamiliar-schema generalization or runtime-outcome acceptance.
+
+### S3.3: callable planning feedback
+
+The [agent planning tools](AGENT_PLANNING_TOOLS.md) give an existing agent actual
+capability lookup, contract inspection and compiler feedback during plan formation.
+The same interface supports infrastructure and data recovery without solution maps.
+The agent host owns environment discovery and access control. Canonical draft
+acceptance remains separate from original-goal review and observed runtime outcomes.
+Host observation integration and live model evaluation remain open S3 work.
