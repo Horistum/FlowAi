@@ -1,84 +1,88 @@
-# AI-A3-S3.5: reproducible worker evaluation
+# AI-A3-S3.5: worker evaluation and lifecycle correction
 
-Baseline: PR #272 merged as `b32c51dfe374899a13a1a03fd107656363faecab`.
+Merged baseline: PR #272, `b32c51dfe374899a13a1a03fd107656363faecab`.
+Review correction: PR #273, initially `bb641c42927dfbe485026af1e6e3b20c90fd3d52`.
 
-## Problem and completed behavior
+## Purpose and ownership
 
-The legacy authoring evaluator drives the data-only proposal interface. Reusing it
-would not measure the newer worker's observation choices, retained candidate
-selection or independent review. A collection of successful draft checks would
-also conflate compiler acceptance with satisfaction of the original requirements.
+The legacy evaluator bypasses worker observations, retained candidate selection
+and independent review. The portfolio runner connects those existing boundaries
+for at least three repetitions, with private expectations, frozen exports and
+explicit total turn accounting. Compiler acceptance, independent requirement
+satisfaction and incomplete evidence are reported separately.
 
-The new public evaluation CLI orchestrates the existing worker and compiler review
-over a fixed case portfolio with at least three repetitions. It freezes independent
-requirements, all bounded discovery exports, shared settings, code and compiler
-identity, public contracts and an explicit total turn allowance before dispatch.
-It checks private requirements against every case's grants, including cross-case
-exposure, and keeps snapshots and expectations outside the model's inputs.
+The compiler remains the sole semantic evaluator. This change adds no model
+transport, scenario-to-plan production mappings, public Intent semantics,
+rendering or execution authority. The original twelve-case corpus is unchanged.
 
-Every planned trial remains in the denominator. Ordinary blocked selections and
-wrong-goal plans are measured outcomes. Preparation failures, uncertain dispatch,
-changed sources and invalid evidence stop further work. An outer reservation is
-durable before worker dispatch; an ambiguous reserved slot cannot be replaced.
-Completed worker receipts and independent reviews recover without another model
-or compiler invocation. Missing summary files are derived again from exact evidence.
+## Findings confirmed during review
 
-The implementation reuses worker configuration, bounded discovery, authority hashes,
-locks, atomic writes and canonical compiler assessment. It adds no model transport,
-scenario-to-plan production mapping, Python semantic evaluator or execution path.
+The initial revision passed CI, but several lifecycle transitions were not covered.
+New regressions run against that revision produced eight failing assertions and
+one subprocess timeout. These demonstrate the following defects rather than
+assuming that an existing green suite establishes the declared invariant.
 
-## Lifecycle review and counterexamples
-
-| Boundary | Counterexample exercised | Enforced behavior |
+| Finding | Reproduced behavior | Correction |
 | --- | --- | --- |
-| Whole experiment | Mutate an export the worker never read. | Full private snapshots invalidate recovery and later dispatch. |
-| Private oracle | Put another case's requirements under a granted root. | Reject the entire portfolio before dispatch. |
-| Turn preparation | Fail commissioning or catalog preparation. | No outer turn is reserved; corrected prerequisites can resume frozen inputs. |
-| Crash window | Reserve a trial without a worker intent, or lose a dispatched turn's receipt. | Retain the incomplete slot and forbid automatic replay. |
-| Completed worker | Interrupt before independent review or before outer aggregation. | Recover the completed worker and finish only the missing review/aggregation. |
-| Partial review | Leave compiler output without a completed review receipt. | Do not overwrite or rerun the partial review. |
-| Review recovery | Substitute candidate metadata, omit artifacts or change process status. | Reconstruct from exact captured inputs and compiler evidence; reject contradictions. |
-| Review success | Remove both graph digests or use nonregular evidence files. | Require a valid graph identity and safe regular inputs; absence cannot equal successful assessment. |
-| Authority drift | Change public contracts while keeping the same executable. | Bind contracts independently before dispatch and during recovery. |
-| Outcome quality | Select a compiler-valid plan with the wrong failure disposition. | Record compiler acceptance separately and retain independent requirement rejection. |
+| Invalid review counted as completion | An independent compiler input error in the last trial returned `complete` and counted every trial as completed. | Exit 2 is invalid measurement evidence, excluded from completed outcomes and retained with an explicit diagnostic. |
+| Reservation count preceded durability | A failed reservation write reported one reserved turn while the journal contained zero. | Reservation publication does not mutate an in-memory authority; reports and dispatch decisions reread the journal. An error after replacement preserves the spent slot. |
+| Summary ignored changes during aggregation | An unread export changed while collecting trial rows, yet a complete report was published. | Revalidate the complete frozen experiment and journal after aggregation and before publication. |
+| Verification could create a new experiment | Clearing retained state before summary acquired its lock caused it to prepare new snapshots and a new plan. | Separate preparation from read-only plan verification; recheck summary admission under the lock. |
+| Metrics escaped their verified snapshot | A draft result changed after handoff recovery; statistics consumed the substituted bytes. | Every metric input must match the recovered artifact digest, and the independent review must refer to the same planning receipt. |
+| Review lacked a selected-graph anchor | Mutating both independent graph digests to the same different value was accepted; missing/substituted canonical-plan artifacts were accepted too. | Require the original selected graph identity and exact canonical-plan bytes. Compare artifacts, without recreating graph semantics in Python. |
+| Completed compiler review could not finish | A crash after compiler completion but before publishing `review.json` permanently blocked normal resume. | Retain the compiler exit status and full output inventory; normal resume can finalize that unchanged evidence without compiler or model I/O. Incomplete evidence remains blocked. |
+| Nonregular nested evidence could hang recovery | Replacing a selected proposal with a FIFO reached a blocking reader during summary. | All retained planning/review/evaluation JSON uses one bounded, nonblocking, no-follow reader. The public CLI regression has an independent subprocess timeout. |
 
-Independent review now retains the actual compiler process exit status separately
-from compiler JSON, and derives the complete review metadata and artifact inventory
-when recovering. Older private records without this process receipt remain
-historical evidence under their original checkout; they are not silently migrated.
-The existing code-identity boundary also prevents reusing old commissioned adapters
-or planning runs under changed host code.
+Earlier tests corrupted final metadata, failed before reservation publication,
+changed exports before aggregation, or interrupted after a finished review. They
+missed failures inside those boundaries. One existing test even expected invalid
+review input to count as a completed outcome; that expectation is corrected.
+The scripted compiler now emits the canonical plan for independently reviewed
+accepted graphs, matching the installed compiler's actual artifact contract.
+
+A further regression protects read-only recovery when a completed review disappears
+during assessment. Only explicit normal completion may republish it. Summary mode
+never finalizes a missing review, including this race.
+
+## Resulting lifecycle
+
+Preparation validates the portfolio and all cross-case expectation isolation,
+freezes bounded exports and requirements, and completes worker/catalog checks
+before the first new reservation of an invocation. Each dispatch uses one durable slot. No uncertain model
+turn is replayed and no failed measurement is silently replaced.
+
+The trial retains the selected handoff, independent inputs, complete compiler
+output inventory and actual process exit status. Recovery checks these against the
+same original proposal, graph, configuration, observations and authority. A complete
+compiler receipt permits publishing a missing final review. Missing, changed or
+partial compiler evidence does not permit another process. Summary reconstructs
+its rows and counts from durable evidence and rechecks inputs before publication.
+
+Historical records remain tied to their original authority checkout. There is no
+silent migration of older process receipts without the complete inventory. No
+public compiler contract or version changes, and no CI gate is removed or weakened.
 
 ## Validation
 
-- **58 worker/review/evaluation tests pass**, using the actual pinned worker package
-  and scripted stdio peers. They exercise preparation, selection, private inputs,
-  counters, crash boundaries, process-free recovery and evidence corruption.
-- **12 installed evaluation outcomes pass** through the public CLI and real compiler:
-  three cases repeated three times, then completed recovery, contradictory review
-  rejection and changed unread-export rejection. All nine trials complete; six meet
-  independent requirements and all three deliberate wrong-goal plans are blocked.
-  Recovery, independent review and summary add no model turns.
-- **20 existing installed worker outcomes pass**, as do the MCP transport test and
-  **14 installed MCP outcomes**.
-- The full existing Python suite ran **495 tests** locally: **483 passed** and the
-  same **12 deployed-observer tests** were blocked by sandbox Unix socket `EPERM`.
-  A direct socket probe reproduced the restriction. Those tests remain enabled in CI.
-- Concurrent local executor sessions reproduced a JVM performance-data collision:
-  `Cannot use file /tmp/hsperfdata_agent/19 because it is locked by another process`.
-  JVM startup put that warning before the catalog marker on stdout, despite exit 0.
-  The catalog boundary correctly rejected it before reserving any turn. The proof
-  wrapper now prints its retained report on failure. The unchanged evaluator passes
-  when run independently; CI already runs these installed suites sequentially.
-  No parser relaxation, warning filter or automatic retry was added.
-- Final-revision exact-head and merge-candidate GitHub checks, including JVM tests,
-  conformance, adapter certification and all installed proofs, remain required.
-  The existing 45-minute job budget and every existing gate are unchanged.
+The correction is checked by worker/review/evaluation regressions and the public
+CLI against the installed compiler. The installed evaluation covers nine trials
+(three repetitions), six accepted plans and three deliberate wrong-goal rejections,
+plus completed recovery, unpublished-review finalization, changed completion
+inventory, substituted graph, missing canonical plan, contradictory review and
+changed unread export. The installed probes invoke the actual canonical compiler;
+the proposing worker is explicitly scripted.
 
-The installed portfolio is deliberately scripted integration evidence. It is not a
-measurement of live model reasoning. The original twelve-case live corpus and
-held-out rendering gates remain unchanged. Independently verified live provenance,
-source interpretation, requirement completeness and remote precondition/ownership
-revalidation remain separate acceptance work. A worker-turn allowance is not a
-provider-request, token or monetary cap. S3/AI-A3 are not declared complete by this
-runner; no reference controller or workflow execution is activated.
+All **71 worker/review/evaluation tests** and **16 installed evaluation outcomes**
+pass locally. The existing **20 installed worker outcomes** also pass. The earlier
+reproduction run failed on the original implementation before production changes.
+
+Final local results and exact-head/merge-candidate GitHub evidence are recorded in
+PR #273. The full existing Python suite retains all 495 tests, including the twelve
+Unix-socket observer cases blocked only by the local sandbox. Both full CI jobs and
+adapter certification remain required on the corrected revision. Previous green
+jobs for `bb641c4` are historical evidence, not validation of this correction.
+
+Live-model provenance and reasoning quality, source interpretation, requirement
+completeness and execution-time remote ownership/precondition checks remain separate
+acceptance work. A turn allowance is not a provider-request, token or monetary cap.
+S3/AI-A3 are not closed, and no controller or workflow execution is activated.

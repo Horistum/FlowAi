@@ -13,7 +13,7 @@ from agent_worker import AppServerWorker, WorkerError, WorkerIndeterminate
 from agent_worker.protocol import ToolInputError, atomic, exclusive_lock, read_record, validate_profile
 
 from . import discovery, inventory_provenance
-from .contracts import HostError, argv, canonical, digest, keys, loads, public_contracts, read, require, save
+from .contracts import MAX_BYTES, HostError, argv, canonical, digest, keys, loads, public_contracts, require, save
 from .planning_tools import PlanningInputError, PlanningTools, validate_configuration
 from .transport import compiler_fingerprint
 
@@ -66,6 +66,16 @@ def authority_identity():
     entry = Path(__file__).parent.parent / "agent_planning_worker.py"
     records[entry.name] = digest(entry.read_bytes())
     return digest(canonical(records))
+
+
+def read_artifact(path):
+    """Bounded JSON evidence using the same no-follow reader as provenance inputs."""
+    try:
+        data = inventory_provenance.read_regular(Path(path).absolute(), MAX_BYTES)
+    except OSError:
+        raise HostError("Retained JSON evidence path is unavailable or unsafe") from None
+    loads(data)
+    return data
 
 
 def configuration(value):
@@ -150,7 +160,7 @@ class PlanningBroker:
         if name == "flow_get_artifact":
             identifier, artifact = arguments["candidate_id"], arguments["name"]
             if isinstance(identifier, str) and identifier in self.results and artifact == "observations.json":
-                content = read(self.planning.root / identifier / artifact)
+                content = read_artifact(self.planning.root / identifier / artifact)
                 expected = self.results[identifier]["observationsSha256"]
                 require(digest(content) == expected, "Candidate observations changed")
                 return dict(candidateId=identifier, name=artifact, sha256=expected, content=loads(content))
@@ -208,13 +218,12 @@ def verify_handoff(config, directory, result):
     for name, sha in result["artifacts"].items():
         parts = discovery.relative(name)
         path = directory.joinpath(*parts)
-        require(all(not parent.is_symlink() for parent in (path, *path.parents)), "Planning artifact path is unsafe")
-        require(digest(read(path)) == sha, "Retained planning artifact changed")
-    require(canonical(loads(read(directory / "config.json"))) == canonical(config["planning"]) and
-            canonical(loads(read(directory / "task.json"))) == canonical(config["planning"]["task"]),
+        require(digest(read_artifact(path)) == sha, "Retained planning artifact changed")
+    require(canonical(loads(read_artifact(directory / "config.json"))) == canonical(config["planning"]) and
+            canonical(loads(read_artifact(directory / "task.json"))) == canonical(config["planning"]["task"]),
             "Retained planning task changed")
     candidate = result["candidate"]
-    selection = loads(read(directory / "selection.json"))
+    selection = loads(read_artifact(directory / "selection.json"))
     keys(selection, ("candidateId", "artifacts"))
     require(canonical(selection["artifacts"]) == canonical({name: sha for name, sha in result["artifacts"].items()
                                                            if name != "selection.json"}),
@@ -230,7 +239,7 @@ def verify_handoff(config, directory, result):
         prefix = identifier + "/"
         require({prefix + name for name in ("proposal.json", "result.json", "observations.json", "compiler/proposal-review.json")}
                 <= set(result["artifacts"]), "Selected candidate artifacts are missing")
-        retained = loads(read(directory / identifier / "result.json"))
+        retained = loads(read_artifact(directory / identifier / "result.json"))
         snapshot = result["artifacts"][prefix + "observations.json"]
         require(canonical(candidate) == canonical(dict(retained, observationsSha256=snapshot)),
                 "Selected candidate differs from retained result")
@@ -240,14 +249,14 @@ def verify_handoff(config, directory, result):
                 candidate["proposalSha256"] == result["artifacts"][prefix + "proposal.json"], "Candidate authority differs")
         require(all(result["artifacts"].get(prefix + name) == sha for name, sha in candidate["artifacts"].items()),
                 "Selected candidate artifact inventory differs")
-        require(canonical(candidate["review"]) == canonical(loads(read(directory / identifier / "compiler/proposal-review.json"))),
+        require(canonical(candidate["review"]) == canonical(loads(read_artifact(directory / identifier / "compiler/proposal-review.json"))),
                 "Selected compiler review differs")
         expected_status = "awaiting-independent-review" if candidate["review"]["exitCode"] == 0 else "blocked"
     require(result["status"] == expected_status, "Planning status contradicts the selected candidate")
     require(compiler_fingerprint(config["planning"]) == result["compilerDigest"], "Compiler distribution changed")
     require(digest(canonical(public_contracts(config["planning"]["compiler"]["contracts"]))) ==
             result["contractsSha256"], "Public contracts changed")
-    discovery.verify(config["discovery"], {}, loads(read(directory / "observations.json")))
+    discovery.verify(config["discovery"], {}, loads(read_artifact(directory / "observations.json")))
 
 
 def bound_worker(config, root):

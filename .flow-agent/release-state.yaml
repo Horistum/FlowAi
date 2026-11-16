@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 154
+stateVersion: 155
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -919,9 +919,9 @@ recoveryBoundedAuthoring:
     predecessorPullRequest: 272
     workerSource: 92a664b7ce894b48ce0fdcb35283c43a5fed661e
     validation: local-worker-and-installed-evaluation-passed-final-revision-ci-required
-    workerTests: 58
+    workerTests: 71
     installedWorkerCases: 20
-    installedEvaluationOutcomes: 12
+    installedEvaluationOutcomes: 16
     installedEvaluationTrials: 9
     installedEvaluationRepetitions: 3
     installedEvaluationRequirementsSatisfied: 6
@@ -930,6 +930,10 @@ recoveryBoundedAuthoring:
     evaluationFormatVersion: 1
     turnAllowanceRequired: true
     automaticUncertainReplay: false
+    reviewCorrectionBaseline: bb641c42927dfbe485026af1e6e3b20c90fd3d52
+    compilerCompletionInventoryRequired: true
+    completedCompilerReviewCanFinalize: true
+    invalidReviewCountedAsOutcome: false
     evaluationEvidenceKind: configured-worker-evaluation
     naturalLanguageGoalAssessed: false
     liveModelEvaluated: false

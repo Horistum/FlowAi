@@ -12,15 +12,9 @@ import re
 from agent_worker.protocol import exclusive_lock
 
 from . import discovery
-from .contracts import MAX_BYTES, canonical, digest, keys, loads, read, require, save
-from .planning_worker import configuration, recover_handoff
+from .contracts import MAX_BYTES, canonical, digest, keys, loads, require, save
+from .planning_worker import configuration, read_artifact, recover_handoff
 from .transport import compiler_environment, invoke
-
-
-def _read(path):
-    require(path.is_file() and path.stat().st_nlink == 1 and
-            all(not p.is_symlink() for p in (path, *path.parents)), "Independent review artifact is unsafe")
-    return read(path)
 
 
 def _paths(value, directory, requirements_file, output_directory):
@@ -44,10 +38,25 @@ def _paths(value, directory, requirements_file, output_directory):
 def _inputs(root, receipt, requirements_data):
     candidate = receipt["result"]["candidate"]
     require(receipt["result"]["status"] == "awaiting-independent-review", "Planning handoff has no reviewable selection")
-    proposal = _read(root / "planning" / candidate["candidateId"] / "proposal.json")
+    proposal = read_artifact(root / "planning" / candidate["candidateId"] / "proposal.json")
     require(digest(proposal) == candidate["proposalSha256"], "Selected proposal changed")
     return {"requirements.json": requirements_data, "proposal.json": proposal, "handoff.json": canonical(receipt),
-            "task.json": _read(root / "planning/task.json"), "observations.json": _read(root / "planning/observations.json")}
+            "task.json": read_artifact(root / "planning/task.json"), "observations.json": read_artifact(root / "planning/observations.json")}
+
+
+def _compiler_artifacts(output):
+    """Capture the entire bounded compiler output, including its exact inventory."""
+    compiler_root = output / "compiler"
+    require(compiler_root.is_dir() and not compiler_root.is_symlink(), "Independent compiler output is unsafe")
+    artifacts, documents = {}, {}
+    total = 0
+    for index, path in enumerate(sorted(compiler_root.iterdir())):
+        require(index < 32, "Unexpected independent compiler artifact")
+        content = read_artifact(path); total += len(content)
+        require(total <= 4 * MAX_BYTES, "Independent compiler artifacts exceed limit")
+        artifacts["compiler/" + path.name] = digest(content)
+        documents[path.name] = loads(content)
+    return artifacts, documents
 
 
 def _assessment(root, output, receipt, requirements_data):
@@ -57,26 +66,19 @@ def _assessment(root, output, receipt, requirements_data):
     artifacts = {}
     for name, expected in _inputs(root, receipt, requirements_data).items():
         path = output / name
-        require(_read(path) == expected, "Captured review input changed")
+        require(read_artifact(path) == expected, "Captured review input changed")
         artifacts[name] = digest(expected)
     process_path = output / "compiler-process.json"
     require(not process_path.is_symlink(), "Compiler process receipt path is unsafe")
-    process_data = _read(process_path)
+    process_data = read_artifact(process_path)
     process = loads(process_data)
-    keys(process, ("exitCode",))
+    keys(process, ("exitCode", "artifacts"))
     code = process["exitCode"]
     require(type(code) is int and code in (0, 2, 3, 4), "Invalid independent compiler process status")
     artifacts[process_path.name] = digest(process_data)
-    compiler_root = output / "compiler"
-    require(compiler_root.is_dir() and not compiler_root.is_symlink(), "Independent compiler output is unsafe")
-    total = 0
-    documents = {}
-    for index, path in enumerate(sorted(compiler_root.iterdir())):
-        require(index < 32 and path.is_file() and not path.is_symlink(), "Unexpected independent compiler artifact")
-        content = _read(path); total += len(content)
-        require(total <= 4 * MAX_BYTES, "Independent compiler artifacts exceed limit")
-        artifacts["compiler/" + path.name] = digest(content)
-        documents[path.name] = loads(content)
+    compiler_artifacts, documents = _compiler_artifacts(output)
+    require(canonical(process["artifacts"]) == canonical(compiler_artifacts), "Completed compiler output changed")
+    artifacts.update(compiler_artifacts)
     compiler_review = documents.get("proposal-review.json", {})
     require(isinstance(compiler_review, dict) and compiler_review.get("formatVersion") == 2 and
             type(compiler_review.get("exitCode")) is int and compiler_review["exitCode"] == code,
@@ -91,10 +93,17 @@ def _assessment(root, output, receipt, requirements_data):
         require(isinstance(fidelity, dict) and isinstance(fidelity.get("requirementsSource"), dict) and
                 fidelity["requirementsSource"].get("sha256") == digest(requirements_data) and
                 fidelity.get("graphDigest") == compiler_review.get("graphDigest"), "Independent requirements receipt mismatch")
-    if code == 0:
+    if code != 2:
         require(isinstance(compiler_review.get("graphDigest"), str) and
                 re.fullmatch(r"[0-9a-f]{64}", compiler_review["graphDigest"]) and
-                compiler_review.get("requestFidelity") == "requirements-satisfied" and
+                compiler_review["graphDigest"] == candidate["review"].get("graphDigest"),
+                "Independent review does not assess the selected graph")
+        name = "compiler/canonical-execution-plan.json"
+        selected_digest = handoff["artifacts"].get(candidate["candidateId"] + "/" + name)
+        require(selected_digest is not None and compiler_artifacts.get(name) == selected_digest,
+                "Independent canonical plan differs from the selected plan")
+    if code == 0:
+        require(compiler_review.get("requestFidelity") == "requirements-satisfied" and
                 fidelity is not None and fidelity.get("state") == "REQUIREMENTS_SATISFIED",
                 "Independent review success requires assessed requirements")
     else:
@@ -107,16 +116,23 @@ def _assessment(root, output, receipt, requirements_data):
                 naturalLanguageCompleteness="unassessed", workflowExecution=False, artifacts=artifacts)
 
 
-def recover_review(value, directory, requirements_file, output_directory):
-    """Validate a completed independent review without model or compiler I/O."""
+def recover_review(value, directory, requirements_file, output_directory, *, complete=False):
+    """Verify a review; optionally publish an already completed compiler receipt.
+
+    Missing or partial compiler completion evidence never authorizes a process.
+    Summary callers leave complete=False and do not finalize missing reviews.
+    """
     config, root, output, requirements_path = _paths(value, directory, requirements_file, output_directory)
     with exclusive_lock(root / "lock"):
         receipt = recover_handoff(config, root)
         path = output / "review.json"
-        require(path.is_file() and not path.is_symlink(), "Independent review receipt is missing or unsafe")
-        retained = loads(_read(path))
-        expected = _assessment(root, output, receipt, _read(requirements_path))
-        require(canonical(retained) == canonical(expected), "Independent review differs from retained evidence")
+        require(complete or path.is_file(), "Independent review receipt is missing or unsafe")
+        expected = _assessment(root, output, receipt, read_artifact(requirements_path))
+        if path.exists():
+            require(canonical(loads(read_artifact(path))) == canonical(expected), "Independent review differs from retained evidence")
+        else:
+            require(complete, "Independent review receipt disappeared during recovery")
+            save(output, "review.json", canonical(expected), {})
         return expected
 
 
@@ -126,7 +142,7 @@ def review(value, directory, requirements_file, output_directory):
     require(not output.exists(), "Review output must be a new safe directory")
     with exclusive_lock(root / "lock"):
         receipt = recover_handoff(config, root)
-        requirements_data = _read(requirements_path)
+        requirements_data = read_artifact(requirements_path)
         # Freeze independent inputs only after the worker has completed. Neither
         # these bytes nor review feedback are exposed through its dynamic tools.
         inputs = _inputs(root, receipt, requirements_data)
@@ -140,8 +156,9 @@ def review(value, directory, requirements_file, output_directory):
                          config["planning"]["limits"]["timeoutSeconds"], compiler_environment())
         require(not process["failure"], "Independent review compiler did not complete")
         require(canonical(recover_handoff(config, root)) == canonical(receipt), "Planning handoff changed during review")
-        require(_read(requirements_path) == requirements_data, "Independent requirements changed during review")
-        save(output, "compiler-process.json", canonical(dict(exitCode=process["returncode"])), {})
+        require(read_artifact(requirements_path) == requirements_data, "Independent requirements changed during review")
+        artifacts, _ = _compiler_artifacts(output)
+        save(output, "compiler-process.json", canonical(dict(exitCode=process["returncode"], artifacts=artifacts)), {})
         result = _assessment(root, output, receipt, requirements_data)
         for path in (output / "compiler").iterdir():
             os.chmod(path, 0o600)

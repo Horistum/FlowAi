@@ -7,8 +7,10 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from unittest.mock import patch
 
-from authoring_host.contracts import canonical, digest, loads, read, require
+from authoring_host import planning_review
+from authoring_host.contracts import HostError, canonical, digest, loads, read, require
 from tests_worker.test_planning_worker import configuration, commission_fixture, step
 
 
@@ -82,6 +84,47 @@ def verify(root, cli):
                     "Completed evaluation did not recover exactly")
         outcomes.append(dict(case="completed-and-summary-recovery", additionalModelTurns=0))
         review_path = output / "trials/repeat-1-foundation/review/review.json"
+        original_review = read(review_path)
+        compiler_root = review_path.parent / "compiler"
+        compiler_times = {p.name: p.stat().st_mtime_ns for p in compiler_root.iterdir()}
+        review_path.unlink()
+        require(invoke(("--summary-only",)).returncode == 3, "Summary finalized an unpublished review")
+        require(invoke().returncode == 0 and read(review_path) == original_review and
+                loads(read(output / "evaluation-report.json")) == report and
+                {p.name: p.stat().st_mtime_ns for p in compiler_root.iterdir()} == compiler_times,
+                "Completed compiler evidence was not recovered without replacement")
+        outcomes.append(dict(case="completed-compiler-review-publication", additionalModelTurns=0))
+        review_path.unlink()
+        extra = compiler_root / "artifact-integrity-report.json"
+        extra_bytes = read(extra); extra.unlink()
+        require(invoke().returncode == 3 and not review_path.exists(), "Changed unpublished compiler output was accepted")
+        extra.write_bytes(extra_bytes); review_path.write_bytes(original_review)
+        outcomes.append(dict(case="changed-unpublished-compiler-output", exitCode=3, additionalModelTurns=0))
+        case_config = loads(read(output / "cases/foundation/config.json"))
+        requirements_path = output / "cases/foundation/requirements.json"
+        worker_path = output / "trials/repeat-1-foundation/worker"
+        original_invoke = planning_review.invoke
+        for variant in ("other-graph", "missing-canonical-plan"):
+            probe = work / ("review-" + variant)
+            def corrupted(*args):
+                result = original_invoke(*args)
+                if variant == "other-graph":
+                    for name in ("proposal-review.json", "request-fidelity-review.json"):
+                        path = probe / "compiler" / name
+                        value = loads(read(path)); value["graphDigest"] = "b" * 64
+                        path.write_bytes(canonical(value))
+                else:
+                    (probe / "compiler/canonical-execution-plan.json").unlink()
+                return result
+            with patch.object(planning_review, "invoke", side_effect=corrupted):
+                try:
+                    planning_review.review(case_config, worker_path, requirements_path, probe)
+                except HostError:
+                    pass
+                else:
+                    raise AssertionError("Independent review accepted " + variant)
+            require(not (probe / "review.json").exists(), "Invalid independent review was published")
+            outcomes.append(dict(case=variant, status="rejected", additionalModelTurns=0))
         before = read(review_path); changed = loads(before); changed["candidateId"] = "draft-999"
         review_path.write_bytes(canonical(changed))
         require(invoke(("--summary-only",)).returncode == 3 and

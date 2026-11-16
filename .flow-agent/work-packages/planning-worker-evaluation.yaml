@@ -1,6 +1,11 @@
 version: AI-A3-S3.5
 name: Reproducible evaluation of observation-driven worker planning
 status: candidate
+reviewCorrection:
+  baseline: bb641c42927dfbe485026af1e6e3b20c90fd3d52
+  authorization: Maintainer requested a deeper correctness and code-quality review of PR 273.
+  scope: Correct durable reservation accounting, invalid-review classification, coherent summary evidence, exact graph binding and completion of a retained compiler review without replay.
+  validation: Demonstrate failures on the original revision, then rerun regressions and installed proofs before final-revision CI.
 stream: architecture-recovery
 parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
 baselineMain: b32c51dfe374899a13a1a03fd107656363faecab

@@ -43,7 +43,9 @@ requirements reference is:
 Requirements must be nonempty, independently confirmed and bound to the exact case
 request. The compiler still owns their semantic validity. An invalid requirements
 document that reaches canonical review stops further dispatch; it is not a reason
-to pay for the rest of the portfolio.
+to pay for the rest of the portfolio. A review input error (exit 2) is an invalid
+measurement, not a completed rejected plan. It remains `incomplete-or-invalid`,
+even in the final trial, and never contributes to `completedRuns`.
 
 All requirements are checked against **every** discovery grant in the portfolio.
 Neither another case's requirements, evaluation output nor worker history can be
@@ -96,10 +98,19 @@ Reusing the same command and output resumes the same experiment:
   before the first new reservation. A known preparation failure consumes no turn;
   correcting that prerequisite can resume the same frozen experiment.
 - Every trial has a durable outer reservation before entering the worker.
+  Reports read the persisted journal, including after a failed write: failure
+  before replacement reserves nothing, while a replaced reservation remains spent
+  even if subsequent synchronization fails.
 - An exact completed worker receipt is recovered without another model call.
 - An exact completed independent review is recovered without compiler or model I/O.
+- A completed compiler receipt without a final `review.json` can be finalized by
+  normal resume, without repeating compilation. The receipt binds the actual exit
+  status and the complete output inventory. Changed or missing artifacts block
+  finalization. `--summary-only` reports this unfinished publication and never
+  writes a missing review receipt.
 - Missing outer reports can be reconstructed from those retained receipts.
-- An uncertain worker turn, a missing reserved worker intent, partial review output,
+- An uncertain worker turn, a missing reserved worker intent, review output without
+  a valid compiler completion receipt,
   changed inputs or contradictory evidence stops further dispatch. A crash after
   reservation but before worker intent conservatively consumes the slot; it never
   authorizes a replacement turn automatically.
@@ -142,6 +153,19 @@ Previously published summary fields are never input authority. The report includ
   additional draft counts, delivered observation count, tool calls and reported usage.
 - Exact planning/review receipt digests, model identity and the captured plan digest.
 
+Metric files are rechecked against the recovered receipt while reading them. All
+frozen inputs and the reservation journal are revalidated after aggregation and
+before publishing the report, including exports the worker never read. Retained
+JSON evidence uses bounded, nonblocking, no-follow reads; a FIFO, hard link or
+symlink cannot turn summary/review recovery into an unbounded file read.
+Plan verification never prepares replacement state. If retained state disappears
+before summary acquires the lock, summary rejects it without creating an experiment.
+
+Independent review must retain the same canonical-plan bytes and graph identity
+as the selected candidate. Agreement between two newly produced review documents
+alone is insufficient. The host compares canonical artifacts; the compiler remains
+the only authority for graph and requirements semantics.
+
 The evidence kind is always `configured-worker-evaluation`. Naming an executable or
 model does not attest that a live provider produced the result. Independent live
 provenance, source interpretation, requirement completeness and actual runtime
@@ -165,5 +189,7 @@ JAVA_HOME=/absolute/jdk-25 /absolute/planning-worker-venv/bin/python \
 The installed proof runs the public CLI over three repetitions of infrastructure,
 data recovery and a compiler-valid wrong-goal mutation. It checks rejected-draft
 repair, private-expectation isolation, independent rejection, completed recovery,
-contradictory review metadata and changed unread exports. Its peer is explicitly
+completion of an unpublished compiler review, changed completion inventories,
+substituted graphs, missing canonical plans, contradictory review metadata and
+changed unread exports. Its peer is explicitly
 scripted: it verifies the evaluator and compiler integration, not model reasoning.

@@ -1,6 +1,10 @@
 """Evaluation lifecycle through the actual packaged worker and private review path."""
 import copy
+from contextlib import contextmanager
+import os
 from pathlib import Path
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -197,7 +201,7 @@ class PlanningEvaluationTests(unittest.TestCase):
         data = loads(read(path)); data["formatVersion"] = 999; path.write_bytes(canonical(data))
         case["requirements"]["sha256"] = digest(read(path))
         result = self.evaluate()
-        self.assertEqual(("incomplete", 1, 1), (result["status"], result["completedRuns"], self.turns()))
+        self.assertEqual(("incomplete", 0, 1), (result["status"], result["completedRuns"], self.turns()))
         self.assertEqual(2, result["runs"][0]["reviewExitCode"])
 
     def test_change_to_unread_export_stops_the_experiment(self):
@@ -237,6 +241,141 @@ class PlanningEvaluationTests(unittest.TestCase):
         with patch.object(evaluation, "run", side_effect=AssertionError("No worker")), self.assertRaises(HostError):
             self.evaluate(summary_only=True)
         self.assertFalse(self.out.exists())
+
+    def test_last_review_input_error_cannot_complete_the_experiment(self):
+        original = planning_review.invoke
+        def input_error(argv, *args):
+            result = original(argv, *args)
+            if any("repeat-3-restore" in arg for arg in argv):
+                directory = Path(argv[argv.index("--out") + 1])
+                path = directory / "proposal-review.json"
+                value = loads(read(path)); value.update(exitCode=2, requestFidelity="unassessed", stage="INPUT")
+                path.write_bytes(canonical(value))
+                (directory / "request-fidelity-review.json").unlink()
+                result["returncode"] = 2
+            return result
+        with patch.object(planning_review, "invoke", side_effect=input_error):
+            result = self.evaluate()
+        self.assertEqual(("incomplete", 5, 6), (result["status"], result["completedRuns"], self.turns()))
+        self.assertEqual("incomplete-or-invalid", result["runs"][-1]["status"])
+        self.assertEqual(2, result["runs"][-1]["reviewExitCode"])
+        with patch.object(planning_review, "invoke", side_effect=AssertionError("No review retry")):
+            self.assertEqual(result, self.evaluate())
+
+    def test_failed_reservation_write_uses_the_durable_count(self):
+        original = evaluation.atomic
+        def fail(path, value):
+            if path.name == "reservations.json" and len(value["trials"]) == 1:
+                raise OSError("Disk write failed before replacement")
+            return original(path, value)
+        with patch.object(evaluation, "atomic", side_effect=fail):
+            result = self.evaluate()
+        self.assertEqual((0, 0), (result["reservedTurns"], self.turns()))
+        self.assertEqual([], loads(read(self.out / "reservations.json"))["trials"])
+        self.assertIsNotNone(result["preparationDiagnostic"])
+        self.assertEqual("complete", self.evaluate()["status"])
+
+    def test_reservation_error_after_replacement_does_not_allow_replay(self):
+        original = evaluation.atomic
+        def fail(path, value):
+            original(path, value)
+            if path.name == "reservations.json" and len(value["trials"]) == 1:
+                raise OSError("Directory sync failed after replacement")
+        with patch.object(evaluation, "atomic", side_effect=fail):
+            result = self.evaluate()
+        self.assertEqual((1, 0), (result["reservedTurns"], self.turns()))
+        self.assertIsNone(result["preparationDiagnostic"])
+        with patch.object(evaluation, "run", side_effect=AssertionError("No replacement turn")):
+            self.assertEqual(result, self.evaluate())
+
+    def test_summary_revalidates_unread_exports_before_publication(self):
+        unread = self.root / "inventory/unread.json"; unread.write_text('{"version":1}')
+        self.evaluate()
+        before = read(self.out / "evaluation-report.json")
+        original = evaluation._completed
+        def changed(*args):
+            row = original(*args); unread.write_text('{"version":2}'); return row
+        with patch.object(evaluation, "_completed", side_effect=changed), self.assertRaises(HostError):
+            self.evaluate(summary_only=True)
+        self.assertEqual(before, read(self.out / "evaluation-report.json"))
+        self.assertEqual(6, self.turns())
+
+    def test_metrics_cannot_read_bytes_outside_the_verified_receipt(self):
+        self.evaluate()
+        original = planning_review.recover_review
+        def changed(*args, **kwargs):
+            result = original(*args, **kwargs)
+            worker = Path(args[1])
+            if worker.parent.name == "repeat-1-foundation":
+                path = worker / "planning/draft-001/result.json"
+                value = loads(read(path)); value["review"]["exitCode"] = 4; path.write_bytes(canonical(value))
+            return result
+        with patch.object(planning_review, "recover_review", side_effect=changed):
+            result = self.evaluate(summary_only=True)
+        self.assertEqual(("incomplete", 5), (result["status"], result["completedRuns"]))
+        self.assertEqual("incomplete-or-invalid", result["runs"][0]["status"])
+
+    def test_summary_rejects_a_journal_change_during_aggregation(self):
+        self.evaluate()
+        before = read(self.out / "evaluation-report.json")
+        original = evaluation._completed
+        def changed(*args):
+            row = original(*args)
+            path = self.out / "reservations.json"
+            value = loads(read(path)); value["trials"] = value["trials"][:5]
+            path.write_bytes(canonical(value))
+            return row
+        with patch.object(evaluation, "_completed", side_effect=changed), self.assertRaises(HostError):
+            self.evaluate(summary_only=True)
+        self.assertEqual(before, read(self.out / "evaluation-report.json"))
+        self.assertEqual(6, self.turns())
+
+    def test_summary_never_prepares_an_experiment_lost_before_lock_acquisition(self):
+        self.evaluate()
+        original = evaluation.exclusive_lock
+        @contextmanager
+        def lost(path):
+            with original(path):
+                if path.parent == self.out:
+                    for child in self.out.iterdir():
+                        if child.name == "lock": continue
+                        if child.is_dir(): shutil.rmtree(child)
+                        else: child.unlink()
+                yield
+        with patch.object(evaluation, "exclusive_lock", side_effect=lost), \
+             patch.object(evaluation, "save", wraps=evaluation.save) as writes:
+            with self.assertRaises(HostError): self.evaluate(summary_only=True)
+        self.assertEqual(0, writes.call_count)
+        self.assertEqual({"lock"}, {p.name for p in self.out.iterdir()})
+        self.assertEqual(6, self.turns())
+
+    def test_completed_compiler_review_finishes_without_recompilation(self):
+        original_save = planning_review.save
+        def crash(root, name, *args):
+            if name == "review.json": raise OSError("Crash before publishing review")
+            return original_save(root, name, *args)
+        with patch.object(planning_review, "save", side_effect=crash):
+            self.assertEqual("incomplete", self.evaluate()["status"])
+        self.assertEqual(1, self.turns())
+        directory = self.out / "trials/repeat-1-foundation/review"
+        self.assertTrue((directory / "compiler-process.json").is_file())
+        self.assertFalse((directory / "review.json").exists())
+        self.assertEqual("incomplete", self.evaluate(summary_only=True)["status"])
+        with patch.object(planning_review, "invoke", wraps=planning_review.invoke) as calls:
+            self.assertEqual("complete", self.evaluate()["status"])
+        self.assertEqual(5, calls.call_count)
+        self.assertEqual(6, self.turns())
+
+    def test_summary_rejects_a_fifo_in_planning_evidence_without_hanging(self):
+        self.evaluate()
+        path = self.out / "trials/repeat-1-foundation/worker/planning/draft-001/proposal.json"
+        path.unlink(); os.mkfifo(path)
+        portfolio_path = self.root / "portfolio.json"; portfolio_path.write_bytes(canonical(self.portfolio))
+        process = subprocess.run([sys.executable, str(Path(__file__).resolve().parents[1] / "evaluate_planning_worker.py"),
+            "--portfolio", str(portfolio_path), "--out", str(self.out), "--max-turns", "6", "--summary-only"],
+            capture_output=True, timeout=5)
+        self.assertEqual(3, process.returncode)
+        self.assertEqual(5, loads(read(self.out / "evaluation-report.json"))["completedRuns"])
 
 
 if __name__ == "__main__":
