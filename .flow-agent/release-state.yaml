@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 152
+stateVersion: 153
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -930,11 +930,14 @@ recoveryBoundedAuthoring:
     predecessorPullRequest: 271
     workerSource: 92a664b7ce894b48ce0fdcb35283c43a5fed661e
     validation: local-worker-and-installed-compiler-passed-final-revision-ci-required
-    workerTests: 20
-    installedWorkerCases: 16
+    workerTests: 36
+    installedWorkerCases: 20
     workerConfigurationVersion: 1
     discoveryProtocolVersion: 3
-    scope: Explicit existing-worker adapter with scoped observations, canonical draft feedback and durable non-replaying handoff.
+    scope: Existing-worker planning with final-observation-bound selection, consistent recovery and independent canonical review of the retained handoff.
+    reviewCorrectionBaseline: 8a56453ecd976b226cb32f7994cf6c44f7120e8e
+    independentReviewEntryPoint: tools/agent_planning_worker.py --review-requirements --review-out
+    independentReviewStartsModel: false
     referenceControllerActivated: false
     naturalLanguageGoalAssessed: false
     liveModelEvaluated: false

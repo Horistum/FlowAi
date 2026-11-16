@@ -1,69 +1,81 @@
-# AI-A3-S3.4: existing worker integration with scoped observations
+# AI-A3-S3.4: existing worker planning and independent handoff review
 
 Baseline: merged PR #271, main `5b1599da18f35da49c5493e5cec19e2ef83737d1`.
+Review correction: open PR #272 at `8a56453ecd976b226cb32f7994cf6c44f7120e8e`.
 
-## Change
+## Confirmed defects in the first implementation
 
-The portable control-plane worker can now call Flow's existing planning operations
-through its dynamic-tool broker. The optional dependency is pinned to control-plane
-commit `92a664b7ce894b48ce0fdcb35283c43a5fed661e`. MCP, shell, edits, execution and
-approval remain disabled in this worker. The reference delivery controller is not
-automatically activated or modified.
+The previous revision passed CI, but its tests did not establish the complete
+planning-to-review contract. The maintainer's review prompted executable counterexamples:
 
-The adapter reuses `PlanningTools`, the installed canonical compiler and existing
-selector-free discovery v3. It captures source observations with drafts, revalidates
-them around compilation and final handoff, and accepts only an exact checked
-candidate ID from the worker. Compiler-valid drafts await independent review;
-fidelity remains unassessed. No model-authored requirements or scenario mapping is
-added. This is a host integration; public Intent/standard versions do not change.
+| Finding | Reproduced behavior | Correction |
+| --- | --- | --- |
+| Stale selection | Check a draft, read another source, select the old draft: the host returned `awaiting-independent-review`. | Selection must match the final observation snapshot. New observations identify drafts needing recheck; unchanged repeated reads remain usable. |
+| Inconsistent recovery | Change the selected review metadata while retaining all artifact hashes: `verify_handoff` accepted it. | Retain `selection.json`; compare exact typed metadata with the captured candidate result, compiler review, snapshot and derived status. Recovery rejects substitutions without another turn. |
+| Premature reservation | Set `maxChecks` to zero: validation failed after `intent.json` had already been reserved. | Share configuration validation with `PlanningTools`; complete compiler/catalog preparation before reserving dispatch. |
+| Unconnected independent review | Documentation and the installed proof invoked the raw compiler, bypassing handoff revalidation. | Add a model-free review mode that recovers the exact selected receipt, freezes independent requirements and checks source/input integrity around canonical compilation. |
+| Unrecoverable lookup typo | A wrong artifact ID raised a fatal host error. | Only lookup errors become correctable tool responses; changed retained bytes remain fatal. |
 
-One private output directory identifies one reserved turn. Completed inner worker
-receipts can restore an interrupted outer result without model/compiler calls.
-Recovery rechecks retained bytes, current local sources, compiler and contracts.
-Missing completed receipts or changed authority/configuration stop; there is no
-automatic repeated model turn. The existing profile and commissioning gate remain.
+The initial regression run failed on the original implementation. The old fixtures
+kept observations fixed before all drafts, mutated artifacts rather than duplicated
+receipt metadata, omitted preparation failures, and tested independent compilation
+outside the actual handoff. The new regressions exercise those missing transitions.
 
-## Validation
+## Resulting design
 
-- 20 new tests pass against the actual packaged worker and a scripted stdio peer.
-  They cover repairs, selection, duplicate delivery, uncertainty, outer-write
-  recovery, changed request/source/listing/compiler/contracts/artifacts, forbidden
-  tools, missing commissioning, scope boundaries and process failures.
-- 16 installed-compiler outcomes pass through the user-facing worker CLI in
-  infrastructure and isolated data recovery. These include canonical retrieval,
-  invalid dependencies, unsafe retry, repaired and unresolved candidates, separate
-  rejection of compiler-valid wrong-goal plans, and one-turn completed recovery.
-- The existing Python suite ran 495 tests locally: 483 passed; 12 deployed-observer
-  process tests cannot start because this environment rejects Unix socket creation
-  with `EPERM`. No test or gate is disabled; the complete suite runs in GitHub CI.
-- Flow Agent structure/context and diff checks pass. The installed CLI build passes.
-- Exact-head and merge-candidate CI are required, including JVM/conformance,
-  isolation, the existing MCP/authoring proofs and the new worker proof. The two
-  full jobs now install the pinned optional worker and run its tests explicitly.
+The portable `agent_worker.AppServerWorker` remains pinned to control-plane commit
+`92a664b7ce894b48ce0fdcb35283c43a5fed661e`. It consumes existing planning tools and
+selector-free discovery v3. No second model transport or semantic evaluator is added.
+MCP, shell, edits, approval and workflow execution remain disabled in this worker.
 
-The first CI attempt at `55922089` passed the complete merge candidate, including
-all 495 Python, 20 worker, 2,573 JVM tests, 319 conformance checks and 16 installed
-worker cases. The exact-head job passed those same groups but exceeded the 35-minute
-job limit during the final existing allocation proof. GitHub explicitly reported
-`The job has exceeded the maximum execution time of 35m0s`; no test assertion failed.
-Both full-job budgets are now 45 minutes to retain the entire expanded suite on
-slower runners. Individual compiler/worker bounds and every test remain unchanged.
-Final-revision CI must still pass; the timed-out attempt is not accepted evidence
-of full exact-head completion.
-The CI cost policy document and its existing finite-budget regression now pin the
-same 45-minute ceiling. Revision selection, mandatory gates, cache restrictions and
-failure propagation remain checked by the complete local CI-policy test suite.
+Preparation validates the configuration envelope and bounds and captures compiler
+contracts/catalog before model dispatch is reserved. Each checked draft retains its
+observation snapshot. Final selection and subsequent recovery verify the same
+candidate, snapshot, compiler identity, contracts, artifact bytes and status.
+Completed receipts recover without model/compiler calls; uncertain turns never replay.
 
-These are scripted protocol/compiler checks, not live model reasoning or executed
-infrastructure recovery. Private fixture attestations are ephemeral and are not
-deployment commissioning evidence.
+Independent review is a separate host operation using the same CLI entrypoint with
+`--review-requirements` and `--review-out`. It cannot start a worker, select another
+candidate or feed reviewer expectations back to the proposing model. Requirements
+stay outside model-readable roots and planning outputs. The host copies exact inputs,
+invokes canonical `proposal --requirements`, revalidates the original handoff and
+requirements, checks compiler receipts, and publishes a private `review.json`.
 
-## Boundaries and next work
+The compiler alone assesses request matching and requirement semantics. A successful
+review means satisfaction of the supplied confirmed requirements. Natural-language
+completeness, source interpretation, remote truth and execution permission are not
+established. No public Intent or standard version changes.
 
-Observed export bytes are not provider truth or completeness; the adapter does not
-automatically bind model interpretations to operation parameters or approve the
-separate reviewed-discovery protocol. Independent original-goal review remains
-external. Source checks at handoff cannot certify later execution preconditions.
-Live model evaluation, remote ownership/state revalidation and the reference
-controller's product-specific activation remain open. S3/AI-A3, AR-06, AR-07 and
-F-16/F-20 remain open; EF-09 stays paused. No support promotion is claimed.
+## Validation of the correction
+
+- **36 worker/review tests pass** against the actual packaged worker and scripted
+  stdio peer. New cases cover late observations, typed receipt substitutions, real
+  journal recovery without replay, preparation failures, repairable lookups,
+  model-free review, independent-input isolation, stale sources and changed inputs
+  or inconsistent compiler receipts during review.
+- **20 installed-compiler outcomes pass** through the public worker/review CLI
+  across infrastructure and isolated data recovery. The independent-review cases
+  select an actual retained worker candidate and prove positive acceptance,
+  compiler-valid wrong-goal rejection, request mismatch rejection and stale-source
+  rejection. Review and completed recovery add no model turns.
+- The existing MCP transport test and **14 MCP installed-compiler outcomes pass**.
+- The full existing Python suite ran **495 tests** locally: **483 passed**; the same
+  12 deployed-observer process tests are blocked by sandbox Unix socket `EPERM`.
+  They remain enabled and required in GitHub CI.
+- Flow Agent structure/context and diff checks pass. Final-revision exact-head and
+  merge-candidate CI, including JVM/conformance, isolation and all installed-host
+  proofs, remain required before claiming completion of this correction.
+
+The existing full-job budget remains 45 minutes. Its earlier increase addressed a
+measured 35-minute job timeout during the last allocation proof. This correction
+does not change budgets, skip tests or weaken any CI gate. Previous green jobs are
+historical evidence, not validation of the corrected revision.
+
+## Remaining boundaries
+
+These are scripted protocol/compiler checks, not live-model reasoning. Private
+fixture attestations are not deployment commissioning evidence. The reference
+delivery controller is not activated. Source observations are not automatically
+promoted to operation-parameter authority or remote ownership/completeness claims.
+Live model evaluation and execution-time state/ownership revalidation remain next.
+S3, AI-A3, AR-06, AR-07 and F-16/F-20 remain open; EF-09 stays paused.

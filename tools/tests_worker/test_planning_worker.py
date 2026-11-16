@@ -95,6 +95,84 @@ class PlanningWorkerTests(unittest.TestCase):
         self.assertEqual(1, value["worker"]["tool_calls"])
         self.assertEqual(1, len(list((self.out / "planning").glob("draft-*"))))
 
+    def test_final_selection_requires_the_latest_observation_snapshot(self):
+        broker = PlanningBroker(self.config, self.root / "broker")
+        first = broker.call("flow_check_plan", dict(response=response()))
+        observed = broker.call("flow_observe", self.observe()["arguments"])
+        with self.assertRaisesRegex(HostError, "observations changed since"):
+            broker.finalize(dict(candidateId=first["candidateId"]))
+        self.assertEqual([first["candidateId"]], observed["draftsNeedRecheck"])
+        second = broker.call("flow_check_plan", dict(response=response()))
+        # Re-reading already delivered unchanged bytes does not invalidate a draft.
+        broker.call("flow_observe", self.observe()["arguments"])
+        result = broker.finalize(dict(candidateId=second["candidateId"]))
+        self.assertEqual("awaiting-independent-review", result["status"])
+
+    def test_recovery_metadata_must_match_the_retained_candidate(self):
+        script(self.root, [self.observe(), self.check()])
+        result = run(self.config, self.out)["result"]
+        mutations = [lambda r: r.update(status="blocked"),
+                     lambda r: r.update(requestFidelity="requirements-satisfied"),
+                     lambda r: r.update(workflowExecution=True),
+                     lambda r: r.update(candidate=None, status="blocked"),
+                     lambda r: r["candidate"]["review"].update(requestFidelity="requirements-satisfied"),
+                     lambda r: r["candidate"]["review"].update(exitCode=False),
+                     lambda r: r["candidate"].update(observationsSha256="0" * 64),
+                     lambda r: r["artifacts"].pop("task.json"),
+                     lambda r: r["artifacts"].pop("observations.json")]
+        for index, mutation in enumerate(mutations):
+            altered = copy.deepcopy(result); mutation(altered)
+            with self.subTest(mutation=index), self.assertRaises(HostError):
+                verify_handoff(self.config, self.out / "planning", altered)
+
+    def test_changed_worker_receipt_is_rejected_on_real_recovery_without_replay(self):
+        script(self.root, [self.check()]); run(self.config, self.out)
+        for path in (self.out / "worker").glob("*/*.json"):
+            value = loads(read(path))
+            if "receipt" in value:
+                value["receipt"]["result"]["candidate"]["review"]["exitCode"] = False
+                atomic(path, value)
+                break
+        else:
+            self.fail("Completed worker receipt missing")
+        with self.assertRaisesRegex(HostError, "differs from retained result"):
+            run(self.config, self.out)
+        self.assertEqual("1", (self.root / "home/turn-count").read_text())
+
+    def test_stale_final_selection_fails_the_real_turn_without_automatic_replay(self):
+        script(self.root, [self.check(), self.observe()])
+        for _ in range(2):
+            with self.assertRaises(WorkerIndeterminate): run(self.config, self.out)
+        self.assertEqual("1", (self.root / "home/turn-count").read_text())
+        self.assertFalse((self.out / "result.json").exists())
+
+    def test_invalid_planning_configuration_stops_before_preflight_and_reservation(self):
+        self.config["planning"]["limits"]["maxChecks"] = 0
+        with patch.object(AppServerWorker, "preflight", side_effect=AssertionError("No worker process")):
+            with self.assertRaises(HostError): run(self.config, self.out)
+        self.assertFalse((self.out / "intent.json").exists())
+
+    def test_compiler_preparation_failure_does_not_reserve_a_model_turn(self):
+        with patch("authoring_host.planning_tools.capability_catalog", side_effect=HostError("Catalog unavailable")):
+            with self.assertRaises(HostError): run(self.config, self.out)
+        self.assertFalse((self.out / "intent.json").exists())
+        script(self.root, [self.check()])
+        self.assertEqual("awaiting-independent-review", run(self.config, self.out)["result"]["status"])
+        self.assertEqual("1", (self.root / "home/turn-count").read_text())
+
+    def test_artifact_lookup_is_repairable_but_changed_bytes_are_fatal(self):
+        broker = PlanningBroker(self.config, self.root / "broker")
+        checked = broker.call("flow_check_plan", dict(response=response()))
+        for candidate, name in (([], "proposal.json"), ("draft-999", "proposal.json"),
+                                (checked["candidateId"], "missing.json")):
+            with self.subTest(candidate=candidate, name=name), self.assertRaises(ToolInputError):
+                broker.call("flow_get_artifact", dict(candidate_id=candidate, name=name))
+        snapshot = broker.call("flow_get_artifact", dict(candidate_id=checked["candidateId"], name="observations.json"))
+        self.assertEqual(checked["observationsSha256"], snapshot["sha256"])
+        (broker.planning.root / checked["candidateId"] / "observations.json").write_text('{}')
+        with self.assertRaises(HostError):
+            broker.call("flow_get_artifact", dict(candidate_id=checked["candidateId"], name="observations.json"))
+
     def test_uncertain_turn_is_never_repeated(self):
         script(self.root, [self.check(), {"crash": True}])
         for _ in range(2):
@@ -195,10 +273,11 @@ class PlanningWorkerTests(unittest.TestCase):
 
     def test_corrected_arguments_continue_in_the_same_worker_turn(self):
         script(self.root, [dict(step("flow_check_plan", response={"request": "replacement"}), success=False),
-                          dict(step("flow_get_contract", contract_id="missing"), success=False), self.check()])
+                          dict(step("flow_get_contract", contract_id="missing"), success=False),
+                          dict(step("flow_get_artifact", candidate_id="draft-999", name="proposal.json"), success=False), self.check()])
         receipt = run(self.config, self.out)
         self.assertEqual("draft-001", receipt["result"]["candidate"]["candidateId"])
-        self.assertEqual(3, receipt["worker"]["tool_calls"])
+        self.assertEqual(4, receipt["worker"]["tool_calls"])
 
     def test_changed_listing_blocks_a_draft_before_compilation(self):
         broker = PlanningBroker(self.config, self.root / "broker")

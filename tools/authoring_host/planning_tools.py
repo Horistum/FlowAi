@@ -9,37 +9,47 @@ import os
 from pathlib import Path
 import threading
 
-from .contracts import (MAX_BYTES, argv, canonical, digest, integer, keys, loads,
+from .contracts import (HostError, MAX_BYTES, argv, canonical, digest, integer, keys, loads,
                         public_contracts, read, require, save)
 from .transport import capability_catalog, compiler_environment, compiler_fingerprint, invoke
+
+
+class PlanningInputError(HostError):
+    """An invalid lookup can be corrected without weakening integrity checks."""
+
+
+def validate_configuration(value):
+    """Validate and copy the complete input before process I/O or turn reservation."""
+    config = loads(canonical(value))
+    keys(config, ("formatVersion", "compiler", "task", "limits"))
+    require(type(config["formatVersion"]) is int and config["formatVersion"] == 1,
+            "Unsupported planning configuration")
+    compiler, task, limits = (config[k] for k in ("compiler", "task", "limits"))
+    keys(compiler, ("argv", "contracts"))
+    argv(compiler["argv"])
+    require(isinstance(compiler["contracts"], str) and Path(compiler["contracts"]).is_absolute(),
+            "Public contract root must be absolute")
+    keys(task, ("request", "allowedEnvironment", "availableTools", "constraints"))
+    keys(task["request"], ("userText",), ("context", "mode"))
+    require(isinstance(task["request"]["userText"], str) and bool(task["request"]["userText"].strip()),
+            "Original goal is required")
+    for name in ("allowedEnvironment", "availableTools", "constraints"):
+        require(isinstance(task[name], list) and len(task[name]) <= 64 and
+                all(isinstance(v, str) and 0 < len(v) <= 4000 for v in task[name]),
+                "Task boundaries must be bounded text lists")
+    require(bool(task["allowedEnvironment"]), "Caller must identify the permitted environment")
+    keys(limits, ("maxChecks", "timeoutSeconds"))
+    integer(limits["maxChecks"], 1, 32)
+    integer(limits["timeoutSeconds"], 1, 300)
+    return config
 
 
 class PlanningTools:
     """One operator-owned task and a bounded sequence of independently checked drafts."""
 
     def __init__(self, config, directory):
-        # Copy caller data so subsequent mutations cannot silently redefine the task.
-        self.config = loads(canonical(config))
-        keys(self.config, ("formatVersion", "compiler", "task", "limits"))
-        require(type(config["formatVersion"]) is int and config["formatVersion"] == 1,
-                "Unsupported planning configuration")
+        self.config = validate_configuration(config)
         compiler, task, limits = (self.config[k] for k in ("compiler", "task", "limits"))
-        keys(compiler, ("argv", "contracts"))
-        argv(compiler["argv"])
-        require(isinstance(compiler["contracts"], str) and Path(compiler["contracts"]).is_absolute(),
-                "Public contract root must be absolute")
-        keys(task, ("request", "allowedEnvironment", "availableTools", "constraints"))
-        keys(task["request"], ("userText",), ("context", "mode"))
-        require(isinstance(task["request"]["userText"], str) and bool(task["request"]["userText"].strip()),
-                "Original goal is required")
-        for name in ("allowedEnvironment", "availableTools", "constraints"):
-            require(isinstance(task[name], list) and len(task[name]) <= 64 and
-                    all(isinstance(v, str) and 0 < len(v) <= 4000 for v in task[name]),
-                    "Task boundaries must be bounded text lists")
-        require(bool(task["allowedEnvironment"]), "Caller must identify the permitted environment")
-        keys(limits, ("maxChecks", "timeoutSeconds"))
-        integer(limits["maxChecks"], 1, 32)
-        integer(limits["timeoutSeconds"], 1, 300)
         self.contracts = public_contracts(compiler["contracts"])
         self.contract_digest = digest(canonical(self.contracts))
         self.compiler_digest = compiler_fingerprint(self.config)
@@ -131,8 +141,11 @@ class PlanningTools:
 
     def artifact(self, candidate_id, name):
         """Read a captured candidate or canonical plan by exact ID with integrity checking."""
+        if not isinstance(candidate_id, str) or not isinstance(name, str):
+            raise PlanningInputError("Candidate and artifact identifiers must be strings")
         artifacts = self.candidates.get(candidate_id, {})
-        require(name in artifacts, "Unknown candidate artifact")
+        if name not in artifacts:
+            raise PlanningInputError("Unknown candidate artifact")
         content = read(self.root / candidate_id / name)
         require(digest(content) == artifacts[name], "Candidate artifact changed")
         return {"candidateId": candidate_id, "name": name, "sha256": artifacts[name], "content": loads(content)}

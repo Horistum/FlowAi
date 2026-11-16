@@ -89,6 +89,15 @@ calls, after compilation and at final handoff. A change stops the run rather tha
 silently refreshing its evidence. This establishes local exports at check time,
 not current remote truth, completeness, ownership or later runtime preconditions.
 
+Final selection must use the **last delivered observation snapshot**. Reading a new
+file or listing after a draft was checked requires another complete draft check,
+even if the agent intends to keep the same proposal. `flow_observe` returns
+`draftsNeedRecheck`; `flow_task` exposes the current `observationsSha256`, and
+`flow_get_artifact` can retrieve a draft's `observations.json`. Re-reading unchanged
+already-delivered evidence does not invalidate a draft. This prevents selection of
+a plan that predates newly discovered evidence; it does not prove the model used
+the evidence correctly or discovered everything relevant.
+
 Final JSON contains only `candidateId`: an exact completely checked draft, or an
 empty string if no proposal is available. The agent cannot replace the request,
 proposal or host verdict through final text. The host returns
@@ -97,7 +106,7 @@ or no candidate return `blocked`. Goal fidelity remains `unassessed` and workflo
 execution remains false. Observation bytes are not automatically promoted to
 operation-parameter authority or reviewed-discovery approval.
 
-Malformed response envelopes and public lookup arguments are correctable within
+Malformed response envelopes and contract/artifact lookup arguments are correctable within
 the same turn. Process failures, integrity changes, forbidden tools and exhausted
 limits stop it. Worker call/byte/frame/output/time bounds and separate discovery
 and compiler limits remain enforced. A turn may contain multiple internal model
@@ -112,22 +121,56 @@ Without a completed receipt it stops, including after a dispatch crash. There is
 automatic retry: inspect private state before explicitly starting a new directory.
 Keep the whole directory. Missing outer results alone do not require another turn.
 
+The configuration envelope, bounds and compiler/catalog preparation are checked before
+`intent.json` reserves a model dispatch. A preparation failure without this intent
+has not reserved a model turn. Partial preparation files may still need inspection
+and a new directory. Once the intent exists, missing completed receipts remain
+uncertain and are never replayed automatically. Recovery also verifies the retained
+`selection.json`, exact candidate result, compiler review, observation snapshot and
+derived status; matching file hashes alone cannot validate contradictory metadata.
+
 The result includes the selected compiler result, observation snapshot digest and
 artifact manifest. Private records contain the request, inventory text and drafts;
 they are not publication artifacts. Historical results are not continuously valid
 authorizations. Revalidate again before later review or execution.
 
-Use the selected candidate ID from `result.json` in an independent original-goal review:
+Use the host's independent-review mode with caller-supplied independent requirements:
 
 ```sh
-/absolute/flow-core/bin/flow-core proposal \
-  /absolute/private/run-001/planning/draft-003/proposal.json \
-  --contracts /absolute/FlowAi --requirements /absolute/caller-requirements.json \
-  --out /absolute/private/independent-review
+JAVA_HOME=/absolute/jdk-25 /absolute/planning-worker-venv/bin/python \
+  /absolute/FlowAi/tools/agent_planning_worker.py \
+  --config /absolute/private/planning.json --out /absolute/private/run-001 \
+  --review-requirements /absolute/private/caller-requirements.json \
+  --review-out /absolute/private/review-001
 ```
 
-`draft-003` is illustrative. Source interpretation and completeness still need
-review. The proposing model never supplies the independent requirements.
+This mode never starts a worker or substitutes another candidate. A missing,
+incomplete, blocked or stale handoff stops before review compilation. The host
+locks the existing run, recovers its exact selected candidate, freezes the proposal,
+task, observations and independent requirements, and invokes the same canonical
+`proposal --requirements` command. It revalidates the original handoff and inputs
+after compilation and checks the compiler's proposal/requirements receipts. A
+direct raw-compiler command does not provide these handoff checks.
+
+Requirements must be outside all model-readable discovery roots and the planning
+output. Review output must be a new directory outside those locations. Requirements
+and review feedback never enter the worker turn. The compiler owns request matching
+and fidelity semantics; the host does not reimplement them. Reviewers must consider
+the retained task boundaries as well as the request. Source interpretation,
+requirement completeness and remote truth still need independent review.
+
+`review.json` binds the source receipt, selected proposal, observation snapshot,
+requirements and compiler artifacts. Status `requirements-satisfied` is limited to
+the supplied confirmed requirements. Other compiler results remain `blocked` with
+their diagnostics. The CLI returns the canonical review exit code (0, 2, 3 or 4),
+or 2 for a host failure. `naturalLanguageCompleteness` remains `unassessed` and
+`workflowExecution` remains false. There is no rendering, approval or execution.
+Reusing a review output is rejected; a deliberate new review uses a new directory.
+Any retained review is historical evidence, not continuing execution permission.
+
+Code changes alter the adapter authority identity. Existing receipts remain tied
+to their original checkout; they are not silently migrated or rerun. New planning
+runs require explicit commissioning of the changed authority.
 
 ## Verification and limits
 
@@ -139,8 +182,9 @@ JAVA_HOME=/absolute/jdk-25 /absolute/planning-worker-venv/bin/python \
 
 Tests run the actual pinned worker against a clearly scripted stdio peer. The
 installed proof covers infrastructure/data recovery, invalid dependencies, unsafe
-retries, repairs, unknown decisions, canonical retrieval, independent rejection of
-compiler-valid wrong-goal plans and recovery without another turn. Production code
+retries, repairs, unknown decisions, canonical retrieval, the actual independent
+review entrypoint (including compiler-valid wrong-goal plans, mismatched requests
+and stale evidence), and recovery without another turn. Production code
 does not load the fixture corpus. This is not live-model understanding, unfamiliar
 environment generalization or actual system recovery. Live evaluation and remote
 state/ownership revalidation before execution remain open. S3, AI-A3, AR-06 and

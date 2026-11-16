@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 88
+revision: 89
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -34,6 +34,7 @@ authoringDevelopment:
   selectedFollowup: .flow-agent/work-packages/brokered-planning-observations.yaml
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
   selectedFollowupSlice: AI-A3-S3.4
+  selectedFollowupCorrection: Complete observation-bound selection, exact receipt recovery and independent handoff review in open PR 272 before further feature work.
   nextFollowupSlice: S3-live-agent-evaluation-and-runtime-precondition-revalidation
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07

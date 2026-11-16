@@ -3,14 +3,12 @@
 import argparse
 import copy
 import json
-import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 
 from authoring_host.contracts import canonical, loads, read, require
-from authoring_host.planning_worker import run
 from tests_worker.test_planning_worker import configuration, commission_fixture, script, step
 
 
@@ -67,20 +65,48 @@ def verify(root, cli):
                 if diagnostic:
                     require(any(item["code"] == diagnostic for item in review["diagnostics"]), "Rejection has an unrelated cause")
                 rows.append(dict(case=case, variant=variant, exitCode=code))
-            for candidate, expected in (("draft-003", 0), ("draft-005", 4)):
-                independent = work / (candidate + "-review")
-                process = subprocess.run([str(cli), "proposal", str(out / "planning" / candidate / "proposal.json"),
-                    "--contracts", str(root), "--requirements", str(root / "conformance/failure-regions" / (case + ".requirements.json")),
-                    "--out", str(independent)], capture_output=True, timeout=120)
-                review = loads(read(independent / "proposal-review.json"))
-                require(process.returncode == expected and review["requestFidelity"] ==
+            # Review the actual worker-selected receipt through the public host
+            # entrypoint; a direct compiler invocation would skip handoff checks.
+            requirements = root / "conformance/failure-regions" / (case + ".requirements.json")
+            for variant, review_command, expected in (("selected-corrected", command, 0), ("selected-wrong-goal", None, 4)):
+                if review_command is None:
+                    wrong_out = work / "wrong-goal-run"
+                    script(work, [step("flow_observe", kind="read", root="inventory", path="resources.json"),
+                                  dict(step("flow_check_plan", response=wrong), id="checked", exitCode=0)])
+                    review_command = [*command[:-1], str(wrong_out)]
+                    process = subprocess.run(review_command, capture_output=True, timeout=620)
+                    require(process.returncode == 0, "Wrong-goal worker run did not produce a checked selection")
+                independent = work / (variant + "-review")
+                process = subprocess.run(review_command + ["--review-requirements", str(requirements),
+                    "--review-out", str(independent)], capture_output=True, timeout=180)
+                result = loads(read(independent / "review.json"))
+                require(process.returncode == expected and result["review"]["requestFidelity"] ==
                         ("requirements-satisfied" if expected == 0 else "violated"), "Independent original-goal review lost authority")
-                rows.append(dict(case=case, variant="independent-review", exitCode=expected))
+                require(result["status"] == ("requirements-satisfied" if expected == 0 else "blocked") and
+                        not result["workflowExecution"], "Independent review crossed the execution boundary")
+                rows.append(dict(case=case, variant=variant + "-independent-review", exitCode=expected))
+            other_requirements = loads(read(requirements))
+            other_requirements["request"]["userText"] += " Preserve all production systems."
+            other_path = work / "other-requirements.json"; other_path.write_bytes(canonical(other_requirements))
+            independent = work / "other-request-review"
+            process = subprocess.run(command + ["--review-requirements", str(other_path), "--review-out", str(independent)],
+                                     capture_output=True, timeout=180)
+            result = loads(read(independent / "review.json"))
+            require(process.returncode == 2 and result["status"] == "blocked" and any(
+                diagnostic["code"] == "FIDELITY_REQUEST_MISMATCH" for diagnostic in result["review"]["diagnostics"]),
+                "Independent review accepted requirements for another request")
+            rows.append(dict(case=case, variant="independent-other-request", exitCode=2))
             # The same entrypoint can adopt its durable receipt without a second turn.
             process = subprocess.run(command, capture_output=True, timeout=30)
             require(process.returncode == 0 and loads(read(out / "result.json")) == receipt, "Completed receipt recovery failed")
-            require((work / "home/turn-count").read_text() == "1", "Recovery repeated the worker turn")
-            rows.append(dict(case=case, variant="completed-recovery", modelTurns=1))
+            require((work / "home/turn-count").read_text() == "2", "Review or recovery repeated a worker turn")
+            rows.append(dict(case=case, variant="completed-recovery", additionalModelTurns=0))
+            (work / "inventory/resources.json").write_text('{"environment":"changed"}')
+            stale = work / "stale-review"
+            process = subprocess.run(command + ["--review-requirements", str(requirements), "--review-out", str(stale)],
+                                     capture_output=True, timeout=30)
+            require(process.returncode == 2 and not stale.exists(), "Independent review accepted stale observations")
+            rows.append(dict(case=case, variant="stale-independent-review", exitCode=2))
     print(json.dumps(dict(status="PASS", evidenceKind="scripted-worker-installed-compiler", cases=rows,
                           liveModelEvaluated=False, externalWorkExecuted=False)))
 

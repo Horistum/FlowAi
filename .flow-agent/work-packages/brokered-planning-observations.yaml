@@ -26,3 +26,17 @@ validationPlan:
 - Run the installed compiler through the worker broker for two domains and independent goal review.
 - Run Python tooling, architecture validation and exact-head/merge-candidate CI.
 nextSlice: S3-live-agent-evaluation-and-runtime-precondition-revalidation
+reviewCorrection:
+  baselineHead: 8a56453ecd976b226cb32f7994cf6c44f7120e8e
+  authorization: Maintainer challenged the logical completeness of the open PR; correct confirmed defects before further development.
+  reproducedFindings:
+  - A draft checked before the last delivered observation can still be selected.
+  - Recovery validates artifact hashes but accepts contradictory selected-result metadata.
+  - Invalid planning configuration reserves an intent before validation or model dispatch.
+  - The documented independent-review command does not revalidate the retained handoff around compilation.
+  requiredOutcomes:
+  - Bind final selection and recovered metadata to the retained candidate and final observation snapshot.
+  - Validate configuration and prepare planning before reserving a model dispatch.
+  - Provide a model-free independent-review entrypoint that freezes requirements and revalidates the exact handoff before and after canonical compilation.
+  - Keep ordinary artifact lookup errors repairable without downgrading integrity failures.
+  - Add falsifying regressions and exercise the complete review entrypoint with the installed compiler.
