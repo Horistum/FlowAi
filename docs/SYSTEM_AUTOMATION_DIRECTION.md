@@ -241,3 +241,19 @@ of those requirements, not full natural-language completeness or execution permi
 This is an explicit adapter, not
 automatic activation of the reference delivery controller. Live-model evaluation,
 remote state truth and pre-execution ownership/precondition revalidation remain open.
+
+### S3.5: reproducible worker evaluation
+
+The [worker evaluation runner](PLANNING_WORKER_EVALUATION.md) now connects repeated
+case portfolios to the S3.4 worker and independent review. It freezes all bounded
+exports and independent expectations before dispatch, enforces a portfolio-wide
+turn allowance, accounts for every case/repetition slot, and recovers completed
+worker and review receipts without repeating model calls. Changed unread exports,
+uncertain turns and inconsistent evidence stop the experiment. Metrics separate
+compiler acceptance from satisfaction of the supplied requirements.
+
+This completes the evaluation runner lifecycle. Deployment-specific commissioning,
+independently verified live portfolio measurements and execution-precondition
+revalidation remain the next acceptance work. Scripted installed-compiler trials
+are integration evidence, not live reasoning or remote-state claims. The original
+AI-A3 corpus and held-out rendering gates remain unchanged.

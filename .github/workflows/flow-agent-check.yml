@@ -241,6 +241,7 @@ jobs:
           /tmp/flow-planning-worker-venv/bin/python -m pip install -r tools/requirements-planning-worker.txt
           /tmp/flow-planning-worker-venv/bin/python -m unittest discover -s tools/tests_worker -v
           /tmp/flow-planning-worker-venv/bin/python -u tools/verify_planning_worker.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/planning-worker.log
+          /tmp/flow-planning-worker-venv/bin/python -u tools/verify_planning_evaluation.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/planning-evaluation.log
 
       - name: Verify Bounded Authoring Host With Installed Product
         shell: bash
@@ -433,6 +434,7 @@ jobs:
           /tmp/flow-planning-worker-venv/bin/python -m pip install -r tools/requirements-planning-worker.txt
           /tmp/flow-planning-worker-venv/bin/python -m unittest discover -s tools/tests_worker -v
           /tmp/flow-planning-worker-venv/bin/python -u tools/verify_planning_worker.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/planning-worker.log
+          /tmp/flow-planning-worker-venv/bin/python -u tools/verify_planning_evaluation.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/planning-evaluation.log
 
       - name: Verify Bounded Authoring Host With Installed Product
         shell: bash

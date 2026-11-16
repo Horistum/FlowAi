@@ -54,6 +54,16 @@ for line in sys.stdin:
         counter.write_text(str(int(counter.read_text()) + 1 if counter.exists() else 1))
         answer(request, {"turn": {"id": "planning-turn", "status": "inProgress"}})
         transcript = json.loads(Path(args[args.index("--transcript") + 1]).read_text())
+        private_canary = transcript.get("privateCanary")
+        assert not private_canary or private_canary not in json.dumps(params)
+        if "cases" in transcript:
+            send({"id": 999, "method": "item/tool/call", "params": {
+                "threadId": "planning-thread", "turnId": "planning-turn", "callId": "select-fixture",
+                "tool": "flow_task", "arguments": {}}})
+            reply = json.loads(sys.stdin.readline())["result"]
+            task = json.loads(reply["contentItems"][0]["text"])
+            assert not private_canary or private_canary not in json.dumps(task)
+            transcript = transcript["cases"][task["request"]["userText"]]
         results = {}
 
         def resolve(value):
@@ -80,6 +90,7 @@ for line in sys.stdin:
             reply = json.loads(sys.stdin.readline())["result"]
             assert reply["success"] == step.get("success", True)
             result = json.loads(reply["contentItems"][0]["text"])
+            assert not private_canary or private_canary not in json.dumps(result)
             if "exitCode" in step: assert result["review"]["exitCode"] == step["exitCode"], result
             results[step.get("id", call_id)] = result
         final = resolve(transcript.get("final", {"candidateId": ""}))

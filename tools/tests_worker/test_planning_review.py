@@ -1,5 +1,6 @@
 """Independent handoff review uses the compiler and cannot start another worker."""
 from pathlib import Path
+import os
 import sys
 import tempfile
 import unittest
@@ -131,6 +132,54 @@ class PlanningReviewTests(unittest.TestCase):
             with self.subTest(path=path), patch.object(planning_review, "invoke", side_effect=AssertionError("No compiler")):
                 with self.assertRaises(HostError):
                     planning_review.review(self.config, self.run_directory, path, self.output)
+
+    def test_completed_review_recovers_without_processes_and_rejects_metadata_changes(self):
+        self.prepare(); expected = self.review()
+        path = self.output / "review.json"; original = read(path)
+        with patch.object(planning_review, "invoke", side_effect=AssertionError("No compiler")), \
+             patch.object(AppServerWorker, "preflight", side_effect=AssertionError("No worker")):
+            self.assertEqual(expected, planning_review.recover_review(
+                self.config, self.run_directory, self.requirements, self.output))
+            for mutate in (lambda r: r.update(status="blocked"), lambda r: r.update(workflowExecution=0),
+                           lambda r: r["artifacts"].pop("task.json"), lambda r: r["review"].update(exitCode=False)):
+                value = loads(original); mutate(value); path.write_bytes(canonical(value))
+                with self.assertRaises(HostError):
+                    planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+                path.write_bytes(original)
+
+    def test_partial_review_or_changed_process_status_is_not_recoverable(self):
+        self.prepare(); self.review()
+        process = self.output / "compiler-process.json"
+        process.write_bytes(canonical(dict(exitCode=4)))
+        with self.assertRaises(HostError):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+        (self.output / "review.json").unlink()
+        with self.assertRaises((HostError, OSError)):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+
+    def test_nonregular_process_receipt_is_rejected_without_reading_it(self):
+        self.prepare(); self.review()
+        path = self.output / "compiler-process.json"; path.unlink(); os.mkfifo(path)
+        original = planning_review.read
+        def guarded_read(value):
+            if value == path: raise AssertionError("Reading a FIFO would hang recovery")
+            return original(value)
+        with patch.object(planning_review, "read", side_effect=guarded_read), self.assertRaises(HostError):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+
+    def test_success_without_graph_identity_cannot_publish_a_review(self):
+        self.prepare()
+        original = planning_review.invoke
+        def missing_graph(*args):
+            process = original(*args)
+            for name in ("proposal-review.json", "request-fidelity-review.json"):
+                path = self.output / "compiler" / name
+                value = loads(read(path)); value.pop("graphDigest", None)
+                path.write_bytes(canonical(value))
+            return process
+        with patch.object(planning_review, "invoke", side_effect=missing_graph), self.assertRaises(HostError):
+            self.review()
+        self.assertFalse((self.output / "review.json").exists())
 
 
 if __name__ == "__main__":

@@ -169,6 +169,15 @@ or 2 for a host failure. `naturalLanguageCompleteness` remains `unassessed` and
 Reusing a review output is rejected; a deliberate new review uses a new directory.
 Any retained review is historical evidence, not continuing execution permission.
 
+The [worker portfolio evaluator](PLANNING_WORKER_EVALUATION.md) runs repeated cases
+through this exact planning/review boundary and can recover a completed review
+without invoking the compiler again. New private reviews retain
+`compiler-process.json` alongside captured inputs and compiler artifacts; recovery
+reconstructs the complete result and compares its typed metadata and inventory.
+Partial review directories are not overwritten. Earlier reviews without this
+process receipt remain historical records of their original authority checkout;
+the evaluator does not silently migrate or reinterpret them.
+
 Code changes alter the adapter authority identity. Existing receipts remain tied
 to their original checkout; they are not silently migrated or rerun. New planning
 runs require explicit commissioning of the changed authority.
