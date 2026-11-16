@@ -225,4 +225,19 @@ capability lookup, contract inspection and compiler feedback during plan formati
 The same interface supports infrastructure and data recovery without solution maps.
 The agent host owns environment discovery and access control. Canonical draft
 acceptance remains separate from original-goal review and observed runtime outcomes.
-Host observation integration and live model evaluation remain open S3 work.
+Worker observation integration is covered below; live model evaluation remains open S3 work.
+
+### S3.4: existing worker and scoped observations
+
+The [brokered planning adapter](BROKERED_AGENT_PLANNING.md) connects the existing
+portable control-plane worker to these tools plus bounded root-scoped observations.
+Each draft retains its delivered evidence; final selection must match the last
+observation snapshot. Changed sources stop final handoff.
+Exact completed receipts recover without another model or compiler process, while
+uncertain turns never replay automatically. Independent review consumes only that
+retained selection, freezes caller requirements and revalidates the handoff around
+canonical compilation without starting a model turn. It can establish satisfaction
+of those requirements, not full natural-language completeness or execution permission.
+This is an explicit adapter, not
+automatic activation of the reference delivery controller. Live-model evaluation,
+remote state truth and pre-execution ownership/precondition revalidation remain open.

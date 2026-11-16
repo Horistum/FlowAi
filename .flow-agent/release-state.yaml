@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 151
+stateVersion: 153
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -921,6 +921,30 @@ recoveryBoundedAuthoring:
     installedClarificationMutations: 5
     installedInvestigationCases: 6
     installedSystemCases: 10
+  brokeredPlanningFollowup:
+    selectedSlice: AI-A3-S3.4
+    workPackage: .flow-agent/work-packages/brokered-planning-observations.yaml
+    report: .flow-agent/reports/brokered-planning-observations.md
+    contract: docs/BROKERED_AGENT_PLANNING.md
+    baselineMain: 5b1599da18f35da49c5493e5cec19e2ef83737d1
+    predecessorPullRequest: 271
+    workerSource: 92a664b7ce894b48ce0fdcb35283c43a5fed661e
+    validation: local-worker-and-installed-compiler-passed-final-revision-ci-required
+    workerTests: 36
+    installedWorkerCases: 20
+    workerConfigurationVersion: 1
+    discoveryProtocolVersion: 3
+    scope: Existing-worker planning with final-observation-bound selection, consistent recovery and independent canonical review of the retained handoff.
+    reviewCorrectionBaseline: 8a56453ecd976b226cb32f7994cf6c44f7120e8e
+    independentReviewEntryPoint: tools/agent_planning_worker.py --review-requirements --review-out
+    independentReviewStartsModel: false
+    referenceControllerActivated: false
+    naturalLanguageGoalAssessed: false
+    liveModelEvaluated: false
+    workflowExecution: false
+    remoteOwnershipProven: false
+    supportPromotion: false
+    nextSlice: S3-live-agent-evaluation-and-runtime-precondition-revalidation
   agentPlanningToolsFollowup:
     selectedSlice: AI-A3-S3.3
     workPackage: .flow-agent/work-packages/agent-planning-tools.yaml

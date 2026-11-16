@@ -1,0 +1,42 @@
+version: AI-A3-S3.4
+name: Existing worker integration with scoped planning observations
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 5b1599da18f35da49c5493e5cec19e2ef83737d1
+predecessorPullRequest: 271
+deliveryBase: main
+authorization: Maintainer requested the next development step after merging PR 271.
+objective: Connect the existing portable control-plane worker to callable planning and bounded observations without enabling general MCP, shell or workflow execution.
+universalInvariant: The worker can inspect granted evidence and repair canonical drafts, but only an exact captured candidate with unchanged supporting observations can be handed to independent review; an uncertain model turn is never automatically repeated.
+scope:
+- Reuse agent_worker.AppServerWorker through its existing dynamic-tool broker interface and pin the optional package source.
+- Reuse PlanningTools and the existing scoped discovery implementation, preserving the original task and independent review boundary.
+- Capture observation snapshots for draft checks and revalidate before and after compilation and at final handoff.
+- Retain durable turn identity and recover completed receipts without another model or compiler call.
+- Exercise actual worker subprocess transport with an explicitly scripted peer and the installed compiler across infrastructure and data recovery.
+forbiddenScope:
+- No new model protocol, semantic evaluator, scenario-to-plan production mapping, execution tool or general MCP enablement.
+- No automatic activation of the reference software-delivery controller or live provider turn.
+- No claim of remote state truth, natural-language goal satisfaction, production recovery or live-model generalization.
+- No S3, AI-A3, AR-06 or AR-07 closure; EF-09 remains paused.
+validationPlan:
+- Test observation boundaries, stale sources, compiler diagnostics, immutable final selection and durable receipt recovery.
+- Test interrupted turns, duplicate calls, changed requests and forbidden worker capabilities using the pinned worker implementation.
+- Run the installed compiler through the worker broker for two domains and independent goal review.
+- Run Python tooling, architecture validation and exact-head/merge-candidate CI.
+nextSlice: S3-live-agent-evaluation-and-runtime-precondition-revalidation
+reviewCorrection:
+  baselineHead: 8a56453ecd976b226cb32f7994cf6c44f7120e8e
+  authorization: Maintainer challenged the logical completeness of the open PR; correct confirmed defects before further development.
+  reproducedFindings:
+  - A draft checked before the last delivered observation can still be selected.
+  - Recovery validates artifact hashes but accepts contradictory selected-result metadata.
+  - Invalid planning configuration reserves an intent before validation or model dispatch.
+  - The documented independent-review command does not revalidate the retained handoff around compilation.
+  requiredOutcomes:
+  - Bind final selection and recovered metadata to the retained candidate and final observation snapshot.
+  - Validate configuration and prepare planning before reserving a model dispatch.
+  - Provide a model-free independent-review entrypoint that freezes requirements and revalidates the exact handoff before and after canonical compilation.
+  - Keep ordinary artifact lookup errors repairable without downgrading integrity failures.
+  - Add falsifying regressions and exercise the complete review entrypoint with the installed compiler.

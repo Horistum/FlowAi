@@ -85,3 +85,11 @@ The S2 continuation now includes [runtime resource identities](work-packages/run
 Read the [version 3 contract](../docs/RUNTIME_RESOURCE_IDENTITIES.md) before collecting allocated
 resources. The next bounded slice is S3 evidence-driven system discovery; broader recovery and
 live-evaluation gates remain open.
+
+After merged PR #271, [S3.4 worker integration](work-packages/brokered-planning-observations.yaml)
+connects the existing portable worker to planning tools and scoped observations.
+The open-PR correction binds selection to the last observation snapshot and adds
+model-free independent review with evidence checks before and after compilation.
+See the [setup and handoff contract](../docs/BROKERED_AGENT_PLANNING.md). Live-agent
+evaluation and remote execution-precondition revalidation remain open; this does
+not automatically activate the reference software-delivery controller.

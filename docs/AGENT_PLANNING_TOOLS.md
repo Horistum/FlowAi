@@ -58,9 +58,11 @@ Register this command in the existing agent's MCP client configuration:
 
 Client configuration syntax varies; the executable and arguments are the portable
 contract. Each launch creates a new session under `--out`, so reconnecting does not
-overwrite prior drafts. `flow_task` returns its session ID. The current brokered
-control-plane worker disables MCP; using this server there requires an explicit
-host integration. No automatic integration or live model evaluation is claimed.
+overwrite prior drafts. `flow_task` returns its session ID. The brokered
+control-plane worker disables MCP. Its explicit [planning adapter](BROKERED_AGENT_PLANNING.md)
+now exposes the same operations plus scoped observations through the existing
+dynamic-tool broker. The reference controller is not automatically activated,
+and no live model evaluation is claimed.
 
 ## Agent workflow
 

@@ -57,6 +57,9 @@ def compiler():
         return code
     (out / "proposal-review.json").write_text(json.dumps(report))
     (out / "request-fidelity-review.json").write_text(json.dumps({
+        'formatVersion': 1,
+        'state': {'requirements-satisfied': 'REQUIREMENTS_SATISFIED', 'violated': 'VIOLATED',
+                  'unsupported': 'UNSUPPORTED', 'review-required': 'REVIEW_REQUIRED'}.get(fidelity, 'NOT_EVALUATED'),
         'requirementsSource': {'sha256': hashlib.sha256(Path(args[args.index('--requirements')+1]).read_bytes()).hexdigest()},
         **({'state': 'NOT_EVALUATED'} if semantic == 'rejected' else {'graphDigest': report['graphDigest']}), 'requirements': [
             {'id': item['id'], 'state': 'SATISFIED' if code == 0 else 'NOT_EVALUATED'} for item in requirements['requirements']]}))

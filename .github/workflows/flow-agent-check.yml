@@ -147,8 +147,8 @@ jobs:
     needs: [isolation-candidates, module-isolation]
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
-    # Full tests, conformance and installed-host/local runtime proofs share this budget.
-    timeout-minutes: 35
+    # Full tests and installed-host proofs share this bounded slower-runner margin.
+    timeout-minutes: 45
 
     steps:
       - name: Require Successful Module Isolation
@@ -232,6 +232,15 @@ jobs:
           /tmp/flow-mcp-venv/bin/python -m pip install -r tools/requirements-agent-planning.txt
           /tmp/flow-mcp-venv/bin/python -m unittest discover -s tools/tests_mcp -v
           /tmp/flow-mcp-venv/bin/python -u tools/verify_agent_planning.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/agent-planning.log
+
+      - name: Verify Existing Worker Planning And Observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/flow-planning-worker-venv
+          /tmp/flow-planning-worker-venv/bin/python -m pip install -r tools/requirements-planning-worker.txt
+          /tmp/flow-planning-worker-venv/bin/python -m unittest discover -s tools/tests_worker -v
+          /tmp/flow-planning-worker-venv/bin/python -u tools/verify_planning_worker.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/planning-worker.log
 
       - name: Verify Bounded Authoring Host With Installed Product
         shell: bash
@@ -332,7 +341,7 @@ jobs:
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     # Match the exact-head budget, including observed runner variance in the full proofs.
-    timeout-minutes: 35
+    timeout-minutes: 45
 
     steps:
       - name: Require Successful Module Isolation
@@ -415,6 +424,15 @@ jobs:
           /tmp/flow-mcp-venv/bin/python -m pip install -r tools/requirements-agent-planning.txt
           /tmp/flow-mcp-venv/bin/python -m unittest discover -s tools/tests_mcp -v
           /tmp/flow-mcp-venv/bin/python -u tools/verify_agent_planning.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/agent-planning.log
+
+      - name: Verify Existing Worker Planning And Observations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m venv /tmp/flow-planning-worker-venv
+          /tmp/flow-planning-worker-venv/bin/python -m pip install -r tools/requirements-planning-worker.txt
+          /tmp/flow-planning-worker-venv/bin/python -m unittest discover -s tools/tests_worker -v
+          /tmp/flow-planning-worker-venv/bin/python -u tools/verify_planning_worker.py --cli flow-cli/build/install/flow-core/bin/flow-core 2>&1 | tee ci-logs/planning-worker.log
 
       - name: Verify Bounded Authoring Host With Installed Product
         shell: bash
