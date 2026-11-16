@@ -126,7 +126,8 @@ The configuration envelope, bounds and compiler/catalog preparation are checked 
 has not reserved a model turn. Partial preparation files may still need inspection
 and a new directory. Once the intent exists, missing completed receipts remain
 uncertain and are never replayed automatically. Recovery also verifies the retained
-`selection.json`, exact candidate result, compiler review, observation snapshot and
+`selection.json`, its frozen complete artifact inventory, exact candidate result,
+compiler review, observation snapshot and
 derived status; matching file hashes alone cannot validate contradictory metadata.
 
 The result includes the selected compiler result, observation snapshot digest and

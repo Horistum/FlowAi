@@ -182,7 +182,9 @@ class PlanningBroker:
         for identifier, entries in self.planning.candidates.items():
             artifacts.update({identifier + "/" + name: sha for name, sha in entries.items()})
         save(self.planning.root, "observations.json", canonical(self.ledger), artifacts)
-        save(self.planning.root, "selection.json", canonical(dict(candidateId=candidate)), artifacts)
+        # Freeze the complete inventory before adding this record's own digest.
+        # Otherwise a damaged receipt could silently omit an unselected draft.
+        save(self.planning.root, "selection.json", canonical(dict(candidateId=candidate, artifacts=artifacts)), artifacts)
         selected = copy.deepcopy(self.results[candidate]) if candidate else None
         result = dict(formatVersion=1, status=("awaiting-independent-review" if selected and
                       selected["review"]["exitCode"] == 0 else "blocked"), candidate=selected,
@@ -213,7 +215,10 @@ def verify_handoff(config, directory, result):
             "Retained planning task changed")
     candidate = result["candidate"]
     selection = loads(read(directory / "selection.json"))
-    keys(selection, ("candidateId",))
+    keys(selection, ("candidateId", "artifacts"))
+    require(canonical(selection["artifacts"]) == canonical({name: sha for name, sha in result["artifacts"].items()
+                                                           if name != "selection.json"}),
+            "Planning artifact inventory differs from retained selection")
     require(isinstance(candidate, dict) or candidate is None, "Invalid selected candidate")
     require(selection["candidateId"] == (candidate.get("candidateId") if candidate is not None else ""),
             "Planning selection differs from retained selection")

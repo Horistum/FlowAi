@@ -109,7 +109,7 @@ class PlanningWorkerTests(unittest.TestCase):
         self.assertEqual("awaiting-independent-review", result["status"])
 
     def test_recovery_metadata_must_match_the_retained_candidate(self):
-        script(self.root, [self.observe(), self.check()])
+        script(self.root, [self.observe(), self.check("reject", "rejected"), self.check()])
         result = run(self.config, self.out)["result"]
         mutations = [lambda r: r.update(status="blocked"),
                      lambda r: r.update(requestFidelity="requirements-satisfied"),
@@ -118,6 +118,7 @@ class PlanningWorkerTests(unittest.TestCase):
                      lambda r: r["candidate"]["review"].update(requestFidelity="requirements-satisfied"),
                      lambda r: r["candidate"]["review"].update(exitCode=False),
                      lambda r: r["candidate"].update(observationsSha256="0" * 64),
+                     lambda r: r["artifacts"].pop("draft-001/proposal.json"),
                      lambda r: r["artifacts"].pop("task.json"),
                      lambda r: r["artifacts"].pop("observations.json")]
         for index, mutation in enumerate(mutations):

@@ -34,6 +34,10 @@ observation snapshot. Final selection and subsequent recovery verify the same
 candidate, snapshot, compiler identity, contracts, artifact bytes and status.
 Completed receipts recover without model/compiler calls; uncertain turns never replay.
 
+Final review also reproduced omission of an unselected draft from the receipt's
+artifact map. The retained selection now freezes the complete pre-selection
+inventory, so dropping an older draft's artifact is rejected during recovery.
+
 Independent review is a separate host operation using the same CLI entrypoint with
 `--review-requirements` and `--review-out`. It cannot start a worker, select another
 candidate or feed reviewer expectations back to the proposing model. Requirements
