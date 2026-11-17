@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.instance
+introducedIn: "AI-A3-S3.6"
+description: Same-address resource replacement invalidates the frozen instance pin.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.instance
+  executionAuthorized: false

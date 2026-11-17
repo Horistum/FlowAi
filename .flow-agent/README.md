@@ -100,3 +100,10 @@ with frozen inputs, cross-case expectation isolation, durable turn reservations 
 process-free completed recovery. See the [portfolio and result contract](../docs/PLANNING_WORKER_EVALUATION.md).
 Live provenance and execution-precondition evidence are separate acceptance work;
 the evaluator never self-promotes scripted results to those claims.
+
+After merged PR #273, the selected continuation is
+[S3.6 operation preconditions](work-packages/operation-preconditions.yaml).
+It binds fresh signed snapshots to existing resource instances and canonical
+operations. See [the operator contract](../docs/OPERATION_PRECONDITIONS.md).
+The compiler reports a point-in-time assessment; external dispatch enforcement
+and independent live portfolio acceptance remain open.

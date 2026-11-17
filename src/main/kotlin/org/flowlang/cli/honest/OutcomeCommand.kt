@@ -3,6 +3,7 @@ package org.flowlang.cli.honest
 import java.io.File
 import java.time.Instant
 import org.flowlang.compiler.CompilationResult
+import org.flowlang.compiler.CompilationUnit
 import org.flowlang.frontend.FrontendCompilerComposition
 import org.flowlang.frontend.ai.ExternalAiProposalReader
 import org.flowlang.frontend.ai.ReviewedAiProposalFrontend
@@ -36,19 +37,11 @@ internal object OutcomeCommand {
         val trust = args.value(CliValueOption.TRUST)?.let { OperationOutcomeReader.trust(File(it)) }
         require(observations == null || trust != null) { "outcomes observations require caller-owned --trust." }
         val evaluatedAt = args.value(CliValueOption.EVALUATED_AT)?.let(Instant::parse) ?: Instant.now()
-        val compiler = FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File(contractRoot, "modules")),
-            StandardEnvironmentSafetyPolicyNotes.policy(contractRoot))
-        val file = File(args.positionals.single())
-        val compiled = when (kind) {
-            "intent" -> IntentYamlFrontend(compiler).compile(file)
-            else -> ReviewedAiProposalFrontend(compiler).compile(ExternalAiProposalReader.read(file).proposal)
-        }
-        if (compiled !is CompilationResult.Accepted) throw CliTypedFailure(CliDiagnosticCode.INTEGRITY_BLOCKED,
-            "Outcome assessment requires a source accepted by the compiler.")
-        val review = OperationOutcomeReviewer.evaluate(compiled.unit, requirements, observations, trust, evaluatedAt)
+        val unit = compileAssessmentSource(args, contractRoot)
+        val review = OperationOutcomeReviewer.evaluate(unit, requirements, observations, trust, evaluatedAt)
         val values = linkedMapOf<String, Any>("operation-outcome-review.json" to review,
-            "workflow-execution-plan-set.json" to compiled.unit.workflowPlanSet)
-        if (!compiled.unit.workflowPlanSet.multiWorkflow) values["execution-plan.json"] = compiled.unit.executionPlan
+            "workflow-execution-plan-set.json" to unit.workflowPlanSet)
+        if (!unit.workflowPlanSet.multiWorkflow) values["execution-plan.json"] = unit.executionPlan
         output.section("OPERATION OUTCOME REVIEW", review)
         val directory = args.value(CliValueOption.OUT)?.let(::File)
         directory?.let { CliArtifactOutput.write(it, values) }
@@ -57,4 +50,20 @@ internal object OutcomeCommand {
                 directory != null)
         })
     }
+}
+
+/** Both evidence assessments consume exactly the existing canonical frontend boundary. */
+internal fun compileAssessmentSource(args: CliArguments, contractRoot: File): CompilationUnit {
+    val kind = requireNotNull(args.value(CliValueOption.SOURCE_KIND)) { "Assessment requires --source-kind." }
+    require(kind in setOf("intent", "proposal")) { "Unsupported assessment source kind." }
+    val compiler = FrontendCompilerComposition.compiler(ModuleRegistry.fromDirectory(File(contractRoot, "modules")),
+        StandardEnvironmentSafetyPolicyNotes.policy(contractRoot))
+    val file = File(args.positionals.single())
+    val compiled = when (kind) {
+        "intent" -> IntentYamlFrontend(compiler).compile(file)
+        else -> ReviewedAiProposalFrontend(compiler).compile(ExternalAiProposalReader.read(file).proposal)
+    }
+    if (compiled !is CompilationResult.Accepted) throw CliTypedFailure(CliDiagnosticCode.INTEGRITY_BLOCKED,
+        "Evidence assessment requires a source accepted by the compiler.")
+    return compiled.unit
 }

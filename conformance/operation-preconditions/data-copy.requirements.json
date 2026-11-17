@@ -1,0 +1,37 @@
+{
+  "formatVersion": 1,
+  "graphDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "assessmentId": "preflight-data-copy",
+  "challenge": "precondition-fixture-challenge-not-for-production",
+  "issuedAt": "2026-11-17T01:00:00Z",
+  "expiresAt": "2026-11-17T01:05:00Z",
+  "reviewerId": "independent-test-reviewer",
+  "resources": [
+    {
+      "id": "copy",
+      "identity": {
+        "scope": "storage-test",
+        "type": "dataset",
+        "key": "isolated-copy"
+      },
+      "disposition": "MANAGED",
+      "owner": "data-team",
+      "instanceId": "native-copy-generation-1"
+    }
+  ],
+  "operations": [
+    {
+      "id": "copy-ready",
+      "selector": {
+        "capability": "DATA_SYNC"
+      },
+      "resource": "copy",
+      "parameter": "destination",
+      "facts": {
+        "writable": true,
+        "schemaVersion": 1
+      },
+      "maxAgeSeconds": 60
+    }
+  ]
+}

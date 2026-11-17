@@ -1,5 +1,8 @@
 # Operation outcomes and resource boundaries (AI-A3-S2.2)
 
+For fresh state **before** external use of a plan, use [operation preconditions](OPERATION_PRECONDITIONS.md).
+Post-run outcome evidence and precondition snapshots have separate signed contracts.
+
 Horistum can assess independently declared postconditions of an accepted plan using
 captured, authenticated observations. This is a post-run assessment over the existing
 canonical graph. It neither executes work nor authorizes execution.

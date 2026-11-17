@@ -24,6 +24,7 @@ from verify_observation_host import verify as verify_observation_host
 from verify_resource_lineage import verify as verify_resource_lineage
 from verify_deployed_observer import verify as verify_deployed_observer
 from verify_runtime_identities import verify as verify_runtime_identities
+from verify_operation_preconditions import verify as verify_operation_preconditions
 
 
 def verify(root, cli):
@@ -174,6 +175,7 @@ def verify(root, cli):
     verify_resource_lineage(root, cli)
     verify_deployed_observer(root, cli)
     verify_runtime_identities(root, cli)
+    verify_operation_preconditions(root, cli)
 
 
 if __name__ == "__main__":

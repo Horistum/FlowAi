@@ -19,6 +19,7 @@ versionBoundary:
     structuredIntent: "3.0"
     recoveryIntent: "3.1"
     requestRequirements: "5"
+    operationPreconditions: "1"
     operationOutcomes: "1"
     attemptAwareOperationOutcomes: "2"
     allocatedResourceOperationOutcomes: "3"

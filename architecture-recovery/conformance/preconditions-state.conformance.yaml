@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.state
+introducedIn: "AI-A3-S3.6"
+description: Changed independently observed facts invalidate the planned change.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.state
+  executionAuthorized: false

@@ -104,6 +104,13 @@ checks:
   - ai.runtime-allocation.conflict
   - ai.runtime-allocation.wrong-scope
   - ai.runtime-allocation.missing-grant
+  - ai.preconditions.fresh
+  - ai.preconditions.missing
+  - ai.preconditions.owner
+  - ai.preconditions.instance
+  - ai.preconditions.state
+  - ai.preconditions.expired
+  - ai.preconditions.replay
   - ai.recovery.portfolio
   - ai.recovery.disposition-mutation
   - ai.recovery.schemas

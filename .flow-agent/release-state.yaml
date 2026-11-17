@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 155
+stateVersion: 156
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -18,6 +18,7 @@ versionBoundary:
     structuredIntent: "3.0"
     recoveryIntent: "3.1"
     requestRequirements: "5"
+    operationPreconditions: "1"
     operationOutcomes: "1"
     attemptAwareOperationOutcomes: "2"
     allocatedResourceOperationOutcomes: "3"
@@ -910,6 +911,30 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  operationPreconditionsFollowup:
+    selectedSlice: AI-A3-S3.6
+    workPackage: .flow-agent/work-packages/operation-preconditions.yaml
+    report: .flow-agent/reports/operation-preconditions.md
+    contract: docs/OPERATION_PRECONDITIONS.md
+    baselineMain: 4c122ec83b8e0d1a2cb819bf8581899d0aea28bb
+    predecessorPullRequest: 273
+    validation: current-revision-ci-required
+    formatVersion: 1
+    scope: Fresh graph-bound snapshots of declared existing resource instances, ownership and scalar state.
+    entryPoint: preconditions
+    frontendTests: 234
+    cliTests: 80
+    conformanceChecks: 326
+    installedPreconditionCases: 27
+    signingDomain: operation-precondition-v1
+    dynamicOperandsSupported: false
+    completeEffectTargetCoverage: false
+    snapshotAtomicity: not-established
+    executionAuthorized: false
+    liveModelEvaluated: false
+    supportPromotion: false
+    recoveryClosure: false
+    nextSlice: S3-independent-live-portfolio-acceptance-and-external-dispatch-precondition-enforcement
   planningEvaluationFollowup:
     selectedSlice: AI-A3-S3.5
     workPackage: .flow-agent/work-packages/planning-worker-evaluation.yaml

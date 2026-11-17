@@ -1,0 +1,368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-precondition-review.schema.json",
+  "title": "Operation Precondition Review v1",
+  "description": "Syntactic interchange. The canonical precondition reader and reviewer own graph binding, authentication, freshness, resource semantics and cross-field constraints.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "state",
+    "graphDigest",
+    "assessmentId",
+    "evaluatedAt",
+    "validUntil",
+    "requirementsSource",
+    "results",
+    "diagnostics",
+    "scope",
+    "executionAuthorized",
+    "observationTruth",
+    "reviewerAttribution",
+    "snapshotAtomicity"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "state": {
+      "enum": [
+        "SATISFIED",
+        "VIOLATED",
+        "UNRESOLVED"
+      ]
+    },
+    "graphDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "compilationSource": {
+      "oneOf": [
+        {
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assessmentId": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+    },
+    "evaluatedAt": {
+      "type": "string",
+      "minLength": 1,
+      "allOf": [
+        {
+          "not": {
+            "minLength": 1001
+          }
+        }
+      ]
+    },
+    "validUntil": {
+      "oneOf": [
+        {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "requirementsSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "sha256",
+        "sizeBytes"
+      ],
+      "properties": {
+        "identity": {
+          "type": "string",
+          "minLength": 1,
+          "allOf": [
+            {
+              "not": {
+                "minLength": 1001
+              }
+            }
+          ]
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "sizeBytes": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "observationsSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "identity",
+            "sha256",
+            "sizeBytes"
+          ],
+          "properties": {
+            "identity": {
+              "type": "string",
+              "minLength": 1,
+              "allOf": [
+                {
+                  "not": {
+                    "minLength": 1001
+                  }
+                }
+              ]
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "sizeBytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "trustSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "identity",
+            "sha256",
+            "sizeBytes"
+          ],
+          "properties": {
+            "identity": {
+              "type": "string",
+              "minLength": 1,
+              "allOf": [
+                {
+                  "not": {
+                    "minLength": 1001
+                  }
+                }
+              ]
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "sizeBytes": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "results": {
+      "type": "array",
+      "minItems": 1,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 65
+          }
+        }
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nodeId",
+          "resource",
+          "state",
+          "code",
+          "observationIds",
+          "validUntil"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "nodeId": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "resource": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "scope",
+              "type",
+              "key"
+            ],
+            "properties": {
+              "scope": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "type": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              "key": {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              }
+            }
+          },
+          "state": {
+            "enum": [
+              "SATISFIED",
+              "VIOLATED",
+              "UNRESOLVED"
+            ]
+          },
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 1001
+                }
+              }
+            ]
+          },
+          "observationIds": {
+            "type": "array",
+            "minItems": 0,
+            "allOf": [
+              {
+                "not": {
+                  "minItems": 2
+                }
+              }
+            ],
+            "items": {
+              "type": "string",
+              "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+            }
+          },
+          "validUntil": {
+            "oneOf": [
+              {
+                "type": "string",
+                "minLength": 1,
+                "allOf": [
+                  {
+                    "not": {
+                      "minLength": 1001
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "minItems": 0,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 9
+          }
+        }
+      ],
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "allOf": [
+          {
+            "not": {
+              "minLength": 1001
+            }
+          }
+        ]
+      }
+    },
+    "scope": {
+      "const": "declared-existing-resource-preconditions"
+    },
+    "executionAuthorized": {
+      "const": false
+    },
+    "observationTruth": {
+      "const": "trusted-observer-assertion"
+    },
+    "reviewerAttribution": {
+      "const": "caller-declared"
+    },
+    "snapshotAtomicity": {
+      "const": "not-established"
+    }
+  }
+}

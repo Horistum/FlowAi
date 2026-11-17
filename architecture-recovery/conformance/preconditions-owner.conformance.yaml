@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.owner
+introducedIn: "AI-A3-S3.6"
+description: Authenticated ownership transfer invalidates the planned change.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.owner
+  executionAuthorized: false
