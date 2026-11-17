@@ -34,7 +34,7 @@ authoringDevelopment:
   selectedFollowup: .flow-agent/work-packages/operation-preconditions.yaml
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
   selectedFollowupSlice: AI-A3-S3.6
-  selectedFollowupCorrection: null
+  selectedFollowupCorrection: Canonical effect-operand coverage and independently observed planning preflight in PR 274.
   previousFollowupCorrection: Durable evaluation accounting and compiler-review finalization merged in PR 273 at 4c122ec83b8e0d1a2cb819bf8581899d0aea28bb.
   nextFollowupSlice: S3-independent-live-portfolio-acceptance-and-external-dispatch-precondition-enforcement
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.

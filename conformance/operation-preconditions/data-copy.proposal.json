@@ -26,7 +26,11 @@
               "id": "copy",
               "capability": "DATA_SYNC",
               "params": {
-                "source": "retained-snapshot",
+                "source": {
+                  "scope": "storage-test",
+                  "type": "dataset",
+                  "key": "retained-snapshot"
+                },
                 "destination": {
                   "scope": "storage-test",
                   "type": "dataset",

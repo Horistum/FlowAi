@@ -59,12 +59,12 @@ Their graph digests and challenges are test placeholders, not deployment values.
 
 A resource contains `id`, literal `identity: {scope, type, key}`, `instanceId` and
 `disposition`. `MANAGED` requires an exact `owner`; `SHARED` forbids declaring an
-owner and only permits read-only operations. A native instance pin detects a
+owner and only permits read effects on that resource. A native instance pin detects a
 replacement at the same address. The contract does not create, discover or infer
 these identities. All declared resources must be referenced.
 
 An operation contains `id`, the existing capability/workflow/parameter `selector`,
-`resource`, resource operand `parameter`, optional nested map `path`, `facts`, and
+`resource`, resource operand `parameter`, optional `path`, `facts`, and
 `maxAgeSeconds` (1–3600, default 300). Facts are at most 32 named scalar values;
 strings, booleans and exact decimal numbers are compared without coercion. An
 empty fact map still requires the identity and applicable ownership checks.
@@ -72,11 +72,98 @@ Missing facts remain unresolved. The selector must identify exactly one canonica
 task and its operand must be the declared literal resource address. Dynamic
 inputs and output references remain unresolved in this version.
 
-Every changing canonical task must have a declaration. This detects an omitted
-operation; it does **not** infer every affected resource of a multi-resource
-operation. The reviewer remains responsible for declaring all necessary operands
-and facts. Read-only tasks need declarations only when their state is relevant to
-the precondition contract. Shared resources cannot be used with changing effects.
+The canonical effect definitions own each effect's resource operand. Every effect
+of a changing task must resolve to a literal address and have a declaration for
+that operand. Checking a `DATA_SYNC` source alone cannot cover its destination.
+The source's READ permits a shared resource; the destination's UPSERT requires a
+managed resource. If both operands alias the same address, that address is affected
+by the write and cannot be treated as shared read-only input.
+
+| Capability | Canonical operand binding |
+| --- | --- |
+| `DATA_SYNC` | READ `source`; UPSERT `destination` |
+| `SYNC` | UPSERT `destination` |
+| `PROVISION` | Exactly one of `resource`, `stack` |
+| `CLEANUP` | `resource` |
+| `DEPROVISION` | `target` |
+| `SECRET_ROTATE` | `subject` |
+| `DATABASE_MIGRATE` | `database` |
+| `CERTIFICATE_RENEW` | `certificate` |
+| `CLUSTER_MAINTENANCE` | `scope` |
+| `VERIFY` | Exactly one of `resource`, `subject`, `target` |
+
+These bindings are defined beside the existing effects in Core, not in the
+precondition reviewer. Historical effect values and canonical graph serialization
+are unchanged. An unsupported effect, missing/ambiguous binding, dynamic address
+or undeclared operand blocks satisfaction. For example, a compound `PROVISION.stack`
+object does not establish the identities of all resources in a stack; only an
+explicit literal address of an existing stack can bind that operand. Recovery
+operations whose new recovery-point identity is unknown cannot satisfy this
+existing-resource contract. No current binding uses a nested `path`; supplying
+one cannot bypass the semantic operand binding.
+
+The reviewer still defines required facts and ownership independently. Entirely
+read-only tasks need declarations only when their state is relevant to the
+precondition contract. Missing coverage is reported as
+`PRECONDITION_UNCOVERED_EFFECT_RESOURCE`; unresolved semantic bindings are reported
+as `PRECONDITION_EFFECT_BINDING_UNRESOLVED`.
+
+## Independent preflight of an agent-selected plan
+
+The existing planning worker entrypoint now connects this assessment to a retained
+candidate and its completed independent goal review. Run the independent review
+first as described in [brokered planning](BROKERED_AGENT_PLANNING.md). Then supply
+separate operator-owned settings, outside all model-readable discovery roots:
+
+```json
+{
+  "formatVersion": 1,
+  "requirements": "/private/review/preconditions.json",
+  "trust": "/private/review/observer-trust.json",
+  "observer": {
+    "argv": ["/opt/observer/bin/resource-snapshots", "--profile", "/private/observer/profile.json"],
+    "credentialEnv": ["OBSERVER_TOKEN"],
+    "timeoutSeconds": 30
+  }
+}
+```
+
+```sh
+python tools/agent_planning_worker.py --config worker.json --out private-run \
+  --review-requirements independent-goal.json --review-out completed-goal-review \
+  --preflight-config preflight-settings.json --preflight-out fresh-preflight
+```
+
+The host recovers the exact selected proposal, discovery evidence, compiler identity
+and independently satisfied fidelity receipt before invoking anything. The compiler
+first checks the precondition declarations without observations. Incomplete effect
+coverage stops before contacting the observer. The host then invokes the configured
+observer once and passes its exact signed bundle to the compiler with the current
+clock. No model turn starts, and neither this mode nor the compiler executes a workflow.
+
+The observer reads one JSON request from stdin and returns one observation bundle
+on stdout, with exit code zero. Its request contains `formatVersion: 1`,
+`contractSha256`, `graphDigest`, `assessmentId`, `challenge`, `issuedAt`, `expiresAt`
+and `operations`. Each operation contains only `requirementId`, compiler-selected
+`nodeId` and `resource: {scope, type, key}`. Expected facts, owner and instance pins
+are withheld. The observer reads actual provider state and signs the corresponding
+claims using the protocol below. Captures and signatures retain their existing
+size limits. The process runs without a shell, with a timeout of 1–120 seconds,
+bounded output and only explicitly granted credentials. Deploy and grant the
+observer independently; the repository's scripted observer is test-only.
+
+Completion publishes an immutable `preflight.json` with the candidate identity,
+fidelity-review digest, compiler assessment and artifact inventory. Reusing that
+directory verifies all retained inputs and outputs without another observer or
+compiler process. The command returns **current** status and checks expiry using
+the host clock; expired evidence returns exit 3 while the historical receipt stays
+unchanged. Clock rollback before the assessment also blocks reuse. Changed trust,
+requirements, discovery, proposal, compiler or fidelity evidence invalidates recovery.
+An incomplete reserved directory never retries automatically. A new assessment
+requires a new directory and independently frozen fresh assessment pins.
+
+Freshness does not establish remote state continuity. Collect a new assessment at
+the external use boundary; state can change inside a valid snapshot's age window.
 
 ## Independent snapshots and trust
 
@@ -147,6 +234,13 @@ JSON/SQLite reads provide facts; real stored owner, instance and state changes
 invalidate unchanged requirements. Missing, stale, replayed and substituted
 evidence are also checked. This runs in both full CI revisions through the existing
 authoring-host verification entry point.
+
+`tools/verify_planning_preflight.py`, called by the installed worker proof in both
+full CI jobs, follows the actual worker selection through independent review and
+preflight. It proves shared-source acceptance, destination owner/instance/state
+drift, omitted destination coverage, missing/stale evidence, process-free recovery
+and expiry without rewriting history. Expected facts remain outside observer and
+model inputs; provider state changes independently of the requirements.
 
 These are local observer integration tests. Live-model portfolio acceptance,
 deployment-specific trusted observers and external dispatch-time enforcement

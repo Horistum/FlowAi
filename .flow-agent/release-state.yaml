@@ -920,15 +920,18 @@ recoveryBoundedAuthoring:
     predecessorPullRequest: 273
     validation: current-revision-ci-required
     formatVersion: 1
-    scope: Fresh graph-bound snapshots of declared existing resource instances, ownership and scalar state.
+    scope: Fresh graph-bound snapshots with canonical effect-operand coverage, independently reviewed worker selection and current-expiry recovery.
     entryPoint: preconditions
-    frontendTests: 234
+    planningEntryPoint: agent_planning_worker.py --preflight-config --preflight-out
+    frontendTests: 238
     cliTests: 80
     conformanceChecks: 326
     installedPreconditionCases: 27
+    installedPlanningPreflightCases: 9
+    planningPreflightHostTests: 12
     signingDomain: operation-precondition-v1
     dynamicOperandsSupported: false
-    completeEffectTargetCoverage: false
+    effectTargetCoverage: Required for every effect of changing tasks; unsupported or ambiguous canonical bindings remain unresolved.
     snapshotAtomicity: not-established
     executionAuthorized: false
     liveModelEvaluated: false

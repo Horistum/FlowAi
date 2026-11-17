@@ -1,78 +1,101 @@
-# AI-A3-S3.6: fresh existing-resource preconditions
+# AI-A3-S3.6: reviewed-plan resource preflight
 
 Baseline: merged PR #273, `4c122ec83b8e0d1a2cb819bf8581899d0aea28bb`.
+PR #274 was reopened for semantic correction after two installed-CLI counterexamples
+and a missing planning integration were confirmed on head `f479583f`.
 
-## Problem and result
+## Problem and corrected behavior
 
-An accepted plan and a completed worker evaluation do not establish whether an
-existing target still has the reviewed owner, native instance or necessary state.
-The new installed `preconditions` command evaluates independently frozen
-expectations against fresh authenticated snapshots for the exact canonical graph.
-Changed authenticated values are violations; missing, stale, ambiguous or
-substituted evidence cannot satisfy the contract. Reports carry the evaluation
-clock, earliest expiry and no execution authorization.
+The initial reviewer counted a task as covered after checking any one of its
+parameters. A DATA_SYNC source-only contract therefore passed without checking the
+write target. It also applied all task effects to each operand, incorrectly
+rejecting a shared read-only source because the destination was written.
 
-## Ownership and implementation
+CanonicalIntentEffectAuthority now defines resource operand bindings beside the
+existing effects. Both old effect APIs and the new binding API consume those same
+definitions. Historical effect values, graph serialization and fingerprints retain
+their meaning. The frontend checks that canonical task effects match their owning
+contract, resolves the bound operands, and requires coverage of every effect of a
+changing task. Unknown, ambiguous, dynamic and omitted bindings remain unresolved.
+A declaration for an unrelated parameter or nested object cannot cover an effect.
+Shared sources permit reads; writes to the same address, including aliased input
+and output operands, are violations. PROVISION resource/stack alternatives and
+VERIFY address alternatives must be unambiguous.
 
-The existing outcome frontend owns the new version 1 snapshot protocol. It reuses
-canonical operation selection, resource operand interpretation, exact scalar
-comparison, bounded input capture and signature framing. A distinct signing domain
-and trust document separate preconditions from post-run outcomes. Existing outcome
-versions 1–3 retain their behavior. No second Python semantic evaluator or runtime
-executor is introduced.
+The existing authority responsibility catalog records the actual new frontend
+caller and API. No second capability switch or semantic authority was introduced.
+The effect contract remains in the semantic kernel; address interpretation and
+snapshot assessment remain in the outcome frontend.
 
-Explicit literal resource addresses require native instance pins; managed
-resources require ownership. Shared resources only allow reads. Every changing
-canonical task must be declared, while complete effect-target and scalar fact
-coverage remain the independent reviewer's responsibility. Dynamic operands are
-explicitly unresolved. The command uses the current clock after compilation and
-publishes schema-validated artifacts atomically.
+## Connected planning behavior
 
-## Review and falsification
+The planning worker entrypoint now supports independent preflight of its retained
+selection after a completed independent goal review. The host recovers and checks
+the exact candidate, compiler distribution, original discovery, goal requirements
+and fidelity receipt. The installed compiler first admits the precondition contract;
+missing effect coverage blocks before observation. An operator-configured bounded
+observer process then receives only selected addresses and assessment pins. Expected
+facts, owner and instance IDs are withheld. Its exact signed output is assessed by
+the compiler using the current clock.
 
-- Unit regressions cover cross-domain acceptance, owner/instance/state drift,
-  absence and failed observations, freshness boundaries, shared-resource mutation,
-  omitted changing tasks, ambiguous selectors and duplicate bindings, nested
-  operands, dynamic inputs, wrong known nodes, replay and trust substitution,
-  signature/source corruption, decimal precision and immutable input snapshots.
-- Seven conformance vectors run across infrastructure, data-copy and credential
-  rotation and validate all five public schemas.
-- The installed proof uses independently initialized JSON/SQLite provider state.
-  Actual persisted ownership transfer, instance replacement at the same address
-  and state mutation fail unchanged requirements. Missing, stale, replayed and
-  tampered evidence provide additional negative outcomes: 27 installed cases.
-- CLI tests cover rejected inputs, current-time expiry, schema identity and atomic
-  publication. Production distribution includes only the five new schemas;
-  test fixtures do not consume its bounded resource inventory.
+A completed preflight receipt binds the candidate, fidelity review, compiler
+assessment and captured artifacts. Recovery verifies retained evidence and compares
+expiry with the current host clock without repeating a model, observer or compiler
+process. Expired evidence returns unresolved while historical receipts stay intact.
+Changed inputs or output evidence invalidate recovery. Incomplete directories never
+silently retry; a fresh assessment uses a new explicit directory and independent
+assessment pins. Neither fidelity review nor preflight authorizes execution.
 
-## Validation
+## Independent falsification and validation
 
-Local results: all 234 frontend and 80 CLI tests pass, including 19 new frontend
-and four new CLI regressions. The complete installed conformance run passes all
-326 checks. The installed precondition proof passes 27 cases, and all 71 existing
-worker tests pass. The full 495-test Python run has 12 failures caused by the local
-Unix-socket restriction; its other 483 tests pass. No tests are disabled in CI.
+- Frontend regressions cover omitted destinations, shared sources, changed target
+  generation, aliased read/write operands, unrelated parameters, nested objects,
+  ambiguous alternatives and the existing signature/freshness/identity failures.
+- The data-copy conformance fixture now contains two real literal operands with a
+  shared READ source and managed UPSERT destination. All seven existing conformance
+  vectors continue to run across infrastructure, data and credential domains.
+- The installed observer proof checks 27 cases against independently initialized
+  local JSON/SQLite state. Ownership transfer, same-address generation replacement
+  and state mutation fail unchanged expectations; missing and invalid evidence
+  remain unresolved.
+- Nine connected installed cases run through worker selection, independent goal
+  review and preflight. They cover valid shared input, destination owner/instance/
+  state drift, omitted destination, missing/stale evidence, process-free recovery
+  and expiry of a genuine retained compiler assessment. Expiry uses a controlled
+  host clock; production preflight exposes no clock override. The worker peer is
+  scripted and explicitly not evidence of live model reasoning.
+- Twelve host tests exercise process boundaries, independent-expectation isolation,
+  immutable receipts, current expiry and clock rollback, partial-output recovery,
+  observer failure, tampering and changes during observation. All 83 worker tests
+  pass locally.
+- The complete local Python tooling run executes 495 tests: 483 pass and 12 existing
+  Unix-socket service tests encounter the environment's AF_UNIX restriction. All
+  495 remain enabled in GitHub CI.
+- The first broad JVM run exposed four failures from the missing actual caller in
+  the responsibility catalog, including its dependent conformance gates. The
+  catalog is corrected; no gate, assertion or test budget is weakened.
 
-The initial broad JVM run exposed four inventory-dependent failures from the
-missing seven-check registration. After registering the actual new checks, all
-four affected suites (26 tests) pass; the remaining module regressions pass too.
-The first CI deletion proof also exposed a CLI test-data dependency on the root
-conformance directory. The CLI now owns its four input documents under its test
-resources and loads them through the test classpath. The isolation procedure is
-unchanged and those resources do not enter the production distribution. The full
-local deletion proof passes 102 actual tests plus installed and relocated product
-checks from both the installation directory and ZIP distribution.
-No assertion, gate, input budget or historical contract is relaxed.
+Local verification passes all 238 frontend and 80 CLI tests, 19 kernel tests, the
+16 tests in the four catalog-dependent suites after correction, and all 326
+installed conformance checks. Product isolation passes 102 tests plus installation
+and ZIP relocation checks after physical source deletion. The final focused
+precondition suite also passes the explicit stack-address and ambiguous-binding
+cases. No production test fixture is added to the distribution resource inventory.
 
-Final exact-head/merge-candidate CI evidence is recorded in the PR. Both full CI
-paths run the installed proof through the existing authoring verification entry
-point. Adapter certification and all 495 Python tests remain required there.
+Exact-head/merge-candidate CI evidence is recorded against the final commit in the PR. Both full CI jobs run
+the connected proof through the existing installed-worker verification entrypoint.
 
-## Remaining roadmap boundary
+## Scope and acceptance boundary
 
-This is an as-of assessment of declared existing-resource preconditions, not a
-lease or dispatch authorization. The external executor must reassess and enforce
-its own trusted-clock and concurrency boundary. Native observer truth, snapshot
-atomicity, complete multi-resource effect coverage and live-model reasoning are
-not established by this slice. Independent live portfolio acceptance and external
-dispatch enforcement remain next work; AI-A3, AR-06 and AR-07 remain open.
+This implements checks of supported canonical effects on existing literal resources.
+The supported operand bindings and unresolved cases are listed in
+[the operator contract](../../docs/OPERATION_PRECONDITIONS.md). This is not physical
+resource discovery from arbitrary stack descriptions or a claim about unspecified
+provider side effects. Dynamic/newly allocated addresses, resource locking and
+atomic snapshots remain outside this contract. A deployed observer supplies trusted
+assertions; cryptographic authenticity does not establish remote truth.
+
+A real executor must collect and enforce current evidence at its own use boundary.
+Live-model portfolio acceptance, deployed-observer commissioning and external
+execution enforcement remain separate roadmap gates. AI-A3, AR-06 and AR-07 remain
+open; this correction does not claim completion of integrated system automation.

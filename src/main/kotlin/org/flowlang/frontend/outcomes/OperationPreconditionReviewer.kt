@@ -5,12 +5,36 @@ import java.time.Duration
 import org.flowlang.compiler.*
 import org.flowlang.effects.EffectDomain
 import org.flowlang.effects.EffectOperation
+import org.flowlang.effects.CanonicalIntentEffectAuthority
+import org.flowlang.intent.StandardCapability
 import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.Inspector
 import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.ResourceOperand
 import org.flowlang.frontend.outcomes.OperationOutcomeReviewer.Violation
 
 /** Point-in-time review only. It neither performs work nor leases the observed resource. */
 object OperationPreconditionReviewer {
+    private data class ResourceEffect(val parameter: String, val identity: ResourceIdentity, val operation: EffectOperation)
+    private data class OperandKey(val node: CanonicalNodeId, val parameter: String)
+
+    private fun resourceEffects(node: CanonicalTaskNode, inspector: Inspector): List<ResourceEffect> {
+        val effects = node.semantics.effects
+        if (effects.isEmpty() || effects.any { it.domain == EffectDomain.UNKNOWN || it.operation == EffectOperation.UNKNOWN })
+            throw UnresolvedOutcome("PRECONDITION_UNKNOWN_EFFECTS")
+        val capability = StandardCapability.entries.singleOrNull { it.name == node.semantics.capability?.value }
+            ?: throw UnresolvedOutcome("PRECONDITION_UNKNOWN_EFFECTS")
+        val contracts = CanonicalIntentEffectAuthority.contractsForRendered(capability, node.semantics.parameters)
+        if (contracts.map { it.effect } != effects)
+            throw UnresolvedOutcome("PRECONDITION_EFFECT_CONTRACT_MISMATCH")
+        return contracts.map { contract ->
+            val parameter = contract.parameterIn(node.semantics.parameters.keys)
+                ?: throw UnresolvedOutcome("PRECONDITION_EFFECT_BINDING_UNRESOLVED")
+            val operand = try { inspector.operand(node, parameter, emptyList()) }
+                catch (failure: Violation) { throw UnresolvedOutcome("PRECONDITION_EFFECT_BINDING_UNRESOLVED") }
+            if (operand !is ResourceOperand.Literal) throw UnresolvedOutcome("PRECONDITION_DYNAMIC_RESOURCE")
+            ResourceEffect(parameter, operand.identity, contract.effect.operation)
+        }
+    }
+
     fun evaluate(unit: CompilationUnit, requirements: CapturedOutcomeInput<OperationPreconditionRequirements>,
                  observations: CapturedOutcomeInput<PreconditionObservationBundle>? = null,
                  trust: CapturedOutcomeInput<PreconditionObservationTrust>? = null,
@@ -32,7 +56,12 @@ object OperationPreconditionReviewer {
         }
         val inspector = Inspector(unit.graph, emptyList(), evaluatedAt)
         val resources = contract.resources.associateBy { it.id }
-        val bindings = mutableSetOf<List<Any>>()
+        val bindings = mutableSetOf<OperandKey>()
+        val effectsByNode = mutableMapOf<CanonicalNodeId, Result<List<ResourceEffect>>>()
+        fun effects(node: CanonicalTaskNode) = effectsByNode.getOrPut(node.id) {
+            runCatching { resourceEffects(node, inspector) }
+        }.getOrThrow()
+        val covered = mutableSetOf<OperandKey>()
         val results = contract.operations.map { operation ->
             val resource = resources.getValue(operation.resource)
             var node: CanonicalTaskNode? = null
@@ -42,15 +71,17 @@ object OperationPreconditionReviewer {
                     code.replaceFirst("OUTCOME_", "PRECONDITION_"), used.toList(), until?.toString())
             try {
                 node = inspector.select(operation.selector)
-                if (!bindings.add(listOf(node.id.value, resource.id, operation.parameter, operation.path)))
+                if (!bindings.add(OperandKey(node.id, operation.parameter)))
                     throw UnresolvedOutcome("PRECONDITION_DUPLICATE_OPERATION_BINDING")
-                val operand = inspector.operand(node, operation.parameter, operation.path)
-                if (operand !is ResourceOperand.Literal) throw UnresolvedOutcome("PRECONDITION_DYNAMIC_RESOURCE")
-                if (operand.identity != resource.identity) throw Violation("PRECONDITION_RESOURCE_MISMATCH")
-                val effects = node.semantics.effects
-                if (effects.isEmpty() || effects.any { it.domain == EffectDomain.UNKNOWN || it.operation == EffectOperation.UNKNOWN })
-                    throw UnresolvedOutcome("PRECONDITION_UNKNOWN_EFFECTS")
-                if (resource.disposition == PreconditionResourceDisposition.SHARED && effects.any { it.operation != EffectOperation.READ })
+                val affected = effects(node)
+                val selected = affected.filter { it.parameter == operation.parameter }
+                if (operation.path.isNotEmpty() || selected.isEmpty())
+                    throw UnresolvedOutcome("PRECONDITION_UNBOUND_RESOURCE_OPERAND")
+                if (selected.any { it.identity != resource.identity }) throw Violation("PRECONDITION_RESOURCE_MISMATCH")
+                covered += OperandKey(node.id, operation.parameter)
+                // Aliased input/output addresses still denote the same resource.
+                if (resource.disposition == PreconditionResourceDisposition.SHARED && affected.any {
+                        it.identity == resource.identity && it.operation != EffectOperation.READ })
                     throw Violation("PRECONDITION_SHARED_RESOURCE_CHANGE")
                 if (diagnostics.isNotEmpty()) throw UnresolvedOutcome(diagnostics.first())
                 val observed = ledger.singleOrNull { it.requirementId == operation.id }
@@ -80,13 +111,16 @@ object OperationPreconditionReviewer {
                 result(OperationOutcomeState.UNRESOLVED, failure.code)
             }
         }
-        // A declaration cannot hide another changing task. Operand coverage is
-        // reviewer-owned; this does not infer all effect targets of an operation.
-        val covered = results.mapNotNull { it.nodeId }.toSet()
-        if (unit.graph.nodes.filterIsInstance<CanonicalTaskNode>().any { node ->
-                (node.semantics.capability == null || node.semantics.effects.any { it.operation != EffectOperation.READ }) &&
-                    node.id.value !in covered
-            }) diagnostics += "PRECONDITION_UNCOVERED_CHANGING_OPERATION"
+        for (node in unit.graph.nodes.filterIsInstance<CanonicalTaskNode>()) {
+            if (node.semantics.capability != null && node.semantics.effects.isNotEmpty() &&
+                node.semantics.effects.all { it.operation == EffectOperation.READ }) continue
+            try {
+                if (effects(node).any { OperandKey(node.id, it.parameter) !in covered })
+                    diagnostics += "PRECONDITION_UNCOVERED_EFFECT_RESOURCE"
+            } catch (failure: UnresolvedOutcome) {
+                diagnostics += failure.code.replaceFirst("OUTCOME_", "PRECONDITION_")
+            }
+        }
         val state = when {
             results.any { it.state == OperationOutcomeState.VIOLATED } -> OperationOutcomeState.VIOLATED
             diagnostics.isNotEmpty() || results.any { it.state == OperationOutcomeState.UNRESOLVED } -> OperationOutcomeState.UNRESOLVED
@@ -97,6 +131,6 @@ object OperationPreconditionReviewer {
             assessmentId = contract.assessmentId, evaluatedAt = evaluatedAt.toString(),
             validUntil = if (state == OperationOutcomeState.SATISFIED) results.minOf { Instant.parse(it.validUntil) }.toString() else null,
             requirementsSource = requirements.source, observationsSource = observations?.source, trustSource = trust?.source,
-            results = results, diagnostics = diagnostics)
+            results = results, diagnostics = diagnostics.distinct())
     }
 }

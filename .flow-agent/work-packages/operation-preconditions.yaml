@@ -7,6 +7,18 @@ baselineMain: 4c122ec83b8e0d1a2cb819bf8581899d0aea28bb
 predecessorPullRequest: 273
 authorization: Maintainer requested the next implemented roadmap slice after merging PR 273, with thorough design, review and validation.
 objective: Reassess independently declared resource state, ownership and instance identity against fresh authenticated observations before a reviewed plan is used.
+correction:
+  authorization: Maintainer requested correction of the reproduced resource-binding failures and missing planning integration in PR 274.
+  invariant: Canonical effect definitions own operand bindings; all effects of changing tasks must have checked resource operands, and shared inputs inherit only effects on their actual identities.
+  implementation:
+  - Define effect-to-operand bindings beside the existing canonical effect definitions without changing historical effect values or graph serialization.
+  - Reject unknown, ambiguous and undeclared effect targets; do not use task IDs as resource coverage.
+  - Add independent planning preflight that recovers the exact selected candidate and fidelity review, invokes a configured bounded observer, and evaluates fresh signed snapshots with the compiler.
+  - Keep preflight receipts immutable; current-use recovery rechecks freshness and input identity without calling a model or repeating observation processes.
+  acceptance:
+  - Shared-source synchronization succeeds with both operands assessed; source-only declarations and destination replacement cannot satisfy the assessment.
+  - Arbitrary parameters, nested objects without a semantic binding, resource aliases and ambiguous bindings cannot evade coverage.
+  - Installed worker-to-review-to-preflight proof covers fresh, missing, changed and expired state without exposing independent expectations to the worker.
 architecturePurpose: Keep operation selection and resource binding in the existing canonical compiler; external observers supply assertions and external systems retain execution authority.
 universalInvariant: A satisfied precondition result is bound to the exact graph, immutable requirements, fresh assessment challenge, selected operation and resource generation; missing, stale, substituted or contradictory evidence cannot satisfy it.
 scope:
@@ -20,7 +32,7 @@ scope:
 forbiddenScope:
 - No runtime executor, provider-specific Core rules, model transport, automatic observation polling or workflow dispatch.
 - No conversion of accepted post-run outcomes into permission or pre-execution evidence.
-- No newly allocated addresses, expression evaluation, inferred resource ownership, arbitrary predicates or claimed complete effect-target coverage.
+- No newly allocated addresses, expression evaluation, inferred resource ownership or arbitrary predicates. Complete coverage is required for supported effect bindings; unsupported bindings block satisfaction.
 - No assertion that signatures establish remote truth, an atomic snapshot, locks, live-model quality or AI-A3 closure.
 architectureDecision:
   owner: Existing outcome frontend and product CLI; no Python semantic evaluator.

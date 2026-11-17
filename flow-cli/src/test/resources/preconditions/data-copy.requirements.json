@@ -17,6 +17,16 @@
       "disposition": "MANAGED",
       "owner": "data-team",
       "instanceId": "native-copy-generation-1"
+    },
+    {
+      "id": "source",
+      "identity": {
+        "scope": "storage-test",
+        "type": "dataset",
+        "key": "retained-snapshot"
+      },
+      "disposition": "SHARED",
+      "instanceId": "native-snapshot-generation-1"
     }
   ],
   "operations": [
@@ -29,6 +39,19 @@
       "parameter": "destination",
       "facts": {
         "writable": true,
+        "schemaVersion": 1
+      },
+      "maxAgeSeconds": 60
+    },
+    {
+      "id": "source-ready",
+      "selector": {
+        "capability": "DATA_SYNC"
+      },
+      "resource": "source",
+      "parameter": "source",
+      "facts": {
+        "writable": false,
         "schemaVersion": 1
       },
       "maxAgeSeconds": 60

@@ -26,7 +26,9 @@ class LocalState:
                      instanceId="native-shared-generation-1", owner="network-team", facts=dict(reachable=True))]
         elif domain == "data-copy":
             self.original = [dict(resource=dict(scope="storage-test", type="dataset", key="isolated-copy"),
-                instanceId="native-copy-generation-1", owner="data-team", facts=dict(writable=True, schemaVersion=1))]
+                instanceId="native-copy-generation-1", owner="data-team", facts=dict(writable=True, schemaVersion=1)),
+                dict(resource=dict(scope="storage-test", type="dataset", key="retained-snapshot"),
+                     instanceId="native-snapshot-generation-1", owner="archive-team", facts=dict(writable=False, schemaVersion=1))]
         else:
             self.original = [dict(resource=dict(scope="service-test", type="credential", key="rotation-target"),
                 instanceId="native-credential-generation-1", owner="identity-team", facts=dict(active=True, version=1))]

@@ -31,17 +31,18 @@ class OperationPreconditionTests {
         try { block(root) } finally { root.deleteRecursively() }
     }
     private fun compile(root: File, capability: StandardCapability, parameter: String = "resource", extra: String = "",
-                        value: Any = address, inputs: String = "[]"): CompilationUnit {
-        val sourceParameter = if (capability == StandardCapability.DATA_SYNC) ",\"source\":\"isolated-snapshot\"" else ""
+                        value: Any = address, inputs: String = "[]", sourceAddress: ResourceIdentity = address.copy(key = "source"),
+                        extraParameters: String = ""): CompilationUnit {
+        val sourceParameter = if (capability == StandardCapability.DATA_SYNC) ",\"source\":${json(sourceAddress)}" else ""
         val source = """{"intentVersion":"3.0","kind":"FlowIntentDocument","name":"preconditions","inputs":$inputs,
           "workflows":[{"name":"main","kind":"CUSTOM","body":[
            {"kind":"operation","id":"approval","capability":"APPROVE"},
            {"kind":"operation","id":"work","capability":"${capability.name}","requires":["approval"],
-             "params":{"$parameter":${json(value)}$sourceParameter}}$extra]}]}"""
+             "params":{"$parameter":${json(value)}$sourceParameter$extraParameters}}$extra]}]}"""
         val result = IntentYamlFrontend(compiler).compile(File(root, "intent.json").apply { writeText(source) })
         return assertIs<CompilationResult.Accepted>(result, result.toString()).unit
     }
-    private inner class Case(val root: File, capability: StandardCapability = StandardCapability.VERIFY,
+    private inner class Case(val root: File, private val capability: StandardCapability = StandardCapability.VERIFY,
                              parameter: String = "resource", extra: String = "", customUnit: CompilationUnit? = null) {
         val unit = customUnit ?: compile(root, capability, parameter, extra)
         val node = unit.graph.nodes.filterIsInstance<CanonicalTaskNode>().first { it.semantics.capability?.value == capability.name }
@@ -52,6 +53,16 @@ class OperationPreconditionTests {
             listOf(PreconditionResource("target", address, "native-generation-1", PreconditionResourceDisposition.MANAGED, "team")),
             listOf(OperationPrecondition("state", RequirementSelector(capability), "target", parameter,
                 facts = mapOf("ready" to json(true)), maxAgeSeconds = 30)))
+        init {
+            if (capability == StandardCapability.DATA_SYNC) contract = contract.copy(
+                resources = contract.resources + PreconditionResource("source", address.copy(key = "source"),
+                    "source-generation-1", PreconditionResourceDisposition.SHARED),
+                operations = contract.operations + OperationPrecondition("source-state", RequirementSelector(capability),
+                    "source", "source", facts = mapOf("readable" to json(true)), maxAgeSeconds = 30))
+        }
+        fun snapshots(): List<PreconditionObservation> = listOf(claim()) + if (capability == StandardCapability.DATA_SYNC)
+            listOf(claim().copy(id = "source-snapshot", requirementId = "source-state", resource = address.copy(key = "source"),
+                instanceId = "source-generation-1", owner = "archive-team", facts = mapOf("readable" to json(true)))) else emptyList()
         var grants = PreconditionObservationTrust(1, listOf(PreconditionObservationGrant("observer", b64(key.public.encoded),
             listOf(address.scope), listOf(address.type))))
         fun file(name: String, value: Any) = File(root, name).apply { writeBytes(Json.mapper.writeValueAsBytes(value)) }
@@ -68,7 +79,7 @@ class OperationPreconditionTests {
             }
             return SignedOperationObservation("observer", b64(payload), b64(signer.sign()), b64(source))
         }
-        fun review(claims: List<PreconditionObservation> = listOf(claim()), at: Instant = now,
+        fun review(claims: List<PreconditionObservation> = snapshots(), at: Instant = now,
                    mutate: (List<SignedOperationObservation>) -> List<SignedOperationObservation> = { it }): OperationPreconditionReview =
             OperationPreconditionReviewer.evaluate(unit, requirements(),
                 OperationPreconditionReader.observations(file("bundle.json", PreconditionObservationBundle(1, mutate(claims.map { signed(it) })))),
@@ -81,7 +92,7 @@ class OperationPreconditionTests {
         assertFalse(result.executionAuthorized)
     }
     @Test fun freshSnapshotsBindExistingInstancesAcrossDomains() = workspace { root ->
-        for ((capability, parameter) in listOf(StandardCapability.PROVISION to "resource",
+        for ((capability, parameter) in listOf(StandardCapability.PROVISION to "resource", StandardCapability.PROVISION to "stack",
                 StandardCapability.DATA_SYNC to "destination", StandardCapability.SECRET_ROTATE to "subject")) {
             val c = Case(root, capability, parameter)
             val review = c.review()
@@ -131,7 +142,7 @@ class OperationPreconditionTests {
     @Test fun aDeclarationCannotOmitAnotherChangingOperation() = workspace { root ->
         val extra = """,{"kind":"operation","id":"other","capability":"PROVISION","requires":["approval"],"params":{"resource":${json(address.copy(key = "other"))}}}"""
         val c = Case(root, extra = extra)
-        assertCode(c.review(), "PRECONDITION_UNCOVERED_CHANGING_OPERATION")
+        assertCode(c.review(), "PRECONDITION_UNCOVERED_EFFECT_RESOURCE")
     }
     @Test fun duplicateSemanticBindingsCannotUseTwoConvenientSnapshots() = workspace { root ->
         val c = Case(root)
@@ -210,15 +221,44 @@ class OperationPreconditionTests {
         val extra = """,{"kind":"operation","id":"other","capability":"VERIFY","params":{"resource":${json(address.copy(key = "other"))}}}"""
         assertCode(Case(root, extra = extra).review(), "PRECONDITION_NONUNIQUE_OPERATION")
     }
-    @Test fun nestedOperandsMustMatchTheDeclaredAddressAndPath() = workspace { root ->
+    @Test fun callerChosenNestedOrUnrelatedOperandsCannotEstablishEffectCoverage() = workspace { root ->
         val unit = compile(root, StandardCapability.PROVISION, "stack", value = mapOf("destination" to address))
         val c = Case(root, StandardCapability.PROVISION, "stack", customUnit = unit)
         c.contract = c.contract.copy(operations = c.contract.operations.map { it.copy(path = listOf("destination")) })
+        assertCode(c.review(), "PRECONDITION_RESOURCE_SHAPE")
+        val actual = compile(root, StandardCapability.PROVISION, extraParameters = ",\"mode\":${json(address)}")
+        val decoy = Case(root, StandardCapability.PROVISION, customUnit = actual)
+        decoy.contract = decoy.contract.copy(operations = decoy.contract.operations.map { it.copy(parameter = "mode") })
+        assertCode(decoy.review(), "PRECONDITION_UNBOUND_RESOURCE_OPERAND")
+        assertTrue("PRECONDITION_UNCOVERED_EFFECT_RESOURCE" in decoy.review().diagnostics)
+    }
+    @Test fun synchronizationCannotHideItsDestinationBehindAValidSourceSnapshot() = workspace { root ->
+        val c = Case(root, StandardCapability.DATA_SYNC, "destination")
+        c.contract = c.contract.copy(resources = c.contract.resources.filter { it.id == "source" },
+            operations = c.contract.operations.filter { it.parameter == "source" })
+        assertCode(c.review(listOf(c.snapshots().last())), "PRECONDITION_UNCOVERED_EFFECT_RESOURCE")
+    }
+    @Test fun sharedInputAndManagedOutputHaveIndependentEffectsAndDrift() = workspace { root ->
+        val c = Case(root, StandardCapability.DATA_SYNC, "destination")
         assertEquals(OperationOutcomeState.SATISFIED, c.review().state)
-        c.contract = c.contract.copy(resources = c.contract.resources.map { it.copy(identity = address.copy(key = "other")) })
-        assertCode(c.review(), "PRECONDITION_RESOURCE_MISMATCH", OperationOutcomeState.VIOLATED)
-        c.contract = c.contract.copy(operations = c.contract.operations.map { it.copy(path = listOf("absent")) })
-        assertCode(c.review(), "PRECONDITION_RESOURCE_PATH_MISSING", OperationOutcomeState.VIOLATED)
+        assertCode(c.review(c.snapshots().map { if (it.requirementId == "state") it.copy(instanceId = "replaced") else it }),
+            "PRECONDITION_INSTANCE_CHANGED", OperationOutcomeState.VIOLATED)
+        c.contract = c.contract.copy(resources = c.contract.resources.map { it.copy(disposition = PreconditionResourceDisposition.SHARED, owner = null) })
+        assertCode(c.review(), "PRECONDITION_SHARED_RESOURCE_CHANGE", OperationOutcomeState.VIOLATED)
+    }
+    @Test fun aliasedReadAndWriteOperandsCannotClaimReadOnlyUse() = workspace { root ->
+        val unit = compile(root, StandardCapability.DATA_SYNC, "destination", sourceAddress = address)
+        val c = Case(root, StandardCapability.DATA_SYNC, "destination", customUnit = unit)
+        c.contract = c.contract.copy(resources = c.contract.resources.take(1).map { it.copy(disposition = PreconditionResourceDisposition.SHARED, owner = null) },
+            operations = c.contract.operations.map { it.copy(resource = "target") })
+        val claims = c.snapshots().map { it.copy(resource = address, instanceId = "native-generation-1") }
+        assertCode(c.review(claims), "PRECONDITION_SHARED_RESOURCE_CHANGE", OperationOutcomeState.VIOLATED)
+    }
+    @Test fun ambiguousCanonicalOperandAlternativesRemainUnresolved() = workspace { root ->
+        for ((capability, alternative) in listOf(StandardCapability.VERIFY to "subject", StandardCapability.PROVISION to "stack")) {
+            val unit = compile(root, capability, extraParameters = ",\"$alternative\":${json(address.copy(key = "other"))}")
+            assertCode(Case(root, capability, customUnit = unit).review(), "PRECONDITION_EFFECT_BINDING_UNRESOLVED")
+        }
     }
     @Test fun aKnownButDifferentNodeCannotSatisfyTheSelectedOperation() = workspace { root ->
         val c = Case(root, extra = """,{"kind":"operation","id":"other","capability":"POLICY_CHECK","params":{"policy":"inventory"}}""")
