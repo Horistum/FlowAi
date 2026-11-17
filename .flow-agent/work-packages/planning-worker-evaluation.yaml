@@ -1,0 +1,43 @@
+version: AI-A3-S3.5
+name: Reproducible evaluation of observation-driven worker planning
+status: candidate
+reviewCorrection:
+  baseline: bb641c42927dfbe485026af1e6e3b20c90fd3d52
+  authorization: Maintainer requested a deeper correctness and code-quality review of PR 273.
+  scope: Correct durable reservation accounting, invalid-review classification, coherent summary evidence, exact graph binding and completion of a retained compiler review without replay.
+  validation: Demonstrate failures on the original revision, then rerun regressions and installed proofs before final-revision CI.
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: b32c51dfe374899a13a1a03fd107656363faecab
+predecessorPullRequest: 272
+deliveryBase: main
+authorization: Maintainer requested the next roadmap step after merging PR 272, with complete lifecycle and code-quality review before delivery.
+objective: Evaluate repeated worker-selected plans against independent requirements through the actual planning and review boundaries, with durable recovery and no hidden model replay.
+architecturePurpose: Keep evaluation orchestration outside the compiler, reuse the pinned worker and canonical fidelity evaluator, and derive metrics from retained evidence rather than self-reported model success.
+universalInvariant: Every counted result belongs to one frozen case and repetition, one unchanged worker/compiler configuration and one exact independent review; interrupted or missing runs never become accepted results or unreserved replacement turns.
+scope:
+- Freeze a bounded case portfolio, all independent requirements, shared settings and an explicit total turn allowance before dispatch.
+- Check cross-case exposure so no independent requirements or evaluation output are visible through any granted discovery root.
+- Run at least three repetitions through existing worker planning and independent review; report semantic acceptance, requirement satisfaction, repairs, observations, usage and incomplete runs separately.
+- Recover completed worker and review receipts after interruption without calling a model again; stop on uncertain turns, changed inputs or contradictory evidence.
+- Provide a public evaluation CLI and process-level and installed-compiler proofs across different system lifecycle requests, including compiler-valid wrong-goal plans.
+forbiddenScope:
+- No new model transport, model-selected expectations, scenario-to-plan production mappings or Python semantic evaluator.
+- No silent live commissioning, unbounded paid runs, automatic retry of uncertain turns, target rendering or workflow execution.
+- No claim that a configured executable or scripted peer establishes live-model provenance, natural-language completeness, remote truth or S3/AI-A3 closure.
+- No change to the frozen twelve-case legacy corpus, public Intent contracts or runtime authorization.
+architectureDecision:
+  owner: External authoring host and evaluation tooling.
+  alternativeRejected: Reusing the legacy data-only evaluator would bypass worker observations and the retained-selection review boundary.
+  reuse: Existing configuration, discovery, worker receipt recovery, canonical compiler review and durable owner locks.
+  driftDelta: Zero semantic surface change; improves behavioral evidence and lifecycle integration without adding platform semantics to Core.
+validationPlan:
+- Reject malformed portfolios, over-budget matrices and cross-case expectation exposure before any model dispatch.
+- Exercise three repetitions, positive and wrong-goal results, blocked selections, interrupted turns, completed-inner-receipt recovery, changed sources and tampered review metadata.
+- Verify summary is process-free and that neither recovery nor independent review increases the recorded model-turn count.
+- Run the public CLI with the installed compiler, existing worker/MCP regression suites, tooling validation and final-head plus merge-candidate GitHub CI.
+completionEvidence:
+- All planned case/repetition slots remain accounted for, including blocked and unfinished ones.
+- Repeated execution of a completed evaluation returns the same measured results without another model or compiler call.
+- Invalid or uncertain infrastructure stops further dispatch while retaining a truthful incomplete evaluation.
+- Deployment commissioning, live provenance and monetary billing remain explicit external prerequisites; the runner promises a turn cap, not a provider-request or price cap.

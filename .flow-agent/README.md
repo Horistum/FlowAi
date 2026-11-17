@@ -88,8 +88,15 @@ live-evaluation gates remain open.
 
 After merged PR #271, [S3.4 worker integration](work-packages/brokered-planning-observations.yaml)
 connects the existing portable worker to planning tools and scoped observations.
-The open-PR correction binds selection to the last observation snapshot and adds
+The correction merged in PR #272 binds selection to the last observation snapshot and adds
 model-free independent review with evidence checks before and after compilation.
 See the [setup and handoff contract](../docs/BROKERED_AGENT_PLANNING.md). Live-agent
 evaluation and remote execution-precondition revalidation remain open; this does
 not automatically activate the reference software-delivery controller.
+
+After merged PR #272, [S3.5 worker evaluation](work-packages/planning-worker-evaluation.yaml)
+provides a complete repeated-case runner through the worker and independent review,
+with frozen inputs, cross-case expectation isolation, durable turn reservations and
+process-free completed recovery. See the [portfolio and result contract](../docs/PLANNING_WORKER_EVALUATION.md).
+Live provenance and execution-precondition evidence are separate acceptance work;
+the evaluator never self-promotes scripted results to those claims.

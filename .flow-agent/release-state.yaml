@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 153
+stateVersion: 155
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -910,6 +910,37 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  planningEvaluationFollowup:
+    selectedSlice: AI-A3-S3.5
+    workPackage: .flow-agent/work-packages/planning-worker-evaluation.yaml
+    report: .flow-agent/reports/planning-worker-evaluation.md
+    contract: docs/PLANNING_WORKER_EVALUATION.md
+    baselineMain: b32c51dfe374899a13a1a03fd107656363faecab
+    predecessorPullRequest: 272
+    workerSource: 92a664b7ce894b48ce0fdcb35283c43a5fed661e
+    validation: local-worker-and-installed-evaluation-passed-final-revision-ci-required
+    workerTests: 71
+    installedWorkerCases: 20
+    installedEvaluationOutcomes: 16
+    installedEvaluationTrials: 9
+    installedEvaluationRepetitions: 3
+    installedEvaluationRequirementsSatisfied: 6
+    scope: Repeated frozen portfolios through actual worker selection and independent review, with durable turn accounting and process-free completed recovery.
+    evaluationEntryPoint: tools/evaluate_planning_worker.py
+    evaluationFormatVersion: 1
+    turnAllowanceRequired: true
+    automaticUncertainReplay: false
+    reviewCorrectionBaseline: bb641c42927dfbe485026af1e6e3b20c90fd3d52
+    compilerCompletionInventoryRequired: true
+    completedCompilerReviewCanFinalize: true
+    invalidReviewCountedAsOutcome: false
+    evaluationEvidenceKind: configured-worker-evaluation
+    naturalLanguageGoalAssessed: false
+    liveModelEvaluated: false
+    workflowExecution: false
+    remoteOwnershipProven: false
+    supportPromotion: false
+    nextSlice: S3-independent-live-portfolio-acceptance-and-runtime-precondition-revalidation
   reconciliationFollowup:
     workPackage: .flow-agent/work-packages/authoring-pr260-reconciliation.yaml
     report: .flow-agent/reports/authoring-pr260-reconciliation.md

@@ -1,12 +1,13 @@
 """Independent handoff review uses the compiler and cannot start another worker."""
 from pathlib import Path
+import os
 import sys
 import tempfile
 import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from agent_worker import AppServerWorker
+from agent_worker import AppServerWorker, WorkerError
 from authoring_host.contracts import HostError, canonical, digest, loads, read
 from authoring_host import planning_review
 from authoring_host.planning_worker import run
@@ -131,6 +132,110 @@ class PlanningReviewTests(unittest.TestCase):
             with self.subTest(path=path), patch.object(planning_review, "invoke", side_effect=AssertionError("No compiler")):
                 with self.assertRaises(HostError):
                     planning_review.review(self.config, self.run_directory, path, self.output)
+
+    def test_completed_review_recovers_without_processes_and_rejects_metadata_changes(self):
+        self.prepare(); expected = self.review()
+        path = self.output / "review.json"; original = read(path)
+        with patch.object(planning_review, "invoke", side_effect=AssertionError("No compiler")), \
+             patch.object(AppServerWorker, "preflight", side_effect=AssertionError("No worker")):
+            self.assertEqual(expected, planning_review.recover_review(
+                self.config, self.run_directory, self.requirements, self.output))
+            for mutate in (lambda r: r.update(status="blocked"), lambda r: r.update(workflowExecution=0),
+                           lambda r: r["artifacts"].pop("task.json"), lambda r: r["review"].update(exitCode=False)):
+                value = loads(original); mutate(value); path.write_bytes(canonical(value))
+                with self.assertRaises(HostError):
+                    planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+                path.write_bytes(original)
+
+    def test_partial_review_or_changed_process_status_is_not_recoverable(self):
+        self.prepare(); self.review()
+        process = self.output / "compiler-process.json"
+        process.write_bytes(canonical(dict(exitCode=4)))
+        with self.assertRaises(HostError):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+        (self.output / "review.json").unlink()
+        with self.assertRaises((HostError, OSError)):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+
+    def test_nonregular_process_receipt_is_rejected_without_reading_it(self):
+        self.prepare(); self.review()
+        path = self.output / "compiler-process.json"; path.unlink(); os.mkfifo(path)
+        with self.assertRaises(HostError):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+
+    def test_success_without_graph_identity_cannot_publish_a_review(self):
+        self.prepare()
+        original = planning_review.invoke
+        def missing_graph(*args):
+            process = original(*args)
+            for name in ("proposal-review.json", "request-fidelity-review.json"):
+                path = self.output / "compiler" / name
+                value = loads(read(path)); value.pop("graphDigest", None)
+                path.write_bytes(canonical(value))
+            return process
+        with patch.object(planning_review, "invoke", side_effect=missing_graph), self.assertRaises(HostError):
+            self.review()
+        self.assertFalse((self.output / "review.json").exists())
+
+    def test_matching_review_digests_cannot_replace_the_selected_graph(self):
+        self.prepare()
+        original = planning_review.invoke
+        def changed(*args):
+            process = original(*args)
+            for name in ("proposal-review.json", "request-fidelity-review.json"):
+                path = self.output / "compiler" / name
+                value = loads(read(path)); value["graphDigest"] = "b" * 64
+                path.write_bytes(canonical(value))
+            return process
+        with patch.object(planning_review, "invoke", side_effect=changed), self.assertRaises(HostError):
+            self.review()
+        self.assertFalse((self.output / "review.json").exists())
+
+    def test_review_requires_the_exact_selected_canonical_plan(self):
+        self.prepare()
+        original = planning_review.invoke
+        for missing in (True, False):
+            output = self.root / ("missing-plan" if missing else "changed-plan")
+            def changed(*args):
+                process = original(*args)
+                path = output / "compiler/canonical-execution-plan.json"
+                if missing: path.unlink(missing_ok=True)
+                else: path.write_text('{"substituted":true}')
+                return process
+            with self.subTest(missing=missing), patch.object(planning_review, "invoke", side_effect=changed), self.assertRaises(HostError):
+                self.review(output)
+            self.assertFalse((output / "review.json").exists())
+
+    def test_unpublished_review_requires_the_complete_recorded_compiler_inventory(self):
+        self.prepare()
+        original_invoke, original_save = planning_review.invoke, planning_review.save
+        def compile_with_extra(*args):
+            result = original_invoke(*args)
+            (self.output / "compiler/extra.json").write_text('{"additionalEvidence":true}')
+            return result
+        def crash(root, name, *args):
+            if name == "review.json": raise OSError("Crash after completed compiler receipt")
+            return original_save(root, name, *args)
+        with patch.object(planning_review, "invoke", side_effect=compile_with_extra), \
+             patch.object(planning_review, "save", side_effect=crash), self.assertRaises(WorkerError):
+            self.review()
+        self.assertTrue((self.output / "compiler-process.json").is_file())
+        self.assertFalse((self.output / "review.json").exists())
+        (self.output / "compiler/extra.json").unlink()
+        with patch.object(planning_review, "invoke", side_effect=AssertionError("No compiler")), self.assertRaises(HostError):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output, complete=True)
+        self.assertFalse((self.output / "review.json").exists())
+
+    def test_read_only_recovery_never_republishes_a_receipt_removed_during_assessment(self):
+        self.prepare(); self.review()
+        original = planning_review._assessment
+        def removed(*args):
+            result = original(*args)
+            (self.output / "review.json").unlink()
+            return result
+        with patch.object(planning_review, "_assessment", side_effect=removed), self.assertRaises(HostError):
+            planning_review.recover_review(self.config, self.run_directory, self.requirements, self.output)
+        self.assertFalse((self.output / "review.json").exists())
 
 
 if __name__ == "__main__":

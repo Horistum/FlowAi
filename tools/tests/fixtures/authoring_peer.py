@@ -29,6 +29,8 @@ def compiler():
         fidelity = "unassessed"
     elif marker == "input-error":
         code, semantic, fidelity, stage = 2, "not-evaluated", "unassessed", "INPUT"
+    elif requirements is not None and requirements.get("formatVersion") == 999:
+        code, fidelity, stage = 2, "unassessed", "INPUT"
     elif requirements is not None and any(i["check"]["kind"] == "unsupported" for i in requirements["requirements"]):
         code, fidelity, stage = 4, "unsupported", "REQUEST_FIDELITY"
     elif requirements is not None and requirements["confirmation"] != "CONFIRMED":
@@ -41,7 +43,8 @@ def compiler():
               "requestFidelity": fidelity, "inputSource": {"sha256": hashlib.sha256(data).hexdigest()},
               "reviewItems": [], "diagnostics": [] if code != 4 else [
                   {"code": "TEST_COMPILER_REJECTION", "field": "$.response.normalizedIntent", "message": "Invalid test intent"}],
-              "renderAuthorized": False, "targetDisposition": "review_only" if "--render" in args else "not-requested"}
+              "renderRequested": "--render" in args, "renderAuthorized": False,
+              "targetDisposition": "review_only" if "--render" in args else "not-requested"}
     if marker == "input-error":
         report["diagnostics"] = [{"code": "TEST_INPUT_ERROR", "field": response["normalizedIntent"]["field"],
                                   "message": "Invalid input"}]
@@ -49,11 +52,10 @@ def compiler():
     # verify_system_discovery.py using the installed product, never this mock.
     if semantic != 'rejected':
         report['graphDigest'] = 'a' * 64
+        (out / 'canonical-execution-plan.json').write_text(json.dumps({'testOnly': True}))
     if requirements is None:
         report.update(formatVersion=1, requestFidelity='unassessed', renderRequested=False)
         (out / 'proposal-review.json').write_text(json.dumps(report))
-        if code == 0:
-            (out / 'canonical-execution-plan.json').write_text(json.dumps({'testOnly': True}))
         return code
     (out / "proposal-review.json").write_text(json.dumps(report))
     (out / "request-fidelity-review.json").write_text(json.dumps({
