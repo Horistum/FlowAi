@@ -56,6 +56,12 @@ Unix-socket restriction; its other 483 tests pass. No tests are disabled in CI.
 The initial broad JVM run exposed four inventory-dependent failures from the
 missing seven-check registration. After registering the actual new checks, all
 four affected suites (26 tests) pass; the remaining module regressions pass too.
+The first CI deletion proof also exposed a CLI test-data dependency on the root
+conformance directory. The CLI now owns its four input documents under its test
+resources and loads them through the test classpath. The isolation procedure is
+unchanged and those resources do not enter the production distribution. The full
+local deletion proof passes 102 actual tests plus installed and relocated product
+checks from both the installation directory and ZIP distribution.
 No assertion, gate, input budget or historical contract is relaxed.
 
 Final exact-head/merge-candidate CI evidence is recorded in the PR. Both full CI

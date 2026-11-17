@@ -8,7 +8,8 @@ import org.flowlang.artifacts.ArtifactPublicationVerifier
 import org.flowlang.cli.Json
 
 class PreconditionCommandTests {
-    private fun fixture(name: String) = File("conformance/operation-preconditions/$name.json").readText()
+    private fun fixture(name: String) = requireNotNull(javaClass.getResourceAsStream(
+        "/preconditions/$name.json")).bufferedReader().use { it.readText() }
     private fun workspace(block: (File) -> Unit) {
         val root = createTempDirectory("precondition-cli-").toFile()
         try { block(root) } finally { root.deleteRecursively() }
