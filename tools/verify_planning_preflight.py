@@ -71,6 +71,7 @@ def verify(root, cli):
                 challenge=secrets.token_urlsafe(32), issuedAt=(now - timedelta(seconds=5)).isoformat(), expiresAt=(now + timedelta(minutes=5)).isoformat())
             if variant == "source-only":
                 contract["resources"] = [r for r in contract["resources"] if r["id"] == "source"]
+                contract["resources"][0].update(disposition="MANAGED", owner="archive-team")
                 contract["operations"] = [r for r in contract["operations"] if r["parameter"] == "source"]
             requirements = work / (variant + "-requirements.json"); requirements.write_bytes(canonical(contract))
             preflight_settings = work / (variant + "-settings.json")

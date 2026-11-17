@@ -233,10 +233,13 @@ class OperationPreconditionTests {
         assertTrue("PRECONDITION_UNCOVERED_EFFECT_RESOURCE" in decoy.review().diagnostics)
     }
     @Test fun synchronizationCannotHideItsDestinationBehindAValidSourceSnapshot() = workspace { root ->
-        val c = Case(root, StandardCapability.DATA_SYNC, "destination")
-        c.contract = c.contract.copy(resources = c.contract.resources.filter { it.id == "source" },
-            operations = c.contract.operations.filter { it.parameter == "source" })
-        assertCode(c.review(listOf(c.snapshots().last())), "PRECONDITION_UNCOVERED_EFFECT_RESOURCE")
+        for (disposition in PreconditionResourceDisposition.entries) {
+            val c = Case(root, StandardCapability.DATA_SYNC, "destination")
+            c.contract = c.contract.copy(resources = c.contract.resources.filter { it.id == "source" }.map {
+                it.copy(disposition = disposition, owner = if (disposition == PreconditionResourceDisposition.MANAGED) "archive-team" else null)
+            }, operations = c.contract.operations.filter { it.parameter == "source" })
+            assertCode(c.review(listOf(c.snapshots().last())), "PRECONDITION_UNCOVERED_EFFECT_RESOURCE")
+        }
     }
     @Test fun sharedInputAndManagedOutputHaveIndependentEffectsAndDrift() = workspace { root ->
         val c = Case(root, StandardCapability.DATA_SYNC, "destination")
