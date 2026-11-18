@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 156
+stateVersion: 157
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -911,6 +911,29 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  planningDispatchFollowup:
+    selectedSlice: AI-A3-S3.7
+    workPackage: .flow-agent/work-packages/planning-dispatch-preconditions.yaml
+    report: .flow-agent/reports/planning-dispatch-preconditions.md
+    contract: docs/PLANNING_DISPATCH_PRECONDITIONS.md
+    baselineMain: c34e5701d484b0a7db234f1a2492b1c31e1df485
+    predecessorPullRequest: 274
+    validation: local-worker-and-installed-runtime-proof-passed-final-ci-required
+    entryPoint: tools/dispatch_planning_worker.py
+    exchangeFormatVersion: 1
+    scope: One explicit external runtime exchange bound to the retained selected plan, independent review and fresh canonical precondition assessment.
+    workerTests: 104
+    newDispatchHostAndTransportTests: 21
+    installedDispatchCases: 17
+    runtimeProtection: Authorization, resource concurrency and durable dispatch deduplication remain external-runtime responsibilities.
+    unknownOutcome: Retain reservation and reconcile externally; never automatically repeat an invocation.
+    completionClaim: runtime-reported-completed
+    executionAuthorized: false
+    outcomeIndependentlyVerified: false
+    liveModelEvaluated: false
+    supportPromotion: false
+    recoveryClosure: false
+    nextSlice: S3-runtime-commissioning-and-independent-live-portfolio-outcome-acceptance
   operationPreconditionsFollowup:
     selectedSlice: AI-A3-S3.6
     workPackage: .flow-agent/work-packages/operation-preconditions.yaml
@@ -918,7 +941,11 @@ recoveryBoundedAuthoring:
     contract: docs/OPERATION_PRECONDITIONS.md
     baselineMain: 4c122ec83b8e0d1a2cb819bf8581899d0aea28bb
     predecessorPullRequest: 273
-    validation: current-revision-ci-required
+    validation: merged-exact-head-and-merge-candidate-ci-passed
+    mergedPullRequest: 274
+    mergedMain: c34e5701d484b0a7db234f1a2492b1c31e1df485
+    validatedHead: e5ed3e628d7605a01dc0e62f6480abf450416209
+    validationEvidence: https://github.com/Horistum/FlowAi/pull/274
     formatVersion: 1
     scope: Fresh graph-bound snapshots with canonical effect-operand coverage, independently reviewed worker selection and current-expiry recovery.
     entryPoint: preconditions

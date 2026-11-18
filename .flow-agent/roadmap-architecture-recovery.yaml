@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 92
+revision: 93
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -31,12 +31,12 @@ currentDecision:
 authoringDevelopment:
   selectedSlice: AI-A3
   investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
-  selectedFollowup: .flow-agent/work-packages/operation-preconditions.yaml
+  selectedFollowup: .flow-agent/work-packages/planning-dispatch-preconditions.yaml
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
-  selectedFollowupSlice: AI-A3-S3.6
-  selectedFollowupCorrection: Canonical effect-operand coverage and independently observed planning preflight in PR 274.
-  previousFollowupCorrection: Durable evaluation accounting and compiler-review finalization merged in PR 273 at 4c122ec83b8e0d1a2cb819bf8581899d0aea28bb.
-  nextFollowupSlice: S3-independent-live-portfolio-acceptance-and-external-dispatch-precondition-enforcement
+  selectedFollowupSlice: AI-A3-S3.7
+  selectedFollowupCorrection: Independently authorized external runtime exchange with fresh canonical preconditions, protected observation/use and durable uncertainty.
+  previousFollowupCorrection: Canonical effect-operand coverage and independently observed planning preflight merged in PR 274 at c34e5701d484b0a7db234f1a2492b1c31e1df485.
+  nextFollowupSlice: S3-runtime-commissioning-and-independent-live-portfolio-outcome-acceptance
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active

@@ -277,3 +277,21 @@ execute a workflow, infer unsupported resource bindings, lock provider state or 
 later work. External dispatch-time enforcement and independently verified live
 portfolio measurements remain the next acceptance work. Deterministic local
 observer evidence does not close the AI-A3 live corpus or held-out rendering gates.
+
+### S3.7: external dispatch assessment exchange
+
+The [external dispatch boundary](PLANNING_DISPATCH_PRECONDITIONS.md) connects the
+reviewed selection to an operator-configured runtime. That runtime independently
+authorizes its implementation, reserves the dispatch ID and retains its transaction
+or equivalent protection while fresh signed state is assessed by the compiler.
+The host binds the exchange to the exact candidate and review, checks current
+expiry before responding, and retains durable evidence before process creation.
+Incomplete invocations never automatically repeat, including after an external
+commit whose response was lost. Complete recovery is a historical report.
+
+The installed proof uses actual SQLite effects and competing processes. The
+runtime remains the owner of operations, authorization, concurrency and idempotency;
+no executor or second semantic evaluator is added to Core. Runtime-reported
+completion is distinct from independently verified outcomes. Commissioning a
+production runtime and independent live portfolio/outcome acceptance remain next
+work; broader recovery and target-support gates remain unchanged.

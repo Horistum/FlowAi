@@ -1,0 +1,39 @@
+version: AI-A3-S3.7
+name: Precondition assessment at an external runtime dispatch boundary
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: c34e5701d484b0a7db234f1a2492b1c31e1df485
+predecessorPullRequest: 274
+authorization: Maintainer requested implementation of the next roadmap step after merging PR 274.
+objective: Connect independent canonical precondition assessment to a bounded external runtime session that retains its own authorization and concurrency protection through use of the result.
+architecturePurpose: Keep the compiler as the sole precondition evaluator and the external runtime as the sole owner of permission, implementation, resource locking and effects.
+universalInvariant: No positive gate response is delivered before the exact selected plan, independent review and fresh runtime snapshots pass compiler assessment and final identity/freshness checks; an uncertain runtime invocation is never automatically repeated.
+scope:
+- Add an explicit external-dispatch CLI separate from normal planning and preflight.
+- Reuse selected-candidate recovery, independent review and canonical precondition assessment.
+- Exchange bounded request, signed observations, assessment and final result frames with an operator-configured external runtime.
+- Bind every frame to a durable dispatch identity, exact request bytes, plan and review; withhold independent expectations from the runtime observation request.
+- Require the runtime protocol to retain its own critical section and authorization until it uses or rejects the assessment; timeout, EOF and missing positive assessment must abort uncommitted work.
+- Retain exact input/output evidence and permit process-free recovery of complete results without treating historical success as new dispatch permission.
+- Prove the public entrypoint with a separate SQLite runtime process that independently authorizes its operation and retains a transaction across observation, compiler assessment and conditional mutation.
+forbiddenScope:
+- No workflow execution, target implementation, lock manager or provider-specific semantics in Core.
+- No automatic retry, resubmission, unknown-outcome repair or new model call.
+- No promotion of compiler acceptance or precondition satisfaction into external execution authorization.
+- No claim that a configured executable is trustworthy or that a runtime-reported effect is an independently verified outcome.
+- No target support promotion, live-model acceptance or AI-A3/AR-06/AR-07 closure.
+architectureDecision:
+  owner: External authoring integration orchestrates a single assessment exchange; existing Kotlin compiler owns semantics; the configured runtime owns actual work and concurrency.
+  alternativeRejected: Reusing a saved successful preflight or running a shell command after observer exit leaves the state race unresolved and can duplicate effects after a crash.
+validationPlan:
+- Test strict framing, bounded streams, timeouts, unexpected messages, mismatched identity, altered receipts and process termination.
+- Test missing effect coverage and failed independent review before runtime launch.
+- Test current expiry and source changes before a positive assessment is sent.
+- Exercise actual concurrent SQLite updates, authorization rejection, changed owner/instance/state, runtime failure before and after commit, and recovery with no additional process or effect.
+- Run worker and tooling regressions, installed compiler integration, conformance, architecture validation and final exact-head/merge-candidate CI plus adapter certification.
+completionEvidence:
+- A real external transaction can consume a fresh successful assessment once; drift and expired evidence cause no committed mutation.
+- A concurrent external writer cannot interleave within the protected observation/use interval.
+- A crash after commit remains uncertain and cannot trigger automatic redispatch.
+- Every final claim distinguishes compiler assessment, runtime-reported completion and independently observed state.

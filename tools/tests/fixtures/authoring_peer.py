@@ -54,6 +54,7 @@ def compiler():
         report['graphDigest'] = 'a' * 64
         report['compilationSource'] = {'sha256': 'c' * 64}
         (out / 'canonical-execution-plan.json').write_text(json.dumps({'testOnly': True}))
+        (out / 'workflow-execution-plan-set.json').write_text(json.dumps({'testOnly': True, 'workflows': []}))
     if requirements is None:
         report.update(formatVersion=1, requestFidelity='unassessed', renderRequested=False)
         (out / 'proposal-review.json').write_text(json.dumps(report))

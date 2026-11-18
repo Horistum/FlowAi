@@ -109,3 +109,11 @@ candidate and goal review to fresh observer snapshots, including expiry on recei
 recovery. See [the operator contract](../docs/OPERATION_PRECONDITIONS.md).
 The compiler reports a point-in-time assessment; external dispatch enforcement
 and independent live portfolio acceptance remain open.
+
+After merged PR #274, the selected continuation is
+[S3.7 external dispatch assessment](work-packages/planning-dispatch-preconditions.yaml).
+An explicit bounded exchange lets an independently authorized runtime retain its
+concurrency protection across fresh observation and canonical assessment. The host
+reserves each invocation durably and never automatically repeats an uncertain one.
+See [the runtime contract](../docs/PLANNING_DISPATCH_PRECONDITIONS.md).
+Provider commissioning and independent live portfolio/outcome acceptance remain open.

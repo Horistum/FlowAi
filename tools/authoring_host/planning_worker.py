@@ -63,8 +63,9 @@ def authority_identity():
     for prefix, directory in (("host", Path(__file__).parent), ("worker", Path(agent_worker.__file__).parent)):
         for path in sorted(directory.glob("*.py")):
             records[prefix + "/" + path.name] = digest(path.read_bytes())
-    entry = Path(__file__).parent.parent / "agent_planning_worker.py"
-    records[entry.name] = digest(entry.read_bytes())
+    for name in ("agent_planning_worker.py", "dispatch_planning_worker.py"):
+        entry = Path(__file__).parent.parent / name
+        records[entry.name] = digest(entry.read_bytes())
     return digest(canonical(records))
 
 

@@ -111,6 +111,8 @@ def verify(root, cli):
                           liveModelEvaluated=False, externalWorkExecuted=False)))
     from verify_planning_preflight import verify as verify_preflight
     verify_preflight(root, cli)
+    from verify_planning_dispatch import verify as verify_dispatch
+    verify_dispatch(root, cli)
 
 
 if __name__ == "__main__":

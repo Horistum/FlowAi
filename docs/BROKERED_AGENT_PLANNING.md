@@ -213,6 +213,12 @@ retries, repairs, unknown decisions, canonical retrieval, the actual independent
 review entrypoint (including compiler-valid wrong-goal plans, mismatched requests
 and stale evidence), and recovery without another turn. Production code
 does not load the fixture corpus. This is not live-model understanding, unfamiliar
-environment generalization or actual system recovery. Live evaluation, deployed
-observer commissioning and external dispatch-time enforcement remain open. S3, AI-A3, AR-06 and
+environment generalization or actual system recovery. Live evaluation and deployed
+observer commissioning remain open.
+
+The [S3.7 external dispatch entrypoint](PLANNING_DISPATCH_PRECONDITIONS.md) now
+provides a bounded exchange with an independently authorized runtime. It never
+starts a worker turn. The runtime retains its own protection across observation,
+canonical assessment and use; complete recovery cannot repeat work. Production
+runtime commissioning and independently verified live outcomes remain open. S3, AI-A3, AR-06 and
 AR-07 remain open; EF-09 stays paused.
