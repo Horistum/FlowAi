@@ -103,9 +103,11 @@ def compiler_report(output, phase, fidelity, requirements, observations, trust):
             "Outcome report does not cover the declared obligations")
     require(report["state"] != "SATISFIED" or (not report["diagnostics"] and
             all(row["state"] == "SATISFIED" for row in rows)), "Satisfied outcome contradicts per-operation evidence")
+    # The compiler records the normalized absolute path of its private copy.
+    proposal_path = str((output / "proposal.json").resolve())
+    expected_source = dict(fidelity["review"]["compilationSource"], identity=proposal_path, sourceName=proposal_path)
     require(report.get("runId") == contract["runId"] and report.get("graphDigest") == fidelity["review"]["graphDigest"] and
-            report.get("compilationSource") == dict(fidelity["review"]["compilationSource"],
-                                                    identity=str(output / "proposal.json"), sourceName=str(output / "proposal.json")) and
+            report.get("compilationSource") == expected_source and
             artifacts.get(phase + "/workflow-execution-plan-set.json") == fidelity["artifacts"]["compiler/workflow-execution-plan-set.json"],
             "Outcome report belongs to a different run, source or plan")
     for name, data in (("requirementsSource", requirements), ("observationsSource", observations), ("trustSource", trust)):

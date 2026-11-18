@@ -34,7 +34,8 @@ def verify_outcomes(root, work, case, database, key, variant, cli, command):
 
     rows = []
     def assess(name, observations, code, diagnostic):
-        output = case / name
+        # JVM source receipts normalize the CLI path, including parent segments.
+        output = case / ".." / case.name / name if name == "independent-copy" else case / name
         args = [*cli, "assess", "--observations", str(observations), "--out", str(output)]
         command(args, code)
         report = loads(read(output / "compiler/operation-outcome-review.json"))

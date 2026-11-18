@@ -96,6 +96,8 @@ class CompilerReceiptTests(unittest.TestCase):
         report, inventory = self.verify()
         self.assertEqual(self.report, report)
         self.assertIn("compiler-process.json", inventory)
+        equivalent = self.compiler / ".."
+        self.assertEqual((report, inventory), outcomes.compiler_report(equivalent, "compiler", self.fidelity, *self.inputs))
 
     def test_each_supplied_file_has_an_independent_source_receipt(self):
         for field in ("requirementsSource", "observationsSource", "trustSource"):
