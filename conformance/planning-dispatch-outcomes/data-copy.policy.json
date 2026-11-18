@@ -1,0 +1,21 @@
+{
+  "formatVersion": 1,
+  "reviewerId": "independent-data-reviewer",
+  "resources": [
+    {
+      "id": "copy",
+      "identity": {"scope": "storage-test", "type": "dataset", "key": "isolated-copy"},
+      "disposition": "MANAGED",
+      "owner": "data-team"
+    }
+  ],
+  "operations": [
+    {
+      "id": "copied",
+      "selector": {"capability": "DATA_SYNC"},
+      "resource": "copy",
+      "parameter": "destination",
+      "postconditions": {"payload": "retained-data"}
+    }
+  ]
+}

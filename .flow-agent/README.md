@@ -117,3 +117,8 @@ concurrency protection across fresh observation and canonical assessment. The ho
 reserves each invocation durably and never automatically repeats an uncertain one.
 See [the runtime contract](../docs/PLANNING_DISPATCH_PRECONDITIONS.md).
 Provider commissioning and independent live portfolio/outcome acceptance remain open.
+
+After merged PR #275, [S3.8 independent dispatch outcomes](work-packages/planning-dispatch-outcomes.yaml)
+binds a predeclared outcome policy to one completed dispatch. See the [operator
+contract](../docs/PLANNING_DISPATCH_OUTCOMES.md) for collecting and assessing
+independent evidence. Production commissioning and live portfolio acceptance remain open.

@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 157
+stateVersion: 158
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -911,6 +911,24 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  planningDispatchOutcomeFollowup:
+    selectedSlice: AI-A3-S3.8
+    workPackage: .flow-agent/work-packages/planning-dispatch-outcomes.yaml
+    report: .flow-agent/reports/planning-dispatch-outcomes.md
+    contract: docs/PLANNING_DISPATCH_OUTCOMES.md
+    baselineMain: 3966e23f496d6a9a58c1c01333c673821dc9f997
+    predecessorPullRequest: 275
+    validation: final-revision-ci-required
+    entryPoint: tools/review_dispatch_outcomes.py
+    scope: Independently signed declared operation postconditions bound to one completed external runtime exchange.
+    observationContract: operation-outcomes-v1
+    runtimeCommissioned: false
+    liveModelEvaluated: false
+    workflowExecutionCorrectness: unassessed
+    executionAuthorized: false
+    supportPromotion: false
+    recoveryClosure: false
+    nextSlice: S3-runtime-commissioning-and-independent-live-portfolio-outcome-acceptance
   planningDispatchFollowup:
     selectedSlice: AI-A3-S3.7
     workPackage: .flow-agent/work-packages/planning-dispatch-preconditions.yaml
@@ -918,7 +936,11 @@ recoveryBoundedAuthoring:
     contract: docs/PLANNING_DISPATCH_PRECONDITIONS.md
     baselineMain: c34e5701d484b0a7db234f1a2492b1c31e1df485
     predecessorPullRequest: 274
-    validation: local-worker-and-installed-runtime-proof-passed-final-ci-required
+    validation: merged-exact-head-and-merge-candidate-ci-passed
+    mergedPullRequest: 275
+    mergedMain: 3966e23f496d6a9a58c1c01333c673821dc9f997
+    validatedHead: a5977feebd811617a46fea3d2d642226479d9135
+    validationEvidence: https://github.com/Horistum/FlowAi/pull/275
     entryPoint: tools/dispatch_planning_worker.py
     exchangeFormatVersion: 1
     scope: One explicit external runtime exchange bound to the retained selected plan, independent review and fresh canonical precondition assessment.

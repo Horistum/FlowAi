@@ -27,14 +27,14 @@ def _instant(value):
 
 
 def _context(value, directory, requirements_file, review_directory, settings_file, output_directory,
-             *, process_field="observer", extra_fields=()):
+             *, process_field="observer", extra_fields=(), optional_fields=()):
     config, root, output, settings_path = planning_review._paths(value, directory, settings_file, output_directory)
     review_root = Path(review_directory).absolute()
     require(review_root.resolve() != output.resolve() and review_root.resolve() not in output.resolve().parents and
             output.resolve() not in review_root.resolve().parents, "Preflight output overlaps independent review")
     settings_data = read_artifact(settings_path)
     settings = loads(settings_data)
-    keys(settings, ("formatVersion", "requirements", "trust", process_field, *extra_fields))
+    keys(settings, ("formatVersion", "requirements", "trust", process_field, *extra_fields), optional_fields)
     require(type(settings["formatVersion"]) is int and settings["formatVersion"] == 1, "Unsupported preflight settings")
     observer = settings[process_field]
     keys(observer, ("argv", "credentialEnv", "timeoutSeconds"))

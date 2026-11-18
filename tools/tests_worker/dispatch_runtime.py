@@ -114,9 +114,15 @@ def main():
         allowed = allowed and db.execute("SELECT document FROM authorizations WHERE reference=?",
                                         (request["authorizationRef"],)).fetchone() == stored
         if allowed:
-            db.execute("UPDATE datasets SET payload=(SELECT payload FROM datasets WHERE name=?) WHERE name=?",
-                       (approval["source"], approval["destination"]))
-            db.execute("INSERT INTO effects(dispatch_id) VALUES (?)", (request["dispatchId"],))
+            if args.mode != "false-completion":
+                db.execute("UPDATE datasets SET payload=(SELECT payload FROM datasets WHERE name=?) WHERE name=?",
+                           (approval["source"], approval["destination"]))
+            destination = approval["destination"]
+            operation = next(op for op in request["preconditions"]["operations"] if op["resource"]["key"] == destination)
+            db.execute("""INSERT INTO effects
+                          SELECT ?, ?, ?, ?, name, instance_id, owner, ? FROM datasets WHERE name=?""",
+                       (request["dispatchId"], sha(decision), "sqlite:" + request["dispatchId"], operation["nodeId"],
+                        now.isoformat(), destination))
             db.commit()
             if args.mode == "crash-after-commit": return 2
         else:
