@@ -26,16 +26,17 @@ def _instant(value):
     return datetime.fromisoformat(value.removesuffix("Z") + "+00:00")
 
 
-def _context(value, directory, requirements_file, review_directory, settings_file, output_directory):
+def _context(value, directory, requirements_file, review_directory, settings_file, output_directory,
+             *, process_field="observer", extra_fields=()):
     config, root, output, settings_path = planning_review._paths(value, directory, settings_file, output_directory)
     review_root = Path(review_directory).absolute()
     require(review_root.resolve() != output.resolve() and review_root.resolve() not in output.resolve().parents and
             output.resolve() not in review_root.resolve().parents, "Preflight output overlaps independent review")
     settings_data = read_artifact(settings_path)
     settings = loads(settings_data)
-    keys(settings, ("formatVersion", "requirements", "trust", "observer"))
+    keys(settings, ("formatVersion", "requirements", "trust", process_field, *extra_fields))
     require(type(settings["formatVersion"]) is int and settings["formatVersion"] == 1, "Unsupported preflight settings")
-    observer = settings["observer"]
+    observer = settings[process_field]
     keys(observer, ("argv", "credentialEnv", "timeoutSeconds"))
     argv(observer["argv"])
     integer(observer["timeoutSeconds"], 1, 120)
@@ -61,14 +62,15 @@ def _context(value, directory, requirements_file, review_directory, settings_fil
     return config, output, observer, captured, fidelity
 
 
-def _compiler(config, output, phase, observations=False):
+def _compiler(config, output, phase, observations=False, *, timeout=None):
     compiler = config["planning"]["compiler"]
     command = compiler["argv"] + ["preconditions", str(output / "proposal.json"), "--source-kind", "proposal",
         "--contracts", compiler["contracts"], "--requirements", str(output / "requirements.json"),
         "--out", str(output / phase)]
     if observations:
         command += ["--observations", str(output / "snapshots.json"), "--trust", str(output / "trust.json")]
-    process = invoke(command, b"", config["planning"]["limits"]["timeoutSeconds"], compiler_environment())
+    limit = config["planning"]["limits"]["timeoutSeconds"]
+    process = invoke(command, b"", min(limit, timeout) if timeout is not None else limit, compiler_environment())
     require(not process["failure"] and process["returncode"] in (0, 3, 4), "Precondition compiler did not complete an assessment")
     artifacts, documents = planning_review._compiler_artifacts(output, phase)
     save(output, phase + "-process.json", canonical(dict(exitCode=process["returncode"], artifacts=artifacts)), {})
@@ -157,14 +159,19 @@ def _assessment(output, captured, fidelity):
         assessment=review, executionAuthorized=False, workflowExecution=False, artifacts=artifacts)
 
 
-def _current(receipt):
-    review = receipt["assessment"]
-    now = _now()
+def _freshness(review, now):
     state, reason = review["state"], "PRECONDITION_" + review["state"]
     if now < _instant(review["evaluatedAt"]):
         state, reason = "UNRESOLVED", "PREFLIGHT_CLOCK_BEFORE_ASSESSMENT"
     elif state == "SATISFIED" and now > _instant(review["validUntil"]):
         state, reason = "UNRESOLVED", "PREFLIGHT_EXPIRED"
+    return state, reason
+
+
+def _current(receipt):
+    review = receipt["assessment"]
+    now = _now()
+    state, reason = _freshness(review, now)
     return dict(status="preconditions-satisfied" if state == "SATISFIED" else "blocked", currentState=state,
         code=reason, exitCode={"SATISFIED": 0, "UNRESOLVED": 3, "VIOLATED": 4}[state], checkedAt=now.isoformat(),
         receiptSha256=digest(canonical(receipt)), assessment=review, workflowExecution=False, executionAuthorized=False)

@@ -7,6 +7,8 @@ assessment challenge, selected operation and native resource instance.
 
 This is a point-in-time review. An external executor must reassess at its own
 dispatch boundary and enforce its own authorization and concurrency controls.
+The [external runtime exchange](PLANNING_DISPATCH_PRECONDITIONS.md) provides the
+explicit integration for retaining runtime protection across observation and use.
 No result dispatches work, grants permission, acquires a lock or guarantees that
 state will remain unchanged. `executionAuthorized` is always `false`.
 

@@ -31,7 +31,9 @@ joins with independent conditional requirements across automation domains.
 observations of existing resource instances, ownership and state before external
 use of a plan. Independent planning preflight connects these checks to the selected
 agent proposal and its goal review. Results remain point-in-time evidence without
-execution authority.
+execution authority. [External dispatch assessment](docs/PLANNING_DISPATCH_PRECONDITIONS.md)
+connects the compiler check to a runtime-held protected observation/use interval,
+with durable invocation evidence and no automatic redispatch after uncertainty.
 
 It is designed to turn human or AI-written automation requests into a validated, portable automation model that can be checked against target capabilities before any target-specific output is generated.
 
