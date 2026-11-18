@@ -141,6 +141,17 @@ data class SemanticEffect(
     }
 }
 
+/**
+ * A canonical effect and its operand role, defined together by the effect owner.
+ * Alternatives name equivalent parameter slots, not additional affected resources.
+ * Exactly one must be present. Empty, missing or ambiguous alternatives cannot
+ * establish a resource binding. This does not infer addresses from effect labels.
+ * Kept outside SemanticEffect to preserve historical graph/wire identities.
+ */
+data class BoundSemanticEffect(val effect: SemanticEffect, val parameterAlternatives: List<String> = emptyList()) {
+    fun parameterIn(parameters: Set<String>): String? = parameterAlternatives.filter { it in parameters }.singleOrNull()
+}
+
 fun defaultTransition(operation: EffectOperation): ResourceStateTransition? =
     SemanticEffect.defaultTransition(operation)
 

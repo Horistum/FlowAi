@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.expired
+introducedIn: "AI-A3-S3.6"
+description: Expired observations cannot be reused as fresh precondition evidence.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.expired
+  executionAuthorized: false

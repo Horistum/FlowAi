@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.fresh
+introducedIn: "AI-A3-S3.6"
+description: Fresh cross-domain snapshots satisfy only their frozen graph and existing instance obligations.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.fresh
+  executionAuthorized: false

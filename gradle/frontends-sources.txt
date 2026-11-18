@@ -18,6 +18,10 @@ org/flowlang/frontend/outcomes/OperationObservationAuthentication.kt
 org/flowlang/frontend/outcomes/OperationOutcomeContracts.kt
 org/flowlang/frontend/outcomes/OperationOutcomeReader.kt
 org/flowlang/frontend/outcomes/OperationOutcomeReviewer.kt
+org/flowlang/frontend/outcomes/OperationPreconditionAuthentication.kt
+org/flowlang/frontend/outcomes/OperationPreconditionContracts.kt
+org/flowlang/frontend/outcomes/OperationPreconditionReader.kt
+org/flowlang/frontend/outcomes/OperationPreconditionReviewer.kt
 org/flowlang/frontend/outcomes/RunEvidenceContracts.kt
 org/flowlang/frontend/outcomes/RunTraceReviewer.kt
 org/flowlang/frontend/outcomes/RuntimeResourceResolution.kt

@@ -113,6 +113,7 @@ org/flowlang/conformance/LanguageIntegrityIntegrationChecks.kt
 org/flowlang/conformance/LoopCompositionFixture.kt
 org/flowlang/conformance/MatchCompositionFixture.kt
 org/flowlang/conformance/OperationOutcomeChecks.kt
+org/flowlang/conformance/OperationPreconditionChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyConformanceChecks.kt
 org/flowlang/conformance/OperationalDomainAdequacyContracts.kt
 org/flowlang/conformance/OperationalDomainAdequacyRoadmapLifecycleAuthority.kt

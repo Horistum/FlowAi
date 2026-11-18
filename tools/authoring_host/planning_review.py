@@ -44,9 +44,9 @@ def _inputs(root, receipt, requirements_data):
             "task.json": read_artifact(root / "planning/task.json"), "observations.json": read_artifact(root / "planning/observations.json")}
 
 
-def _compiler_artifacts(output):
+def _compiler_artifacts(output, name="compiler"):
     """Capture the entire bounded compiler output, including its exact inventory."""
-    compiler_root = output / "compiler"
+    compiler_root = output / name
     require(compiler_root.is_dir() and not compiler_root.is_symlink(), "Independent compiler output is unsafe")
     artifacts, documents = {}, {}
     total = 0
@@ -54,7 +54,7 @@ def _compiler_artifacts(output):
         require(index < 32, "Unexpected independent compiler artifact")
         content = read_artifact(path); total += len(content)
         require(total <= 4 * MAX_BYTES, "Independent compiler artifacts exceed limit")
-        artifacts["compiler/" + path.name] = digest(content)
+        artifacts[name + "/" + path.name] = digest(content)
         documents[path.name] = loads(content)
     return artifacts, documents
 

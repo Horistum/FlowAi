@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.replay
+introducedIn: "AI-A3-S3.6"
+description: A snapshot from another assessment cannot satisfy the current challenge.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.replay
+  executionAuthorized: false

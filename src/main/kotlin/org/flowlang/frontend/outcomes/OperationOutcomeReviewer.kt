@@ -181,9 +181,12 @@ object OperationOutcomeReviewer {
                 throw Violation("OUTCOME_ALLOCATION_REQUEST_SCOPE")
         }
         fun operand(node: CanonicalTaskNode, operation: OperationOutcomeRequirement): ResourceOperand {
-            val source = node.semantics.parameters[operation.parameter] ?: throw Violation("OUTCOME_RESOURCE_PARAMETER_MISSING")
+            return operand(node, operation.parameter, operation.path)
+        }
+        fun operand(node: CanonicalTaskNode, parameter: String, path: List<String>): ResourceOperand {
+            val source = node.semantics.parameters[parameter] ?: throw Violation("OUTCOME_RESOURCE_PARAMETER_MISSING")
             var value = expression(source)
-            var pending = operation.path
+            var pending = path
             while (pending.isNotEmpty() && value is MapLiteralNode) {
                 value = value.entries[pending.first()] ?: throw Violation("OUTCOME_RESOURCE_PATH_MISSING")
                 pending = pending.drop(1)

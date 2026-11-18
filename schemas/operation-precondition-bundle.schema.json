@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "operation-precondition-bundle.schema.json",
+  "title": "Operation Precondition Bundle v1",
+  "description": "Syntactic interchange. The canonical precondition reader and reviewer own graph binding, authentication, freshness, resource semantics and cross-field constraints.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "formatVersion",
+    "observations"
+  ],
+  "properties": {
+    "formatVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "observations": {
+      "type": "array",
+      "minItems": 0,
+      "allOf": [
+        {
+          "not": {
+            "minItems": 129
+          }
+        }
+      ],
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "keyId",
+          "payload",
+          "signature",
+          "source"
+        ],
+        "properties": {
+          "keyId": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_.-]{0,127}$"
+          },
+          "payload": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 90001
+                }
+              }
+            ]
+          },
+          "signature": {
+            "type": "string",
+            "minLength": 88,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 89
+                }
+              }
+            ]
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "allOf": [
+              {
+                "not": {
+                  "minLength": 90001
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  }
+}

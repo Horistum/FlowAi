@@ -1,0 +1,58 @@
+{
+  "formatVersion": 1,
+  "graphDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+  "assessmentId": "preflight-infrastructure",
+  "challenge": "precondition-fixture-challenge-not-for-production",
+  "issuedAt": "2026-11-17T01:00:00Z",
+  "expiresAt": "2026-11-17T01:05:00Z",
+  "reviewerId": "independent-test-reviewer",
+  "resources": [
+    {
+      "id": "temporary",
+      "identity": {
+        "scope": "tenant-a/subscription-test",
+        "type": "network",
+        "key": "temporary"
+      },
+      "disposition": "MANAGED",
+      "instanceId": "native-temporary-generation-1",
+      "owner": "platform-team"
+    },
+    {
+      "id": "shared",
+      "identity": {
+        "scope": "tenant-a/subscription-test",
+        "type": "network",
+        "key": "shared"
+      },
+      "disposition": "SHARED",
+      "instanceId": "native-shared-generation-1"
+    }
+  ],
+  "operations": [
+    {
+      "id": "existing-network-ready",
+      "selector": {
+        "capability": "PROVISION"
+      },
+      "resource": "temporary",
+      "parameter": "resource",
+      "facts": {
+        "ready": true
+      },
+      "maxAgeSeconds": 60
+    },
+    {
+      "id": "shared-unchanged",
+      "selector": {
+        "capability": "VERIFY"
+      },
+      "resource": "shared",
+      "parameter": "resource",
+      "facts": {
+        "reachable": true
+      },
+      "maxAgeSeconds": 60
+    }
+  ]
+}

@@ -109,6 +109,8 @@ def verify(root, cli):
             rows.append(dict(case=case, variant="stale-independent-review", exitCode=2))
     print(json.dumps(dict(status="PASS", evidenceKind="scripted-worker-installed-compiler", cases=rows,
                           liveModelEvaluated=False, externalWorkExecuted=False)))
+    from verify_planning_preflight import verify as verify_preflight
+    verify_preflight(root, cli)
 
 
 if __name__ == "__main__":

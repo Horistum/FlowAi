@@ -26,7 +26,7 @@ object OperationObservationAuthentication {
         return signingBytes("Horistum operation run observation\u0000v$formatVersion\u0000", keyId, payload)
     }
 
-    private fun signingBytes(domain: String, keyId: String, payload: ByteArray): ByteArray {
+    internal fun signingBytes(domain: String, keyId: String, payload: ByteArray): ByteArray {
         require(keyId.matches(Regex("[A-Za-z][A-Za-z0-9_.-]{0,127}")) && payload.size <= OperationOutcomeReader.MAX_PAYLOAD)
         val output = ByteArrayOutputStream()
         DataOutputStream(output).use { stream ->

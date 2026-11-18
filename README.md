@@ -27,6 +27,11 @@ See the [system automation direction](docs/SYSTEM_AUTOMATION_DIRECTION.md) and
 [multi-resource planning examples](examples/system-automation/README.md).
 [Structured authoring](docs/STRUCTURED_AUTHORING.md) adds explicit branches and value
 joins with independent conditional requirements across automation domains.
+[Operation preconditions](docs/OPERATION_PRECONDITIONS.md) check fresh signed
+observations of existing resource instances, ownership and state before external
+use of a plan. Independent planning preflight connects these checks to the selected
+agent proposal and its goal review. Results remain point-in-time evidence without
+execution authority.
 
 It is designed to turn human or AI-written automation requests into a validated, portable automation model that can be checked against target capabilities before any target-specific output is generated.
 

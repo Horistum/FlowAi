@@ -1,0 +1,10 @@
+kind: FlowConformanceVector
+version: "1.0"
+id: ai.preconditions.missing
+introducedIn: "AI-A3-S3.6"
+description: Missing current observations cannot become successful preconditions.
+input:
+  command: conformance
+expected:
+  requiredCheck: ai.preconditions.missing
+  executionAuthorized: false

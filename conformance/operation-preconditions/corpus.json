@@ -1,0 +1,46 @@
+{
+  "formatVersion": 1,
+  "cases": [
+    "infrastructure",
+    "data-copy",
+    "credential-rotation"
+  ],
+  "graphPin": "Only the graph digest is filled from compilation; expected ownership, generation and facts are independently frozen.",
+  "vectors": [
+    {
+      "id": "fresh",
+      "state": "SATISFIED",
+      "code": "PRECONDITION_SATISFIED"
+    },
+    {
+      "id": "missing",
+      "state": "UNRESOLVED",
+      "code": "PRECONDITION_OBSERVATION_MISSING"
+    },
+    {
+      "id": "owner",
+      "state": "VIOLATED",
+      "code": "PRECONDITION_OWNER_CHANGED"
+    },
+    {
+      "id": "instance",
+      "state": "VIOLATED",
+      "code": "PRECONDITION_INSTANCE_CHANGED"
+    },
+    {
+      "id": "state",
+      "state": "VIOLATED",
+      "code": "PRECONDITION_STATE_CHANGED"
+    },
+    {
+      "id": "expired",
+      "state": "UNRESOLVED",
+      "code": "PRECONDITION_OBSERVATION_STALE"
+    },
+    {
+      "id": "replay",
+      "state": "UNRESOLVED",
+      "code": "PRECONDITION_OBSERVATION_CONTEXT"
+    }
+  ]
+}

@@ -52,6 +52,7 @@ def compiler():
     # verify_system_discovery.py using the installed product, never this mock.
     if semantic != 'rejected':
         report['graphDigest'] = 'a' * 64
+        report['compilationSource'] = {'sha256': 'c' * 64}
         (out / 'canonical-execution-plan.json').write_text(json.dumps({'testOnly': True}))
     if requirements is None:
         report.update(formatVersion=1, requestFidelity='unassessed', renderRequested=False)

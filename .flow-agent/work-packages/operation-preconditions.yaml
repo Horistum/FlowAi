@@ -1,0 +1,62 @@
+version: AI-A3-S3.6
+name: Fresh, graph-bound preconditions for existing resources
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 4c122ec83b8e0d1a2cb819bf8581899d0aea28bb
+predecessorPullRequest: 273
+authorization: Maintainer requested the next implemented roadmap slice after merging PR 273, with thorough design, review and validation.
+objective: Reassess independently declared resource state, ownership and instance identity against fresh authenticated observations before a reviewed plan is used.
+correction:
+  authorization: Maintainer requested correction of the reproduced resource-binding failures and missing planning integration in PR 274.
+  invariant: Canonical effect definitions own operand bindings; all effects of changing tasks must have checked resource operands, and shared inputs inherit only effects on their actual identities.
+  implementation:
+  - Define effect-to-operand bindings beside the existing canonical effect definitions without changing historical effect values or graph serialization.
+  - Reject unknown, ambiguous and undeclared effect targets; do not use task IDs as resource coverage.
+  - Add independent planning preflight that recovers the exact selected candidate and fidelity review, invokes a configured bounded observer, and evaluates fresh signed snapshots with the compiler.
+  - Keep preflight receipts immutable; current-use recovery rechecks freshness and input identity without calling a model or repeating observation processes.
+  acceptance:
+  - Shared-source synchronization succeeds with both operands assessed; source-only declarations and destination replacement cannot satisfy the assessment.
+  - Arbitrary parameters, nested objects without a semantic binding, resource aliases and ambiguous bindings cannot evade coverage.
+  - Installed worker-to-review-to-preflight proof covers fresh, missing, changed and expired state without exposing independent expectations to the worker.
+architecturePurpose: Keep operation selection and resource binding in the existing canonical compiler; external observers supply assertions and external systems retain execution authority.
+universalInvariant: A satisfied precondition result is bound to the exact graph, immutable requirements, fresh assessment challenge, selected operation and resource generation; missing, stale, substituted or contradictory evidence cannot satisfy it.
+scope:
+- Add an opt-in version 1 precondition contract and installed preconditions CLI for Intent and reviewed proposals.
+- Reuse canonical operation selection, resource operand interpretation, scalar equality and immutable input capture from the outcome frontend.
+- Support exact existing-resource addresses with explicit instance pins, managed ownership and bounded scalar state requirements.
+- Authenticate independent snapshot claims with separate Ed25519 signing domains, exact scope grants and source capture digests.
+- Report uncovered changing operations, unknown effects and dynamic resource operands as unresolved; shared resources cannot be modified.
+- Publish point-in-time results with explicit expiry and no execution authorization; preserve all historical outcome contracts.
+- Prove state drift, ownership transfer, same-address instance replacement, expiry, context/signature substitution and missing coverage using unit, CLI, conformance and installed-product tests.
+forbiddenScope:
+- No runtime executor, provider-specific Core rules, model transport, automatic observation polling or workflow dispatch.
+- No conversion of accepted post-run outcomes into permission or pre-execution evidence.
+- No newly allocated addresses, expression evaluation, inferred resource ownership or arbitrary predicates. Complete coverage is required for supported effect bindings; unsupported bindings block satisfaction.
+- No assertion that signatures establish remote truth, an atomic snapshot, locks, live-model quality or AI-A3 closure.
+architectureDecision:
+  owner: Existing outcome frontend and product CLI; no Python semantic evaluator.
+  alternativeRejected: Checking discovery timestamps alone cannot bind current ownership or generation to a canonical operation; post-run result claims have different temporal meaning.
+  compatibility: New explicit contract and signing domain; existing Intent, outcome v1-v3 and observer wire contracts remain unchanged.
+expectedFilesToInspect:
+- src/main/kotlin/org/flowlang/frontend/outcomes/
+- src/main/kotlin/org/flowlang/cli/honest/OutcomeCommand.kt
+- flow-frontends/src/test/kotlin/org/flowlang/frontend/outcomes/
+expectedFilesToAdd:
+- Operation precondition contracts, reader, authentication and reviewer in the existing frontend.
+- Product command, schemas, conformance cases, installed proof and operator documentation.
+expectedFilesToChange:
+- Shared resource operand helper and signing-message framing visibility without behavior changes.
+- CLI registration, schema registry and explicit source/resource ownership inventories.
+- Roadmap selection, release state and both final CI integration paths.
+validationPlan:
+- Prove positive infrastructure/data/credential cases and falsifying negative evidence independently of implementation output.
+- Verify strict readers, immutable captured inputs, precision-preserving comparisons, schema parity and atomic CLI publication.
+- Exercise real local JSON/SQLite state changes without executing a workflow or supplying expected values to the observer.
+- Run offline frontend/CLI tests, existing Python and worker regressions, installed proofs and conformance.
+- Require exact-head and merge-candidate full GitHub CI and adapter certification on the final revision.
+completionEvidence:
+- Fresh evidence satisfies the frozen plan; changed owner, instance or facts fails without changing requirements.
+- Missing or invalid evidence remains unresolved, while wrong authenticated values are violations.
+- Every changing graph operation is covered and no report authorizes execution or guarantees later state.
+- Live portfolio acceptance and runtime enforcement remain independently identified follow-up gates.

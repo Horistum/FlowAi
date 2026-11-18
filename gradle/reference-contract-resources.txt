@@ -147,6 +147,11 @@ schemas/operation-outcome-requirements.schema.json
 schemas/operation-outcome-review-v2.schema.json
 schemas/operation-outcome-review-v3.schema.json
 schemas/operation-outcome-review.schema.json
+schemas/operation-precondition-bundle.schema.json
+schemas/operation-precondition-observation.schema.json
+schemas/operation-precondition-requirements.schema.json
+schemas/operation-precondition-review.schema.json
+schemas/operation-precondition-trust.schema.json
 schemas/operation-run-observation-v2.schema.json
 schemas/operation-run-observation-v3.schema.json
 schemas/operational-domain-case.schema.json

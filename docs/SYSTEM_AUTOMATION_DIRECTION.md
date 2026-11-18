@@ -257,3 +257,23 @@ independently verified live portfolio measurements and execution-precondition
 revalidation remain the next acceptance work. Scripted installed-compiler trials
 are integration evidence, not live reasoning or remote-state claims. The original
 AI-A3 corpus and held-out rendering gates remain unchanged.
+
+### S3.6: fresh preconditions for existing resources
+
+The [precondition command](OPERATION_PRECONDITIONS.md) reassesses the exact compiled
+graph against independent expectations and fresh authenticated snapshots. Existing
+resource addresses are pinned to native instance identities; ownership transfer,
+same-address replacement and scalar state drift fail unchanged requirements.
+Missing evidence, stale snapshots and uncovered effect operands remain unresolved.
+Canonical effect definitions bind each effect to its resource operand; shared READ
+inputs remain distinct from managed write targets. Unknown bindings block assessment.
+The worker's independent preflight now recovers the exact selection and completed
+goal review, obtains fresh signed snapshots from an operator-configured observer,
+and assesses them with the installed compiler. Receipt recovery checks current
+expiry without repeating model, observer or compiler processes.
+
+This provides the bounded assessment boundary anticipated by S3.5. It does not
+execute a workflow, infer unsupported resource bindings, lock provider state or authorize
+later work. External dispatch-time enforcement and independently verified live
+portfolio measurements remain the next acceptance work. Deterministic local
+observer evidence does not close the AI-A3 live corpus or held-out rendering gates.

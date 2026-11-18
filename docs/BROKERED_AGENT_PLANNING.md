@@ -191,6 +191,16 @@ runs require explicit commissioning of the changed authority.
 
 ## Verification and limits
 
+After an independent goal review succeeds, the same entrypoint supports a
+[fresh resource preflight](OPERATION_PRECONDITIONS.md#independent-preflight-of-an-agent-selected-plan).
+Supply `--preflight-config` and `--preflight-out` together with the existing
+`--review-requirements` and completed `--review-out`. This mode recovers the
+selection and review, checks canonical effect coverage, collects signed snapshots
+from a separately configured observer and invokes the compiler. It never starts
+a model turn. Reuse verifies a completed receipt and current expiry; partial
+outputs never trigger an automatic retry. Fidelity satisfaction alone remains
+distinct from resource readiness and external execution authorization.
+
 ```sh
 /absolute/planning-worker-venv/bin/python -m unittest discover -s tools/tests_worker -v
 JAVA_HOME=/absolute/jdk-25 /absolute/planning-worker-venv/bin/python \
@@ -203,6 +213,6 @@ retries, repairs, unknown decisions, canonical retrieval, the actual independent
 review entrypoint (including compiler-valid wrong-goal plans, mismatched requests
 and stale evidence), and recovery without another turn. Production code
 does not load the fixture corpus. This is not live-model understanding, unfamiliar
-environment generalization or actual system recovery. Live evaluation and remote
-state/ownership revalidation before execution remain open. S3, AI-A3, AR-06 and
+environment generalization or actual system recovery. Live evaluation, deployed
+observer commissioning and external dispatch-time enforcement remain open. S3, AI-A3, AR-06 and
 AR-07 remain open; EF-09 stays paused.
