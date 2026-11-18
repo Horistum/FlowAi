@@ -10,6 +10,7 @@ universalInvariant: A runtime completion alone cannot satisfy a postcondition. T
 scope:
 - Opt into private policy and trust files in dispatch settings. Capture their exact bytes before launch and commit both digests into the nonce acknowledged by the runtime.
 - Derive a read-only observation request from verified completed evidence and disclose only correlation pins to the observer.
+- Stabilize published dependency relation property order after a repeated installed run exposed inconsistent plan digests across JVMs.
 - Assess a captured bundle using the existing canonical outcomes command and verify its plan and input receipts. Recover without redispatch or recompilation.
 forbiddenScope:
 - No provider implementation, model call, automatic redispatch, second outcome evaluator, target promotion or global workflow correctness claim.

@@ -50,3 +50,13 @@ The fixture establishes the observed result in its local database. A production
 deployment must independently commission the runtime, correlate effects with its
 provider's audit records and manage observer key custody. The live portfolio,
 held-out rendering and AI-A3/AR-06/AR-07 acceptance gates remain open.
+
+## Serialization defect found by repeating the installed proof
+
+Two JVM processes published the same dependency relation with its computed
+`continuity` and `blocking` fields in opposite orders. The installed proof stopped
+at the exact plan-set comparison. The retained byte diff isolated the change to
+those two fields. The artifact JSON mapper now specifies the wire order of
+`PlanDependencyRelation` and leaves the compiler model free of serialization
+dependencies. A regression checks all populated fields and forces an alternative
+property-discovery default. Plan comparisons still use the exact published bytes.
