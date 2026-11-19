@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 94
+revision: 95
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -31,12 +31,12 @@ currentDecision:
 authoringDevelopment:
   selectedSlice: AI-A3
   investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
-  selectedFollowup: .flow-agent/work-packages/planning-dispatch-outcomes.yaml
+  selectedFollowup: .flow-agent/work-packages/kubernetes-dispatch-commissioning.yaml
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
-  selectedFollowupSlice: AI-A3-S3.8
-  selectedFollowupCorrection: Bind independently declared postconditions and signed observed effects to the exact completed external dispatch.
-  previousFollowupCorrection: External transactional runtime exchange and durable uncertainty merged in PR 275 at 3966e23f496d6a9a58c1c01333c673821dc9f997.
-  nextFollowupSlice: S3-runtime-commissioning-and-independent-live-portfolio-outcome-acceptance
+  selectedFollowupSlice: AI-A3-S3.9
+  selectedFollowupCorrection: Commission the existing dispatch and outcome protocols against one real Kubernetes API operation with native auditing.
+  previousFollowupCorrection: Independent dispatch outcomes merged in PR 276 at 668b1c5ce839908f2f1473274bf6bba354359cf7.
+  nextFollowupSlice: S3-independent-live-portfolio-acceptance
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active

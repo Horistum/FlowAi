@@ -1,5 +1,5 @@
 project: Flow
-stateVersion: 158
+stateVersion: 159
 
 currentVersion: "0.9.5"
 currentPackage: "flow-core-prod-v0_9_5_universal_model_completion.zip"
@@ -911,6 +911,23 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  kubernetesDispatchCommissioning:
+    selectedSlice: AI-A3-S3.9
+    workPackage: .flow-agent/work-packages/kubernetes-dispatch-commissioning.yaml
+    report: .flow-agent/reports/kubernetes-dispatch-commissioning.md
+    contract: docs/KUBERNETES_CONFIGMAP_DISPATCH.md
+    baselineMain: 668b1c5ce839908f2f1473274bf6bba354359cf7
+    predecessorPullRequest: 276
+    validation: final-revision-ci-required
+    entryPoint: tools/kubernetes_configmap_dispatch.py
+    scope: Conditional text-data replacement of one existing ConfigMap on a disposable API server.
+    evidence: Distinct writer and reader RBAC identities, native API audit ID, committed data and independently read current state.
+    liveModelEvaluated: false
+    productionTenantCommissioned: false
+    workflowExecutionCorrectness: unassessed
+    supportPromotion: false
+    recoveryClosure: false
+    nextSlice: S3-independent-live-portfolio-acceptance
   planningDispatchOutcomeFollowup:
     selectedSlice: AI-A3-S3.8
     workPackage: .flow-agent/work-packages/planning-dispatch-outcomes.yaml
@@ -918,7 +935,11 @@ recoveryBoundedAuthoring:
     contract: docs/PLANNING_DISPATCH_OUTCOMES.md
     baselineMain: 3966e23f496d6a9a58c1c01333c673821dc9f997
     predecessorPullRequest: 275
-    validation: final-revision-ci-required
+    validation: merged-exact-head-and-merge-candidate-ci-passed
+    mergedPullRequest: 276
+    mergedMain: 668b1c5ce839908f2f1473274bf6bba354359cf7
+    validatedHead: eae874b3c2a4dc6b7a4f1983cf4e89ff55aadebb
+    validationEvidence: https://github.com/Horistum/FlowAi/pull/276
     entryPoint: tools/review_dispatch_outcomes.py
     scope: Independently signed declared operation postconditions bound to one completed external runtime exchange.
     observationContract: operation-outcomes-v1
