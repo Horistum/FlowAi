@@ -9,7 +9,7 @@ from kubernetes_provider.common import emit, frame
 
 
 def main():
-    provider, config, kubectl, kubeconfig, resource, patch = sys.argv[1:]
+    provider, config, kubectl, kubeconfig, resource, patch, receipt_path = sys.argv[1:]
     runtime = [sys.executable, provider, "runtime", "--config", config]
     request = frame()
     # Inherit the bounded host process group so timeout also stops the writer.
@@ -21,9 +21,11 @@ def main():
             require(first["kind"] == "observations", "Competitor missed the observation boundary")
             duplicate = subprocess.run(runtime, input=canonical(request), capture_output=True, check=True, timeout=8)
             require(loads(duplicate.stdout).get("reason") == "conflict", "Duplicate entered the reserved dispatch")
-            subprocess.run([kubectl, "--kubeconfig", kubeconfig, "--request-timeout=4s", "-n", "commissioning",
-                "patch", resource, "--type=merge", "-p", patch],
+            competing = subprocess.run([kubectl, "--kubeconfig", kubeconfig, "--request-timeout=4s", "-n", "commissioning",
+                "patch", resource, "--type=merge", "-p", patch, "-o", "json"],
                 capture_output=True, check=True, timeout=8)
+            meta = loads(competing.stdout)["metadata"]
+            Path(receipt_path).write_bytes(canonical(dict(uid=meta["uid"], resourceVersion=meta["resourceVersion"])))
             emit(first)
             decision = frame()
             child.stdin.write(canonical(decision))

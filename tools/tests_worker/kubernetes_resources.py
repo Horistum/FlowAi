@@ -94,7 +94,15 @@ RETENTION = Scenario(
     initial=dict(immutable=True, spec=dict(retention=dict(fallback=["90d", "365d"]), storage="audit-store")),
     desired=["90d", "365d"], competing=["180d"],
 )
-CASES = (CONFIG, SCALE, PAUSE, RETENTION)
+PUBLISH = Scenario(
+    kind="Service", name="collectors", group="", plural="services", api_version="v1", version="3.0",
+    profile=dict(formatVersion=1, apiVersion="v1", kind="Service", plural="services",
+                 fieldPath=["spec", "publishNotReadyAddresses"], valueType="boolean"),
+    field=("spec", "publishNotReadyAddresses"), actor_prefix="service-",
+    initial=dict(spec=dict(selector=dict(app="collector"), ports=[dict(name="syslog", port=601, protocol="TCP")])),
+    desired=True, competing=False,
+)
+CASES = (CONFIG, SCALE, PAUSE, RETENTION, PUBLISH)
 
 
 def install_archive_crd(cluster):

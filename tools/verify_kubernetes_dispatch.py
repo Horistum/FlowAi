@@ -13,7 +13,7 @@ import tempfile
 from authoring_host.contracts import canonical, digest, loads, require
 from kubernetes_provider.common import now
 from tests_worker.kubernetes_cluster import start
-from tests_worker.kubernetes_resources import CASES, CONFIG, SCALE, RETENTION
+from tests_worker.kubernetes_resources import CASES, CONFIG, PUBLISH, RETENTION, SCALE
 from tests_worker.test_planning_worker import configuration, commission_fixture, script, step
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -151,8 +151,10 @@ def race(work, common, cluster, case, settings):
     grant = loads(Path(writer["grant"]).read_bytes())
     grant.update(contractSha256=digest(canonical(before)), resourceVersion=revision, pins=dict(grant["pins"], dispatchId="competing"))
     config = write(work / "race-writer.json", dict(writer, requirements=before_path, grant=write(work / "race-grant.json", grant)))
+    competing_receipt = work / "competing-revision.json"
     relay = [sys.executable, str(ROOT / "tools/tests_worker/kubernetes_competitor.py"), runtime[1], config,
-             str(cluster.bins / "kubectl"), str(cluster.work / "admin.json"), case.address, canonical(case.competitor).decode()]
+             str(cluster.bins / "kubectl"), str(cluster.work / "admin.json"), case.address, canonical(case.competitor).decode(),
+             str(competing_receipt)]
     settings = dict(settings, requirements=before_path, dispatch=dict(settings["dispatch"], id="competing"),
                     runtime=dict(settings["runtime"], argv=relay))
     out = work / "race-dispatch"
@@ -160,6 +162,12 @@ def race(work, common, cluster, case, settings):
              write(work / "race-settings.json", settings), "--out", str(out)], 3)
     require(loads((out / "runtime-assessment.json").read_bytes())["currentState"] == "SATISFIED" and
             loads((out / "runtime-result.json").read_bytes())["status"] == "rejected", "Race missed the conditional write")
+    # Some APIs omit false/defaulted fields on GET. The competing writer's native revision
+    # identifies its committed state even when its patch literal has no stored representation.
+    winning = loads(competing_receipt.read_bytes())
+    live = current(cluster, case)["metadata"]
+    require(winning["resourceVersion"] != revision and winning == {k: live[k] for k in ("uid", "resourceVersion")},
+            "The competing revision did not survive the conditional update")
     records = map(loads, (cluster.work / "audit.log").read_bytes().splitlines())
     require(any(e.get("responseStatus", {}).get("code") == 409 and e["user"]["username"] == case.actor_prefix + "writer"
                 for e in records), "No native conflict for the selected writer")
@@ -172,6 +180,7 @@ def assess(work, review, collect, request, name, status, code):
     command([*review, "assess", "--observations", path, "--out", str(out)], status)
     report = loads((out / "compiler/operation-outcome-review.json").read_bytes())
     require(report["results"][0]["code"] == code, f"Unexpected {name} outcome")
+    return bundle
 
 
 def challenge_evidence(work, review, collect, request, runtime):
@@ -293,11 +302,13 @@ def verify(work, cluster, cli, case):
     if case is RETENTION:
         challenge_profile(work, case, collect, request, settings["runtime"]["argv"])
     race(work, common, cluster, case, settings)
-    after = current(cluster, case)
-    for key in case.field:
-        after = after[key]
-    require(after == case.competing, "Lost concurrent change")
-    assess(work, review, collect, request, "drift", 4, "OUTCOME_POSTCONDITION_FAILED")
+    drift = assess(work, review, collect, request, "drift", 4, "OUTCOME_POSTCONDITION_FAILED")
+    if case is PUBLISH:
+        signed = [loads(base64.b64decode(o["payload"], validate=True)) for o in drift["observations"]]
+        state, = [claim for claim in signed if claim["kind"] == "STATE"]
+        require(state["facts"] == dict(profileSha256=case.profile_sha, committedValuePresent=True,
+                committedValueSha256=digest(canonical(True)), valuePresent=False),
+                "Omitted Service field was reported as an explicit false value")
     if case == CONFIG:
         cluster.kubectl("delete", case.address, "-n", "commissioning")
         cluster.create(dict(apiVersion="v1", kind="ConfigMap", metadata=dict(name=case.name, namespace="commissioning"), data=case.source["data"]))

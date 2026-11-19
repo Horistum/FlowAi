@@ -924,7 +924,7 @@ recoveryBoundedAuthoring:
     scope: A compiler-selected SYNC and one conditional field update on an existing named object.
     builtInProfiles: [configmap-text, deployment-replicas]
     declaredProfiles: Operator-provisioned field paths pinned by source, approval and audit binding.
-    exercisedKinds: [ConfigMap, Deployment, CronJob, ArchivePolicy]
+    exercisedKinds: [ConfigMap, Deployment, CronJob, Service, ArchivePolicy]
     evidence: Distinct writer and reader RBAC identities, native API audit ID, committed data and independently read current state.
     liveModelEvaluated: false
     productionTenantCommissioned: false

@@ -13,9 +13,10 @@ The initial two-profile correction still required a Python implementation per ad
 | ConfigMap, structured Intent 3.0 | The reviewed text replaces obsolete keys. Binary data and unrelated metadata are preserved. Audit and live GET yield the committed and current data digests. |
 | Deployment, flat Intent 2.0 | The desired replica count changes from one to three. The pod template and selector are preserved. Audit and GET report numeric facts under a distinct RBAC identity. |
 | CronJob, operator file | The same provider sets `spec.suspend` to true through `batch/v1`. The schedule, job template and unrelated metadata survive. |
+| Service, core-group operator file | The API stores the requested true value and later omits the field after a competing false patch. The native competing revision survives and the independent review detects drift. |
 | ArchivePolicy CRD, operator file | Reviewed input sets an absent nested array under an explicit absence precondition. Both the committed and live digests are checked. The sibling fallback has the same desired value, yet a substituted declaration cannot reuse the receipt, grant or reviewed source. |
 | Incorrect reviewer source or destination | A matching SYNC count still fails fidelity for a different source. A different named resource fails canonical effect binding before dispatch. |
-| Concurrent updates, all four resources | After a signed GET, another writer changes the resource. The compiler returns SATISFIED, the API returns 409, and the independent postcondition detects the competing state. |
+| Concurrent updates, all five resources | After a signed GET, another writer changes the resource. The compiler returns SATISFIED, the API returns 409, and the independent postcondition detects the competing state. |
 | Incomplete or misleading evidence | Empty, ambiguous, uncorrelated and simulated admission-rewritten audit evidence exercise the observation boundary. A same-name replacement loses the UID binding. |
 
 Both full CI paths run the installed CLIs against a disposable API server. No pod controller is part of this proof. The Deployment outcome concerns the declared replica count. Multi-operation execution, workload availability, live model evaluation and independent portfolio acceptance remain open. [Operator procedure](../../docs/KUBERNETES_RESOURCE_DISPATCH.md)
