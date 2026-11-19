@@ -295,3 +295,12 @@ no executor or second semantic evaluator is added to Core. Runtime-reported
 completion is distinct from independently verified outcomes. Commissioning a
 production runtime and independent live portfolio/outcome acceptance remain next
 work; broader recovery and target-support gates remain unchanged.
+
+### S3.8: independently observed dispatch outcomes
+
+[Dispatch outcome review](PLANNING_DISPATCH_OUTCOMES.md) connects an exact completed
+exchange to predeclared postconditions and independently signed observations. The
+installed compiler checks the policy before runtime launch and later evaluates the
+observed effect. A runtime can report a successful data copy while the independent
+review establishes a violated destination postcondition. Commissioning a provider
+and its independent observer, and evaluating the live portfolio, remain open.

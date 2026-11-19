@@ -13,6 +13,7 @@ import sys
 import tempfile
 
 from authoring_host.contracts import canonical, digest, loads, read, require
+from verify_dispatch_outcomes import outcome_settings, verify_outcomes
 from tests_worker.test_planning_worker import configuration, commission_fixture, script, step
 
 
@@ -35,7 +36,9 @@ def verify(root, cli):
 
         def command(args, expected):
             result = subprocess.run(args, capture_output=True, timeout=180)
-            require(result.returncode == expected, f"Installed dispatch CLI exit {result.returncode}, expected {expected}: " + result.stderr.decode()[-800:] + result.stdout.decode()[-800:])
+            target = args[args.index("--out") + 1] if "--out" in args else args[-1]
+            require(result.returncode == expected, f"Installed dispatch CLI {target}: exit {result.returncode}, expected {expected}: "
+                    + result.stderr.decode()[-800:] + result.stdout.decode()[-800:])
             return loads(result.stdout) if expected != 2 else None
 
         planning = [sys.executable, str(root / "tools/agent_planning_worker.py"), "--config", str(settings), "--out", str(run)]
@@ -49,15 +52,17 @@ def verify(root, cli):
         trust.write_bytes(canonical(dict(formatVersion=1, grants=[dict(keyId="test-observer", publicKey=base64.b64encode(public).decode(),
             scopes=["storage-test"], resourceTypes=["dataset"])])))
         template = loads(read(root / "conformance/operation-preconditions/data-copy.requirements.json"))
+        outcome_review, audit_key = outcome_settings(root, work)
         variants = (("fresh", 0), ("concurrent", 0), ("concurrent-runtime", 0), ("owner", 4), ("instance", 4), ("state", 4),
             ("unauthorized", 3), ("source-only", 3), ("missing", 3), ("stale", 3), ("expires-before-use", 3),
-            ("crash-before-decision", 2), ("crash-after-commit", 2))
+            ("crash-before-decision", 2), ("crash-after-commit", 2), ("false-completion", 0), ("invalid-outcome-selector", 3))
         for variant, expected in variants:
             case = work / variant; case.mkdir()
             database = case / "provider.sqlite"
             with sqlite3.connect(database) as db:
                 db.execute("CREATE TABLE datasets(name TEXT PRIMARY KEY, instance_id TEXT, owner TEXT, writable INTEGER, schema_version INTEGER, payload TEXT)")
-                db.execute("CREATE TABLE effects(dispatch_id TEXT PRIMARY KEY)")
+                db.execute("""CREATE TABLE effects(dispatch_id TEXT PRIMARY KEY, decision_sha TEXT, receipt TEXT, node_id TEXT,
+                                  destination TEXT, instance_id TEXT, owner_at_use TEXT, recorded_at TEXT)""")
                 db.execute("CREATE TABLE authorizations(reference TEXT PRIMARY KEY, document TEXT)")
                 db.executemany("INSERT INTO datasets VALUES (?,?,?,?,?,?)", [
                     ("isolated-copy", "native-copy-generation-1", "data-team", 1, 1, "previous-data"),
@@ -88,7 +93,14 @@ def verify(root, cli):
                 db.execute("INSERT INTO authorizations VALUES (?,?)", (dispatch["authorizationRef"], canonical(approval).decode()))
             counter = case / "runtime-count"
             runtime_settings = case / "dispatch-settings.json"
-            runtime_settings.write_bytes(canonical(dict(formatVersion=1, requirements=str(requirements), trust=str(trust),
+            optional = dict(outcomeReview=outcome_review) if variant in ("fresh", "false-completion", "crash-after-commit", "invalid-outcome-selector") else {}
+            if variant == "invalid-outcome-selector":
+                bad_policy = case / "policy.json"
+                policy = loads(read(outcome_review["policy"]))
+                policy["operations"][0]["selector"]["capability"] = "DEPROVISION"
+                bad_policy.write_bytes(canonical(policy))
+                optional = dict(outcomeReview=dict(outcome_review, policy=str(bad_policy)))
+            runtime_settings.write_bytes(canonical(dict(formatVersion=1, **optional, requirements=str(requirements), trust=str(trust),
                 dispatch=dispatch, runtime=dict(argv=[sys.executable, str(root / "tools/tests_worker/dispatch_runtime.py"),
                     "--database", str(database), "--key", str(key), "--count", str(counter),
                     "--mode", variant], credentialEnv=[], timeoutSeconds=100))))
@@ -101,10 +113,12 @@ def verify(root, cli):
                 with sqlite3.connect(database) as db:
                     return db.execute("SELECT COUNT(*) FROM effects").fetchone()[0], db.execute(
                         "SELECT payload FROM datasets WHERE name='isolated-copy'").fetchone()[0]
-            committed = variant in ("fresh", "concurrent", "concurrent-runtime", "crash-after-commit")
-            require(effect_count() == (1 if committed else 0, "retained-data" if committed else "previous-data"),
+            copied = variant in ("fresh", "concurrent", "concurrent-runtime", "crash-after-commit")
+            expected_events = int(copied or variant == "false-completion")
+            event_count, destination_payload = effect_count()
+            require((event_count, destination_payload) == (expected_events, "retained-data" if copied else "previous-data"),
                     "Actual runtime effects disagree with the independent expectation")
-            rows.append(dict(case=variant, exitCode=expected, committedEffects=effect_count()[0]))
+            rows.append(dict(case=variant, exitCode=expected, committedEffects=event_count, destinationMatchesSnapshot=copied))
             if variant == "source-only":
                 require(not counter.exists(), "Uncovered target reached external runtime")
             if variant == "expires-before-use":
@@ -134,6 +148,18 @@ def verify(root, cli):
                 command([*base, "--out", str(case / "different-output-same-dispatch")], 3)
                 require(effect_count()[0] == 1, "External dispatch identity allowed duplicate work")
                 rows.append(dict(case="external-duplicate-rejected", exitCode=3, committedEffects=1))
+            if variant == "invalid-outcome-selector":
+                command([*base, "--out", str(output)], 3)
+                require(result["status"] == "outcome-policy-blocked" and not counter.exists() and
+                        not (output / "dispatch-intent.json").exists(),
+                        "Unresolvable outcome selection reached the external runtime")
+            elif optional or variant == "unauthorized":
+                outcome_cli = [sys.executable, str(root / "tools/review_dispatch_outcomes.py"),
+                               "--config", str(settings), "--run", str(run), "--review-requirements", str(goal),
+                               "--review-out", str(review), "--dispatch-config", str(runtime_settings), "--dispatch-out", str(output)]
+                before = counter.read_bytes()
+                rows.extend(verify_outcomes(root, work, case, database, audit_key, variant, outcome_cli, command))
+                require(counter.read_bytes() == before, "Outcome review launched the runtime")
             if result:
                 require(result["executionAuthorized"] is False and result["outcomeIndependentlyVerified"] is False,
                         "Runtime report was promoted to compiler authority")

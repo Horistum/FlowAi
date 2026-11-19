@@ -151,8 +151,8 @@ only after the complete exchange, clean process exit and final input checks.
 | CLI exit | Meaning |
 | --- | --- |
 | `0` | A complete retained exchange reports external completion. Actual outcomes are not independently verified. |
-| `3` | Canonical preconditions are unresolved, or the runtime rejected authorization, concurrency, expiry or use. |
-| `4` | The compiler assessed an authenticated precondition violation and the exchange did not report completion. |
+| `3` | Canonical preconditions or optional outcome-policy admission are unresolved, or the runtime rejected authorization, concurrency, expiry or use. |
+| `4` | The compiler assessed a precondition violation or a violated boundary during optional outcome-policy admission. |
 | `2` | Invalid inputs, changed evidence or incomplete/uncertain process state. Reconcile with the runtime before deciding what to do. |
 
 Reusing the same command and directory verifies the complete historical receipt
@@ -189,3 +189,6 @@ This closes the bounded external assessment exchange and its transactional local
 proof. Provider-specific runtime commissioning, independently verified live
 portfolio acceptance and live outcome evidence remain next work. It does not close
 AI-A3, AR-06 or AR-07 or promote target support.
+
+To declare an outcome policy before dispatch and independently check observed
+effects afterward, see [independent dispatch outcomes](PLANNING_DISPATCH_OUTCOMES.md).

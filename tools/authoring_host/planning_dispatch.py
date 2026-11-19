@@ -10,15 +10,21 @@ import os
 import re
 import secrets
 
-from . import planning_preflight as preflight
+from . import dispatch_outcomes, planning_preflight as preflight
 from .contracts import canonical, digest, keys, loads, require, save
 from .dispatch_transport import RuntimeSession
 from .planning_worker import read_artifact
 
 
-def _context(*args):
-    context = preflight._context(*args, process_field="runtime", extra_fields=("dispatch",))
-    dispatch = loads(context[3]["settings.json"])["dispatch"]
+def _context(value, directory, requirements_file, review_directory, settings_file, output_directory):
+    context = preflight._context(value, directory, requirements_file, review_directory, settings_file, output_directory,
+                                 process_field="runtime", extra_fields=("dispatch",), optional_fields=("outcomeReview",))
+    config, output, _, captured, _ = context
+    settings = loads(captured["settings.json"])
+    if "outcomeReview" in settings:
+        captured.update(dispatch_outcomes.capture_policy(config, directory, review_directory, output, settings["outcomeReview"],
+                                                        captured["trust.json"]))
+    dispatch = settings["dispatch"]
     keys(dispatch, ("id", "runtimeId", "authorizationRef"))
     for value in dispatch.values():
         require(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:/-]{0,127}", value),
@@ -84,6 +90,15 @@ def _compiler_review(output, phase, captured, fidelity, observations):
     return review, artifacts
 
 
+def _admission(output, captured, fidelity, preconditions, *, config=None):
+    if not preflight._admitted(preconditions):
+        return False, None
+    if "outcome-policy.json" not in captured:
+        return True, None
+    outcome = dispatch_outcomes.admission(output, captured, fidelity, preconditions, config=config)
+    return dispatch_outcomes.ready_for_observation(outcome[0]), outcome
+
+
 def _derive(output, captured, fidelity):
     """Reconstruct historical completion solely from the exact retained exchange."""
     artifacts = {}
@@ -96,7 +111,15 @@ def _derive(output, captured, fidelity):
     admission, compiler_artifacts = _compiler_review(output, "admission", captured, fidelity, False)
     artifacts.update(compiler_artifacts)
     status, assessment, reported = "preconditions-blocked", admission, None
-    if preflight._admitted(admission):
+    ready, outcome_admission = _admission(output, captured, fidelity, admission)
+    outcome_fields = {}
+    if outcome_admission is not None:
+        review, evidence = outcome_admission
+        artifacts.update(evidence)
+        outcome_fields["outcomeAdmission"] = dict(readyForObservation=ready, state=review["state"])
+        if not ready:
+            status = "outcome-policy-blocked"
+    if ready:
         request = _request(admission, captured, fidelity)
         require(artifact("dispatch-intent.json") == canonical(request), "External dispatch intent changed")
         first = loads(artifact("runtime-observations.json"))
@@ -114,7 +137,11 @@ def _derive(output, captured, fidelity):
             decision = loads(artifact("runtime-assessment.json"))
             require(isinstance(decision, dict) and isinstance(decision.get("nonce"), str) and
                     re.fullmatch(r"[0-9a-f]{64}", decision["nonce"]), "Invalid dispatch assessment nonce")
-            expected = _decision(request, assessment, snapshots, preflight._instant(decision.get("checkedAt")), decision["nonce"])
+            nonce = decision["nonce"]
+            if "outcome-policy.json" in captured:
+                salt = loads(artifact("outcome-nonce-salt.json"))
+                nonce = dispatch_outcomes.commitment_nonce(captured, salt)
+            expected = _decision(request, assessment, snapshots, preflight._instant(decision.get("checkedAt")), nonce)
             require(canonical(decision) == canonical(expected), "Sent dispatch assessment changed")
             reported = loads(artifact("runtime-result.json"))
             _result(reported, request, decision)
@@ -123,17 +150,29 @@ def _derive(output, captured, fidelity):
     return dict(formatVersion=1, status=status, dispatch=loads(captured["settings.json"])["dispatch"],
         candidateId=fidelity["candidateId"], graphDigest=assessment["graphDigest"], assessment=assessment,
         runtimeResult=reported, artifacts=artifacts, executionAuthorized=False,
-        outcomeIndependentlyVerified=False)
+        outcomeIndependentlyVerified=False, **outcome_fields)
+
+
+def _recover(output, captured, fidelity):
+    """Read-only verification. A missing receipt can never start or finalize a dispatch."""
+    retained = read_artifact(output / "dispatch.json")
+    expected = _derive(output, captured, fidelity)
+    require(canonical(loads(retained)) == canonical(expected), "Dispatch receipt differs from retained evidence")
+    return expected
+
+
+def completed(value, directory, requirements_file, review_directory, settings_file, output_directory):
+    """Verify a historical dispatch without any path to the runtime launcher."""
+    config, output, _, captured, fidelity = _context(value, directory, requirements_file, review_directory,
+                                                     settings_file, output_directory)
+    return config, output, captured, fidelity, _recover(output, captured, fidelity)
 
 
 def run(value, directory, requirements_file, review_directory, settings_file, output_directory):
     args = (value, directory, requirements_file, review_directory, settings_file, output_directory)
     config, output, runtime, captured, fidelity = _context(*args)
     if output.exists():
-        retained = loads(read_artifact(output / "dispatch.json"))
-        expected = _derive(output, captured, fidelity)
-        require(canonical(retained) == canonical(expected), "Dispatch receipt differs from retained evidence")
-        return expected
+        return _recover(output, captured, fidelity)
     environment = {}
     for name in runtime["credentialEnv"]:
         item = os.environ.get(name)
@@ -150,7 +189,10 @@ def run(value, directory, requirements_file, review_directory, settings_file, ou
         require(after[3] == captured and canonical(after[4]) == canonical(fidelity), "Dispatch inputs changed during assessment")
 
     unchanged()
-    if preflight._admitted(admission):
+    ready, outcome_admission = _admission(output, captured, fidelity, admission, config=config)
+    if ready:
+        if outcome_admission is not None:
+            unchanged()
         request = _request(admission, captured, fidelity)
         # This durable reservation precedes process creation. Nothing below may
         # delete it or infer from absent output that an invocation is safe to retry.
@@ -177,7 +219,13 @@ def run(value, directory, requirements_file, review_directory, settings_file, ou
                     require(read_artifact(output / name) == data, "Captured runtime exchange changed")
                 checked, _ = _compiler_review(output, "assessment", captured, fidelity, True)
                 require(canonical(checked) == canonical(assessment), "Compiler assessment changed before dispatch")
-                decision = _decision(request, assessment, snapshots, preflight._now(), secrets.token_hex(32))
+                nonce = secrets.token_hex(32)
+                if outcome_admission is not None:
+                    require(dispatch_outcomes.admission(output, captured, fidelity, admission) == outcome_admission,
+                            "Outcome admission changed before dispatch")
+                    save(output, "outcome-nonce-salt.json", canonical(nonce), {})
+                    nonce = dispatch_outcomes.commitment_nonce(captured, nonce)
+                decision = _decision(request, assessment, snapshots, preflight._now(), nonce)
                 save(output, "runtime-assessment.json", canonical(decision), {})
                 # The consumer must check its own clock again inside its protected
                 # transaction. A positive assessment is never an authorization.

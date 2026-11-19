@@ -1,0 +1,21 @@
+version: AI-A3-S3.8
+name: Independent assessment of declared postconditions after a planning dispatch
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 3966e23f496d6a9a58c1c01333c673821dc9f997
+predecessorPullRequest: 275
+objective: Connect a completed external dispatch to independently captured outcome evidence assessed by the installed compiler.
+universalInvariant: A runtime completion alone cannot satisfy a postcondition. The obligation and observer trust are pinned before dispatch and authenticated observations belong to the exact completed exchange.
+scope:
+- Opt into private policy and trust files in dispatch settings. Capture their exact bytes before launch and commit both digests into the nonce acknowledged by the runtime.
+- Derive a read-only observation request from verified completed evidence and disclose only correlation pins to the observer.
+- Stabilize published dependency relation property order after a repeated installed run exposed inconsistent plan digests across JVMs.
+- Assess a captured bundle using the existing canonical outcomes command and verify its plan and input receipts. Recover without redispatch or recompilation.
+forbiddenScope:
+- No provider implementation, model call, automatic redispatch, second outcome evaluator, target promotion or global workflow correctness claim.
+- No live tenant or portfolio acceptance from local fixture evidence.
+validationPlan:
+- Exercise the public CLIs and actual committed and corrupted data with a separate read-only observer and signing key.
+- Falsify replay, key reuse, changed policy, missing evidence, substituted compiler artifacts and incomplete dispatch recovery.
+- Verify the existing worker suite, roadmap checks and GitHub CI on the PR.

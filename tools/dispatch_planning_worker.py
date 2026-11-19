@@ -30,6 +30,8 @@ def main():
             dispatchId=result["dispatch"]["id"], executionAuthorized=False, outcomeIndependentlyVerified=False)).decode(), end="")
         if result["status"] == "runtime-reported-completed":
             return 0
+        if result["status"] == "outcome-policy-blocked":
+            return 4 if result["outcomeAdmission"]["state"] == "VIOLATED" else 3
         return 4 if result["assessment"]["state"] == "VIOLATED" else 3
     except (HostError, WorkerError, OSError, ValueError, TypeError, subprocess.SubprocessError):
         print("Dispatch stopped; inspect private artifacts and reconcile with the runtime. A reserved or incomplete invocation must never be automatically repeated", file=sys.stderr)
