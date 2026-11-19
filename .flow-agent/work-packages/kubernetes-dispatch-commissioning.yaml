@@ -8,7 +8,7 @@ predecessorPullRequest: 276
 objective: Exercise the reviewed dispatch and independent outcome contracts against a real isolated API server.
 universalInvariant: One explicitly authorized update applies only to the observed object revision. A completed runtime receipt requires separate provider evidence to satisfy its declared outcome.
 scope:
-- Independently commissioned writer, named ConfigMap text or Deployment replica count, reviewed source, UID and resourceVersion.
+- Independently commissioned writer, one declared field of a named namespaced resource, reviewed source, UID and resourceVersion.
 - Separate read-only observer and signing key, native completed audit event and current object state.
 - Reproducible disposable control plane and installed planning, dispatch and outcome CLI evidence.
 forbiddenScope:
@@ -19,6 +19,8 @@ validationPlan:
 - Run the existing tooling and final pull request checks.
 reviewCorrection:
 - Use the pinned compiler plan and its resolved approval relation for the supported sync operation.
-- Share conditional submission, audit correlation and outcome collection across two bounded resource projections.
+- Share conditional submission, audit correlation and outcome collection across built-in and operator-declared projections.
 - Demonstrate distinct Intent representations, destination types and source values using the installed public CLIs.
 - Preserve the ConfigMap entry point and reject extra effects, unsupported controls and ambiguous resource bindings.
+- Bind the external profile to reviewed source bytes, operator approval and independent audit evidence.
+- Commission a previously unlisted native kind and a namespaced custom resource through the same public entry point.

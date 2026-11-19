@@ -12,7 +12,7 @@ from urllib.parse import urlsplit
 
 from authoring_host.contracts import MAX_BYTES, canonical, digest, loads, require
 from authoring_host.inventory_provenance import read_regular
-from .projections import PROFILES
+from .projections import load_projection
 
 OWNER = "horistum.com/owner"
 BINDING = "horistum.com/dispatch-binding"
@@ -48,10 +48,13 @@ def emit(value):
     sys.stdout.buffer.flush()
 
 
-def binding(request, node, checked_at, decision_sha):
-    return digest(canonical(dict(resource=request["resource"], nodeId=node, checkedAt=checked_at,
+def binding(request, node, checked_at, decision_sha, profile_sha=None):
+    fields = dict(resource=request["resource"], nodeId=node, checkedAt=checked_at,
         dispatchId=request["dispatchId"], runtimeId=request["runtimeId"], graphDigest=request["graphDigest"],
-        requestSha256=request["requestSha256"], decisionSha256=decision_sha)))
+        requestSha256=request["requestSha256"], decisionSha256=decision_sha)
+    if profile_sha is not None:
+        fields["profileSha256"] = profile_sha
+    return digest(canonical(fields))
 
 
 def sign(config, domain, source, **fields):
@@ -75,7 +78,7 @@ class ResourceAPI:
     """A verified TLS endpoint, one named resource and one operator-provisioned credential."""
     def __init__(self, config):
         self.config = config
-        self.profile = PROFILES[config["profile"]]
+        self.profile = load_projection(config)
         endpoint = urlsplit(config["server"])
         require(endpoint.scheme == "https" and endpoint.hostname and not endpoint.username and
                 not endpoint.password and endpoint.path in ("", "/") and not endpoint.query and

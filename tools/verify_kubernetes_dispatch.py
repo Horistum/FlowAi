@@ -2,7 +2,7 @@
 """Installed planning, dispatch and outcome commissioning on a disposable Kubernetes control plane."""
 import argparse
 import base64
-from dataclasses import dataclass
+from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
 import secrets
@@ -13,39 +13,12 @@ import tempfile
 from authoring_host.contracts import canonical, digest, loads, require
 from kubernetes_provider.common import now
 from tests_worker.kubernetes_cluster import start
+from tests_worker.kubernetes_resources import CASES, CONFIG, SCALE, RETENTION
 from tests_worker.test_planning_worker import configuration, commission_fixture, script, step
 
 ROOT = Path(__file__).resolve().parents[1]
 PROVIDER = str(ROOT / "tools/kubernetes_resource_dispatch.py")
 LEGACY = str(ROOT / "tools/kubernetes_configmap_dispatch.py")
-
-
-@dataclass(frozen=True)
-class Scenario:
-    kind: str
-    name: str
-    version: str
-    mode: str
-    source: dict
-    expected: dict
-    competitor: dict
-    actor_prefix: str
-    profile: str
-
-    @property
-    def identity(self):
-        return dict(scope="loopback/commissioning", type=self.kind, key=self.name)
-
-    @property
-    def address(self):
-        return self.kind + "/" + self.name
-
-
-DATA_SHA = digest(canonical(dict(mode="reviewed")))
-CONFIG = Scenario("configmap", "settings", "3.0", "replace-text-data", dict(data=dict(mode="reviewed")),
-                  dict(dataSha256=DATA_SHA, committedDataSha256=DATA_SHA), dict(data=dict(mode="concurrent")), "", "configmap-text")
-SCALE = Scenario("deployment", "workers", "2.0", "replace", dict(replicas=3),
-                 dict(replicas=3, committedReplicas=3), dict(spec=dict(replicas=2)), "replica-", "deployment-replicas")
 
 
 def write(path, document):
@@ -104,13 +77,15 @@ def identity(work, cluster, case, role):
     subprocess.run(["openssl", "genpkey", "-algorithm", "ED25519", "-out", str(key)], check=True, capture_output=True)
     pub = subprocess.run(["openssl", "pkey", "-in", str(key), "-pubout", "-outform", "DER"], check=True, capture_output=True)
     grant = dict(keyId=actor, publicKey=base64.b64encode(pub.stdout).decode(),
-                 scopes=[case.identity["scope"]], resourceTypes=[case.kind])
+                 scopes=[case.identity["scope"]], resourceTypes=[case.identity["type"]])
     if role == "observer":
         grant["kinds"] = ["RESULT", "OWNERSHIP", "STATE"]
     trust = write(work / (actor + "-trust.json"), dict(formatVersion=1, grants=[grant]))
     cfg = dict(cluster="loopback", namespace="commissioning", name=case.name, server=cluster.server,
                caFile=str(cluster.work / "server.crt"), tokenFile=str(cluster.work / (actor + ".token")), signingKey=str(key), keyId=actor)
-    if case != CONFIG:
+    if case.profile_sha:
+        cfg["profileFile"] = write(work / (role + "-profile.json"), case.profile)
+    elif not case.legacy:
         cfg["profile"] = case.profile
     return cfg, trust
 
@@ -129,6 +104,8 @@ def commission(work, cluster, cli, case, meta):
     before = dict(formatVersion=1, assessmentId="before-" + case.name, graphDigest=graph, challenge=secrets.token_hex(32),
         issuedAt=now().isoformat(), expiresAt=expiry, reviewerId="reviewer", resources=[dict(resource, instanceId=meta["uid"])],
         operations=[dict(selection, id="current", facts=dict(resourceVersion=meta["resourceVersion"]), maxAgeSeconds=120)])
+    if case is RETENTION:
+        before["operations"][0]["facts"]["valuePresent"] = False
     requirements = write(work / "before.json", before)
     proposal = str(work / "review/proposal.json")
     command([str(cli), "preconditions", proposal, "--source-kind", "proposal", "--contracts", str(ROOT),
@@ -145,12 +122,14 @@ def commission(work, cluster, cli, case, meta):
                 fidelityReviewSha256=digest(fidelity_raw))
     grant = dict(pins=pins, deadlineSemantics="submission", graphDigest=graph, nodeId=selected["nodeId"], owner="platform",
                  uid=meta["uid"], resourceVersion=meta["resourceVersion"], contractSha256=digest(canonical(before)), expiresAt=expiry)
+    if case.profile_sha:
+        grant["profileSha256"] = case.profile_sha
     ledger = work / "reservations"
     ledger.mkdir(mode=0o700)
     writer, trust = identity(work, cluster, case, "writer")
     writer.update(grant=write(work / "grant.json", grant), requirements=requirements, source=str(work / "source.json"),
                   proposal=proposal, reservationDirectory=str(ledger))
-    entry = LEGACY if case == CONFIG else PROVIDER
+    entry = LEGACY if case.legacy else PROVIDER
     runtime = [sys.executable, entry, "runtime", "--config", write(work / "runtime-config.json", writer)]
     observer, audit_trust = identity(work, cluster, case, "observer")
     observer.update(writerUsername=case.actor_prefix + "writer", runtimeId=dispatch["runtimeId"], auditFile=str(work / "audit.jsonl"))
@@ -229,6 +208,29 @@ def challenge_evidence(work, review, collect, request, runtime):
             "Substituted decision produced evidence")
 
 
+def challenge_profile(work, case, collect, request, runtime):
+    intent = loads((work / "dispatch/dispatch-intent.json").read_bytes())
+    writer = loads(Path(runtime[-1]).read_bytes())
+    alternate = dict(case.profile, fieldPath=["spec", "retention", "fallback"])
+    paths = [Path(writer["profileFile"]), Path(writer["grant"]), work / "observer-profile.json"]
+    originals = [path.read_bytes() for path in paths]
+    writer_profile, grant_path, observer_profile = paths
+    try:
+        write(observer_profile, alternate)
+        require(not command(collect, document=request)["observations"], "Another field reused the audit receipt")
+        grant = loads(originals[1])
+        write(grant_path, {key: value for key, value in grant.items() if key != "profileSha256"})
+        require(command(runtime, document=intent).get("reason") == "authorization", "Missing field approval admitted")
+        grant_path.write_bytes(originals[1])
+        write(writer_profile, alternate)
+        require(command(runtime, document=intent).get("reason") == "authorization", "Approval admitted another field")
+        write(grant_path, dict(grant, profileSha256=digest(writer_profile.read_bytes())))
+        require(command(runtime, document=intent).get("reason") == "unsupported", "Reviewed source admitted another field")
+    finally:
+        for path, raw in zip(paths, originals):
+            path.write_bytes(raw)
+
+
 def reject_substitutions(work, cli, case):
     # Same selected proposal and capability count. A different reviewer-approved
     # source must fail fidelity, and a different resource must fail effect binding.
@@ -267,24 +269,34 @@ def verify(work, cluster, cli, case):
     execute = [sys.executable, str(ROOT / "tools/dispatch_planning_worker.py"), *args, "--out", str(output)]
     command(execute)
     applied = current(cluster, case)
-    if case == CONFIG:
-        require(applied["data"] == case.source["data"] and applied["binaryData"] == original["binaryData"] and
-                applied["metadata"]["annotations"]["example.com/retain"] == "yes", "Wrong configuration update")
-    else:
-        require(applied["spec"]["replicas"] == 3 and applied["spec"]["template"] == original["spec"]["template"] and
-                applied["spec"]["selector"] == original["spec"]["selector"], "Wrong deployment update")
-    require(applied["metadata"]["labels"] == original["metadata"]["labels"], "Labels changed")
+    applied_revision = applied["metadata"]["resourceVersion"]
+    expected = deepcopy(original)
+    container = expected
+    for key in case.field[:-1]:
+        container = container[key]
+    container[case.field[-1]] = case.desired
+    for obj in (applied, expected):
+        # Compare the complete served object, excluding native accounting and our correlation marker.
+        meta = obj["metadata"]
+        for key in ("resourceVersion", "generation", "managedFields"):
+            meta.pop(key, None)
+        meta["annotations"].pop("horistum.com/dispatch-binding", None)
+    require(applied == expected, "Update changed the wrong field or lost unrelated state")
     command(execute)
-    require(current(cluster, case)["metadata"]["resourceVersion"] == applied["metadata"]["resourceVersion"], "Recovery wrote again")
+    require(current(cluster, case)["metadata"]["resourceVersion"] == applied_revision, "Recovery wrote again")
     review = [sys.executable, str(ROOT / "tools/review_dispatch_outcomes.py"), *args, "--dispatch-out", str(output)]
     request = command([*review, "request"])
     (work / "audit.jsonl").write_bytes((cluster.work / "audit.log").read_bytes())
     assess(work, review, collect, request, "committed", 0, "OUTCOME_SATISFIED")
     if case == CONFIG:
         challenge_evidence(work, review, collect, request, settings["runtime"]["argv"])
+    if case is RETENTION:
+        challenge_profile(work, case, collect, request, settings["runtime"]["argv"])
     race(work, common, cluster, case, settings)
     after = current(cluster, case)
-    require(after["data"] == dict(mode="concurrent") if case == CONFIG else after["spec"]["replicas"] == 2, "Lost concurrent change")
+    for key in case.field:
+        after = after[key]
+    require(after == case.competing, "Lost concurrent change")
     assess(work, review, collect, request, "drift", 4, "OUTCOME_POSTCONDITION_FAILED")
     if case == CONFIG:
         cluster.kubectl("delete", case.address, "-n", "commissioning")
@@ -301,7 +313,7 @@ if __name__ == "__main__":
     with tempfile.TemporaryDirectory(prefix="flow-kubernetes-") as temporary:
         root = Path(temporary)
         with start(root, args.binaries.resolve()) as server:
-            for scenario in (CONFIG, SCALE):
+            for scenario in CASES:
                 directory = root / scenario.kind
                 directory.mkdir()
                 verify(directory, server, args.cli.resolve(), scenario)

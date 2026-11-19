@@ -2,13 +2,14 @@
 from copy import deepcopy
 from datetime import timedelta
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from authoring_host.contracts import HostError, canonical, digest
 from kubernetes_provider.common import instant
-from kubernetes_provider.projections import CONFIGMAP, DEPLOYMENT
+from kubernetes_provider.projections import CONFIGMAP, DEPLOYMENT, declared_projection, load_projection
 from kubernetes_provider.selection import sync_node
 
 
@@ -79,3 +80,58 @@ class ReviewedSyncTests(unittest.TestCase):
         self.assertEqual(instant(stamp) + timedelta(microseconds=1), instant(stamp, lower_bound=True))
         self.assertEqual(instant("2026-11-19T12:00:00.100000+00:00"),
                          instant("2026-11-19T12:00:00.100000000Z", lower_bound=True))
+
+class DeclaredFieldTests(unittest.TestCase):
+    definition = dict(formatVersion=1, apiVersion="jobs.example.test/v1beta1", plural="queues",
+                      kind="Queue", fieldPath=["spec", "settings", "enabled"], valueType="boolean")
+
+    def test_profile_bytes_bind_the_reviewed_source_and_group_qualified_destination(self):
+        raw = canonical(self.definition)
+        profile = declared_projection(raw)
+        self.assertEqual("queues.jobs.example.test", profile.resource_type)
+        self.assertEqual("queues", declared_projection(canonical(dict(self.definition, apiVersion="v1"))).resource_type)
+        self.assertTrue(profile.desired(dict(profileSha256=digest(raw), value=True)))
+        for source in (dict(value=True), dict(profileSha256=digest(raw + b" "), value=True),
+                       dict(profileSha256=digest(raw), value=1), dict(profileSha256=digest(raw), value=True, path=[])):
+            with self.subTest(source=source), self.assertRaises(HostError):
+                profile.desired(source)
+
+    def test_file_selection_is_exclusive_and_builtin_and_legacy_facts_stay_stable(self):
+        self.assertIs(CONFIGMAP, load_projection(dict(profile="configmap-text")))
+        for config in ({}, dict(profile="unknown"), dict(profile="deployment-replicas", profileFile="/unused")):
+            with self.subTest(config=config), self.assertRaises(HostError):
+                load_projection(config)
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "profile.json"
+            path.write_bytes(canonical(self.definition))
+            self.assertEqual(digest(path.read_bytes()), load_projection(dict(profileFile=str(path))).profile_sha)
+
+    def test_untrusted_address_components_and_control_fields_fail_closed(self):
+        invalid = (dict(apiVersion="/v1"), dict(apiVersion="example.test/v1?watch"), dict(apiVersion="a/b/v1"),
+                   dict(plural="queues/status"), dict(kind="*"), dict(formatVersion=True),
+                   dict(valueType="expression"), dict(unknownField=0), dict(fieldPath=[]), dict(fieldPath=["metadata", "uid"]),
+                   dict(fieldPath=["apiVersion"]), dict(fieldPath=["kind"]), dict(fieldPath=["status", "ready"]),
+                   dict(fieldPath=["spec", "*"]), dict(fieldPath=["spec", 0]))
+        for mutation in invalid:
+            with self.subTest(mutation=mutation), self.assertRaises(HostError):
+                declared_projection(canonical(dict(self.definition, **mutation)))
+
+    def test_fields_are_typed_and_replaced_as_whole_values(self):
+        for name, value, wrong in (("string", "", False), ("integer", 0, True), ("object", {}, []),
+                                   ("array", [], {}), ("boolean", False, "false")):
+            profile = declared_projection(canonical(dict(self.definition, valueType=name)))
+            with self.subTest(name=name):
+                self.assertEqual(value, profile.desired(dict(profileSha256=profile.profile_sha, value=value)))
+                with self.assertRaises(HostError):
+                    profile.desired(dict(profileSha256=profile.profile_sha, value=wrong))
+                obj = dict(spec=dict(settings=dict(retain=7)))
+                self.assertFalse(profile.before_facts(obj)["valuePresent"])
+                profile.replace(obj, value)
+                facts = profile.outcome_facts(obj, dict(spec={}))
+                self.assertTrue(facts["committedValuePresent"])
+                self.assertEqual(digest(canonical(value)), facts["committedValueSha256"])
+                self.assertFalse(facts["valuePresent"])
+                self.assertNotIn("valueSha256", facts)
+                self.assertEqual(dict(enabled=value, retain=7), obj["spec"]["settings"])
+                with self.assertRaises(HostError):
+                    profile.before_facts(dict(spec=dict(settings=[])))

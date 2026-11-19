@@ -49,7 +49,8 @@ def observations(config, request, audit_bytes):
             request["challenge"] != digest(b"Horistum dispatch outcome v1\0" + canonical(result))):
         return []
     node = operations[0]["nodeId"]
-    correlation = binding(dict(request, resource=api.resource), node, request["startedAt"], request["decisionSha256"])
+    correlation = binding(dict(request, resource=api.resource), node, request["startedAt"],
+                          request["decisionSha256"], api.profile.profile_sha)
     event = completed_event(audit_bytes, request, api, config["writerUsername"], correlation)
     if event is None:
         return []
@@ -69,7 +70,7 @@ def observations(config, request, audit_bytes):
     state = dict(record, observedAt=read_at, observedResourceVersion=live["metadata"]["resourceVersion"], facts=facts)
     pins = {k: request[k] for k in ("contractSha256", "graphDigest", "runId", "challenge")}
     def claim(kind, when, source, **fields):
-        return sign(config, OUTCOME, canonical(source), kind=kind, id=api.profile.resource_type + "-" + kind, observedAt=when,
+        return sign(config, OUTCOME, canonical(source), kind=kind, id=api.profile.claim_id(kind), observedAt=when,
                     nodeId=node, resource=api.resource, **pins, **fields)
     claims = [claim("RESULT", at, record), claim("STATE", read_at, state, facts=facts)]
     if owner:

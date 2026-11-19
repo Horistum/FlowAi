@@ -18,7 +18,7 @@ def main(*, configmap_only=False):
     try:
         config = json_file(args.config)
         if configmap_only:
-            if config.setdefault("profile", "configmap-text") != "configmap-text":
+            if "profileFile" in config or config.setdefault("profile", "configmap-text") != "configmap-text":
                 raise HostError("The compatibility entry point accepts only its original profile")
         (runtime.run if args.role == "runtime" else observer.run)(config)
     except (HostError, KeyError, ValueError, TypeError, OSError, http.client.HTTPException, subprocess.SubprocessError):

@@ -7,6 +7,8 @@ import socket
 import subprocess
 import time
 
+from .kubernetes_resources import CASES, install_archive_crd
+
 
 @contextmanager
 def service(command, log):
@@ -24,7 +26,7 @@ def service(command, log):
 class Cluster:
     def __init__(self, work, bins):
         self.work, self.bins = work, bins
-        self.tokens = {actor: secrets.token_hex(32) for actor in ("admin", "writer", "observer", "replica-writer", "replica-observer")}
+        self.tokens = {actor: secrets.token_hex(32) for actor in ["admin", *(c.actor_prefix + role for c in CASES for role in ("writer", "observer"))]}
 
     def kubectl(self, *args, document=None, actor="admin", check=True):
         result = subprocess.run([str(self.bins / "kubectl"), "--kubeconfig", str(self.work / (actor + ".json")),
@@ -39,20 +41,21 @@ class Cluster:
 
     def setup(self):
         self.create(dict(apiVersion="v1", kind="Namespace", metadata=dict(name="commissioning")))
-        self.create(dict(apiVersion="v1", kind="ConfigMap", metadata=dict(namespace="commissioning", name="settings",
-                         labels={"horistum.com/owner": "platform"}, annotations={"example.com/retain": "yes"}),
-                         data=dict(mode="before", obsolete="remove"),
-                         binaryData=dict(retained="YQ==")))
-        self.create(dict(apiVersion="apps/v1", kind="Deployment", metadata=dict(namespace="commissioning", name="workers",
-            labels={"horistum.com/owner": "platform"}), spec=dict(replicas=1, selector=dict(matchLabels=dict(app="workers")),
-            template=dict(metadata=dict(labels=dict(app="workers")), spec=dict(containers=[dict(name="worker", image="example.invalid/worker:1")])))))
+        install_archive_crd(self)
+        for case in CASES:
+            meta = dict(namespace="commissioning", name=case.name, labels={"horistum.com/owner": "platform"},
+                        annotations={"example.com/retain": "yes"})
+            self.create(dict(apiVersion=case.api_version, kind=case.kind, metadata=meta, **case.initial))
+            self.grant_access(case)
+
+    def grant_access(self, case):
         rbac = "rbac.authorization.k8s.io"
-        for actor, group, resource, name in (("writer", "", "configmaps", "settings"), ("observer", "", "configmaps", "settings"),
-                ("replica-writer", "apps", "deployments", "workers"), ("replica-observer", "apps", "deployments", "workers")):
-            verbs = ["get", "update"] if actor.endswith("writer") else ["get"]
+        for role in ("writer", "observer"):
+            actor = case.actor_prefix + role
+            verbs = ["get", "update"] if role == "writer" else ["get"]
             meta = dict(name=actor, namespace="commissioning")
             self.create(dict(apiVersion=rbac + "/v1", kind="Role", metadata=meta,
-                rules=[dict(apiGroups=[group], resources=[resource], resourceNames=[name], verbs=verbs)]))
+                rules=[dict(apiGroups=[case.group], resources=[case.plural], resourceNames=[case.name], verbs=verbs)]))
             self.create(dict(apiVersion=rbac + "/v1", kind="RoleBinding", metadata=meta,
                 roleRef=dict(apiGroup=rbac, kind="Role", name=actor),
                 subjects=[dict(apiGroup=rbac, kind="User", name=actor)]))
@@ -89,10 +92,8 @@ def start(work, bins):
         (work / (actor + ".json")).write_text(json.dumps(config))
     policy = work / "audit-policy.json"
     policy.write_text(json.dumps(dict(apiVersion="audit.k8s.io/v1", kind="Policy", omitStages=["RequestReceived"],
-        rules=[dict(level="RequestResponse", users=["writer"], verbs=["update"], namespaces=["commissioning"],
-                    resources=[dict(group="", resources=["configmaps"], resourceNames=["settings"])]),
-               dict(level="RequestResponse", users=["replica-writer"], verbs=["update"], namespaces=["commissioning"],
-                    resources=[dict(group="apps", resources=["deployments"], resourceNames=["workers"])])])))
+        rules=[dict(level="RequestResponse", users=[c.actor_prefix + "writer"], verbs=["update"], namespaces=["commissioning"],
+                    resources=[dict(group=c.group, resources=[c.plural], resourceNames=[c.name])]) for c in CASES])))
     with ExitStack() as stack:
         stack.enter_context(service([str(bins / "etcd"), "--data-dir", str(work / "etcd"), "--listen-client-urls", client,
             "--advertise-client-urls", client, "--listen-peer-urls", peer, "--initial-advertise-peer-urls", peer,

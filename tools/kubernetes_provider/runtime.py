@@ -31,10 +31,14 @@ def reserve(directory, dispatch_id):
     return True
 
 
-def approved_contract(config, grant, request, resource):
+def approved_contract(config, grant, request, api):
     """Match the external grant and reconstruct all precondition pins from its exact contract."""
     keys(grant, ("pins", "contractSha256", "graphDigest", "nodeId", "uid", "resourceVersion",
-                 "expiresAt", "owner", "deadlineSemantics"))
+                 "expiresAt", "owner", "deadlineSemantics"), ("profileSha256",))
+    profile_pin = grant.get("profileSha256")
+    if profile_pin != api.profile.profile_sha or ("profileSha256" in grant and profile_pin is None):
+        return None
+    resource = api.resource
     pre = request["preconditions"]
     raw = read_regular(config["requirements"], 2_000_000)
     contract = loads(raw)
@@ -80,7 +84,7 @@ def run(config):
     grant = json_file(config["grant"])
     request_sha = digest(canonical(request))
     reply = dict(formatVersion=1, dispatchId=request["dispatchId"], requestSha256=request_sha)
-    contract = approved_contract(config, grant, request, api.resource)
+    contract = approved_contract(config, grant, request, api)
     if contract is None:
         emit(dict(reply, kind="rejected", reason="authorization"))
         return
@@ -100,16 +104,22 @@ def run(config):
         return
     meta = obj["metadata"]
     owner = meta.get("labels", {}).get(OWNER)
+    try:
+        facts = api.profile.before_facts(obj)
+    except HostError:
+        emit(dict(reply, kind="rejected", reason="conflict"))
+        return
     if (not owner or owner != grant["owner"] or meta["uid"] != grant["uid"] or
-            meta["resourceVersion"] != grant["resourceVersion"] or obj.get("immutable") or
+            meta["resourceVersion"] != grant["resourceVersion"] or
+            (api.profile.api_version == "v1" and api.profile.kind == "ConfigMap" and obj.get("immutable")) or
             not reserve(config["reservationDirectory"], request["dispatchId"])):
         emit(dict(reply, kind="rejected", reason="conflict"))
         return
     op, = pre["operations"]
-    facts = {api.profile.fact: api.profile.observed(obj), "resourceVersion": meta["resourceVersion"]}
+    facts["resourceVersion"] = meta["resourceVersion"]
     projection = dict(resource=api.resource, instanceId=meta["uid"], owner=owner, facts=facts)
     pins = {k: pre[k] for k in ("contractSha256", "graphDigest", "assessmentId", "challenge")}
-    claim = sign(config, PRECONDITION, canonical(projection), id=api.profile.resource_type + "-before", requirementId=op["requirementId"],
+    claim = sign(config, PRECONDITION, canonical(projection), id=api.profile.claim_id("before"), requirementId=op["requirementId"],
                  nodeId=op["nodeId"], observedAt=observed_at.isoformat(), **pins, **projection)
     snapshots = canonical(dict(formatVersion=1, observations=[claim]))
     emit(dict(reply, kind="observations", snapshots=snapshots.decode()))
@@ -120,7 +130,8 @@ def run(config):
             re.fullmatch("[0-9a-f]{64}", decision["nonce"]), "Invalid assessment frame")
     decision_sha = digest(canonical(decision))
     context = dict(reply, runtimeId=request["runtimeId"], resource=api.resource, graphDigest=pre["graphDigest"])
-    meta.setdefault("annotations", {})[BINDING] = binding(context, op["nodeId"], decision["checkedAt"], decision_sha)
+    meta.setdefault("annotations", {})[BINDING] = binding(
+        context, op["nodeId"], decision["checkedAt"], decision_sha, api.profile.profile_sha)
     api.profile.replace(obj, desired)
     result = dict(reply, kind="result", decisionSha256=decision_sha, status="rejected", receiptId="no-update")
     if (decision["currentState"] == "SATISFIED" and decision["code"] == "PRECONDITION_SATISFIED" and
