@@ -1,9 +1,19 @@
-# AI-A3-S3.9 Kubernetes ConfigMap commissioning
+# AI-A3-S3.9 Kubernetes resource commissioning
 
-After PR #276, a dispatcher could pin a policy and recover a signed outcome, but the end-to-end example could produce both its effect and audit row in the same SQLite fixture. This slice commissions a bounded external writer against an actual Kubernetes API server and obtains the completion identity from the server.
+PR #276 bound a completed external dispatch to independent outcome evidence. The first implementation of #277 exercised real Kubernetes concurrency and auditing, but bound its entire writer and observer to ConfigMap text. It compared the canonical-plan hash without opening the plan, recognized one spelling of a two-statement proposal and checked only the number of SYNC operations in the independent goal review. The proof even supplied the compiler node ID as a test literal.
 
-The writer accepts one reviewed, content-addressed SYNC into one existing object under an independent approval. It uses the API revision from its signed GET for the conditional PUT. The observer has a distinct API identity and key and reads a provider-owned audit export. Graph, node, time, operation and request/decision pins must match the native event. A same-name replacement loses the UID binding. The reviewer can require both the committed and current text-data digests.
+The corrected writer opens the canonical artifact pinned by independent review. It checks the resolved manual approval, the unique unconditional SYNC and its supported destination effect. Its source ID identifies the original typed operands. The compiler binds the destination for that same node during precondition review. The operator grant must cover the exact contract, node, object instance, owner and resource version. The proof obtains the node ID from the installed compiler and separately checks the source digest, mode, approval order and operation count.
 
-The installed proof boots loopback etcd and kube-apiserver, drives the public planning, dispatch and outcome CLIs, and verifies unchanged unrelated fields, historical recovery, denied observer UPDATE privilege and signed independent results. A second real dispatch receives a satisfied compiler assessment after a competing writer changes the object. Its PUT receives a native conflict, preserving the competing change. Adverse audit projections cover dry-run, impersonation, incorrect actor or receipt, ambiguity, and a simulated admission rewrite. Separate assertions exercise empty evidence, real data drift and deletion/recreation.
+Resource-specific behavior is confined to two commissioned projections. ConfigMap text and Deployment replicas share plan selection, grant validation, reservation, signed observation, conditional PUT, native audit correlation and independent outcome review. Resource profiles fix the API group, kind, endpoint, writable field and observable facts. The original ConfigMap CLI and fact names remain available. The operator procedure describes the additional canonical-plan file for writers provisioned with a standalone proposal.
 
-Reproduction and operator configuration are in [the provider contract](../../docs/KUBERNETES_CONFIGMAP_DISPATCH.md). This evidence is scoped to the disposable provider profile. Independent live portfolio evaluation remains open.
+## Evidence
+
+| Case | Observation |
+| --- | --- |
+| ConfigMap, structured Intent 3.0 | The reviewed text replaces obsolete keys. Binary data and unrelated metadata are preserved. Audit and live GET yield the committed and current data digests. |
+| Deployment, flat Intent 2.0 | The desired replica count changes from one to three. The pod template and selector are preserved. Audit and GET report numeric facts under a distinct RBAC identity. |
+| Incorrect reviewer source or destination | A matching SYNC count still fails fidelity for a different source. A different named resource fails canonical effect binding before dispatch. |
+| Concurrent updates, both resources | After a signed GET, another writer changes the resource. The compiler returns SATISFIED, the API returns 409, and the independent postcondition detects the competing state. |
+| Incomplete or misleading evidence | Empty, ambiguous, uncorrelated and simulated admission-rewritten audit evidence exercise the observation boundary. A same-name replacement loses the UID binding. |
+
+Both full CI paths run the installed CLIs against a disposable API server. No pod controller is part of this proof. The Deployment outcome concerns the declared replica count. Multi-operation execution, workload availability, live model evaluation and independent portfolio acceptance remain open. [Operator procedure](../../docs/KUBERNETES_RESOURCE_DISPATCH.md)

@@ -1,6 +1,6 @@
-"""Operator-owned transport and evidence encoding for the existing ConfigMap profile."""
+"""Operator-owned transport and evidence encoding for the commissioned resource profiles."""
 import base64
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import http.client
 from pathlib import Path
 import re
@@ -12,6 +12,7 @@ from urllib.parse import urlsplit
 
 from authoring_host.contracts import MAX_BYTES, canonical, digest, loads, require
 from authoring_host.inventory_provenance import read_regular
+from .projections import PROFILES
 
 OWNER = "horistum.com/owner"
 BINDING = "horistum.com/dispatch-binding"
@@ -21,6 +22,15 @@ OUTCOME = b"Horistum operation observation\0v1\0"
 
 def now():
     return datetime.now(timezone.utc)
+
+
+def instant(value, *, lower_bound=False):
+    """Read UTC RFC 3339 with JVM nanoseconds; round admission boundaries inward."""
+    match = re.fullmatch(r"(\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d)(?:\.(\d{1,9}))?(?:Z|\+00:00)", value)
+    require(match, "Expected a UTC timestamp")
+    fraction = (match[2] or "").ljust(9, "0")
+    at = datetime.fromisoformat(match[1]).replace(microsecond=int(fraction[:6]), tzinfo=timezone.utc)
+    return at + timedelta(microseconds=1) if lower_bound and int(fraction[6:]) else at
 
 
 def json_file(path):
@@ -61,10 +71,11 @@ def sign(config, domain, source, **fields):
     return dict(keyId=config["keyId"], payload=encode(payload), signature=encode(sig), source=encode(source))
 
 
-class ConfigMapAPI:
+class ResourceAPI:
     """A verified TLS endpoint, one named resource and one operator-provisioned credential."""
     def __init__(self, config):
         self.config = config
+        self.profile = PROFILES[config["profile"]]
         endpoint = urlsplit(config["server"])
         require(endpoint.scheme == "https" and endpoint.hostname and not endpoint.username and
                 not endpoint.password and endpoint.path in ("", "/") and not endpoint.query and
@@ -75,8 +86,10 @@ class ConfigMapAPI:
         label = r"[a-z0-9](?:[-a-z0-9]*[a-z0-9])?"
         require(len(namespace) <= 63 and re.fullmatch(label, namespace) and len(name) <= 253 and
                 all(len(part) <= 63 and re.fullmatch(label, part) for part in name.split(".")), "Invalid object address")
-        self.path = f"/api/v1/namespaces/{namespace}/configmaps/{name}"
-        self.resource = dict(scope=config["cluster"] + "/" + namespace, type="configmap", key=name)
+        self.group, _, self.version = self.profile.api_version.rpartition("/")
+        prefix = "/apis/" if self.group else "/api/"
+        self.path = f"{prefix}{self.profile.api_version}/namespaces/{namespace}/{self.profile.plural}/{name}"
+        self.resource = dict(scope=config["cluster"] + "/" + namespace, type=self.profile.resource_type, key=name)
 
     def call(self, method, document=None):
         token = read_regular(self.config["tokenFile"], 16384, private=True).decode("ascii").strip()
@@ -93,6 +106,6 @@ class ConfigMapAPI:
 
     def matches(self, obj):
         meta = obj.get("metadata", {})
-        return (obj.get("kind") == "ConfigMap" and obj.get("apiVersion") == "v1" and
+        return (obj.get("kind") == self.profile.kind and obj.get("apiVersion") == self.profile.api_version and
                 meta.get("namespace") == self.config["namespace"] and meta.get("name") == self.config["name"] and
                 bool(meta.get("uid")) and bool(meta.get("resourceVersion")) and not meta.get("deletionTimestamp"))

@@ -305,9 +305,9 @@ observed effect. A runtime can report a successful data copy while the independe
 review establishes a violated destination postcondition. Commissioning a provider
 and its independent observer, and evaluating the live portfolio, remain open.
 
-### S3.9 ConfigMap provider commissioning
+### S3.9 Kubernetes provider commissioning
 
-The [ConfigMap commissioning profile](KUBERNETES_CONFIGMAP_DISPATCH.md) applies a reviewed
-SYNC through the Kubernetes API and independently checks its committed and current data.
+The [commissioned writer and independent observer](KUBERNETES_RESOURCE_DISPATCH.md) apply and verify a reviewed
+SYNC through the Kubernetes API for ConfigMap text or a Deployment replica count.
 The installed gate exercises a real provider conflict and audit stream on a disposable
 control plane. Independent live-model portfolio acceptance is the next roadmap decision.

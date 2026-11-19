@@ -1,12 +1,11 @@
-"""Read provider-owned audit evidence and current ConfigMap state under a separate identity."""
+"""Read provider-owned audit evidence and current resource state under a separate identity."""
 import os
 from pathlib import Path
 import stat
 
 from authoring_host.contracts import canonical, digest, loads, require
 from authoring_host.discovery import _directory
-from authoring_host.inventory_provenance import timestamp
-from .common import BINDING, OUTCOME, OWNER, ConfigMapAPI, binding, emit, frame, now, sign
+from .common import BINDING, OUTCOME, OWNER, ResourceAPI, binding, emit, frame, instant, now, sign
 
 
 def completed_event(raw, request, api, actor, expected_binding):
@@ -23,9 +22,11 @@ def completed_event(raw, request, api, actor, expected_binding):
             event.get("level") == "RequestResponse" and event.get("verb") == "update" and
             event.get("requestURI") == api.path and event.get("user", {}).get("username") == actor and
             "impersonatedUser" not in event and event.get("responseStatus", {}).get("code") == 200 and
-            ref.get("apiGroup", "") == "" and ref.get("apiVersion") == "v1" and ref.get("resource") == "configmaps" and
+            ref.get("apiGroup", "") == api.group and ref.get("apiVersion") == api.version and
+            ref.get("resource") == api.profile.plural and
             ref.get("namespace") == api.config["namespace"] and ref.get("name") == api.config["name"] and
-            not ref.get("subresource") and timestamp(request["startedAt"]) <= timestamp(event["stageTimestamp"]) <= now()):
+            not ref.get("subresource") and instant(request["startedAt"], lower_bound=True) <= instant(event["stageTimestamp"]) and
+            instant(event["stageTimestamp"], lower_bound=True) <= now()):
         return None
     before, after = event.get("requestObject", {}), event.get("responseObject", {})
     if not all(api.matches(obj) and obj["metadata"].get("annotations", {}).get(BINDING) == expected_binding
@@ -38,7 +39,7 @@ def completed_event(raw, request, api, actor, expected_binding):
 
 
 def observations(config, request, audit_bytes):
-    api = ConfigMapAPI(config)
+    api = ResourceAPI(config)
     operations = request["operations"]
     if request["runtimeId"] != config["runtimeId"] or len(operations) != 1 or operations[0]["resource"] != api.resource:
         return []
@@ -64,12 +65,11 @@ def observations(config, request, audit_bytes):
     record = dict(auditId=event["auditID"], auditEventSha256=digest(canonical(event)), binding=correlation,
                   uid=recorded["uid"], resourceVersion=recorded["resourceVersion"], recordedAt=at)
     owner = recorded.get("labels", {}).get(OWNER)
-    facts = dict(committedDataSha256=digest(canonical(event["responseObject"].get("data", {}))),
-                 dataSha256=digest(canonical(live.get("data", {}))))
+    facts = api.profile.outcome_facts(event["responseObject"], live)
     state = dict(record, observedAt=read_at, observedResourceVersion=live["metadata"]["resourceVersion"], facts=facts)
     pins = {k: request[k] for k in ("contractSha256", "graphDigest", "runId", "challenge")}
     def claim(kind, when, source, **fields):
-        return sign(config, OUTCOME, canonical(source), kind=kind, id="configmap-" + kind, observedAt=when,
+        return sign(config, OUTCOME, canonical(source), kind=kind, id=api.profile.resource_type + "-" + kind, observedAt=when,
                     nodeId=node, resource=api.resource, **pins, **fields)
     claims = [claim("RESULT", at, record), claim("STATE", read_at, state, facts=facts)]
     if owner:

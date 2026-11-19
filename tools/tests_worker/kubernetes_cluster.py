@@ -24,7 +24,7 @@ def service(command, log):
 class Cluster:
     def __init__(self, work, bins):
         self.work, self.bins = work, bins
-        self.tokens = {actor: secrets.token_hex(32) for actor in ("admin", "writer", "observer")}
+        self.tokens = {actor: secrets.token_hex(32) for actor in ("admin", "writer", "observer", "replica-writer", "replica-observer")}
 
     def kubectl(self, *args, document=None, actor="admin", check=True):
         result = subprocess.run([str(self.bins / "kubectl"), "--kubeconfig", str(self.work / (actor + ".json")),
@@ -43,11 +43,16 @@ class Cluster:
                          labels={"horistum.com/owner": "platform"}, annotations={"example.com/retain": "yes"}),
                          data=dict(mode="before", obsolete="remove"),
                          binaryData=dict(retained="YQ==")))
+        self.create(dict(apiVersion="apps/v1", kind="Deployment", metadata=dict(namespace="commissioning", name="workers",
+            labels={"horistum.com/owner": "platform"}), spec=dict(replicas=1, selector=dict(matchLabels=dict(app="workers")),
+            template=dict(metadata=dict(labels=dict(app="workers")), spec=dict(containers=[dict(name="worker", image="example.invalid/worker:1")])))))
         rbac = "rbac.authorization.k8s.io"
-        for actor, verbs in (("writer", ["get", "update"]), ("observer", ["get"])):
+        for actor, group, resource, name in (("writer", "", "configmaps", "settings"), ("observer", "", "configmaps", "settings"),
+                ("replica-writer", "apps", "deployments", "workers"), ("replica-observer", "apps", "deployments", "workers")):
+            verbs = ["get", "update"] if actor.endswith("writer") else ["get"]
             meta = dict(name=actor, namespace="commissioning")
             self.create(dict(apiVersion=rbac + "/v1", kind="Role", metadata=meta,
-                rules=[dict(apiGroups=[""], resources=["configmaps"], resourceNames=["settings"], verbs=verbs)]))
+                rules=[dict(apiGroups=[group], resources=[resource], resourceNames=[name], verbs=verbs)]))
             self.create(dict(apiVersion=rbac + "/v1", kind="RoleBinding", metadata=meta,
                 roleRef=dict(apiGroup=rbac, kind="Role", name=actor),
                 subjects=[dict(apiGroup=rbac, kind="User", name=actor)]))
@@ -85,7 +90,9 @@ def start(work, bins):
     policy = work / "audit-policy.json"
     policy.write_text(json.dumps(dict(apiVersion="audit.k8s.io/v1", kind="Policy", omitStages=["RequestReceived"],
         rules=[dict(level="RequestResponse", users=["writer"], verbs=["update"], namespaces=["commissioning"],
-                    resources=[dict(group="", resources=["configmaps"], resourceNames=["settings"])])])))
+                    resources=[dict(group="", resources=["configmaps"], resourceNames=["settings"])]),
+               dict(level="RequestResponse", users=["replica-writer"], verbs=["update"], namespaces=["commissioning"],
+                    resources=[dict(group="apps", resources=["deployments"], resourceNames=["workers"])])])))
     with ExitStack() as stack:
         stack.enter_context(service([str(bins / "etcd"), "--data-dir", str(work / "etcd"), "--listen-client-urls", client,
             "--advertise-client-urls", client, "--listen-peer-urls", peer, "--initial-advertise-peer-urls", peer,

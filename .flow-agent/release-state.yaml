@@ -915,12 +915,14 @@ recoveryBoundedAuthoring:
     selectedSlice: AI-A3-S3.9
     workPackage: .flow-agent/work-packages/kubernetes-dispatch-commissioning.yaml
     report: .flow-agent/reports/kubernetes-dispatch-commissioning.md
-    contract: docs/KUBERNETES_CONFIGMAP_DISPATCH.md
+    contract: docs/KUBERNETES_RESOURCE_DISPATCH.md
     baselineMain: 668b1c5ce839908f2f1473274bf6bba354359cf7
     predecessorPullRequest: 276
     validation: final-revision-ci-required
-    entryPoint: tools/kubernetes_configmap_dispatch.py
-    scope: Conditional text-data replacement of one existing ConfigMap on a disposable API server.
+    entryPoint: tools/kubernetes_resource_dispatch.py
+    compatibilityEntryPoint: tools/kubernetes_configmap_dispatch.py
+    scope: A compiler-selected SYNC and one conditional field update on an existing named object.
+    commissionedProfiles: [configmap-text, deployment-replicas]
     evidence: Distinct writer and reader RBAC identities, native API audit ID, committed data and independently read current state.
     liveModelEvaluated: false
     productionTenantCommissioned: false

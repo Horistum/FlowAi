@@ -1,16 +1,15 @@
 """Test synchronization point between a genuine signed GET and the installed compiler decision."""
-import json
 from pathlib import Path
 import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from authoring_host.contracts import canonical, loads, require
-from kubernetes_configmap.common import emit, frame
+from kubernetes_provider.common import emit, frame
 
 
 def main():
-    provider, config, kubectl, kubeconfig = sys.argv[1:]
+    provider, config, kubectl, kubeconfig, resource, patch = sys.argv[1:]
     runtime = [sys.executable, provider, "runtime", "--config", config]
     request = frame()
     # Inherit the bounded host process group so timeout also stops the writer.
@@ -23,7 +22,7 @@ def main():
             duplicate = subprocess.run(runtime, input=canonical(request), capture_output=True, check=True, timeout=8)
             require(loads(duplicate.stdout).get("reason") == "conflict", "Duplicate entered the reserved dispatch")
             subprocess.run([kubectl, "--kubeconfig", kubeconfig, "--request-timeout=4s", "-n", "commissioning",
-                "patch", "configmap", "settings", "--type=merge", "-p", json.dumps(dict(data=dict(mode="concurrent")))],
+                "patch", resource, "--type=merge", "-p", patch],
                 capture_output=True, check=True, timeout=8)
             emit(first)
             decision = frame()

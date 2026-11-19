@@ -119,4 +119,4 @@ commissioning, live portfolio acceptance, and overall workflow execution
 correctness require their own evidence.
 
 For an executable example using Kubernetes-native audit evidence and a separately
-authorized GET, follow [ConfigMap provider commissioning](KUBERNETES_CONFIGMAP_DISPATCH.md).
+authorized GET, follow [Kubernetes resource commissioning](KUBERNETES_RESOURCE_DISPATCH.md).
