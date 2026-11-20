@@ -125,7 +125,7 @@ validation is the preferred place for iterative failures before publication.
 
 ## Budgets and evidence
 
-Full-validation jobs have a 45-minute ceiling each. The combined JVM regression,
+Full-validation jobs have a 55-minute ceiling each. The combined JVM regression,
 conformance and installed-host/local-runtime proofs exceeded the former 25-minute
 ceiling on a slower runner after all JVM tests and conformance checks had passed.
 Installed-host output is unbuffered so each completed proof remains visible.
@@ -137,10 +137,16 @@ ceiling during the installed-host proof after passing tests and conformance.
 PR #272 added the existing-worker planning proof to both full jobs. Its first
 exact-head run passed JVM, conformance, MCP and worker validation but reached the
 35-minute ceiling during the final existing runtime-allocation proof. The complete
-merge-candidate job passed. The 45-minute ceiling accommodates the expanded suite
-and observed runner variance while retaining every check, both revision boundaries,
-failure propagation and the individual compiler/worker process limits. The cost
-policy regression pins this same finite ceiling for both jobs.
+merge-candidate job passed, and the ceiling was raised to 45 minutes.
+
+In [PR #278's first run](https://github.com/Horistum/FlowAi/actions/runs/44697543353),
+the exact head finished in 44 minutes and the merge candidate reached the 45-minute
+limit during the installed-host proofs. The worker and planning step took under
+seven minutes on both runners, compared with five to six and a half minutes in
+[PR #277](https://github.com/Horistum/FlowAi/actions/runs/44524790008).
+Both full jobs now allow ten more minutes for runner variation. The cost policy
+regression pins their common ceiling. The individual compiler and worker process
+limits still apply.
 These are separate bounded responsibilities, not a longer limit for one
 repeated-build job. Failure logs and all module JUnit reports are uploaded by
 the original full-validation jobs; `flow-isolation-<label>` artifacts own the
