@@ -304,3 +304,10 @@ installed compiler checks the policy before runtime launch and later evaluates t
 observed effect. A runtime can report a successful data copy while the independent
 review establishes a violated destination postcondition. Commissioning a provider
 and its independent observer, and evaluating the live portfolio, remain open.
+
+### S3.9 Kubernetes provider commissioning
+
+The [commissioned writer and independent observer](KUBERNETES_RESOURCE_DISPATCH.md) apply and verify a reviewed
+SYNC for a single declared field on an existing namespaced Kubernetes object. Operator-provisioned profiles bind its API type and field to the reviewed source, external grant and audit evidence. The gate covers ConfigMap, Deployment, CronJob, Service and a namespaced custom resource.
+The installed gate exercises a real provider conflict and audit stream on a disposable
+control plane. Independent live-model portfolio acceptance is the next roadmap decision.

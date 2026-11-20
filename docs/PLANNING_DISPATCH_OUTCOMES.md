@@ -117,3 +117,6 @@ reconcile an uncertain dispatch, or grant execution authority. A satisfied resul
 covers the declared facts, resource bindings and observation interval. Provider
 commissioning, live portfolio acceptance, and overall workflow execution
 correctness require their own evidence.
+
+For an executable example using Kubernetes-native audit evidence and a separately
+authorized GET, follow [Kubernetes resource commissioning](KUBERNETES_RESOURCE_DISPATCH.md).

@@ -122,3 +122,8 @@ After merged PR #275, [S3.8 independent dispatch outcomes](work-packages/plannin
 binds a predeclared outcome policy to one completed dispatch. See the [operator
 contract](../docs/PLANNING_DISPATCH_OUTCOMES.md) for collecting and assessing
 independent evidence. Production commissioning and live portfolio acceptance remain open.
+
+After merged PR #276, [S3.9 Kubernetes commissioning](work-packages/kubernetes-dispatch-commissioning.yaml)
+uses the same reviewed SYNC path for operator-declared native and custom resources on a disposable Kubernetes API server.
+A separate observer correlates its native audit record and live state with the reviewed dispatch.
+See the [commissioning procedure](../docs/KUBERNETES_RESOURCE_DISPATCH.md).
