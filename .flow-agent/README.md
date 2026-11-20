@@ -127,3 +127,5 @@ After merged PR #276, [S3.9 Kubernetes commissioning](work-packages/kubernetes-d
 uses the same reviewed SYNC path for operator-declared native and custom resources on a disposable Kubernetes API server.
 A separate observer correlates its native audit record and live state with the reviewed dispatch.
 See the [commissioning procedure](../docs/KUBERNETES_RESOURCE_DISPATCH.md).
+
+After merged PR #277, S3.10 adds preregistration and independent review of each planning trial. Commissioned live measurements and the original held-out render remain open. [Work package](work-packages/independent-planning-portfolio.yaml) · [Operator procedure](../docs/PLANNING_PORTFOLIO_REVIEW.md)

@@ -911,6 +911,20 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  independentPlanningPortfolio:
+    selectedSlice: AI-A3-S3.10
+    workPackage: .flow-agent/work-packages/independent-planning-portfolio.yaml
+    report: .flow-agent/reports/independent-planning-portfolio.md
+    contract: docs/PLANNING_PORTFOLIO_REVIEW.md
+    baselineMain: 3079dddb70e8b500c8b0d414eaec4a446e3dceeb
+    predecessorPullRequest: 277
+    validation: final-revision-ci-required
+    entryPoint: tools/review_planning_portfolio.py
+    scope: Register held-out scope and compare every recovered planning trial with distinct provider and reviewer evidence.
+    liveModelEvaluated: false
+    heldOutRenderVerified: false
+    recoveryClosure: false
+    nextSlice: S3-commissioned-live-portfolio-measurements
   kubernetesDispatchCommissioning:
     selectedSlice: AI-A3-S3.9
     workPackage: .flow-agent/work-packages/kubernetes-dispatch-commissioning.yaml
@@ -918,7 +932,11 @@ recoveryBoundedAuthoring:
     contract: docs/KUBERNETES_RESOURCE_DISPATCH.md
     baselineMain: 668b1c5ce839908f2f1473274bf6bba354359cf7
     predecessorPullRequest: 276
-    validation: final-revision-ci-required
+    validation: merged-exact-head-and-merge-candidate-ci-passed
+    mergedPullRequest: 277
+    mergedMain: 3079dddb70e8b500c8b0d414eaec4a446e3dceeb
+    validatedHead: f02a5e10ad4cebfd4a97635eca28ef27f2384543
+    validationEvidence: https://github.com/Horistum/FlowAi/pull/277
     entryPoint: tools/kubernetes_resource_dispatch.py
     compatibilityEntryPoint: tools/kubernetes_configmap_dispatch.py
     scope: A compiler-selected SYNC and one conditional field update on an existing named object.

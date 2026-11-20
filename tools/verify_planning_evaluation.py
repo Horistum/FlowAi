@@ -11,6 +11,7 @@ from unittest.mock import patch
 
 from authoring_host import planning_review
 from authoring_host.contracts import HostError, canonical, digest, loads, read, require
+from tests_worker.portfolio_review_fixture import PortfolioReviewFixture
 from tests_worker.test_planning_worker import configuration, commission_fixture, step
 
 
@@ -21,6 +22,7 @@ def verify(root, cli):
         config = configuration(work, [str(cli)])
         config["planning"]["compiler"]["contracts"] = str(root)
         config["worker"]["profile"]["timeout_seconds"] = 600
+        config["worker"]["argv"].extend(["--turn-records", str(work / "turns.jsonl")])
         commission_fixture(config, work / "commissioning")
         cases, scripts = [], {}
         for identifier, source, wrong_goal in (("foundation", "infrastructure-readiness", False),
@@ -58,6 +60,7 @@ def verify(root, cli):
                          limits=config["planning"]["limits"], cases=cases)
         portfolio_path = work / "portfolio.json"; portfolio_path.write_bytes(canonical(portfolio))
         output = work / "evaluation"
+        acceptance = PortfolioReviewFixture(root, work, portfolio_path, output)
         command = [sys.executable, str(root / "tools/evaluate_planning_worker.py"), "--portfolio", str(portfolio_path),
                    "--out", str(output), "--max-turns", "9"]
         def invoke(arguments=()):
@@ -125,6 +128,8 @@ def verify(root, cli):
                     raise AssertionError("Independent review accepted " + variant)
             require(not (probe / "review.json").exists(), "Invalid independent review was published")
             outcomes.append(dict(case=variant, status="rejected", additionalModelTurns=0))
+        acceptance.verify()
+        outcomes.append(dict(case="independent-portfolio-assessment", status="test-evidence", additionalModelTurns=0))
         before = read(review_path); changed = loads(before); changed["candidateId"] = "draft-999"
         review_path.write_bytes(canonical(changed))
         require(invoke(("--summary-only",)).returncode == 3 and

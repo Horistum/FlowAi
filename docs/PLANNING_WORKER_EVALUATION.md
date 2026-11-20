@@ -193,3 +193,5 @@ completion of an unpublished compiler review, changed completion inventories,
 substituted graphs, missing canonical plans, contradictory review metadata and
 changed unread exports. Its peer is explicitly
 scripted: it verifies the evaluator and compiler integration, not model reasoning.
+
+For live portfolio assessment, register exposure before the first reservation and retain the independent provider and reviewer records. [Independent portfolio review](PLANNING_PORTFOLIO_REVIEW.md)
