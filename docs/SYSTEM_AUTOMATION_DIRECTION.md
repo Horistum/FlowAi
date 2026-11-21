@@ -311,3 +311,7 @@ The [commissioned writer and independent observer](KUBERNETES_RESOURCE_DISPATCH.
 SYNC for a single declared field on an existing namespaced Kubernetes object. Operator-provisioned profiles bind its API type and field to the reviewed source, external grant and audit evidence. The gate covers ConfigMap, Deployment, CronJob, Service and a namespaced custom resource.
 The installed gate exercises a real provider conflict and audit stream on a disposable
 control plane. Independent live-model portfolio acceptance is the next roadmap decision.
+
+### S3.10 Independent planning portfolio review
+
+Preregistered exposure and separate provider and reviewer evidence now support a decision on each measured trial. The installed proof exercises the protocol with a scripted peer. The next acceptance evidence is a commissioned live campaign using independently held-out cases. [Portfolio review procedure](PLANNING_PORTFOLIO_REVIEW.md)

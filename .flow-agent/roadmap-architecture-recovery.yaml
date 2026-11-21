@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 95
+revision: 96
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -31,12 +31,12 @@ currentDecision:
 authoringDevelopment:
   selectedSlice: AI-A3
   investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
-  selectedFollowup: .flow-agent/work-packages/kubernetes-dispatch-commissioning.yaml
+  selectedFollowup: .flow-agent/work-packages/independent-planning-portfolio.yaml
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
-  selectedFollowupSlice: AI-A3-S3.9
-  selectedFollowupCorrection: Commission the existing dispatch and outcome protocols against two Kubernetes resource projections sharing one conditional-update and audit protocol.
-  previousFollowupCorrection: Independent dispatch outcomes merged in PR 276 at 668b1c5ce839908f2f1473274bf6bba354359cf7.
-  nextFollowupSlice: S3-independent-live-portfolio-acceptance
+  selectedFollowupSlice: AI-A3-S3.10
+  selectedFollowupCorrection: Register portfolio exposure before dispatch and assess repeated planning trials against independently attested provider exchanges and semantic review.
+  previousFollowupCorrection: Declarative Kubernetes resource commissioning merged in PR 277 at 3079dddb70e8b500c8b0d414eaec4a446e3dceeb.
+  nextFollowupSlice: S3-commissioned-live-portfolio-measurements
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active

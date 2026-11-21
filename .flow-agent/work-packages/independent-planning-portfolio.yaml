@@ -1,0 +1,19 @@
+version: AI-A3-S3.10
+name: Independent review of repeated planning trials
+status: candidate
+stream: architecture-recovery
+parentWorkPackage: .flow-agent/work-packages/system-automation-direction.yaml
+baselineMain: 3079dddb70e8b500c8b0d414eaec4a446e3dceeb
+predecessorPullRequest: 277
+objective: Allow a portfolio owner to register exposure before dispatch and an independent reviewer to compare each retained selection with separately captured provider evidence.
+universalInvariant: Every counted trial belongs to one preregistered experiment, one distinct externally evidenced turn and one independently assessed selection.
+scope:
+- Freeze the existing evaluation plan and reviewed case exposure before the first reservation.
+- Match all planned trials to independent turn records, original requests, actual checked responses and final selections.
+- Assess fidelity, hard constraints, domain coverage, held-out performance, latency and available cost from the complete matrix.
+- Reuse existing reservations, worker recovery and canonical review without an additional model call.
+validationPlan:
+- Exercise the public commands with a scripted peer and installed compiler across distinct lifecycle requests.
+- Reject omitted, duplicated, mismatched or relabelled evidence, late registration and reviewer/semantic contradictions.
+- Verify the final PR head and merge candidate in CI.
+externalEvidence: Genuine independently reviewed held-out inputs, a commissioned worker and provider records are needed to publish live measurements. The original corpus and held-out render gates remain separate.

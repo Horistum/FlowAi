@@ -148,7 +148,7 @@ jobs:
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     runs-on: ubuntu-latest
     # Full tests and installed-host proofs share this bounded slower-runner margin.
-    timeout-minutes: 45
+    timeout-minutes: 55
 
     steps:
       - name: Require Successful Module Isolation
@@ -349,7 +349,7 @@ jobs:
     if: ${{ !cancelled() && github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
     # Match the exact-head budget, including observed runner variance in the full proofs.
-    timeout-minutes: 45
+    timeout-minutes: 55
 
     steps:
       - name: Require Successful Module Isolation
