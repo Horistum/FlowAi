@@ -485,6 +485,8 @@ def _advance(root, state, config, environment, kind):
                 return _finish(root, state, "provider-error")
             if result["failure"] or result["returncode"] != 0:
                 attempt["status"] = result["failure"] or "provider-process-error"
+                if not result["failure"]:
+                    attempt["providerReturnCode"] = result["returncode"]
                 return _finish(root, state, "provider-error")
             value = _provider_result(raw, config)
             attempt.update(provider=value["provider"], usage=value["usage"], status="received")

@@ -41,3 +41,10 @@ class TerminalReviewTests(unittest.TestCase):
         self.assertNotIn("\u009b", text)
         self.assertIn("Provider explanation", text)
         self.assertNotIn("Compiler-checked plan", text)
+
+    def test_process_signal_is_distinct_from_a_model_decision(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            show_result({"status": "provider-error", "failure": "provider-process-error", "providerReturnCode": -9})
+        self.assertIn("Provider process terminated by signal 9", output.getvalue())
+        self.assertNotIn("Provider explanation", output.getvalue())

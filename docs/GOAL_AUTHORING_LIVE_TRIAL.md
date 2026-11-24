@@ -12,7 +12,7 @@ A success requires either a compiler-admitted plan with the exact resources, ope
 | Ask which collection and recovery point to restore | Identified both missing values in a refusal | Attempted a restore draft in the wrong reply format, without asking the user | Named both missing values in a refusal instead of asking for them. |
 | Verify amber and leave blue alone | Refused as unrepresentable | Refused and requested directory paths and health-check specifics in the refusal | Refused and requested paths and health-check specifics in the refusal. |
 
-Each recipe scored **0/3** against the original criteria. No first turn produced either a compiler-checked plan or the required clarification. The capability guide reduced the initial prompts from about 10,520 to 7,155 tokens; it did not improve task success. The shipped local example retains the complete public contract. The separate installed-command tests cover dialogue, persistence and compilation using a deterministic provider peer.
+Each recipe scored **0/3** against the original criteria. No first turn produced either a compiler-checked plan or the required clarification. The capability guide reduced the initial prompts from about 10,520 to 7,155 tokens without improving task success. The shipped local example retains the complete public contract. The separate installed-command tests cover dialogue, persistence and compilation using a deterministic provider peer.
 
 A development variant also tried to load the entire recursive response schema as a llama.cpp decoding grammar. The native parser rejected it at its recursion-depth limit. All three attempts produced provider errors before returning usable replies. These failures are recorded separately from model decisions.
 
@@ -64,10 +64,19 @@ for case in cases:
 PY
 ```
 
-The shipped adapter uses the baseline prompt and generic JSON decoding. It supplies the complete public contracts unchanged. The baseline source is at `2530e0c9e84b02284e54bc65c9b982a14b02cce7`. Baseline measurements used `flow-author plan`; the subsequent measurements used `flow-author chat`. Both entry points call the same authoring host.
+The shipped adapter uses the baseline prompt and generic JSON decoding. It supplies the complete public contracts unchanged. The baseline source is at `2530e0c9e84b02284e54bc65c9b982a14b02cce7`. Baseline measurements used `flow-author plan`. The subsequent measurements used `flow-author chat`. Both entry points call the same authoring host.
 
 The second pass used the capability guide at `c4a62b70dc5dff5e41a2ac068ba6ceb34d8a95d1` with generic JSON decoding. The final experiment passed a bounded projection of the public response schema as llama.cpp's grammar, using the same guide, weights and decoding settings. To reproduce the latter, use the recorded `boundedDecoderSchema` with `LlamaGrammar.from_json_schema(json.dumps(schema), verbose=False)` and pass the resulting `grammar` instead of `response_format` to `create_chat_completion`. The full-recursion experiment between the baseline and guide removed unanchored regex constraints for the decoder and attempted to load the whole response schema.
 
-A separate first-conversation check uses a previously unused archive-retirement goal with two deliberately withheld facts: the collection and its decision owner. Its criterion is an explicit question covering both facts before any proposed work. This check is independent of the three-goal score.
+## Separate conversation check
+
+A fourth, previously unused goal asked the system to identify an archive collection and its decision owner before drafting any retirement work. The pass criterion required questions covering both missing facts, with no proposed work or invented values.
+
+| Local model | Observed first turn |
+| --- | --- |
+| Qwen2.5-7B-Instruct Q4_K_M, two verified shards | The process exited before replying. A diagnostic replay was terminated by signal 9. Model quality could not be assessed. |
+| Qwen2.5-3B-Instruct Q4_K_M, one verified file | Returned a schema definition in place of a question or proposal. The compiler rejected the input with `PROPOSAL_INVALID_INPUT`. Provider time was 684 seconds (10,525 input tokens and 1,971 output tokens). |
+
+Both runs used the shipped full-contract prompt, the same original text and zero automatic repairs. The first-turn goal was not met. No second turn or execution followed. Exact weight revisions, SHA-256 values, original text and the returned model output are in the [evidence file](../.flow-agent/reports/goal-authoring-first-turn.json).
 
 Each repeat reused the three known goals. The experiment measures these recipes on this model only. No target was selected and no workflow ran. The next roadmap slice tests capability grounding and the distinction between clarification and refusal on fresh goals.

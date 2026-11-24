@@ -714,5 +714,558 @@
         "additionalProperties": false
       }
     ]
+  },
+  "separateGoalTrial": {
+    "input": {
+      "id": "clinic-archive",
+      "goal": "Before we change anything, ask me which archive collection we are retiring and who owns the decision. I have not supplied either value. Wait for my reply before drafting any work.",
+      "criteria": "Ask for both the archive collection and the decision owner, with no proposed work or invented values."
+    },
+    "runs": [
+      {
+        "repository": "Qwen/Qwen2.5-7B-Instruct-GGUF",
+        "revision": "bb5d59e06d9551d752d08b292a50eb208b07ab1f",
+        "files": [
+          {
+            "name": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+            "bytes": 3993201344,
+            "sha256": "dfce12e3862a5283ccfb88221b48480e58745165de856439950d0f22590580db"
+          },
+          {
+            "name": "qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf",
+            "bytes": 689872288,
+            "sha256": "539cf93f78e887edea1c04e2d7d8cdaca9d01dae9c9025bcb8accbe29df3d72a"
+          }
+        ],
+        "modelId": "sha256-shards:7940175a3ab60e02258555c465273737d860dca88ed495f798441c0e7ab098c6",
+        "turns": [
+          {
+            "status": "provider-process-error",
+            "latencyMs": 10848,
+            "responseSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ],
+        "sessionStatus": "provider-error",
+        "diagnosticReplay": "Process terminated by SIGKILL after loading model weights. No model reply was available for assessment."
+      },
+      {
+        "repository": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        "revision": "7dabda4d13d513e3e842b20f0d435c732f172cbe",
+        "files": [
+          {
+            "name": "qwen2.5-3b-instruct-q4_k_m.gguf",
+            "bytes": 2104932768,
+            "sha256": "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d"
+          }
+        ],
+        "modelId": "sha256:626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d",
+        "turns": [
+          {
+            "status": "reviewed",
+            "latencyMs": 684384,
+            "usage": {
+              "input_tokens": 10525,
+              "output_tokens": 1971
+            },
+            "responseSha256": "f6ef70f97cc5a4042123c60324cea365d03e4f7e28a23f9bb68e8ff97d6e5378",
+            "reply": {
+              "$defs": {
+                "intent-v3.1.schema.json": {
+                  "$defs": {
+                    "failure": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "notify": {
+                          "type": "boolean"
+                        },
+                        "rollback": {
+                          "type": "boolean"
+                        },
+                        "stopOnError": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "input": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "default": {
+                          "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ],
+                      "type": "object"
+                    },
+                    "intentValue": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "items": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "additionalProperties": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "policy": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "condition": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "message": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    "schedule": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "expression": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "kind": {
+                          "enum": [
+                            "CRON",
+                            "INTERVAL",
+                            "CALENDAR"
+                          ]
+                        },
+                        "timezone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "expression"
+                      ],
+                      "type": "object"
+                    },
+                    "statement": {
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "capability": {
+                              "not": {
+                                "const": "SCHEDULE"
+                              },
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "operation"
+                            },
+                            "params": {
+                              "additionalProperties": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                              },
+                              "type": "object"
+                            },
+                            "produces": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "requires": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "uses": {
+                              "pattern": "^([A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+)$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "capability",
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "branch"
+                            },
+                            "otherwise": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "then": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "when": {
+                              "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "when",
+                            "then"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "value"
+                            },
+                            "value": {
+                              "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "value"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "merge"
+                            },
+                            "sources": {
+                              "items": {
+                                "pattern": "^ref:[A-Za-z_][A-Za-z0-9_]*$"
+                              },
+                              "minItems": 2,
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array",
+                              "uniqueItems": true
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "sources"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "body": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "disposition": {
+                              "enum": [
+                                "propagate",
+                                "recover"
+                              ]
+                            },
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "attempt"
+                            },
+                            "onFailure": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "body",
+                            "onFailure",
+                            "disposition"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "body": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "minItems": 1,
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "delaySeconds": {
+                              "minimum": 0,
+                              "not": {
+                                "minimum": 3601
+                              },
+                              "type": "integer"
+                            },
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "retry"
+                            },
+                            "maxAttempts": {
+                              "minimum": 1,
+                              "not": {
+                                "minimum": 101
+                              },
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "body",
+                            "maxAttempts",
+                            "delaySeconds"
+                          ],
+                          "type": "object"
+                        }
+                      ],
+                      "type": "object"
+                    },
+                    "system": {
+                      "additionalProperties": true,
+                      "properties": {
+                        "config": {
+                          "additionalProperties": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "object"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    "trigger": {
+                      "additionalProperties": false,
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "const": "SCHEDULE"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "schedule"
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "enum": [
+                                  "EVENT",
+                                  "WEBHOOK"
+                                ]
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "event"
+                            ]
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "event": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "id": {
+                          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                        },
+                        "params": {
+                          "additionalProperties": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "object"
+                        },
+                        "schedule": {
+                          "$ref": "#/$defs/intent-v3.1.schema.json/$defs/schedule"
+                        },
+                        "type": {
+                          "enum": [
+                            "MANUAL",
+                            "SCHEDULE",
+                            "EVENT",
+                            "WEBHOOK"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "workflows"
+                      ],
+                      "type": "object"
+                    },
+                    "workflow": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "body": {
+                          "items": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                          },
+                          "not": {
+                            "minItems": 2001
+                          },
+                          "type": "array"
+                        },
+                        "kind": {
+                          "not": {
+                            "const": "SCHEDULE"
+                          },
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "kind",
+                        "body"
+                      ],
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "review": {
+              "semanticAcceptance": "not-assessed",
+              "requestFidelity": "unassessed",
+              "diagnostics": [
+                {
+                  "code": "PROPOSAL_INVALID_INPUT",
+                  "field": "$.response.normalizedIntent",
+                  "message": "Supply one strict UTF-8 JSON document matching the proposal schema.",
+                  "severity": "ERROR"
+                }
+              ]
+            }
+          }
+        ],
+        "sessionStatus": "repair-limit"
+      }
+    ]
   }
 }

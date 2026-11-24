@@ -29,6 +29,8 @@ def session_view(directory, state):
             result["failurePhase"] = attempt["failurePhase"]
     elif state["status"] == "provider-error":
         result["failure"] = attempt["status"]
+        if "providerReturnCode" in attempt:
+            result["providerReturnCode"] = attempt["providerReturnCode"]
     if "reason" in attempt:
         result["reason"] = attempt["reason"]
     if "discoveryReviewPacket" in attempt:

@@ -66,7 +66,13 @@ def show_result(view):
     if view.get("failure"):
         if view.get("failurePhase") == "provider" or view["status"] == "provider-error":
             print("The provider did not return a usable reply for this turn. No new plan was compiled.")
-        print("Stopped:", _display(view["failure"]))
+        code = view.get("providerReturnCode")
+        if code is None:
+            print("Stopped:", _display(view["failure"]))
+        elif code < 0:
+            print(f"Provider process terminated by signal {-code}.")
+        else:
+            print(f"Provider process exited with code {code}.")
     if view.get("reason"):
         if view["status"] == "provider-cannot-plan":
             print("The model stopped before proposing a plan for the compiler.")

@@ -918,6 +918,7 @@ recoveryBoundedAuthoring:
     entryPoint: flow-author chat
     report: docs/GOAL_AUTHORING_LIVE_TRIAL.md
     liveModelScope: Three English goals, one local instruction model and a fresh session for each first turn.
+    independentClarificationCheck: Separate retirement goal with two missing facts. The 3B reply failed input validation and the 7B process ended before replying.
     heldOutRenderVerified: false
     recoveryClosure: false
     nextSlice: S4-capability-grounding-on-new-goals

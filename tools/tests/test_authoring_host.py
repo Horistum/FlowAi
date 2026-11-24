@@ -201,6 +201,10 @@ class AuthoringHostTests(unittest.TestCase):
                 self.out = self.root / response
                 state = self.run_host([response])
                 self.assertIn(state["status"], ("provider-error", "provider-or-compiler-error"))
+                if response == "fail":
+                    self.assertEqual(9, state["attempts"][0]["providerReturnCode"])
+                else:
+                    self.assertNotIn("providerReturnCode", state["attempts"][0])
                 self.assertEqual(1, len(state["attempts"]))
                 self.assertEqual(108192, state["reservedTokens"])
 
