@@ -75,13 +75,13 @@ Required open questions prevent strict usage.
 ## CLI
 
 ```bash
-./gradlew run --args='normalize "Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure." --target jenkins --strict --render --out generated/ai-deploy'
+./gradlew run --args='normalize --scenario-pack "Deploy application billing-api to Kubernetes. Require approval in production. Verify health after deploy and rollback on failure." --target jenkins --strict --render --out generated/ai-deploy'
 ```
 
 For file input:
 
 ```bash
-./gradlew run --args='normalize --file examples/ai-normalization/deploy-request.txt --target github-actions --render'
+./gradlew run --args='normalize --scenario-pack --file examples/ai-normalization/deploy-request.txt --target github-actions --render'
 ```
 
 ## Why scenario packs first?

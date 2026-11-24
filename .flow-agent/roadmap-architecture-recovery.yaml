@@ -31,12 +31,12 @@ currentDecision:
 authoringDevelopment:
   selectedSlice: AI-A3
   investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
-  selectedFollowup: .flow-agent/work-packages/independent-planning-portfolio.yaml
+  selectedFollowup: docs/GOAL_AUTHORING.md
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
-  selectedFollowupSlice: AI-A3-S3.10
-  selectedFollowupCorrection: Register portfolio exposure before dispatch and assess repeated planning trials against independently attested provider exchanges and semantic review.
-  previousFollowupCorrection: Declarative Kubernetes resource commissioning merged in PR 277 at 3079dddb70e8b500c8b0d414eaec4a446e3dceeb.
-  nextFollowupSlice: S3-commissioned-live-portfolio-measurements
+  selectedFollowupSlice: AI-A3-S4.1
+  selectedFollowupCorrection: Start from an original goal and return a compiler-checked portable plan or explicit questions through the installed authoring command.
+  previousFollowupCorrection: Independent planning portfolio review merged in PR 278 at 833b8f0a880b14b9658b546596c0d5877dc8ed77.
+  nextFollowupSlice: S4-goal-authoring-live-evaluation
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active

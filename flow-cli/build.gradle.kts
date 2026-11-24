@@ -18,3 +18,18 @@ dependencies {
 }
 
 tasks.test { workingDir(rootProject.projectDir) }
+
+// The external host proposes actions. The installed JVM compiler validates every proposal.
+val authoringHostSources = rootProject.file("gradle/authoring-host-sources.txt").readLines()
+distributions.named("main") {
+    contents {
+        from(rootProject.file("tools/flow-author")) {
+            into("bin")
+            filePermissions { unix("rwxr-xr-x") }
+        }
+        from(rootProject.file("tools")) {
+            into("bin")
+            include(authoringHostSources)
+        }
+    }
+}

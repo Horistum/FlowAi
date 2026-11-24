@@ -129,3 +129,8 @@ A separate observer correlates its native audit record and live state with the r
 See the [commissioning procedure](../docs/KUBERNETES_RESOURCE_DISPATCH.md).
 
 After merged PR #277, S3.10 adds preregistration and independent review of each planning trial. Commissioned live measurements and the original held-out render remain open. [Work package](work-packages/independent-planning-portfolio.yaml) · [Operator procedure](../docs/PLANNING_PORTFOLIO_REVIEW.md)
+
+After merged PR #278, the selected slice is S4.1. An operator enters a goal in
+plain text and reviews the compiler-checked plan or answers a missing decision.
+The next evaluation uses new goals with a live provider. Earlier corpus, target
+render and portfolio measurements remain open. [Product entry point](../docs/GOAL_AUTHORING.md)

@@ -23,7 +23,11 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     request = loads(request_data)
     keys(request, ("userText",), ("context", "mode"))
     require(isinstance(request["userText"], str) and bool(request["userText"].strip()), "Empty original request")
-    original_requirements = requirements(requirements_data, request)
+    original_requirements = requirements(requirements_data, request) if requirements_data is not None else None
+    if original_requirements is None:
+        require(target is None and not render and not request.get("context", {}).get("target"),
+                "Target selection requires independently reviewed requirements")
+        require("investigation" not in config, "Investigation sessions require independent requirements")
     require(not render or target, "Rendering requires an explicitly selected target")
     if target is not None:
         nonblank(target)
@@ -48,8 +52,10 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     root = Path(directory).absolute()
     # All retained inputs are checked before creating the evidence directory or spending quota.
     snapshots = {"config.json": canonical(config), "request.json": request_data,
-                 "requirements-0.json": requirements_data, "contracts.json": canonical(contracts),
+                 "contracts.json": canonical(contracts),
                  "instructions.txt": INSTRUCTIONS.encode()}
+    if requirements_data is not None:
+        snapshots["requirements-0.json"] = requirements_data
     if investigation_config is not None:
         snapshots["instructions.txt"] += ("\n\n" + investigation.instructions(investigation_config)).encode()
         if investigation_config["formatVersion"] in (2, 3):
@@ -76,7 +82,7 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
              "compilerDigest": compiler_digest, "evidenceKind": config["provider"]["evidenceKind"],
              "provider": {k: config["provider"][k] for k in ("id", "model", "version")},
              "providerAttribution": "operator-configured-and-adapter-reported-not-attested",
-             "target": target, "render": render, "requirementsFile": "requirements-0.json",
+             "target": target, "render": render, "requirementsFile": "requirements-0.json" if requirements_data is not None else None,
              "attempts": [], "repairCount": 0, "clarificationCount": 0, "answers": [],
              "reservedTokens": 0, "reservedCostMicrousd": 0, "reportedUsage": [], "pending": []}
     for name, data in snapshots.items():
@@ -94,7 +100,7 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     return _locked_advance(root, state, config, environment, "initial")
 
 
-def resume(directory, answers_data, requirements_data):
+def resume(directory, answers_data, requirements_data=None):
     root = Path(directory).absolute()
     with (root / "lock").open("a+b") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -105,12 +111,12 @@ def resume(directory, answers_data, requirements_data):
         verify_inventory(root, state)
         require(state["status"] == "awaiting-user", "Only an explicit clarification can resume; interrupted calls never replay")
         last = state["attempts"][-1]
-        prior_requirements = loads(read(root / state["requirementsFile"]))
+        prior_requirements = loads(read(root / state["requirementsFile"])) if state["requirementsFile"] else None
         investigation_pending = last.get("status") == "investigation-awaiting-user"
         if investigation_pending:
             require(state["pending"] == investigation.pending(investigation.load(root, state)), "Pending decisions changed")
         else:
-            require(last.get("review", {}).get("exitCode") == 3, "Captured compiler review does not request a user decision")
+            require(_needs_answers(last["review"], prior_requirements), "Captured compiler review does not request a user decision")
             previous = loads(read(root / last["directory"] / "proposal.json"))
             require(state["pending"] == _pending(previous, prior_requirements, last["review"]), "Pending decisions changed")
         answers = loads(answers_data)
@@ -126,12 +132,15 @@ def resume(directory, answers_data, requirements_data):
             require(answer["id"] not in answered, "Duplicate clarification answer")
             answered.add(answer["id"])
         require(answered == {p["id"] for p in state["pending"]}, "Answer every pending decision exactly once")
-        reviewed = requirements(requirements_data, loads(read(root / "request.json")))
-        require(reviewed["confirmation"] == "CONFIRMED" and reviewed.get("reviewerId") == answers["reviewerId"],
-                "Resumption requires caller-confirmed requirements and matching reviewer attribution")
-        require(not any(i["check"].get("kind") == "clarification" for i in reviewed["requirements"]),
-                "Requirements still contain unanswered decisions")
-        preserve_requirements(prior_requirements, reviewed)
+        require((prior_requirements is None) == (requirements_data is None),
+                "Resume with the same requirements mode as the original session")
+        if requirements_data is not None:
+            reviewed = requirements(requirements_data, loads(read(root / "request.json")))
+            require(reviewed["confirmation"] == "CONFIRMED" and reviewed.get("reviewerId") == answers["reviewerId"],
+                    "Resumption requires caller-confirmed requirements and matching reviewer attribution")
+            require(not any(i["check"].get("kind") == "clarification" for i in reviewed["requirements"]),
+                    "Requirements still contain unanswered decisions")
+            preserve_requirements(prior_requirements, reviewed)
         config = validate_config(loads(read(root / "config.json")))
         if config.get("investigation", {}).get("formatVersion") == 3:
             require(reviewed["formatVersion"] == 5, "Reviewed discovery requires explicit requirements version 5")
@@ -151,17 +160,19 @@ def resume(directory, answers_data, requirements_data):
             except investigation.SourceChanged as error:
                 return _source_changed(root, state, error)
         for data in (answers_data, requirements_data):
-            require(not contains_credential(data, environment), "A credential appears in retained inputs")
+            require(data is None or not contains_credential(data, environment), "A credential appears in retained inputs")
         number = state["clarificationCount"] + 1
         answered_ledger = (investigation.answer(investigation.load(root, state), answers["answers"],
                            f"answers-{number}.json", config["investigation"]["maxRecords"])
                            if investigation_pending else None)
         save(root, f"answers-{number}.json", answers_data, state["files"])
-        name = f"requirements-{number}.json"
-        save(root, name, requirements_data, state["files"])
+        if requirements_data is not None:
+            name = f"requirements-{number}.json"
+            save(root, name, requirements_data, state["files"])
+            state["requirementsFile"] = name
         if answered_ledger is not None:
             investigation.persist(root, state, answered_ledger, f"investigation-answers-{number}.json")
-        state.update(requirementsFile=name, clarificationCount=number, pending=[], status="ready-to-continue")
+        state.update(clarificationCount=number, pending=[], status="ready-to-continue")
         # Reviewer identity is evidence for the operator, never candidate prompt content.
         state["answers"].extend(answers["answers"])
         checkpoint(root, state)
@@ -294,7 +305,9 @@ def _compile(root, state, config, attempt, proposal):
     out = root / prefix / "review"
     requirements_file = attempt.get("compilerRequirementsFile", state["requirementsFile"])
     command = config["compiler"]["argv"] + ["proposal", str(root / prefix / "proposal.json"),
-              "--requirements", str(root / requirements_file), "--out", str(out)]
+              "--out", str(out)]
+    if requirements_file is not None:
+        command += ["--requirements", str(root / requirements_file)]
     if state["target"]:
         command += ["--target", state["target"]]
     if state["render"]:
@@ -304,7 +317,8 @@ def _compile(root, state, config, attempt, proposal):
     verify_inventory(root, state)
     require(compiler_fingerprint(config) == state["compilerDigest"], "Compiler distribution changed")
     review = loads(read(out / "proposal-review.json"))
-    require(review.get("formatVersion") == 2 and review.get("exitCode") == result["returncode"] and
+    expected_version = 2 if requirements_file is not None else 1
+    require(review.get("formatVersion") == expected_version and review.get("exitCode") == result["returncode"] and
             result["returncode"] in (0, 2, 3, 4, 70), "Compiler review and process status disagree")
     require(review.get("inputSource", {}).get("sha256") == digest(canonical(proposal)), "Compiler input receipt mismatch")
     for path in out.iterdir():
@@ -325,6 +339,11 @@ def _pending(proposal, reviewed_requirements, review):
             result.append({"id": f"question-{index}", "question": question["question"]})
     for index, decision in enumerate(report.get("missingDecisions", [])):
         result.append({"id": f"decision-{index}", "question": decision})
+    if reviewed_requirements is None:
+        for index, risk in enumerate(report.get("risks", [])):
+            if risk.get("severity") == "HIGH" and not risk.get("mitigated", False):
+                result.append({"id": f"risk-{index}", "question": risk["message"]})
+        return result
     for item in reviewed_requirements["requirements"]:
         if item["check"].get("kind") == "clarification":
             result.append({"id": "requirement-" + item["id"], "question": item["check"]["question"]})
@@ -333,6 +352,15 @@ def _pending(proposal, reviewed_requirements, review):
     if not result:
         result.append({"id": "review-decision", "question": "Resolve the compiler's required review and supply confirmed requirements."})
     return result
+
+
+def _needs_answers(review, reviewed_requirements):
+    if review["exitCode"] == 3:
+        return True
+    # Missing decisions can prevent canonicalization of a partial proposal.
+    # A decoded report can still ask the caller before any automatic repair.
+    return (reviewed_requirements is None and review["semanticAcceptance"] == "rejected" and
+            any(item["severity"] in ("REQUIRED", "HIGH") for item in review["reviewItems"]))
 
 
 def _advance(root, state, config, environment, kind):
@@ -509,10 +537,10 @@ def _advance(root, state, config, environment, kind):
             outcome = _reviewed_status(review, state)
             if outcome is not None:
                 return _finish(root, state, outcome)
-            reviewed_requirements = loads(read(root / state["requirementsFile"]))
-            if any(i["check"].get("kind") == "unsupported" for i in reviewed_requirements["requirements"]):
+            reviewed_requirements = loads(read(root / state["requirementsFile"])) if state["requirementsFile"] else None
+            if reviewed_requirements is not None and any(i["check"].get("kind") == "unsupported" for i in reviewed_requirements["requirements"]):
                 return _finish(root, state, "representability-blocker")
-            if review["exitCode"] == 3:
+            if _needs_answers(review, reviewed_requirements):
                 state["pending"] = _pending(proposal, reviewed_requirements, review)
                 return _finish(root, state, "awaiting-user")
             if repeated:
@@ -565,6 +593,12 @@ def _reviewed_status(review, state):
     faithful = (review["semanticAcceptance"] == "accepted" and fidelity == "requirements-satisfied" and
                 not any(i["severity"] in ("REQUIRED", "HIGH") for i in review["reviewItems"]))
     if review["exitCode"] == 0:
+        if state["requirementsFile"] is None:
+            ready = (review["semanticAcceptance"] == "accepted" and fidelity == "unassessed" and
+                     review.get("graphDigest") and review.get("targetDisposition") == "not-requested" and
+                     not review.get("renderAuthorized") and not review.get("renderRequested") and
+                     not any(i["severity"] in ("REQUIRED", "HIGH") for i in review["reviewItems"]))
+            return "plan-ready-for-review" if ready else "compiler-error"
         authorized = faithful and (not state["render"] or review.get("renderAuthorized") is True)
         return "accepted" if authorized else "compiler-error"
     if review["stage"] == "MATERIALIZATION":

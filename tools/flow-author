@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+"""Draft a portable automation plan from a goal using a configured proposal provider."""
+import argparse
+import json
+from pathlib import Path
+import sys
+
+sys.dont_write_bytecode = True
+
+from authoring_host.contracts import HostError, canonical, loads, read
+from authoring_host.session import resume, start
+
+
+def present(directory, state):
+    result = {"goal": loads(read(directory / "request.json"))["userText"], "status": state["status"],
+              "provider": state["provider"], "evidenceKind": state["evidenceKind"]}
+    if state["pending"]:
+        result["questions"] = state["pending"]
+    if state["attempts"]:
+        attempt = state["attempts"][-1]
+        if "review" in attempt:
+            review = attempt["review"]
+            result.update(semanticAcceptance=review["semanticAcceptance"], requestFidelity=review["requestFidelity"],
+                          graphDigest=review.get("graphDigest"), renderAuthorized=review["renderAuthorized"],
+                          diagnostics=review["diagnostics"], targetDisposition=review["targetDisposition"])
+            folder = directory / attempt["directory"]
+            result["reviewFile"] = str(folder / "review" / "proposal-review.json")
+            if review["semanticAcceptance"] == "accepted":
+                proposal = folder / "proposal.json"
+                result["proposalFile"] = str(proposal)
+                response = loads(read(proposal))["response"]
+                result["candidateIntent"] = response["normalizedIntent"]
+                result["reviewNotes"] = {key: response["report"][key] for key in
+                                         ("assumptions", "risks", "openQuestions", "missingDecisions", "explanation")
+                                         if response["report"].get(key)}
+                result["planFile"] = str(folder / "review" / "workflow-execution-plan-set.json")
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    if state["status"] == "accepted":
+        return 0
+    return 3 if state["status"] in ("plan-ready-for-review", "awaiting-user") else 4
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    plan = commands.add_parser("plan", help="Propose and compile a plan for the original goal")
+    plan.add_argument("goal", help="Original goal in natural language")
+    plan.add_argument("--config", required=True, help="Reusable provider, compiler and budget configuration")
+    plan.add_argument("--out", required=True, type=Path, help="New session directory")
+    plan.add_argument("--requirements", help="Independent criteria bound to the original goal")
+    plan.add_argument("--target", help="Explicit target for an independently checked plan")
+    plan.add_argument("--render", action="store_true")
+    answer = commands.add_parser("answer", help="Answer the pending decisions and continue the same plan")
+    answer.add_argument("--run", required=True, type=Path)
+    answer.add_argument("--reviewer", required=True)
+    answer.add_argument("--answer", nargs=2, action="append", required=True, metavar=("ID", "TEXT"))
+    answer.add_argument("--requirements", help="Reconfirmed criteria if the session started with criteria")
+    args = parser.parse_args()
+    try:
+        criteria = read(args.requirements) if args.requirements else None
+        if args.command == "plan":
+            directory = args.out.absolute()
+            request = {"userText": args.goal, "context": {}, "mode": "DRAFT"}
+            config = loads(read(args.config))
+            if "investigation" in config:
+                raise HostError("Use a proposal provider configuration without managed discovery for goal authoring")
+            state = start(config, canonical(request), criteria, directory, target=args.target, render=args.render)
+        else:
+            directory = args.run.absolute()
+            answers = {"runId": loads(read(directory / "state.json"))["runId"], "reviewerId": args.reviewer,
+                       "answers": [{"id": key, "answer": value} for key, value in args.answer]}
+            state = resume(directory, canonical(answers), criteria)
+        return present(directory, state)
+    except HostError as error:
+        print(str(error), file=sys.stderr)
+    except FileExistsError:
+        print("Choose a new session directory for each plan.", file=sys.stderr)
+    except (OSError, ValueError, KeyError, TypeError):
+        print("Cannot read authoring inputs or complete the session. Check the paths and retained state.", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

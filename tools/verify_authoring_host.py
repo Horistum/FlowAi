@@ -11,6 +11,7 @@ import tempfile
 from authoring_host.contracts import HostError, canonical, loads, read, require, verify_inventory
 from authoring_host.evaluation import evaluate
 from authoring_host.session import resume, start
+from verify_goal_authoring import verify as verify_goal_authoring
 from verify_authoring_investigation import verify as verify_investigation
 from verify_system_discovery import verify as verify_system_discovery
 from verify_managed_inventory import verify as verify_managed_inventory
@@ -46,6 +47,7 @@ def verify(root, cli):
         def sequence(values):
             source.write_bytes(canonical([{"response": v["response"]} for v in values]))
             counter.unlink(missing_ok=True)
+        verify_goal_authoring(root, cli, work, config, sequence, counter)
         proposal = fixture("deployment-specified")
         req = read(corpus / "deployment-specified.requirements.json")
         invalid = copy.deepcopy(proposal)
