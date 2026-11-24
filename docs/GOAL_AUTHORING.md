@@ -17,8 +17,8 @@ If you already configured a command-reasoning/v2 provider, run
 
 To use your own local GGUF instruction model, create its configuration once from
 the same checkout. The optional CPU backend runs in its own Python environment.
-The model stays on your machine. Supply a GGUF model file you already have, or
-see the exact model revision and digest in the [local trial](GOAL_AUTHORING_LIVE_TRIAL.md).
+The model stays on your machine. For a split GGUF, place every shard in the same directory and pass the first file. The configuration binds all shard digests in order. Supply a GGUF model file you already have, or
+reproduce the [local trial](GOAL_AUTHORING_LIVE_TRIAL.md). Its 1.5B model struggled to produce valid plans for simple requests. Review the results before choosing weights for daily use.
 
 ```sh
 python3 -m venv .venv-author

@@ -1,6 +1,8 @@
 """Exercise the optional GGUF provider's prompt without downloading model weights."""
 import importlib.util
 import json
+import hashlib
+import tempfile
 from pathlib import Path
 import unittest
 
@@ -24,10 +26,23 @@ class LocalProviderPromptTests(unittest.TestCase):
                    "input": {"capabilityCatalog": entries, "request": request, **observed}}
         before = json.dumps(payload)
         system, user = PROVIDER.model_messages(payload)
-        self.assertIn("marker", system["content"])
-        for entry in entries:
-            self.assertIn(entry["capability"] + " | " + entry["description"], user["content"])
-        self.assertIn('requiredParams=["scope"]', user["content"])
-        for item in [*observed.values(), request]:
-            self.assertIn(json.dumps(item, separators=(",", ":")), user["content"])
+        self.assertEqual(payload["output_schema"], json.loads(system["content"].split("Response schema:\n")[1]))
+        self.assertEqual({"capabilityCatalog": entries, "request": request, **observed}, json.loads(user["content"]))
         self.assertEqual(before, json.dumps(payload))
+
+    def test_model_identity_covers_every_gguf_shard_in_order(self):
+        with tempfile.TemporaryDirectory() as work:
+            plain = Path(work) / "local.gguf"
+            plain.write_bytes(b"weights")
+            self.assertEqual("sha256:" + hashlib.sha256(b"weights").hexdigest(), PROVIDER.model_identity(plain))
+            first = Path(work) / "local-00001-of-00002.gguf"
+            second = Path(work) / "local-00002-of-00002.gguf"
+            first.write_bytes(b"a")
+            with self.assertRaises(FileNotFoundError):
+                PROVIDER.model_identity(first)
+            second.write_bytes(b"b")
+            original = PROVIDER.model_identity(first)
+            second.write_bytes(b"c")
+            self.assertNotEqual(original, PROVIDER.model_identity(first))
+            with self.assertRaises(ValueError):
+                PROVIDER.model_identity(second)

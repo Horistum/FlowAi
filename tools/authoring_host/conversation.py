@@ -64,6 +64,8 @@ def _statements(statements, indent):
 def show_result(view):
     print(f"Session status: {view['status']}")
     if view.get("failure"):
+        if view.get("failurePhase") == "provider" or view["status"] == "provider-error":
+            print("The provider did not return a usable reply for this turn. No new plan was compiled.")
         print("Stopped:", _display(view["failure"]))
     if view.get("reason"):
         if view["status"] == "provider-cannot-plan":

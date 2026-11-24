@@ -25,6 +25,8 @@ def session_view(directory, state):
     attempt = state["attempts"][-1]
     if "diagnostic" in attempt:
         result["failure"] = attempt["diagnostic"]
+        if "failurePhase" in attempt:
+            result["failurePhase"] = attempt["failurePhase"]
     elif state["status"] == "provider-error":
         result["failure"] = attempt["status"]
     if "reason" in attempt:

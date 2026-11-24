@@ -6,6 +6,7 @@ from importlib.metadata import version
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import sys
 import tempfile
@@ -19,6 +20,20 @@ def sha256(path):
     return digest.hexdigest()
 
 
+def model_identity(path):
+    split = re.fullmatch(r"(.+)-(\d{5})-of-(\d{5})\.gguf", path.name)
+    if split is None:
+        return "sha256:" + sha256(path)
+    stem, index, total = split.groups()
+    if index != "00001" or int(total) < 1:
+        raise ValueError("Select the first file of the split GGUF model.")
+    digest = hashlib.sha256()
+    for number in range(1, int(total) + 1):
+        shard = path.with_name(f"{stem}-{number:05d}-of-{total}.gguf")
+        digest.update(bytes.fromhex(sha256(shard)))
+    return "sha256-shards:" + digest.hexdigest()
+
+
 def configure(args):
     source = Path(__file__).resolve()
     root = source.parents[2]
@@ -30,7 +45,7 @@ def configure(args):
         raise ValueError("Select a regular GGUF file.")
     backend = version("llama-cpp-python")
     commit = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
-    model_id = "sha256:" + sha256(model)
+    model_id = model_identity(model)
     config = {"formatVersion": 1,
               "provider": {"id": "local-gguf", "model": model_id, "version": "llama-cpp-python/" + backend,
                            "evidenceKind": "live", "credentialEnv": [],
@@ -51,50 +66,20 @@ def configure(args):
 
 
 def model_messages(payload):
+    """All goals and decision turns use the same complete public contract."""
     inputs = payload["input"].copy()
-    catalog = inputs.pop("capabilityCatalog")
     request = inputs.pop("request")
-    lines = []
-    for entry in catalog:
-        details = [entry["capability"], entry["description"]]
-        for field in ("requiredParams", "optionalParams", "requiredSystems", "requiredDesignQuestions",
-                      "notes", "targetImplications"):
-            if entry.get(field):
-                details.append(field + "=" + json.dumps(entry[field], ensure_ascii=False))
-        lines.append(" | ".join(details))
-    schema = payload["output_schema"]
-    proposal = next((option for option in schema.get("oneOf", [schema])
-                     if "normalizedIntent" in option.get("properties", {})), None)
-    # Keep the original public contract for other response protocols. For a
-    # proposal, present the document, workflow and operation forms together.
-    guide = schema if proposal is None else {}
-    if proposal is not None:
-        for name, document in schema["$defs"].items():
-            guide[name] = {key: document[key] for key in ("required", "properties")}
-            guide[name]["workflow"] = document["$defs"]["workflow"]
-            for form in ("step", "statement"):
-                if form in document["$defs"]:
-                    guide[name][form] = document["$defs"][form]
-        guide["report"] = proposal["properties"]["report"]
-
     def compact(value):
         return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-    content = ("Available portable operations:\n" + "\n".join(lines) +
-               "\nModule contracts and conversation history:\n" + compact(inputs) +
-               "\nUser request:\n" + compact(request))
-    if any(option.get("properties", {}).get("kind", {}).get("const") == "clarify"
-           for option in schema.get("oneOf", ())):
-        content += ("\nIf a user decision is missing, ask for it. Otherwise write a proposal using the listed operations. "
-                    "Use cannot-plan only for a specific missing capability and identify that gap. "
-                    "You are preparing a plan for review. You do not need access to the actual resources.")
-    return [{"role": "system", "content": payload["instructions"] + "\nProposal format:\n" + compact(guide)},
-            {"role": "user", "content": content}]
+    return [{"role": "system", "content": payload["instructions"] +
+             "\nReturn a single JSON object. Response schema:\n" + compact(payload["output_schema"])},
+            {"role": "user", "content": compact({**inputs, "request": request})}]
 
 
 def generate(model):
     from llama_cpp import Llama
     payload = json.load(sys.stdin)
-    model_id = "sha256:" + sha256(model)
+    model_id = model_identity(model)
     if payload["schema"] != "command-reasoning/v2" or payload["model"] != model_id:
         raise ValueError("Provider protocol or GGUF digest changed.")
     messages = model_messages(payload)
