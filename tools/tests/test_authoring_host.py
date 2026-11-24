@@ -45,6 +45,55 @@ class AuthoringHostTests(unittest.TestCase):
             self.responses.write_text(json.dumps(responses))
         return start(self.config, canonical(self.request), canonical(self.requirements), self.out)
 
+    def test_provider_can_report_a_limitation_without_emitting_a_candidate(self):
+        explanation = "The catalog has no operation that preserves this resource's retention lock."
+        self.responses.write_bytes(canonical([{"response": {"kind": "cannot-plan", "reason": explanation}}]))
+        state = start(self.config, canonical(self.request), None, self.out, interactive=True)
+        self.assertEqual("provider-cannot-plan", state["status"])
+        self.assertEqual(explanation, state["attempts"][0]["reason"])
+        self.assertNotIn("review", state["attempts"][0])
+        self.assertFalse((self.out / "attempt-000/proposal.json").exists())
+        self.assertEqual("1", self.counter.read_text())
+
+    def test_invalid_dialogue_replies_do_not_reach_the_compiler(self):
+        q = {"id": "owner", "question": "Which owner?"}
+        for index, reply in enumerate(({"kind": "clarify", "questions": []},
+                                       {"kind": "clarify", "questions": [q, q]},
+                                       {"kind": "clarify", "questions": [q], "normalizedIntent": {}},
+                                       {"kind": "cannot-plan", "reason": "  "},
+                                       {"kind": "invented", "reason": "unknown"})):
+            with self.subTest(reply=reply):
+                self.counter.unlink(missing_ok=True)
+                folder = self.root / f"invalid-{index}"
+                self.responses.write_bytes(canonical([{"response": reply}]))
+                state = start(self.config, canonical(self.request), None, folder, interactive=True)
+                self.assertEqual("provider-or-compiler-error", state["status"])
+                self.assertEqual("provider", state["attempts"][0]["failurePhase"])
+                self.assertEqual([], state["pending"])
+                self.assertFalse((folder / "attempt-000/proposal.json").exists())
+                self.assertEqual("1", self.counter.read_text())
+
+    def test_question_only_turn_retains_independent_constraints_without_redisclosure(self):
+        question = {"id": "owner", "question": "Who owns the backup?"}
+        self.responses.write_bytes(canonical([{"response": {"kind": "clarify", "questions": [question]}},
+                                             {"marker": "accept"}]))
+        state = start(self.config, canonical(self.request), canonical(self.requirements), self.out, interactive=True)
+        decision = {"runId": state["runId"], "reviewerId": "operator",
+                    "answers": [{"id": state["pending"][0]["id"], "answer": "Operations"}]}
+        state = resume(self.out, canonical(decision))
+        self.assertEqual("accepted", state["status"])
+        self.assertEqual("requirements-0.json", state["attempts"][1]["requirementsFile"])
+        payload = loads(read(self.out / "attempt-001/provider-request.json"))["input"]
+        self.assertNotIn("forbid-capability", json.dumps(payload))
+        self.assertEqual([{**decision["answers"][0], "question": question["question"]}], payload["userAnswers"])
+
+    def test_invalid_original_context_stops_before_spending_quota(self):
+        for context in ({"knownSystems": {"archive": 42}}, {"unknownField": "archive"}):
+            with self.subTest(context=context), self.assertRaises(HostError):
+                start(self.config, canonical({**self.request, "context": context}), None, self.out, interactive=True)
+        self.assertFalse(self.counter.exists())
+        self.assertFalse(self.out.exists())
+
     def test_version_two_requirements_remain_independent_and_captured(self):
         self.requirements["formatVersion"] = 2
         self.requirements["requirements"][0]["check"] = {
@@ -293,10 +342,11 @@ class AuthoringHostTests(unittest.TestCase):
 
     def test_output_schema_resolves_nested_intent_references_without_repo_paths(self):
         schema = public_contracts(ROOT)["outputSchema"]
-        self.assertEqual({"oneOf": [{"$ref": "#/$defs/intent"}, {"$ref": "#/$defs/structuredIntent"}, {"$ref": "#/$defs/recoveryIntent"}]}, schema["properties"]["normalizedIntent"])
-        reference = schema["$defs"]["intent"]["properties"]["workflows"]["items"]["$ref"]
-        self.assertEqual("#/$defs/intent/$defs/workflow", reference)
-        self.assertNotIn("$id", schema["$defs"]["intent"])
+        authored = loads(read(ROOT / "schemas/ai-proposal.schema.json"))
+        names = [alt["$ref"] for alt in authored["properties"]["response"]["properties"]["normalizedIntent"]["oneOf"]]
+        self.assertEqual([{"$ref": "#/$defs/" + name} for name in names],
+                         schema["properties"]["normalizedIntent"]["oneOf"])
+        self.assertEqual(set(names), set(schema["$defs"]))
         def resolve_refs(node):
             if isinstance(node, dict):
                 if "$ref" in node:
@@ -310,6 +360,24 @@ class AuthoringHostTests(unittest.TestCase):
                 for value in node:
                     resolve_refs(value)
         resolve_refs(schema)
+
+    def test_provider_uses_only_intent_versions_declared_by_the_public_contract(self):
+        schemas = self.root / "schemas"
+        schemas.mkdir()
+        (self.root / "modules").mkdir()
+        (self.root / "modules/example.yaml").write_text("example")
+        proposal = loads(read(ROOT / "schemas/ai-proposal.schema.json"))
+        choice = proposal["properties"]["response"]["properties"]["normalizedIntent"]
+        choice["oneOf"] = [{"$ref": "objects.json"}]
+        (schemas / "ai-proposal.schema.json").write_bytes(canonical(proposal))
+        (schemas / "objects.json").write_bytes(canonical({
+            "properties": {"intentVersion": {"const": "test-version"}, "object": {"$ref": "#/$defs/resource"}},
+            "$defs": {"resource": {"type": "string"}}}))
+        contracts = public_contracts(self.root)
+        self.assertEqual(["test-version"], contracts["intentVersions"])
+        self.assertEqual({"objects.json"}, set(contracts["outputSchema"]["$defs"]))
+        embedded = contracts["outputSchema"]["$defs"]["objects.json"]
+        self.assertEqual("#/$defs/objects.json/$defs/resource", embedded["properties"]["object"]["$ref"])
 
     def test_conditional_requirements_survive_resume_without_candidate_oracle_access(self):
         self.requirements.update(formatVersion=3, confirmation="PROVISIONAL", reviewerId=None)

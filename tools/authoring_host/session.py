@@ -9,26 +9,34 @@ import uuid
 
 from .contracts import (HostError, INSTRUCTIONS, PROMPT_VERSION, canonical, checkpoint, contains_credential, digest,
                         integer, keys, loads, nonblank, preserve_requirements, priced_usage, public_contracts, read,
-                        require, requirements, reservation, save, validate_config, verify_inventory)
+                        require, requirements, reservation, save, validate_config, validate_goal_context, verify_inventory)
 from .transport import capability_catalog, compiler_environment, compiler_fingerprint, credentials, invoke
-from . import investigation
+from . import dialogue, investigation
 
 
 def _now():
     return datetime.now(timezone.utc).isoformat()
 
 
-def start(config, request_data, requirements_data, directory, *, target=None, render=False, expected_settings=None):
+def start(config, request_data, requirements_data, directory, *, target=None, render=False, expected_settings=None, interactive=False):
     config = validate_config(loads(canonical(config)))
     request = loads(request_data)
     keys(request, ("userText",), ("context", "mode"))
     require(isinstance(request["userText"], str) and bool(request["userText"].strip()), "Empty original request")
     original_requirements = requirements(requirements_data, request) if requirements_data is not None else None
+    context = request.get("context", {})
+    require(isinstance(context, dict), "Request context must be an object")
+    requested_target = context.get("target")
+    if requested_target is not None:
+        nonblank(requested_target)
+    if interactive:
+        validate_goal_context(request, config["compiler"]["contracts"])
+        require(not target or not requested_target or target == requested_target, "Conflicting target selections")
     if original_requirements is None:
-        require(target is None and not render and not request.get("context", {}).get("target"),
+        require(target is None and not render and not requested_target,
                 "Target selection requires independently reviewed requirements")
         require("investigation" not in config, "Investigation sessions require independent requirements")
-    require(not render or target, "Rendering requires an explicitly selected target")
+    require(not render or target or requested_target, "Rendering requires an explicitly selected target")
     if target is not None:
         nonblank(target)
     environment = credentials(config)
@@ -54,6 +62,9 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     snapshots = {"config.json": canonical(config), "request.json": request_data,
                  "contracts.json": canonical(contracts),
                  "instructions.txt": INSTRUCTIONS.encode()}
+    use_dialogue = interactive and investigation_config is None
+    if use_dialogue:
+        snapshots["instructions.txt"] = dialogue.INSTRUCTIONS.encode() + b"\n\n" + snapshots["instructions.txt"]
     if requirements_data is not None:
         snapshots["requirements-0.json"] = requirements_data
     if investigation_config is not None:
@@ -85,6 +96,8 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
              "target": target, "render": render, "requirementsFile": "requirements-0.json" if requirements_data is not None else None,
              "attempts": [], "repairCount": 0, "clarificationCount": 0, "answers": [],
              "reservedTokens": 0, "reservedCostMicrousd": 0, "reportedUsage": [], "pending": []}
+    if use_dialogue:
+        state["dialogueProtocol"] = dialogue.VERSION
     for name, data in snapshots.items():
         save(root, name, data, state["files"])
     if investigation_config is not None:
@@ -100,6 +113,21 @@ def start(config, request_data, requirements_data, directory, *, target=None, re
     return _locked_advance(root, state, config, environment, "initial")
 
 
+def _captured_questions(root, state, reviewed_requirements):
+    last = state["attempts"][-1]
+    if last["status"] == "investigation-awaiting-user":
+        return investigation.pending(investigation.load(root, state))
+    if last["status"] == "clarification-requested":
+        require(state.get("dialogueProtocol") == dialogue.VERSION, "Invalid captured dialogue protocol")
+        raw = loads(read(root / last["directory"] / "provider-response.json"))
+        questions = dialogue.read_questions(raw["result"])
+    else:
+        require(_needs_answers(last["review"], reviewed_requirements), "Captured compiler review does not request a user decision")
+        previous = loads(read(root / last["directory"] / "proposal.json"))
+        questions = _pending(previous, reviewed_requirements)
+    return dialogue.scope_questions(questions, len(state["attempts"])) if state.get("dialogueProtocol") else questions
+
+
 def resume(directory, answers_data, requirements_data=None):
     root = Path(directory).absolute()
     with (root / "lock").open("a+b") as lock:
@@ -113,12 +141,9 @@ def resume(directory, answers_data, requirements_data=None):
         last = state["attempts"][-1]
         prior_requirements = loads(read(root / state["requirementsFile"])) if state["requirementsFile"] else None
         investigation_pending = last.get("status") == "investigation-awaiting-user"
-        if investigation_pending:
-            require(state["pending"] == investigation.pending(investigation.load(root, state)), "Pending decisions changed")
-        else:
-            require(_needs_answers(last["review"], prior_requirements), "Captured compiler review does not request a user decision")
-            previous = loads(read(root / last["directory"] / "proposal.json"))
-            require(state["pending"] == _pending(previous, prior_requirements, last["review"]), "Pending decisions changed")
+        direct_question = last["status"] == "clarification-requested"
+        pending = _captured_questions(root, state, prior_requirements)
+        require(state["pending"] == pending, "Pending decisions changed")
         answers = loads(answers_data)
         keys(answers, ("runId", "reviewerId", "answers"))
         require(answers["runId"] == state["runId"], "Answers belong to another run")
@@ -132,7 +157,8 @@ def resume(directory, answers_data, requirements_data=None):
             require(answer["id"] not in answered, "Duplicate clarification answer")
             answered.add(answer["id"])
         require(answered == {p["id"] for p in state["pending"]}, "Answer every pending decision exactly once")
-        require((prior_requirements is None) == (requirements_data is None),
+        require((direct_question and requirements_data is None) or
+                (prior_requirements is None) == (requirements_data is None),
                 "Resume with the same requirements mode as the original session")
         if requirements_data is not None:
             reviewed = requirements(requirements_data, loads(read(root / "request.json")))
@@ -174,7 +200,11 @@ def resume(directory, answers_data, requirements_data=None):
             investigation.persist(root, state, answered_ledger, f"investigation-answers-{number}.json")
         state.update(clarificationCount=number, pending=[], status="ready-to-continue")
         # Reviewer identity is evidence for the operator, never candidate prompt content.
-        state["answers"].extend(answers["answers"])
+        # Mixed compiler and independent review can contain private criteria.
+        if state.get("dialogueProtocol") and (direct_question or prior_requirements is None):
+            state["answers"].extend(dialogue.answered_questions(pending, answers["answers"]))
+        else:
+            state["answers"].extend(answers["answers"])
         checkpoint(root, state)
         return _advance(root, state, config, environment, "clarification")
 
@@ -331,7 +361,7 @@ def _compile(root, state, config, attempt, proposal):
     return review
 
 
-def _pending(proposal, reviewed_requirements, review):
+def _pending(proposal, reviewed_requirements):
     result = []
     report = proposal["response"].get("report", {})
     for index, question in enumerate(report.get("openQuestions", [])):
@@ -371,10 +401,16 @@ def _advance(root, state, config, environment, kind):
     investigation_config = config.get("investigation")
     output_schema = (investigation.output_schema(contracts["outputSchema"], investigation_config)
                      if investigation_config is not None else contracts["outputSchema"])
-    if state["attempts"]:
-        last = state["attempts"][-1]
-        previous = loads(read(root / last["directory"] / "proposal.json"))["response"]
-        feedback = _feedback(last["review"]) if "review" in last else None
+    protocol = state.get("dialogueProtocol")
+    require(protocol in (None, dialogue.VERSION), "Unsupported goal dialogue protocol")
+    if protocol:
+        output_schema = dialogue.output_schema(output_schema)
+    for attempt in reversed(state["attempts"]):
+        name = attempt["directory"] + "/proposal.json"
+        if name in state["files"]:
+            previous = loads(read(root / name))["response"]
+            feedback = _feedback(attempt["review"]) if "review" in attempt else None
+            break
     while True:
         verify_inventory(root, state)
         if investigation_config is not None:
@@ -459,6 +495,16 @@ def _advance(root, state, config, environment, kind):
             if (usage.get("input_tokens", 0) > budget["maxInputTokensPerCall"] or
                     usage.get("output_tokens", 0) > budget["maxOutputTokensPerCall"]):
                 return _finish(root, state, "provider-budget-overrun")
+            reply = value["result"]
+            if protocol and "kind" in reply:
+                if reply["kind"] == "clarify":
+                    questions = dialogue.read_questions(reply)
+                    state["pending"] = dialogue.scope_questions(questions, number + 1)
+                    attempt["status"] = "clarification-requested"
+                    return _finish(root, state, "awaiting-user")
+                attempt["reason"] = dialogue.read_limitation(reply)
+                attempt["status"] = "provider-cannot-plan"
+                return _finish(root, state, "provider-cannot-plan")
             if investigation_config is not None:
                 phase = "investigation"
                 verify_inventory(root, state)
@@ -541,7 +587,8 @@ def _advance(root, state, config, environment, kind):
             if reviewed_requirements is not None and any(i["check"].get("kind") == "unsupported" for i in reviewed_requirements["requirements"]):
                 return _finish(root, state, "representability-blocker")
             if _needs_answers(review, reviewed_requirements):
-                state["pending"] = _pending(proposal, reviewed_requirements, review)
+                questions = _pending(proposal, reviewed_requirements)
+                state["pending"] = dialogue.scope_questions(questions, number + 1) if protocol else questions
                 return _finish(root, state, "awaiting-user")
             if repeated:
                 return _finish(root, state, "unchanged-proposal")

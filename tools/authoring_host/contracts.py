@@ -214,21 +214,55 @@ def contains_credential(data, environment):
     return any(secret.encode() in candidate for secret in environment.values() for candidate in candidates)
 
 
+def validate_goal_context(request, root):
+    """Validate caller-owned context against the installed proposal contract before dispatch."""
+    spec = loads(read(Path(root) / "schemas/ai-proposal.schema.json"))["properties"]["request"]["properties"]
+    if "mode" in request:
+        require(request["mode"] in spec["mode"]["enum"], "Unsupported request mode")
+    context = request.get("context", {})
+    fields = spec["context"]["properties"]
+    keys(context, (), fields)
+    for name, value in context.items():
+        if fields[name].get("type") == "object":
+            require(isinstance(value, dict) and all(isinstance(v, str) for v in value.values()),
+                    "Request context requires a map of string values")
+        else:
+            require(value is None or isinstance(value, str), "Invalid request context value")
+
+
+def _embed_intent(value, name):
+    if isinstance(value, list):
+        return [_embed_intent(item, name) for item in value]
+    if not isinstance(value, dict):
+        return value
+    result = {key: _embed_intent(item, name) for key, item in value.items() if key not in ("$id", "$schema", "$ref")}
+    if "$ref" in value:
+        ref = value["$ref"]
+        require(isinstance(ref, str) and (ref == "#" or ref.startswith("#/")), "Expected a local Intent definition")
+        result["$ref"] = "#/$defs/" + name + ref[1:]
+    return result
+
+
 def public_contracts(root):
     root = Path(root)
     proposal = loads(read(root / "schemas/ai-proposal.schema.json"))
-    def rebase(value, name):
-        if isinstance(value, dict):
-            return {k: ("#/$defs/" + name + v[1:] if k == "$ref" and v.startswith("#/") else rebase(v, name))
-                    for k, v in value.items() if k not in ("$id", "$schema")}
-        return [rebase(v, name) for v in value] if isinstance(value, list) else value
     schema = proposal["properties"]["response"]
-    schema["properties"]["normalizedIntent"] = {"oneOf": [{"$ref": "#/$defs/intent"}, {"$ref": "#/$defs/structuredIntent"}, {"$ref": "#/$defs/recoveryIntent"}]}
-    schema["$defs"] = {name: rebase(loads(read(root / "schemas" / file)), name)
-                       for name, file in (("intent", "intent.schema.json"), ("structuredIntent", "intent-v3.schema.json"), ("recoveryIntent", "intent-v3.1.schema.json"))}
+    definitions = schema.setdefault("$defs", {})
+    versions = []
+    for alternative in schema["properties"]["normalizedIntent"]["oneOf"]:
+        keys(alternative, ("$ref",))
+        name = alternative["$ref"]
+        require(isinstance(name, str) and re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*\.json", name)
+                and name not in definitions, "Expected a distinct local Intent schema")
+        document = loads(read(root / "schemas" / name))
+        version = document["properties"]["intentVersion"]["const"]
+        require(isinstance(version, str) and version not in versions, "Ambiguous Intent version")
+        versions.append(version)
+        definitions[name] = _embed_intent(document, name)
+        alternative["$ref"] = "#/$defs/" + name
     modules = {p.name: p.read_text(encoding="utf-8") for p in sorted((root / "modules").glob("*.yaml"))}
     require(bool(modules), "Public module contracts are missing")
-    result = {"outputSchema": schema, "modules": modules, "proposalSchemaVersion": 1, "reviewSchemaVersion": 2, "intentVersions": ["2.0", "3.0", "3.1"], "requirementsVersions": [1, 2, 3, 4, 5]}
+    result = {"outputSchema": schema, "modules": modules, "proposalSchemaVersion": 1, "reviewSchemaVersion": 2, "intentVersions": versions, "requirementsVersions": [1, 2, 3, 4, 5]}
     require(len(canonical(result)) <= MAX_BYTES, "Public contracts exceed host limit")
     return result
 

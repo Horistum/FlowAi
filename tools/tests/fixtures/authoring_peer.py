@@ -70,6 +70,20 @@ def compiler():
     return code
 
 
+def from_input(node, supplied):
+    """Test peer substitution using only the public provider input."""
+    if isinstance(node, list):
+        return [from_input(item, supplied) for item in node]
+    if isinstance(node, dict):
+        if set(node) == {"fromInput"}:
+            value = supplied
+            for key in node["fromInput"]:
+                value = value[key]
+            return value
+        return {key: from_input(item, supplied) for key, item in node.items()}
+    return node
+
+
 def provider():
     request = json.load(sys.stdin)
     source, counter = Path(sys.argv[2]), Path(sys.argv[3])
@@ -100,6 +114,8 @@ def provider():
     usage = value.pop("usage", {"input_tokens": 10, "output_tokens": 20})
     identity = value.pop("provider", {"id": "test-provider", "model": request["model"], "request_id": str(index)})
     result = value.get("response", {"normalizedIntent": value, "report": {"openQuestions": []}})
+    if "response" in value:
+        result = from_input(result, request["input"])
     if "observationTemplate" in value:
         # Generic deterministic test agent: fill a response from delivered JSON facts.
         # No domain names, target adapters, requirements or filesystem reads are involved.

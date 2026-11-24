@@ -9,7 +9,6 @@ import sys
 import tempfile
 
 from authoring_host.contracts import canonical, digest, loads, read, require, verify_inventory
-from authoring_host.session import start
 from authoring_host.investigation import load
 
 
@@ -59,7 +58,16 @@ def verify(root, cli):
                 replies.write_bytes(canonical([{"observationTemplate": candidate}]))
                 counter.unlink(missing_ok=True)
                 directory = work / (case + "-" + variant)
-                state = start(config, canonical(proposal["request"]), canonical(requirements), directory)
+                config_file, request_file, criteria = (work / n for n in ("config.json", "request.json", "criteria.json"))
+                config_file.write_bytes(canonical(config))
+                request_file.write_bytes(canonical(proposal["request"]))
+                criteria.write_bytes(canonical(requirements))
+                result = subprocess.run([str(cli.with_name("flow-author")), "plan", "--request", str(request_file),
+                                         "--config", str(config_file), "--requirements", str(criteria), "--out", str(directory)],
+                                        cwd=work, capture_output=True, text=True, timeout=180)
+                state = loads(read(directory / "state.json"))
+                require(result.returncode == (0 if variant == "matching" else 4) and
+                        json.loads(result.stdout)["status"] == state["status"], "Unexpected investigation CLI outcome")
                 verify_inventory(directory, state)
                 require(len(state["attempts"]) == 2 and state["investigationSteps"] == 1,
                         "Investigation did not use the shared bounded read/propose cycle")
