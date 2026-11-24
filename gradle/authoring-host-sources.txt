@@ -1,5 +1,6 @@
 authoring_host/__init__.py
 authoring_host/contracts.py
+authoring_host/conversation.py
 authoring_host/dialogue.py
 authoring_host/discovery.py
 authoring_host/discovery_bindings.py

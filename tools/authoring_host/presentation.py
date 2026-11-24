@@ -1,5 +1,17 @@
 """Public session view for interactive clients. Only published artifacts are linked."""
-from .contracts import loads, read
+from .contracts import loads, read, verify_inventory
+
+
+def load_session(directory):
+    state = loads(read(directory / "state.json"))
+    verify_inventory(directory, state)
+    return state
+
+
+def session_exit(status):
+    if status == "accepted":
+        return 0
+    return 3 if status in ("plan-ready-for-review", "awaiting-user", "awaiting-discovery-review") else 4
 
 
 def session_view(directory, state):
@@ -11,6 +23,10 @@ def session_view(directory, state):
     if not state["attempts"]:
         return result
     attempt = state["attempts"][-1]
+    if "diagnostic" in attempt:
+        result["failure"] = attempt["diagnostic"]
+    elif state["status"] == "provider-error":
+        result["failure"] = attempt["status"]
     if "reason" in attempt:
         result["reason"] = attempt["reason"]
     if "discoveryReviewPacket" in attempt:

@@ -87,6 +87,9 @@ not current provider prices. Supply the actual chosen rates and a conscious budg
 }
 ```
 
+Local inference profiles can set both provider token rates and the provider charge
+budget to zero. The call, repair, token and timeout limits still apply.
+
 Only explicitly named credential environment variables reach the adapter. Keep
 keys out of configuration, argv, requests and captures. The provider process gets
 an empty temporary HOME/cwd, a minimal PATH and no ambient account configuration.

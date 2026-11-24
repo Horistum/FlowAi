@@ -50,21 +50,54 @@ def configure(args):
     print("Configuration saved to", args.out)
 
 
+def model_messages(payload):
+    inputs = payload["input"].copy()
+    catalog = inputs.pop("capabilityCatalog")
+    request = inputs.pop("request")
+    lines = []
+    for entry in catalog:
+        details = [entry["capability"], entry["description"]]
+        for field in ("requiredParams", "optionalParams", "requiredSystems", "requiredDesignQuestions",
+                      "notes", "targetImplications"):
+            if entry.get(field):
+                details.append(field + "=" + json.dumps(entry[field], ensure_ascii=False))
+        lines.append(" | ".join(details))
+    schema = payload["output_schema"]
+    proposal = next((option for option in schema.get("oneOf", [schema])
+                     if "normalizedIntent" in option.get("properties", {})), None)
+    # Keep the original public contract for other response protocols. For a
+    # proposal, present the document, workflow and operation forms together.
+    guide = schema if proposal is None else {}
+    if proposal is not None:
+        for name, document in schema["$defs"].items():
+            guide[name] = {key: document[key] for key in ("required", "properties")}
+            guide[name]["workflow"] = document["$defs"]["workflow"]
+            for form in ("step", "statement"):
+                if form in document["$defs"]:
+                    guide[name][form] = document["$defs"][form]
+        guide["report"] = proposal["properties"]["report"]
+
+    def compact(value):
+        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+    content = ("Available portable operations:\n" + "\n".join(lines) +
+               "\nModule contracts and conversation history:\n" + compact(inputs) +
+               "\nUser request:\n" + compact(request))
+    if any(option.get("properties", {}).get("kind", {}).get("const") == "clarify"
+           for option in schema.get("oneOf", ())):
+        content += ("\nIf a user decision is missing, ask for it. Otherwise write a proposal using the listed operations. "
+                    "Use cannot-plan only for a specific missing capability and identify that gap. "
+                    "You are preparing a plan for review. You do not need access to the actual resources.")
+    return [{"role": "system", "content": payload["instructions"] + "\nProposal format:\n" + compact(guide)},
+            {"role": "user", "content": content}]
+
+
 def generate(model):
     from llama_cpp import Llama
     payload = json.load(sys.stdin)
     model_id = "sha256:" + sha256(model)
     if payload["schema"] != "command-reasoning/v2" or payload["model"] != model_id:
         raise ValueError("Provider protocol or GGUF digest changed.")
-    # Put the original problem last, after the public contracts. Every case uses
-    # the same prompt, including its full proposal schema and previous answers.
-    prompt = {**payload["input"]}
-    request = prompt.pop("request")
-    def compact(value):
-        return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
-    messages = [{"role": "system", "content": payload["instructions"] +
-                 "\nReturn a single JSON object. Response schema:\n" + compact(payload["output_schema"])},
-                {"role": "user", "content": compact({**prompt, "request": request})}]
+    messages = model_messages(payload)
     llm = Llama(model_path=str(model), n_ctx=16384, n_threads=min(4, os.cpu_count() or 1),
                 n_threads_batch=min(4, os.cpu_count() or 1), verbose=False)
     answer = llm.create_chat_completion(messages, response_format={"type": "json_object"},
