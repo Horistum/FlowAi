@@ -39,11 +39,12 @@ MODULES = {
     "flow-cli": Path("gradle/cli-sources.txt"),
 }
 TEST_MODULES = ("flow-standard-artifacts", "flow-cli")
+AUTHORING_MANIFEST = Path("gradle/authoring-host-sources.txt")
 BUILD_INPUTS = (
     Path("build.gradle.kts"), Path("settings.gradle.kts"), Path("gradle.properties"),
     Path("gradlew"), Path("gradle/wrapper/gradle-wrapper.jar"),
     Path("gradle/wrapper/gradle-wrapper.properties"),
-    Path("tools/flow-author"), Path("gradle/authoring-host-sources.txt"),
+    Path("tools/flow-author"), AUTHORING_MANIFEST,
     Path("gradle/production-source-ownership.gradle.kts"),
     Path("gradle/production-module.gradle.kts"), Path("gradle/cli-application.gradle.kts"),
     Path("src/main/resources/standard/compatibility/capability-aliases.yaml"), RESOURCE_INVENTORY,
@@ -86,7 +87,10 @@ def prepare_isolated_project(root: Path, destination: Path) -> dict[str, str]:
         raise ValueError("Isolation destination must be empty.")
     ownership = production_sources(root)
     inputs = list(BUILD_INPUTS) + [path for paths in ownership.values() for path in paths]
-    for name in regular_source(root, Path("gradle/authoring-host-sources.txt")).read_text().splitlines():
+    host_sources = regular_source(root, AUTHORING_MANIFEST).read_text().splitlines()
+    if not host_sources or host_sources != sorted(set(host_sources)):
+        raise ValueError("Packaged authoring host sources must be nonempty, unique and sorted")
+    for name in host_sources:
         if not re.fullmatch(r"authoring_host/[a-z_]+\.py", name):
             raise ValueError("Invalid packaged authoring host source")
         inputs.append(Path("tools") / name)
