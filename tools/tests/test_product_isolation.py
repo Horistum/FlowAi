@@ -36,6 +36,8 @@ class ProductIsolationTests(unittest.TestCase):
             if module in isolation.TEST_MODULES:
                 self.write(Path(module) / "src/test/kotlin/Test.kt", f"class Tests{index}\n")
         self.write(Path("test-support/kotlin/Support.kt"), "class Support\n")
+        self.write(isolation.AUTHORING_MANIFEST, "authoring_host/session.py\n")
+        self.write(Path("tools/authoring_host/session.py"), "def start(): pass\n")
         self.write(isolation.RESOURCE_INVENTORY, "modules/fixture.yaml\n")
         self.write(Path("modules/fixture.yaml"), "contract fixture\n")
 
@@ -53,7 +55,8 @@ class ProductIsolationTests(unittest.TestCase):
             self.write(Path(relative), "excluded")
         digests = isolation.prepare_isolated_project(self.root, self.destination)
         self.assertIn("gradle/cli-application.gradle.kts", digests)
-        self.assertEqual(len(isolation.BUILD_INPUTS) + len(isolation.MODULES) + len(isolation.TEST_MODULES) + 2, len(digests))
+        self.assertEqual(len(isolation.BUILD_INPUTS) + len(isolation.MODULES) + len(isolation.TEST_MODULES) + 3, len(digests))
+        self.assertIn("tools/authoring_host/session.py", digests)
         for relative in digests:
             target = self.destination / (isolation.RESOURCE_INPUTS if relative == "modules/fixture.yaml" else Path()) / relative
             self.assertEqual((self.root / relative).read_bytes(), target.read_bytes())

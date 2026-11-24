@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+"""Draft a portable automation plan from a goal using a configured proposal provider."""
+import argparse
+import json
+from pathlib import Path
+import sys
+
+sys.dont_write_bytecode = True
+
+from authoring_host.contracts import HostError, canonical, loads, read, verify_inventory
+from authoring_host.presentation import session_view
+from authoring_host.session import resume, review_discovery, start
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    plan = commands.add_parser("plan", help="Propose and compile a plan for the original goal")
+    source = plan.add_mutually_exclusive_group(required=True)
+    source.add_argument("goal", nargs="?", help="Original goal in natural language")
+    source.add_argument("--request", type=Path, help="Original Flow request JSON including optional context and mode")
+    plan.add_argument("--config", required=True, help="Reusable provider, compiler and budget configuration")
+    plan.add_argument("--out", required=True, type=Path, help="New session directory")
+    plan.add_argument("--requirements", help="Independent criteria bound to the original goal")
+    plan.add_argument("--target", help="Explicit target for an independently checked plan")
+    plan.add_argument("--render", action="store_true")
+    answer = commands.add_parser("answer", help="Answer the pending decisions and continue the same plan")
+    answer.add_argument("--run", required=True, type=Path)
+    answer.add_argument("--reviewer", required=True)
+    answer.add_argument("--answer", nargs=2, action="append", required=True, metavar=("ID", "TEXT"))
+    answer.add_argument("--requirements", help="Reconfirmed criteria if the session started with criteria")
+    status = commands.add_parser("status", help="Read a saved session and its outstanding questions")
+    status.add_argument("--run", required=True, type=Path)
+    discovery = commands.add_parser("review-discovery", help="Review a captured discovery candidate")
+    discovery.add_argument("--run", required=True, type=Path)
+    discovery.add_argument("--review", required=True, type=Path)
+    args = parser.parse_args()
+    try:
+        if args.command == "plan":
+            directory = args.out.absolute()
+            request = (read(args.request) if args.request else
+                       canonical({"userText": args.goal, "context": {}, "mode": "DRAFT"}))
+            state = start(loads(read(args.config)), request, read(args.requirements) if args.requirements else None,
+                          directory, target=args.target, render=args.render, interactive=True)
+        else:
+            directory = args.run.absolute()
+            if args.command == "answer":
+                answers = {"runId": loads(read(directory / "state.json"))["runId"], "reviewerId": args.reviewer,
+                           "answers": [{"id": key, "answer": value} for key, value in args.answer]}
+                state = resume(directory, canonical(answers), read(args.requirements) if args.requirements else None)
+            elif args.command == "review-discovery":
+                state = review_discovery(directory, read(args.review))
+            else:
+                state = loads(read(directory / "state.json"))
+                verify_inventory(directory, state)
+        print(json.dumps(session_view(directory, state), ensure_ascii=False, indent=2))
+        if state["status"] == "accepted":
+            return 0
+        return 3 if state["status"] in ("plan-ready-for-review", "awaiting-user", "awaiting-discovery-review") else 4
+    except HostError as error:
+        print(str(error), file=sys.stderr)
+    except FileExistsError:
+        print("Choose a new session directory for each plan.", file=sys.stderr)
+    except (OSError, ValueError, KeyError, TypeError):
+        print("Cannot read authoring inputs or complete the session. Check the paths and retained state.", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

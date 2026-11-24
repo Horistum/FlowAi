@@ -9,7 +9,7 @@ Both forms are supported, in any order relative to positional inputs:
 ```sh
 flow-core intent --out ./result --target jenkins ./request.intent.yaml
 flow-core intent ./request.intent.yaml --target=jenkins --out=./result
-flow-core normalize --app shop build --explain and test
+flow-core normalize --scenario-pack --app shop build --explain and test
 ```
 
 Quote values containing spaces. The first `=` separates a long option from its value;
@@ -19,7 +19,7 @@ text starting with `-` can be passed literally:
 
 ```sh
 flow-core intent --out ./result -- --request.intent.yaml
-flow-core normalize -- --literal text
+flow-core normalize --scenario-pack -- --literal text
 ```
 
 | Command | Positional input | Value options | Flags |

@@ -13,7 +13,7 @@ class ReviewedAiProposalCliConvergenceTests {
     fun normalizeLowerUsesTheConvergedCompilerAndReturnsTargetNeutralPlanning() {
         val result = executeCli(
             arrayOf(
-                "normalize",
+                "normalize", "--scenario-pack",
                 "Build and test the orders service.",
                 "--lower"
             )

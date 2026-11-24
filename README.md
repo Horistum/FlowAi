@@ -1,5 +1,10 @@
 # Horistum
 
+Describe an automation goal with `flow-author plan`. Horistum asks the configured
+provider for a portable proposal, checks it with the compiler and shows the
+operations, parameters and dependencies for review. A missing decision can be
+answered in the same session. [Plan from plain text](docs/GOAL_AUTHORING.md).
+
 Start with the [current architecture](docs/ARCHITECTURE.md) and the
 [active-roadmap route](.flow-agent/README.md#active-roadmap-route).
 
@@ -167,10 +172,11 @@ Render a partial Tekton artifact bundle:
 ./gradlew run --args="intent examples/intent/build-test-deploy.intent.yaml --target tekton --render --out generated/tekton"
 ```
 
-Normalize natural language into standard intent:
+Draft a portable plan from a goal using the installed product and a provider configuration:
 
 ```bash
-./gradlew run --args='normalize "Deploy billing-api to Kubernetes. Require approval in production and verify health after deploy." --target jenkins --strict --render --out generated/ai-deploy'
+flow-author plan 'Retire the preview environment after backup and approval. Preserve the shared network.' \
+  --config "$HOME/flow-provider.json" --out preview-review
 ```
 
 List scenario packs:

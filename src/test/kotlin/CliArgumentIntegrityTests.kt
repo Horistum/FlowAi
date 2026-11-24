@@ -33,8 +33,8 @@ class CliArgumentIntegrityTests {
     }
 
     @Test fun normalizationPreservesTextAfterInterspersedOptions() {
-        val baseline = executeCli(arrayOf("normalize", "build", "and", "test", "--app", "shop", "--explain"))
-        val reordered = executeCli(arrayOf("normalize", "--app", "shop", "build", "--explain", "and", "test"))
+        val baseline = executeCli(arrayOf("normalize", "--scenario-pack", "build", "and", "test", "--app", "shop", "--explain"))
+        val reordered = executeCli(arrayOf("normalize", "--scenario-pack", "--app", "shop", "build", "--explain", "and", "test"))
         assertIs<CliExecutionResult.Completed>(reordered)
         assertEquals(json(baseline), json(reordered))
     }

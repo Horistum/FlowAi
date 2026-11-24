@@ -1,0 +1,34 @@
+"""Public session view for interactive clients. Only published artifacts are linked."""
+from .contracts import loads, read
+
+
+def session_view(directory, state):
+    request = loads(read(directory / "request.json"))
+    result = {"goal": request["userText"], "status": state["status"], "provider": state["provider"],
+              "evidenceKind": state["evidenceKind"]}
+    if state["pending"]:
+        result["questions"] = state["pending"]
+    if not state["attempts"]:
+        return result
+    attempt = state["attempts"][-1]
+    if "reason" in attempt:
+        result["reason"] = attempt["reason"]
+    if "discoveryReviewPacket" in attempt:
+        result["discoveryReviewFile"] = str(directory / attempt["discoveryReviewPacket"])
+    if "review" not in attempt:
+        return result
+    review = attempt["review"]
+    result.update({key: review[key] for key in
+                   ("semanticAcceptance", "requestFidelity", "renderAuthorized", "diagnostics", "targetDisposition")})
+    result["graphDigest"] = review.get("graphDigest")
+    folder = directory / attempt["directory"]
+    result["reviewFile"] = str(folder / "review/proposal-review.json")
+    if review["semanticAcceptance"] == "accepted":
+        proposal = folder / "proposal.json"
+        response = loads(read(proposal))["response"]
+        result.update(proposalFile=str(proposal), candidateIntent=response["normalizedIntent"],
+                      reviewNotes={key: response["report"][key] for key in
+                                   ("assumptions", "risks", "openQuestions", "missingDecisions", "explanation")
+                                   if response["report"].get(key)},
+                      planFile=str(folder / "review/workflow-execution-plan-set.json"))
+    return result

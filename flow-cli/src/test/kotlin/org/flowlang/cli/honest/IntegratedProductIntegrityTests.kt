@@ -45,10 +45,20 @@ class IntegratedProductIntegrityTests {
         }
     }
 
+    @Test fun freeTextDoesNotImplicitlySelectAScenarioOrPublishItsPlan() = workspace { root ->
+        val destination = File(root, "plan")
+        val result = assertIs<CliExecutionResult.Rejected>(
+            executeCli(arrayOf("normalize", "Retire my environment", "--out", destination.path))
+        )
+        assertEquals(CliDiagnosticCode.INVALID_INPUT, result.diagnostic.code)
+        assertContains(result.diagnostic.message, "flow-author plan")
+        assertFalse(destination.exists())
+    }
+
     @Test fun normalizationOptionsPublishVerifiableBytesAndTamperingIsDetected() = workspace { root ->
         val source = File(root, "requirements.txt").apply { writeText("build and test") }
         val destination = File(root, "normalized")
-        val result = assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("normalize",
+        val result = assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("normalize", "--scenario-pack",
             "--out", destination.path, "--app=shop", "--file", source.path)))
         assertEquals(0, result.exitCode)
         val report = ArtifactPublicationVerifier().verify(destination)

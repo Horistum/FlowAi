@@ -911,6 +911,14 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  goalAuthoring:
+    selectedSlice: AI-A3-S4.1
+    baselineMain: 833b8f0a880b14b9658b546596c0d5877dc8ed77
+    predecessorPullRequest: 278
+    entryPoint: tools/flow-author
+    contract: docs/GOAL_AUTHORING.md
+    liveModelEvaluated: false
+    nextSlice: S4-goal-authoring-live-evaluation
   independentPlanningPortfolio:
     selectedSlice: AI-A3-S3.10
     workPackage: .flow-agent/work-packages/independent-planning-portfolio.yaml

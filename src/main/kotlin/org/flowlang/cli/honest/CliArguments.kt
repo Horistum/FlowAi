@@ -13,7 +13,7 @@ enum class CliValueOption(val token: String) {
 enum class CliFlagOption(val token: String) {
     STRICT("--strict"), FAIL_ON_UNSUPPORTED("--fail-on-unsupported"), RENDER("--render"),
     LOWER("--lower"), PIPELINE("--pipeline"), EXPLAIN("--explain"), REPAIR("--repair"),
-    MARKDOWN("--markdown"), EXAMPLES("--examples")
+    SCENARIO_PACK("--scenario-pack"), MARKDOWN("--markdown"), EXAMPLES("--examples")
 }
 
 /** A detached parse result. Raw argv is never searched again by command implementations. */
@@ -119,7 +119,7 @@ internal object ProductCliArguments {
         "normalize" to CliArgumentSchema(
             setOf(CliValueOption.CONTRACTS, CliValueOption.OUT, CliValueOption.TARGET, CliValueOption.FILE, CliValueOption.APP,
                 CliValueOption.ENVIRONMENT, CliValueOption.REPO, CliValueOption.CHANNEL),
-            targetFlags + setOf(CliFlagOption.LOWER, CliFlagOption.PIPELINE, CliFlagOption.EXPLAIN, CliFlagOption.REPAIR),
+            targetFlags + setOf(CliFlagOption.SCENARIO_PACK, CliFlagOption.LOWER, CliFlagOption.PIPELINE, CliFlagOption.EXPLAIN, CliFlagOption.REPAIR),
             maxPositionals = Int.MAX_VALUE, positionalAlternative = CliValueOption.FILE, requireSource = true,
             exclusiveFlags = setOf(CliFlagOption.STRICT, CliFlagOption.EXPLAIN, CliFlagOption.REPAIR)),
         "diagnostics" to CliArgumentSchema(setOf(CliValueOption.OUT)),

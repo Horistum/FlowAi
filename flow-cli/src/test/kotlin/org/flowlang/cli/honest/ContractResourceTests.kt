@@ -189,7 +189,7 @@ class ContractResourceTests {
     @Test fun maintenanceSafetyUsesSelectedNotesAndRejectsInvalidOverrides() {
         val request = "Run Kubernetes maintenance in namespace payments with dry-run."
         for ((environment, requiredField) in listOf("prod" to "safety.maintenance.window", "prod-eu" to "safety.environment", "dev" to null)) {
-            val result = assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("normalize", request, "--environment", environment)))
+            val result = assertIs<CliExecutionResult.Completed>(executeCli(arrayOf("normalize", "--scenario-pack", request, "--environment", environment)))
             val report = result.presentation.items.filterIsInstance<CliPresentationItem.Section>()
                 .single { it.title == "AI INTENT NORMALIZATION REPORT" }.value
             val fields = Json.mapper.valueToTree<com.fasterxml.jackson.databind.JsonNode>(report)["openQuestions"].map { it["field"].asText() }
@@ -199,7 +199,7 @@ class ContractResourceTests {
         ContractResourceResolver().open().use { external ->
             File(external.root, "standard/notes/packages/safety-core.yaml").writeText("invalid: [notes")
             val out = File(external.root, "output")
-            val rejected = executeCli(arrayOf("normalize", request, "--environment", "prod", "--contracts", external.root.path, "--out", out.path))
+            val rejected = executeCli(arrayOf("normalize", "--scenario-pack", request, "--environment", "prod", "--contracts", external.root.path, "--out", out.path))
             assertIs<CliExecutionResult.Rejected>(rejected)
             assertFalse(out.exists())
             assertTrue(rejected.artifacts.isEmpty())

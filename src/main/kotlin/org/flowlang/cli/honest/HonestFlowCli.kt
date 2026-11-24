@@ -353,6 +353,10 @@ private fun runNormalizeCommand(
         ),
         mode
     )
+    require(args.has(CliFlagOption.SCENARIO_PACK)) {
+        "Use flow-author plan with your goal, --config <provider.json> and --out <new-directory>. " +
+            "For the heuristic scenario normalizer, select normalize --scenario-pack."
+    }
     val response = ScenarioPackIntentNormalizer(StandardEnvironmentSafetyPolicyNotes.policy(contractRoot)).normalize(request)
     output.section("AI INTENT NORMALIZATION REPORT", response.report)
     output.section("NORMALIZED INTENT JSON", response.normalizedIntent)
@@ -938,6 +942,8 @@ private fun printHelp(output: CliOutputCollector, additionalCommands: Set<String
     output.text("Flow CLI commands: ${(productCommands + additionalCommands).sorted().joinToString()}")
     output.text("Contract commands use packaged resources; --contracts <root> explicitly replaces the complete resource set.")
     output.text("Target materialization requires --target. Rendering additionally requires --render.")
+    output.text("flow-author plan <goal> --config <provider.json> --out <new-directory> requests a portable plan and reports pending decisions.")
+    output.text("normalize --scenario-pack explicitly enables the legacy heuristic normalizer.")
     output.text("proposal <request.json> [--requirements <reviewed-requirements.json>] [--out <new-directory>] [--target <target>] [--render] imports an external AI proposal; its request may also declare the explicit target.")
     output.text("outcomes <source> --source-kind intent|proposal --requirements <file> [--observations <file> --trust <file>] [--evaluated-at <instant>] [--out <new-directory>] assesses declared operation postconditions; it does not execute work.")
     output.text("preconditions <source> --source-kind intent|proposal --requirements <file> [--observations <file> --trust <file>] [--evaluated-at <instant>] [--out <new-directory>] reassesses existing-resource state, ownership and instance identity; it does not authorize execution.")
