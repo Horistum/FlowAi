@@ -146,3 +146,8 @@ authoring. Independent review measures named objects, parameters and direct
 dependencies on fresh goals. The next slice addresses missing operations and
 incorrect arguments during goal review before target selection.
 [Evaluation and reproduction](../docs/GOAL_AUTHORING_GROUNDING.md)
+
+After PR #281, S4.4 checks the complete operation list against a saved candidate.
+An executable export requires the compiler's fidelity decision and the target
+adapter's executable receipt. The next slice tests whether a provider can author
+supported module bindings from new goals. [Check and export a saved goal](../docs/GOAL_AUTHORING.md#check-the-complete-operation-list)

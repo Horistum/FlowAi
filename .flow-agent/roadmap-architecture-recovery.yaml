@@ -1,5 +1,5 @@
 roadmap: "ARCHITECTURE-RECOVERY"
-revision: 97
+revision: 98
 status: "active"
 purpose: "Restore Flow to one target-neutral compiler architecture, move concrete target implementations behind enforced adapter boundaries, and close all 22 findings from the project-wide production-code audit without turning them into 22 disconnected roadmap items."
 
@@ -31,12 +31,12 @@ currentDecision:
 authoringDevelopment:
   selectedSlice: AI-A3
   investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
-  selectedFollowup: docs/GOAL_AUTHORING_GROUNDING.md
+  selectedFollowup: docs/GOAL_AUTHORING.md
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
-  selectedFollowupSlice: AI-A3-S4.3
-  selectedFollowupCorrection: Publish the executable capability contracts to authors and measure independently checked operation graphs and clarification on new goals.
-  previousFollowupCorrection: The terminal conversation and local first-turn measurements merged in PR 280 at 741729d693686bc8f11226cb8208b9e46ffe9745.
-  nextFollowupSlice: S4-independent-goal-review-before-target-selection
+  selectedFollowupSlice: AI-A3-S4.4
+  selectedFollowupCorrection: Check the full reviewer-declared operation list on a saved goal and export only the executable file authorized by the installed adapter.
+  previousFollowupCorrection: The local model comparison and partial operation checks merged in PR 281 at 2c0f5760fc169921d7ee47fe7fba4ba0545bebac.
+  nextFollowupSlice: S4-author-supported-module-bindings-on-held-out-goals
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active

@@ -8,6 +8,8 @@ authoring_host/discovery_review.py
 authoring_host/inventory_provenance.py
 authoring_host/investigation.py
 authoring_host/operation_check.py
+authoring_host/operation_expectations.py
 authoring_host/presentation.py
 authoring_host/session.py
+authoring_host/target_output.py
 authoring_host/transport.py

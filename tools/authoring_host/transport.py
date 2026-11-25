@@ -93,8 +93,11 @@ def compiler_environment():
 
 
 def capability_catalog(config):
-    result = invoke(config["compiler"]["argv"] + ["catalog"], b"", config["budget"]["timeoutSeconds"],
-                    compiler_environment())
+    return read_capability_catalog(config["compiler"]["argv"], config["budget"]["timeoutSeconds"])
+
+
+def read_capability_catalog(command, timeout):
+    result = invoke(command + ["catalog"], b"", timeout, compiler_environment())
     marker = b"===== FLOW STANDARD INTENT CATALOG =====\n"
     require(result["returncode"] == 0 and not result["failure"] and result["stdout"].startswith(marker),
             "Compiler did not publish the capability catalog")

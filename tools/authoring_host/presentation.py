@@ -1,5 +1,38 @@
 """Public session view for interactive clients. Only published artifacts are linked."""
+import json
+
 from .contracts import loads, read, verify_inventory
+
+
+def display_value(value):
+    text = json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
+    # A provider can return arbitrary strings, including terminal control characters.
+    printable = "".join(char if char.isprintable() else ascii(char)[1:-1] for char in text)
+    return printable[1:-1] if isinstance(value, str) else printable
+
+
+def describe_selector(selector):
+    return " ".join([display_value(selector["capability"]), *(
+        f"{display_value(k)}={display_value(v)}" for k, v in selector["parameters"].items())])
+
+
+def child_blocks(statement):
+    return [key for key in ("then", "otherwise", "body", "onFailure") if isinstance(statement.get(key), list)]
+
+
+def proposed_arguments(intent, capabilities):
+    """Describe the authored literals for a mismatch without using them to judge fidelity."""
+    def operations(statements):
+        for statement in statements:
+            if statement.get("capability") in capabilities:
+                yield statement
+            for key in child_blocks(statement):
+                yield from operations(statement[key])
+
+    for workflow in intent["workflows"]:
+        for step in operations(workflow.get("body", workflow.get("steps", []))):
+            yield (f"{display_value(workflow['name'])}/{display_value(step['id'])} "
+                   + describe_selector({"capability": step["capability"], "parameters": step.get("params", {})}))
 
 
 def load_session(directory):

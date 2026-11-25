@@ -92,6 +92,42 @@ flow-author check --run backup-review \
 
 Each `--expect` requires at least one operation matching the named capability and each literal string argument you supply. Use `flow-core catalog` to see operation and parameter names. Leave off parameters to check the operation alone. Field names matter: a check for `resource` requires that specific field. Use `--in-order` for prerequisite relationships and `--forbid` for exclusions. The installed compiler checks the saved graph without a model call and prints a result for each expectation. Exit 0 means the listed expectations passed. Other operations and arguments can still be present. A violated requirement returns 4. The original session remains available for further checks.
 
+### Check the complete operation list
+
+Add `--only` when the plan should contain exactly the operation occurrences you list.
+
+```sh
+flow-author check --run backup-review --only \
+  --expect BACKUP subject=sensor-feed destination=mirror-42 \
+  --expect VERIFY resource=sensor-feed --in-order
+```
+
+An extra checkout fails even if the backup and verification match. A second backup to a different destination also fails. On a literal mismatch the terminal shows the arguments from the relevant proposed steps so you can see which resource the provider used. Each occurrence of a capability may have its own parameters. To distinguish two objects, give different values for a shared field. To require two identical operations, repeat the same expectation and omit `--in-order`. The checks count catalog operations and compare the specified string fields. Unlisted parameters, runtime effects and other parts of the original goal still need review. Conditional execution can require a path-specific requirements document.
+
+### Export a target file
+
+To try an executable example immediately after installing the CLI, run this from the checkout. The repository supplies a proposal with a native Git checkout and Docker build. This uses your installed compiler and needs no model setup:
+
+```sh
+flow-author export --proposal examples/proposals/accepted.json --target jenkins --out generated \
+  --expect CHECKOUT branch=main --expect BUILD_IMAGE --in-order
+```
+
+Open `generated/Jenkinsfile` to inspect the checkout URL and Docker build. For your own chat, replace `--proposal examples/proposals/accepted.json` with `--run` and the session directory printed by the chat. Supply your own expected operations.
+
+Export uses the same complete operation check. If the saved candidate contains approved module actions for the target, the compiler can produce a file such as `generated/Jenkinsfile`. Existing files are preserved. A session started with an independent requirements document reuses that document automatically. For that session omit the expectation flags. Export reads the saved proposal without calling the model or running the pipeline.
+
+| Exit | What to do |
+| --- | --- |
+| 0 | Open the printed target file and review it for your environment. |
+| 2 | Correct the input, target name or destination reported by the command. |
+| 3 | Read the adapter's explanation or resolve the outstanding review. A portable operation may still need a supported module action. |
+| 4 | Inspect the violated expectations or compiler diagnostics. A change to the requested work needs a new review. |
+
+For a checkout with a native Git binding, the GitHub Actions adapter writes `github-actions.yml`. For the same checkout the Tekton renderer reports that its certification covers review evidence. Export returns 3 and prints the renderer finding.
+
+For example, on the saved Qwen draft for `create pipeline for aks with terraform`, a reviewer who specified `--expect PROVISION resource=aks tool=terraform` saw four additional operations: build, test, deploy and verify. The proposed provisioning step put `terraform` in `target` and left `tool` absent. The compiler withheld target output. The words “AKS” and “Terraform” in a draft do not establish an Azure provider binding or a working Terraform configuration.
+
 ## Machine-readable commands
 
 Use `flow-author plan`, `answer` and `status` for automation. They retain their JSON

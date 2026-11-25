@@ -116,8 +116,73 @@ def verify(root, cli, work, config, sequence, counter):
             and "resource" in operations["VERIFY"]["optionalParams"]
             and "system" in operations["VERIFY"]["bindingOnlyParams"],
             "Installed provider request must carry the executable catalog and binding restrictions")
+    verify_export(run, work, config_file, root, author, sequence, counter)
     verify_dialogue(run, work, config_file, structured, sequence, counter)
     verify_conversation(author, work, config_file, structured, sequence, counter)
+
+
+def verify_export(run, work, config, root, author, sequence, counter):
+    def export(session, target, output, flags, expected, message):
+        result = subprocess.run([str(author), "export", "--run", str(session), "--target", target, "--out", str(output),
+                                 *flags], capture_output=True, text=True, cwd=work, timeout=180)
+        require(result.returncode == expected and message in result.stdout + result.stderr,
+                f"Expected export {expected} with {message!r}. Got {result.returncode}: {result.stdout} {result.stderr}")
+
+    # The same saved session can violate scope or pass scope but lack target support.
+    output = work / "withheld-output"
+    deploy = work / "deploy"
+    export(deploy, "jenkins", output, ["--expect", "DEPLOY"], 4, "VIOLATED excluded operation: APPROVE")
+    export(deploy, "jenkins", output, ["--expect", "APPROVE", "--expect", "DEPLOY", "--expect", "VERIFY",
+                                       "--in-order"], 3, "Target file withheld: review_only")
+    require(not output.exists(), "An incomplete operation list or a review document reached the destination")
+
+    bound = loads(read(root / "examples/proposals/accepted.json"))
+    sequence([bound])
+    folder = work / "bound-session"
+    run(3, "plan", bound["request"]["userText"], "--out", folder, "--config", config)
+    original_state = read(folder / "state.json")
+    flags = ["--expect", "CHECKOUT", "branch=main", "--expect", "BUILD_IMAGE", "--in-order"]
+    output = work / "pipeline"
+    export(folder, "jenkins", output, ["--expect", "CHECKOUT", "branch=release", "--expect", "BUILD_IMAGE"],
+           4, "branch=main")
+    export(folder, "unknown-target", output, flags, 2, "PROPOSAL_TARGET_UNKNOWN")
+    require(not output.exists(), "A rejected target export created files")
+    export(folder, "jenkins", output, flags, 0, "Target file:")
+    artifact = output / "Jenkinsfile"
+    require(list(output.iterdir()) == [artifact] and "git branch: 'main'" in artifact.read_text() and
+            'docker.build(' in artifact.read_text(), "Expected the executable adapter output")
+    standalone = work / "standalone-output"
+    direct = subprocess.run([str(author), "export", "--proposal", str(root / "examples/proposals/accepted.json"),
+                             "--target", "jenkins", "--out", str(standalone), *flags], cwd=work, capture_output=True)
+    require(direct.returncode == 0 and (standalone / "Jenkinsfile").read_bytes() == artifact.read_bytes(),
+            "Standalone proposal export differed from the same saved plan")
+    checkout = copy.deepcopy(bound)
+    checkout["request"]["userText"] = "Check out the public Hello-World repository on main."
+    workflow = checkout["response"]["normalizedIntent"]["workflows"][0]
+    workflow["steps"] = workflow["steps"][:1]
+    checkout_file = work / "checkout-only.json"
+    checkout_file.write_bytes(canonical(checkout))
+    # An executable manifest can still have a review-only renderer.
+    for target, code, message in (("github-actions", 0, "Target file:"), ("tekton", 3, "certified only for review evidence")):
+        target_dir = work / target
+        result = subprocess.run([str(author), "export", "--proposal", str(checkout_file), "--target", target,
+                                 "--out", str(target_dir), "--expect", "CHECKOUT"], cwd=work, capture_output=True, text=True)
+        require(result.returncode == code and message in result.stdout and target_dir.exists() == (code == 0),
+                f"Unexpected {target} export: {result.returncode} {result.stdout} {result.stderr}")
+    artifact.write_text("existing user pipeline")
+    export(folder, "jenkins", output, flags, 2, "Output already exists")
+    require(artifact.read_text() == "existing user pipeline" and read(folder / "state.json") == original_state and
+            counter.read_text() == "1", "Export changed existing work, the session or provider quota")
+
+    # A run with richer confirmed requirements keeps its exact, original criteria.
+    reviewed = loads(read(root / "examples/proposals/faithful.json"))
+    sequence([reviewed])
+    retained = work / "reviewed-deployment"
+    run(0, "plan", reviewed["request"]["userText"], "--out", retained,
+        "--config", config, "--requirements", root / "examples/proposals/reviewed-requirements.json")
+    export(retained, "jenkins", work / "unused", [], 3, "SATISFIED requirement: approval-first")
+    export(retained, "jenkins", work / "unused", ["--expect", "DEPLOY"], 2, "without replacing")
+    require(not (work / "unused").exists() and counter.read_text() == "1", "Export replaced the retained review")
 
 
 def verify_dialogue(run, work, config_file, structured, sequence, counter):

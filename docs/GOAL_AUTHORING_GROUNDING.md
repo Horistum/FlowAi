@@ -74,4 +74,8 @@ flow-core proposal trial/certificate/attempt-000/proposal.json \
 
 Repeat with `validate-backup` in a fresh session. For `inventory-name`, set `maxCalls` to 2 and leave repairs at zero. Inspect the pending question first, then reopen the session with `flow-author chat --run trial/inventory-name` and enter the predefined answer only if the question requests the omitted name. Compare the exact proposed steps and canonical graph with the case file, including extra parameters and steps. No model call is needed for compiler review.
 
-The next roadmap slice makes missing operations, unrequested work, incorrect argument roles and ordering visible to the person reviewing the goal before target selection. These measurements establish a failure mode for two local models. General-purpose authoring and held-out target rendering remain open.
+The [saved-plan review and export](GOAL_AUTHORING.md#check-the-complete-operation-list) checks independently listed operations, literal argument roles and ordering before producing a target file. These measurements establish a failure mode for two local models. General-purpose authoring and held-out target rendering remain open.
+
+### Saved-plan review on a new goal
+
+A fresh Qwen3.5-4B operations session received “Synchronize data from incoming-ledger to retained-ledger. After synchronization, verify the health of retained-ledger.” Before inference, the reviewer specified `DATA_SYNC source=incoming-ledger destination=retained-ledger` followed by `VERIFY resource=retained-ledger`, with no additional operation. One provider call produced a compilable draft using `SYNC` followed by `VERIFY subject=retained-ledger target=retained-ledger`. The installed complete-list check returned 4. It exposed the unexpected operation and printed the proposed verification arguments. This single trial measures detection on that draft.

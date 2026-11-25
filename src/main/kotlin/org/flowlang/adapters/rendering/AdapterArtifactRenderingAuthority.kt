@@ -52,31 +52,34 @@ class AdapterArtifactRenderingAuthority(
         requireCompletePortfolio = documentOverride == null
     )
 
-    fun render(manifest: TargetManifest): AdapterArtifactRenderingBundle {
-        val record = certifiedRecords[manifest.target]
-            ?: throw AdapterArtifactRenderingBlockedException(
-                manifest.target,
-                listOf("No certified adapter artifact rendering record exists.")
-            )
-        val initialReadiness = TargetRenderPolicy.evaluate(manifest)
-        if (initialReadiness.mode == TargetRenderMode.FAIL_FAST) {
-            throw AdapterArtifactRenderingBlockedException(
-                manifest.target,
-                initialReadiness.findings.map { "${it.nodeId}:${it.status}:${it.reason}" }
-            )
-        }
-
-        val executable = initialReadiness.mode == TargetRenderMode.EXECUTABLE &&
-            record.status == AdapterArtifactRenderingClaimStatus.SUPPORTED
-        val effectiveReadiness = if (executable) {
-            initialReadiness
+    fun readiness(manifest: TargetManifest): TargetRenderReadiness {
+        val initial = TargetRenderPolicy.evaluate(manifest)
+        if (initial.mode == TargetRenderMode.FAIL_FAST) return initial
+        val record = certifiedRecord(manifest)
+        return if (initial.mode == TargetRenderMode.EXECUTABLE && record.status == AdapterArtifactRenderingClaimStatus.SUPPORTED) {
+            initial
         } else {
-            reviewReadiness(initialReadiness, record)
+            reviewReadiness(initial, record)
         }
+    }
+
+    private fun certifiedRecord(manifest: TargetManifest): AdapterArtifactRenderingRecord =
+        certifiedRecords[manifest.target] ?: throw AdapterArtifactRenderingBlockedException(
+            manifest.target, listOf("No certified adapter artifact rendering record exists.")
+        )
+
+    fun render(manifest: TargetManifest): AdapterArtifactRenderingBundle {
+        val effectiveReadiness = readiness(manifest)
+        if (effectiveReadiness.mode == TargetRenderMode.FAIL_FAST) {
+            throw AdapterArtifactRenderingBlockedException(
+                manifest.target, effectiveReadiness.findings.map { "${it.nodeId}:${it.status}:${it.reason}" }
+            )
+        }
+        val record = certifiedRecord(manifest)
         val format: AdapterArtifactFormat
         val kind: AdapterRenderedArtifactKind
         val content: String
-        if (executable) {
+        if (effectiveReadiness.mode == TargetRenderMode.EXECUTABLE) {
             val executableFormat = record.executable
                 ?: error("Certified executable renderer '${record.target}' has no artifact format.")
             val provider = projections.requireProvider(record.target)

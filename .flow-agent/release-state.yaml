@@ -911,6 +911,16 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  goalAuthoringReview:
+    selectedSlice: AI-A3-S4.4
+    baselineMain: 2c0f5760fc169921d7ee47fe7fba4ba0545bebac
+    predecessorPullRequest: 281
+    entryPoints: [flow-author check --only, flow-author export]
+    report: docs/GOAL_AUTHORING.md
+    executableProof: Installed authoring host with bound examples on Jenkins and GitHub Actions. The Tekton renderer withheld executable output.
+    heldOutRenderVerified: false
+    recoveryClosure: false
+    nextSlice: S4-author-supported-module-bindings-on-held-out-goals
   goalAuthoringGrounding:
     selectedSlice: AI-A3-S4.3
     baselineMain: 741729d693686bc8f11226cb8208b9e46ffe9745

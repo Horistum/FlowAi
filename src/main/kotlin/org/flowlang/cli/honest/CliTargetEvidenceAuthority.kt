@@ -232,42 +232,32 @@ class CliTargetEvidenceAuthority(
             TargetAdapterContractAnalyzer(targets).analyze(plan, target, strict = strict),
             readiness
         )
-        val renderReadiness = TargetRenderPolicy.evaluate(manifest)
+        // A renderer's certification can further narrow an otherwise executable manifest.
+        val renderReadiness = if (renderRequested) renderingAuthority.readiness(manifest) else TargetRenderPolicy.evaluate(manifest)
         val outcome = when (renderReadiness.mode) {
             TargetRenderMode.EXECUTABLE -> CliTargetEvidenceOutcome.EXECUTABLE
             TargetRenderMode.REVIEW_ONLY -> CliTargetEvidenceOutcome.REVIEW_ONLY
             TargetRenderMode.FAIL_FAST -> CliTargetEvidenceOutcome.BLOCKED
         }
-        val rendered = when {
-            !renderRequested -> null
-            outcome == CliTargetEvidenceOutcome.BLOCKED -> {
-                diagnostics += CliTargetDiagnostic(
-                    code = "CLI_RENDER_NOT_AUTHORIZED",
-                    severity = "error",
-                    message = "Target output was requested but manifest evidence is blocked; no artifact was emitted."
-                )
-                null
-            }
-            else -> {
-                if (outcome == CliTargetEvidenceOutcome.REVIEW_ONLY) {
-                    diagnostics += CliTargetDiagnostic(
-                        code = "CLI_RENDER_NOT_AUTHORIZED",
-                        severity = "error",
-                        message = "Executable target syntax is not authorized; a dedicated non-executable review artifact was emitted instead."
-                    )
-                }
-                renderingAuthority.render(manifest).let { bundle ->
-                    CliRenderedArtifact(
-                        fileName = bundle.artifact.fileName,
-                        content = bundle.artifact.content,
-                        kind = bundle.artifact.kind,
-                        mediaType = bundle.artifact.mediaType,
-                        sha256 = bundle.artifact.sha256,
-                        evidenceFileName = bundle.evidenceFileName,
-                        evidence = bundle.receipt
-                    )
-                }
-            }
+        val bundle = if (renderRequested && outcome != CliTargetEvidenceOutcome.BLOCKED) renderingAuthority.render(manifest) else null
+        if (renderRequested && outcome != CliTargetEvidenceOutcome.EXECUTABLE) {
+            diagnostics += CliTargetDiagnostic(
+                code = "CLI_RENDER_NOT_AUTHORIZED",
+                severity = "error",
+                message = if (bundle == null) "Target output was requested but manifest evidence is blocked; no artifact was emitted."
+                          else "Executable target syntax is not authorized; a dedicated non-executable review artifact was emitted instead."
+            )
+        }
+        val rendered = bundle?.let {
+            CliRenderedArtifact(
+                fileName = it.artifact.fileName,
+                content = it.artifact.content,
+                kind = it.artifact.kind,
+                mediaType = it.artifact.mediaType,
+                sha256 = it.artifact.sha256,
+                evidenceFileName = it.evidenceFileName,
+                evidence = it.receipt
+            )
         }
 
         return CliTargetEvidence(
