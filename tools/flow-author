@@ -40,7 +40,8 @@ def main():
     args = parser.parse_args()
     try:
         if args.command == "check":
-            findings, code = operation_check.run(args, Path(__file__).resolve().with_name("flow-core"))
+            session_status, findings, code = operation_check.run(args, Path(__file__).resolve().with_name("flow-core"))
+            print("Saved session status:", json.dumps(session_status, ensure_ascii=True))
             for state, check in findings:
                 if check["kind"] == "before":
                     print(state, "order:", conversation.describe_selector(check["before"]), "before",

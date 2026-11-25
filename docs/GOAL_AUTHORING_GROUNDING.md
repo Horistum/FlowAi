@@ -1,6 +1,25 @@
 # Grounding a draft in the capability catalog
 
-The Qwen2.5 measurements below describe the earlier operations profile at commit `10e8ff19`. Use that revision to reproduce those prompts. The current quickstart offers Qwen3.5 models, limits each operations clarification turn to one question and supports checking saved candidates with `flow-author check`. [Current setup and operation checks](GOAL_AUTHORING.md)
+## Choosing a local model
+
+We ran six identical requests through the installed chat on three GGUF models, using the same operations profile. The reviewer checked the requested outcome, the relevant resource values and the required order. A second parameter naming the same resource did not invalidate an otherwise correct backup. These six selected inputs exercise common user-facing failures and do not estimate a general success rate.
+
+| Request | Qwen2.5-1.5B | Qwen3.5-2B | Qwen3.5-4B |
+| --- | --- | --- | --- |
+| AKS pipeline with Terraform | Image build | Provision operation | Provision, build, test, deploy and verify operations |
+| Backup followed by a health check | Omitted health check | Omitted destination and prerequisite | Met all named requirements |
+| Rotate a named secret | Asked back for the supplied name | Correct rotation | Correct rotation |
+| Ask for backup storage and use the answer | Produced checkout | Produced provisioning | Correct backup after the answer |
+| Copy data and validate the copy against schema v4 | Produced checkout | Missing prerequisite | Wrong schema value |
+| Return a live memory reading without access | Proposed a plan | Asked again about access | Asked for a monitoring tool |
+
+The 4B model met three outcomes. The 2B model met one and the 1.5B model met none. The AKS requests produced portable drafts without a pipeline file. Median first-turn wall times were **62.0 s**, **28.8 s** and **25.4 s**, respectively, on the test CPU. Each call included startup and inference. Local tests shared the machine. The quickstart uses 4B for its better results on the two backup tasks. Select 2B for a smaller download and a shorter wait on this setup.
+
+[Exact prompts, outputs, weight hashes and timings](../.flow-agent/reports/local-operations-qwen35.json) · [Run a chat and check its operations](GOAL_AUTHORING.md)
+
+## Earlier Qwen2.5 trials
+
+The measurements below describe the operations profile at commit `10e8ff19`. Use that revision to reproduce its prompts.
 
 The optional `operations` profile of `flow-author chat` lets a local GGUF model ask for a missing decision or propose a graph of unbound operations. It constrains which operations, fields and literal values the model can submit. On three fresh goals, both tested models asked for the missing inventory name, but neither produced a fully correct plan on any of the goals. Keep the result in review before selecting a target. [Getting started](GOAL_AUTHORING.md#first-conversation)
 

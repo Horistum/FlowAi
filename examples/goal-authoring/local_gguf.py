@@ -31,7 +31,7 @@ EXAMPLES = {
         "https://huggingface.co/unsloth/Qwen3.5-4B-GGUF/resolve/e87f176479d0855a907a41277aca2f8ee7a09523/Qwen3.5-4B-Q4_K_M.gguf",
         2_740_937_888, "00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4"),
 }
-DEFAULT_EXAMPLE = "qwen3.5-2b"
+DEFAULT_EXAMPLE = "qwen3.5-4b"
 
 
 def sha256(path):
@@ -177,7 +177,7 @@ def main():
     model_choice = setup.add_mutually_exclusive_group(required=True)
     model_choice.add_argument("model", nargs="?", type=Path, help="Existing GGUF model file (first shard for split models)")
     model_choice.add_argument("--download-example", nargs="?", choices=tuple(EXAMPLES), const=DEFAULT_EXAMPLE,
-                              help="Download and verify local GGUF weights (default: qwen3.5-2b, 1.28 GB)")
+                              help=f"Download and verify local GGUF weights (default: {DEFAULT_EXAMPLE}, {EXAMPLES[DEFAULT_EXAMPLE].size / 1e9:.2f} GB)")
     config_home = Path(os.environ.get("XDG_CONFIG_HOME", ""))
     default_config = (config_home if config_home.is_absolute() else Path.home() / ".config") / "horistum/authoring.json"
     setup.add_argument("--out", type=Path, default=default_config)

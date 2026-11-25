@@ -6,6 +6,7 @@ import hashlib
 import os
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 import unittest
 from unittest.mock import patch
 
@@ -43,6 +44,31 @@ class LocalProviderSetupTests(unittest.TestCase):
                 PROVIDER.download_example(example)
             self.assertEqual(b"x" * len(expected), path.read_bytes())
             self.assertEqual([path], list(directory.iterdir()))
+
+    def test_example_and_user_file_get_distinct_defaults_and_existing_configs_survive(self):
+        with tempfile.TemporaryDirectory() as work:
+            root = Path(work)
+            compiler = root / "flow-cli/build/install/flow-core/bin/flow-core"
+            compiler.parent.mkdir(parents=True)
+            compiler.touch()
+            model = root / "user.gguf"
+            model.write_bytes(b"small fixture")
+            with patch.object(PROVIDER, "__file__", str(root / "examples/goal-authoring/local_gguf.py")), \
+                    patch.object(PROVIDER, "download_example", return_value=model), \
+                    patch.object(PROVIDER, "version", return_value="test"), \
+                    patch.object(PROVIDER.subprocess, "check_output", return_value="head"):
+                for index, (preset, profile, operations) in enumerate((
+                    (PROVIDER.DEFAULT_EXAMPLE, None, True), (None, None, False),
+                    (PROVIDER.DEFAULT_EXAMPLE, "full", False), (None, "operations", True),
+                )):
+                    args = SimpleNamespace(model=model, download_example=preset, profile=profile, out=root / f"config-{index}.json")
+                    PROVIDER.configure(args)
+                    original = args.out.read_bytes()
+                    provider = json.loads(original)["provider"]
+                    self.assertEqual(operations, provider["argv"][-2:] == ["--profile", "operations"])
+                    with self.assertRaises(FileExistsError):
+                        PROVIDER.configure(args)
+                    self.assertEqual(original, args.out.read_bytes())
 
 
 class LocalProviderPromptTests(unittest.TestCase):

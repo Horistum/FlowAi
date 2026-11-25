@@ -1,0 +1,586 @@
+{
+  "protocol": "Installed flow-author chat, operations-v2, CPU, Q4_K_M, up to four threads. Fresh session and provider process per call. Same six texts across all models, alternating model order. Standard budget. No target execution. Timing includes compiler startup, loading and inference, and may include other local test workloads. Reviewer judgments reflect the user outcome on this small selected sample. Extra fields repeating the same requested subject were allowed.",
+  "inferenceRevision": "a086460e8883016e3a64c3515bbf4d222c3025f5",
+  "providerVersion": "llama-cpp-python/0.3.38",
+  "cases": [
+    {
+      "id": "aks",
+      "goal": "create pipeline for aks with terraform",
+      "expectedOutcome": "Ask which pipeline artifact or CI target is intended, or accurately describe why the requested artifact cannot be supplied. A generic cloud-operation draft is insufficient.",
+      "trials": {
+        "2.5-1.5B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 26.21,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "78d029ec30009c13878da5f1bf7a3fb6016ad48ab526d74447fd7be701638a26",
+              "providerMs": 22323,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "BUILD_IMAGE",
+                  "params": {
+                    "image": "aks",
+                    "path": "terraform",
+                    "push": "terraform",
+                    "target": "aks"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "9d3b47c1955b8cb2df7c1f947c18f22356fecf35cc5fc7384d93a013f302c9d8"
+            }
+          ]
+        },
+        "3.5-2B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 28.15,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "6cdb1b9ec505d74f4665a6677948ca084ab75dc57fd317fc97def4ff44ebd4e4",
+              "providerMs": 23869,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "PROVISION",
+                  "params": {
+                    "mode": "create",
+                    "stack": "aks",
+                    "resource": "aks",
+                    "target": "aks"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "719155f2e8e99e27b5d20f6c156623d6dfb936907cc1517f7bd65b3fb6bf8eda"
+            }
+          ]
+        },
+        "3.5-4B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 68.91,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "a9f563ab5ed20092c5b968ac7b950bed5114292149cc080f43424b9cba8a68b9",
+              "providerMs": 63933,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "PROVISION",
+                  "params": {
+                    "resource": "aks",
+                    "target": "terraform"
+                  },
+                  "requires": []
+                },
+                {
+                  "id": "step-2",
+                  "capability": "BUILD",
+                  "params": {
+                    "target": "terraform"
+                  },
+                  "requires": [
+                    "step-1"
+                  ]
+                },
+                {
+                  "id": "step-3",
+                  "capability": "TEST",
+                  "params": {
+                    "suite": "terraform",
+                    "target": "aks"
+                  },
+                  "requires": [
+                    "step-2"
+                  ]
+                },
+                {
+                  "id": "step-4",
+                  "capability": "DEPLOY",
+                  "params": {
+                    "target": "aks",
+                    "environment": "terraform",
+                    "artifact": "terraform"
+                  },
+                  "requires": [
+                    "step-3"
+                  ]
+                },
+                {
+                  "id": "step-5",
+                  "capability": "VERIFY",
+                  "params": {
+                    "target": "aks",
+                    "subject": "terraform"
+                  },
+                  "requires": [
+                    "step-4"
+                  ]
+                }
+              ],
+              "graphDigest": "f13790d76697d8765767c6bdb92c60c579b396f6a9fc3e04a18272813b9c11e2"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "backup-order",
+      "goal": "Back up sensor-feed to mirror-42. After the backup, verify the health of sensor-feed.",
+      "expectedOutcome": "Back up sensor-feed to mirror-42 and verify sensor-feed only after backup.",
+      "trials": {
+        "2.5-1.5B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 24.6,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "38c9695db32398f72d67c8e9959d17dcffd58c3b465b64ecf9d4202a0152972e",
+              "providerMs": 19882,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "BACKUP",
+                  "params": {
+                    "subject": "sensor-feed",
+                    "target": "mirror-42"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "ea932ece6b13bb32444055690a732ca23001c197d0ff85370a7e01650c382dd0"
+            }
+          ]
+        },
+        "3.5-2B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 29.37,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "82e66a2b1cdc10728f0cd1bc9922fd5dc5f3760b9e747a9929a827ed3acf289d",
+              "providerMs": 25842,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "BACKUP",
+                  "params": {
+                    "subject": "sensor-feed"
+                  },
+                  "requires": []
+                },
+                {
+                  "id": "step-2",
+                  "capability": "VERIFY",
+                  "params": {
+                    "subject": "sensor-feed"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "c63aff1b17801398d186bba4f6798f7c6576ecd5d361fe559f7f2a2cdc60b6cc"
+            }
+          ]
+        },
+        "3.5-4B": {
+          "outcomeMet": true,
+          "firstTurnWallSeconds": 62.33,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "d9d488d21ab803768e7dc06d0a0c07889c8ed3bf2b0874e8504b0a42be8fb85c",
+              "providerMs": 58181,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "BACKUP",
+                  "params": {
+                    "subject": "sensor-feed",
+                    "destination": "mirror-42"
+                  },
+                  "requires": []
+                },
+                {
+                  "id": "step-2",
+                  "capability": "VERIFY",
+                  "params": {
+                    "subject": "sensor-feed",
+                    "resource": "sensor-feed"
+                  },
+                  "requires": [
+                    "step-1"
+                  ]
+                }
+              ],
+              "graphDigest": "e2973bb2203ecb260887752b9d21bebc604f460c8653dbfdccfcf15d95444c84"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "rotate",
+      "goal": "Rotate the secret named portal-key.",
+      "expectedOutcome": "Rotate exactly the named secret portal-key.",
+      "trials": {
+        "2.5-1.5B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 26.86,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "0362fe22bd52859ab7a24bd3705290f88e50abbd49393c5e4643fe634c75307a",
+              "providerMs": 25489,
+              "status": "clarification-requested",
+              "questions": [
+                "portal-key"
+              ]
+            }
+          ]
+        },
+        "3.5-2B": {
+          "outcomeMet": true,
+          "firstTurnWallSeconds": 29.58,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "a0b81de07afde1a5975f951222ea1b4eaf26e1706312e6dfc2bd3699d92573f5",
+              "providerMs": 24575,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "SECRET_ROTATE",
+                  "params": {
+                    "subject": "portal-key"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "144cdc3cf866869c9feedd71e715290a231d6044a8539fad675babf097b9e596"
+            }
+          ]
+        },
+        "3.5-4B": {
+          "outcomeMet": true,
+          "firstTurnWallSeconds": 56.45,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "5392a363a0fc1ac2a5c462b4baf0c119562d7178a6e3e0fbbd8f4e576b35199a",
+              "providerMs": 50969,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "SECRET_ROTATE",
+                  "params": {
+                    "subject": "portal-key"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "144cdc3cf866869c9feedd71e715290a231d6044a8539fad675babf097b9e596"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ask-store",
+      "goal": "Zálohuj inventář travel-orders. Nejdřív se mě zeptej na cílové úložiště.",
+      "expectedOutcome": "Ask for the backup destination, wait for the answer, then back up travel-orders to the supplied vault-west.",
+      "trials": {
+        "2.5-1.5B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 21.63,
+          "answer": "Cílové úložiště je vault-west.",
+          "turns": [
+            {
+              "responseSha256": "1995720a8fda17d86c828cdeffb4b79d58ae8bf9830438553284b45da4f9c218",
+              "providerMs": 20333,
+              "status": "clarification-requested",
+              "questions": [
+                "What is the target storage for the inventory export?"
+              ]
+            },
+            {
+              "responseSha256": "8140270ae30e305c2c8b595eed7b5447d571d51e0b275868f6bd601b72e92cbc",
+              "providerMs": 20537,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "CHECKOUT",
+                  "params": {
+                    "url": "vault-west",
+                    "branch": "travel-orders",
+                    "target": "travel-orders"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "5872d22251d20fe70556dfc3ef6d8c8b2f235e6a213021fef59f1448d755ef99"
+            }
+          ]
+        },
+        "3.5-2B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 26.47,
+          "answer": "Cílové úložiště je vault-west.",
+          "turns": [
+            {
+              "responseSha256": "6c9e74126fd95ad49b3ee9c7ba395eb5119ec7680c7a07840f93db9636454e16",
+              "providerMs": 25418,
+              "status": "clarification-requested",
+              "questions": [
+                "Kde by měl být cílové úložiště pro tento inventář? (např. 'travel-orders', 'inventory', 's3://travel-orders')"
+              ]
+            },
+            {
+              "responseSha256": "b5729ee58ee90955d0f343b0055a917ef7cd72b234a45ad914a64bc1220b6ce2",
+              "providerMs": 22436,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "PROVISION",
+                  "params": {
+                    "resource": "travel-orders",
+                    "target": "vault-west"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "07378be608f21de536bf7fc83d17d571baf08366c11c18d10567b8976bdeb2ff"
+            }
+          ]
+        },
+        "3.5-4B": {
+          "outcomeMet": true,
+          "firstTurnWallSeconds": 45.75,
+          "answer": "Cílové úložiště je vault-west.",
+          "turns": [
+            {
+              "responseSha256": "9d31bc9cdce2bd5733987e744cee0776a3f272a16a0d605b780ce9e3d6b4486d",
+              "providerMs": 44379,
+              "status": "clarification-requested",
+              "questions": [
+                "Which storage destination should be used for the backup?"
+              ]
+            },
+            {
+              "responseSha256": "5f07d5cfd6e4cee08cb802f4ec96d52db08e7ba201a44de2862484eaaa65d70d",
+              "providerMs": 47744,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "BACKUP",
+                  "params": {
+                    "subject": "travel-orders",
+                    "destination": "vault-west"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "352854c50de76fe73103d7c35215d63c2beb4dc921f1c003b273a7a217778eb9"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "copy-check",
+      "goal": "Copy the data from ledger-blue to vault-7, then validate the copy against schema v4.",
+      "expectedOutcome": "Copy ledger-blue to vault-7 and validate vault-7 against v4 after the copy.",
+      "trials": {
+        "2.5-1.5B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 22.71,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "54d73e02ef211b8bae8c917f940bf6c67d8de9c1438f83da38b268ae65a0c2a8",
+              "providerMs": 19222,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "CHECKOUT",
+                  "params": {
+                    "url": "ledger-blue",
+                    "branch": "ledger-blue",
+                    "target": "vault-7"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "ec0fcea0bee3b1ce5d1d3393628df7d243fc9d43d38b68256b5330986dcdf58e"
+            }
+          ]
+        },
+        "3.5-2B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 30.34,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "7106abcf5c015b841342d04c47d9974a5c2b0d8d4295b3b3a26d26fd819b4dd0",
+              "providerMs": 26647,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "DATA_SYNC",
+                  "params": {
+                    "source": "ledger-blue",
+                    "destination": "vault-7"
+                  },
+                  "requires": []
+                },
+                {
+                  "id": "step-2",
+                  "capability": "VALIDATE",
+                  "params": {
+                    "operation": "schema",
+                    "schema": "v4",
+                    "target": "vault-7"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "e0903e0d294f1ae7dc6c4dec30159458d425ed91ecf065144ce4d937f5301a1d"
+            }
+          ]
+        },
+        "3.5-4B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 61.67,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "0c2d23b40fadefc977ebaf70ccebe741b100b79bbc0efd35c4c3c3f72b535cf7",
+              "providerMs": 57596,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "DATA_SYNC",
+                  "params": {
+                    "source": "ledger-blue",
+                    "destination": "vault-7"
+                  },
+                  "requires": []
+                },
+                {
+                  "id": "step-2",
+                  "capability": "VALIDATE",
+                  "params": {
+                    "schema": "schema",
+                    "target": "vault-7"
+                  },
+                  "requires": [
+                    "step-1"
+                  ]
+                }
+              ],
+              "graphDigest": "6b9d6436e7d58e41fb2272ebd0aa9c8760093dac5ab90879cebb49447cee31b1"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "metric",
+      "goal": "Vrať mi skutečnou aktuální spotřebu paměti podu payments v bajtech. Žádné měření ani přístup ke clusteru nemáš.",
+      "expectedOutcome": "Explain that a current memory reading cannot be obtained without access or measurements.",
+      "trials": {
+        "2.5-1.5B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 26.59,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "84b55bfdb602648b00deb91469893d8232f3299f7f03193364f0a4a4394f26e0",
+              "providerMs": 22140,
+              "status": "reviewed",
+              "steps": [
+                {
+                  "id": "step-1",
+                  "capability": "CHECKOUT",
+                  "params": {
+                    "url": "spotřebu",
+                    "branch": "spotřebu",
+                    "target": "spotřebu"
+                  },
+                  "requires": []
+                }
+              ],
+              "graphDigest": "b9fabf29704829bbec2634977cd923481c4509c33ff70f7402f37fcf8b269d08"
+            }
+          ]
+        },
+        "3.5-2B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 24.77,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "249e9f8c82989f1805736a260cb5d52b3d664e98391d13578c30c4c50a902ca3",
+              "providerMs": 23763,
+              "status": "clarification-requested",
+              "questions": [
+                "Máte přístup k clusteru nebo k datovému zdroji, kde by mohla být tato informace nalezena?"
+              ]
+            }
+          ]
+        },
+        "3.5-4B": {
+          "outcomeMet": false,
+          "firstTurnWallSeconds": 65.71,
+          "answer": null,
+          "turns": [
+            {
+              "responseSha256": "7182c6242b9c3613edc8be518075bbf2624b9b38da981b80c4bb16c8feeba919",
+              "providerMs": 64684,
+              "status": "clarification-requested",
+              "questions": [
+                "What specific monitoring tool or command should be used to retrieve the memory usage for the 'payments' pod?"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "models": {
+    "2.5-1.5B": {
+      "weights": "sha256:6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+      "outcomesMet": 0,
+      "count": 6,
+      "firstTurnMedianSeconds": 25.41
+    },
+    "3.5-2B": {
+      "weights": "sha256:aaf42c8b7c3cab2bf3d69c355048d4a0ee9973d48f16c731c0520ee914699223",
+      "outcomesMet": 1,
+      "count": 6,
+      "firstTurnMedianSeconds": 28.76
+    },
+    "3.5-4B": {
+      "weights": "sha256:00fe7986ff5f6b463e62455821146049db6f9313603938a70800d1fb69ef11a4",
+      "outcomesMet": 3,
+      "count": 6,
+      "firstTurnMedianSeconds": 62.0
+    }
+  }
+}

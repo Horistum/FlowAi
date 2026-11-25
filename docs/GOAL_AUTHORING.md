@@ -15,14 +15,14 @@ python3 -m venv .venv-author && \
   .venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
 ```
 
-**If the build and pip installation already succeeded, start here.** This command downloads the Qwen3.5-2B Q4_K_M GGUF from Unsloth (1.28 GB), verifies its SHA-256, saves a provider configuration, then opens the chat. The model runs on your machine. The first prompt is `What would you like to automate?`.
+**If the build and pip installation already succeeded, start here.** This command downloads the Qwen3.5-4B Q4_K_M GGUF from Unsloth (2.74 GB), verifies its SHA-256, saves a provider configuration, then opens the chat. The model runs on your machine. The first prompt is `What would you like to automate?`.
 
 ```sh
 .venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example && \
   ./flow-cli/build/install/flow-core/bin/flow-author chat
 ```
 
-The file stays in `${XDG_CACHE_HOME:-$HOME/.cache}/horistum/models`. Subsequent chats need only `flow-author chat`. The sample model is suitable for trying the conversation. Use the operation checks below to compare a proposed plan with your goal. [Earlier Qwen2.5 trials](GOAL_AUTHORING_GROUNDING.md)
+The file stays in `${XDG_CACHE_HOME:-$HOME/.cache}/horistum/models`. Subsequent chats need only `flow-author chat`. The sample model is suitable for trying the conversation. Use the operation checks below to compare a proposed plan with your goal. [Measured Qwen3.5 and Qwen2.5 results](GOAL_AUTHORING_GROUNDING.md)
 
 If you already have a GGUF model, you can configure it offline. Enter the actual filename when prompted. For a split model, keep all shards together and enter the path to the first one.
 
@@ -33,11 +33,11 @@ IFS= read -r model && .venv-author/bin/python examples/goal-authoring/local_gguf
 
 The local setup writes `${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`. An existing configuration is preserved. To use a different provider configuration, pass its JSON file with `flow-author chat --config` or set `FLOW_AUTHOR_CONFIG`. [External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
 
-The quickstart selects the `operations` profile for goals about named resources and operations. Its grammar comes from the installed capability catalog. To compare a larger Qwen3.5-4B Q4_K_M model (2.74 GB) or switch from an existing configuration, save a new config and select it for that chat:
+The quickstart selects the `operations` profile for goals about named resources and operations. Its grammar comes from the installed capability catalog. For a smaller 1.28 GB download, select Qwen3.5-2B. Using a new config path lets you try a different model alongside your existing configuration:
 
 ```sh
-.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example qwen3.5-4b --out local-4b.json && \
-  flow-author chat --config local-4b.json
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example qwen3.5-2b --out local-2b.json && \
+  flow-author chat --config local-2b.json
 ```
 
 An existing model file uses `full` by default. Use `--profile full` with either downloaded model for proposals involving conditions, schedules, failure handlers or module bindings. Local inference speed depends on your hardware, model size and prompt. Each call starts a fresh inference process. [2B GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) · [4B GGUF](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF)

@@ -90,4 +90,5 @@ def run(args, compiler):
         report = loads(read(out / "request-fidelity-review.json"))
         require(report["graphDigest"] == graph and report["requirementsSource"]["sha256"] == digest(criteria.read_bytes()) and
                 [r["id"] for r in report["requirements"]] == [r["id"] for r in rules], "Incomplete operation review")
-        return [(r["state"], c) for r, c in zip(report["requirements"], checks)], process["returncode"]
+        findings = [(r["state"], c) for r, c in zip(report["requirements"], checks)]
+        return state["status"], findings, process["returncode"]
