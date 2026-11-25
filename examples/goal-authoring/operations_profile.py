@@ -109,7 +109,7 @@ class OperationDialogue:
         index = {"type": "integer", "minimum": 1}
         edge = record({"from": index, "to": index})
         answered = {"summary": text, "questions": {"const": []}}
-        forms = [record({"summary": text, "questions": {"type": "array", "minItems": 1, "maxItems": 32, "items": text}})]
+        forms = [record({"summary": text, "questions": {"type": "array", "minItems": 1, "maxItems": 1, "items": text}})]
         definitions = {}
         if steps:
             definitions = {"argument": self.arguments.schema(), "step": {"oneOf": steps}}
@@ -133,14 +133,14 @@ class OperationDialogue:
             rows.append(" | ".join(fields))
         directions = (
             "You are planning automation for the person who wrote the last request. "
-            "Summarize their specific goal in one sentence. Then list the questions you must ask them. "
-            "If they ask you to confirm a missing decision, ask them that specific question and stop. "
-            "When all decisions have been supplied, leave questions empty and provide their complete operation graph. "
+            "Identify the deliverable the user requested. If this portable draft cannot supply it, state what is missing. "
+            "Ask one short question in the user's language only when a missing decision would change the plan. "
+            "Use answers already supplied. For a complete request, leave questions empty and provide every requested operation. "
             "Choose capabilities and named parameters from the catalog. For each argument copy the exact user value. "
             "String arguments can be copied directly, quote copies an exact phrase, and context is a JSON pointer "
             "to a typed value in the supplied context. An ask argument requests a missing value. "
             "Number steps from 1. A dependency points from the earlier prerequisite number to the dependent step number. "
-            "Use an empty dependencies array for independent work. Copy each resource name exactly. Omit unspecified optional "
+            "Express every requested ordering as a dependency between the relevant steps. Use an empty array for independent work. Copy each resource name exactly. Omit unspecified optional "
             "parameters. Conditions, failure paths, produced values, schedules and module bindings need a richer "
             "document. Describe the limitation for such a request. Never execute work."
         )
@@ -171,9 +171,9 @@ class OperationDialogue:
 
     @staticmethod
     def clarification(questions):
-        if (not isinstance(questions, list) or not 0 < len(questions) <= 32
+        if (not isinstance(questions, list) or len(questions) != 1
                 or not all(isinstance(q, str) and q.strip() for q in questions)):
-            raise ValueError("Expected a nonempty list of questions.")
+            raise ValueError("Expected one clarification question.")
         return {"kind": "clarify", "questions": [
             {"id": f"decision-{i}", "question": q} for i, q in enumerate(questions, 1)]}
 
@@ -212,7 +212,7 @@ class OperationDialogue:
                                 "cannot be copied as a literal from this request, context or its answers."}
             steps.append({"id": f"step-{len(steps) + 1}", "capability": step["capability"], "params": values, "requires": []})
         if questions:
-            return self.clarification(questions)
+            return self.clarification(questions[:1])
         if not isinstance(result["dependencies"], list):
             raise ValueError("Expected a dependency list.")
         for edge in result["dependencies"]:

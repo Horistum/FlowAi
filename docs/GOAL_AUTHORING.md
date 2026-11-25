@@ -15,14 +15,14 @@ python3 -m venv .venv-author && \
   .venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
 ```
 
-**If the build and pip installation already succeeded, start here.** This command downloads the public Qwen2.5-1.5B-Instruct Q4_K_M model (1.12 GB), verifies its SHA-256, saves a provider configuration, then opens the chat. The model runs on your machine. The first prompt is `What would you like to automate?`.
+**If the build and pip installation already succeeded, start here.** This command downloads the Qwen3.5-2B Q4_K_M GGUF from Unsloth (1.28 GB), verifies its SHA-256, saves a provider configuration, then opens the chat. The model runs on your machine. The first prompt is `What would you like to automate?`.
 
 ```sh
 .venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example && \
   ./flow-cli/build/install/flow-core/bin/flow-author chat
 ```
 
-The file stays in `${XDG_CACHE_HOME:-$HOME/.cache}/horistum/models`. Subsequent chats need only `flow-author chat`. The sample model is suitable for trying the conversation. Check the operations and their arguments in any proposed plan. [Measured local-model results](GOAL_AUTHORING_GROUNDING.md)
+The file stays in `${XDG_CACHE_HOME:-$HOME/.cache}/horistum/models`. Subsequent chats need only `flow-author chat`. The sample model is suitable for trying the conversation. Use the operation checks below to compare a proposed plan with your goal. [Earlier Qwen2.5 trials](GOAL_AUTHORING_GROUNDING.md)
 
 If you already have a GGUF model, you can configure it offline. Enter the actual filename when prompted. For a split model, keep all shards together and enter the path to the first one.
 
@@ -33,12 +33,14 @@ IFS= read -r model && .venv-author/bin/python examples/goal-authoring/local_gguf
 
 The local setup writes `${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`. An existing configuration is preserved. To use a different provider configuration, pass its JSON file with `flow-author chat --config` or set `FLOW_AUTHOR_CONFIG`. [External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
 
-For goals that name resources and a set of operations, the optional `operations` profile restricts the local model to capabilities and parameter names published by the installed compiler. The existing `full` profile supports the complete proposal format, including conditions, schedules, failure handlers and explicit module bindings. This example reuses the verified model and creates a separate configuration:
+The quickstart selects the `operations` profile for goals about named resources and operations. Its grammar comes from the installed capability catalog. To compare a larger Qwen3.5-4B Q4_K_M model (2.74 GB) or switch from an existing configuration, save a new config and select it for that chat:
 
 ```sh
-.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example --profile operations --out local-operations.json && \
-  flow-author chat --config local-operations.json
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example qwen3.5-4b --out local-4b.json && \
+  flow-author chat --config local-4b.json
 ```
+
+An existing model file uses `full` by default. Use `--profile full` with either downloaded model for proposals involving conditions, schedules, failure handlers or module bindings. Local inference speed depends on your hardware, model size and prompt. Each call starts a fresh inference process. [2B GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) · [4B GGUF](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF)
 
 A missing argument can produce a question before a draft. Plain-text argument
 values are copied from the goal or answers. Structured values, including
@@ -71,6 +73,24 @@ compiler's decision and the reviewed operations. Conditional branches and failur
 handlers are indented separately. Keep the printed plan and review paths for
 machine-readable evidence. Provider limitations and compiler rejection are possible
 outcomes. Conversation mode performs no deployment or resource changes.
+
+## Check what the proposed plan would do
+
+Start with the work you actually want. For example:
+
+```sh
+flow-author chat --out backup-review 'Back up sensor-feed to mirror-42. Then verify the health of sensor-feed.'
+```
+
+When the chat produces a candidate, check it against your own expectations:
+
+```sh
+flow-author check --run backup-review \
+  --expect BACKUP subject=sensor-feed destination=mirror-42 \
+  --expect VERIFY resource=sensor-feed --in-order --forbid CHECKOUT
+```
+
+Each `--expect` requires at least one operation matching the named capability and each literal string argument you supply. Use `flow-core catalog` to see operation and parameter names. Leave off parameters to check the operation alone. Field names matter: a check for `resource` requires that specific field. Use `--in-order` for prerequisite relationships and `--forbid` for exclusions. The installed compiler checks the saved graph without a model call and prints a result for each expectation. Exit 0 means the listed expectations passed. Other operations and arguments can still be present. A violated requirement returns 4. The original session remains available for further checks.
 
 ## Machine-readable commands
 

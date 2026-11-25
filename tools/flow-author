@@ -8,7 +8,7 @@ import sys
 sys.dont_write_bytecode = True
 
 from authoring_host.contracts import HostError, canonical, loads, read
-from authoring_host import conversation
+from authoring_host import conversation, operation_check
 from authoring_host.presentation import load_session, session_exit, session_view
 from authoring_host.session import resume, review_discovery, start
 
@@ -17,6 +17,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     conversation.add_command(commands)
+    operation_check.add_command(commands)
     plan = commands.add_parser("plan", help="Propose and compile a plan for the original goal")
     source = plan.add_mutually_exclusive_group(required=True)
     source.add_argument("goal", nargs="?", help="Original goal in natural language")
@@ -38,6 +39,18 @@ def main():
     discovery.add_argument("--review", required=True, type=Path)
     args = parser.parse_args()
     try:
+        if args.command == "check":
+            findings, code = operation_check.run(args, Path(__file__).resolve().with_name("flow-core"))
+            for state, check in findings:
+                if check["kind"] == "before":
+                    print(state, "order:", conversation.describe_selector(check["before"]), "before",
+                          conversation.describe_selector(check["after"]))
+                elif check["kind"] == "forbid-capability":
+                    print(state, "excluded operation:", check["capability"])
+                else:
+                    print(state, "required operation:", conversation.describe_selector(check["selector"]))
+            print("Checked the listed expectations on the saved plan.")
+            return code
         if args.command == "chat":
             return conversation.chat(args)
         if args.command == "plan":

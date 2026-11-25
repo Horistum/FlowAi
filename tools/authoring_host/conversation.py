@@ -43,6 +43,11 @@ def _display(value):
     return printable[1:-1] if isinstance(value, str) else printable
 
 
+def describe_selector(selector):
+    return " ".join([_display(selector["capability"]), *(
+        f"{_display(k)}={_display(v)}" for k, v in selector["parameters"].items())])
+
+
 def _statements(statements, indent):
     for statement in statements:
         label = statement.get("capability", statement.get("kind", "statement"))
@@ -83,7 +88,9 @@ def show_result(view):
             print("Fidelity has not been assessed. Review the operations, resources and ordering against your goal.")
         else:
             print("Request fidelity:", view["requestFidelity"])
-        print("Compiler-checked plan:", _display(intent["name"]))
+        if view.get("targetDisposition") == "not-requested":
+            print("Output: portable draft for review. This session produced no target pipeline file.")
+        print("Proposed workflow:", _display(intent["name"]))
         for key, value in intent.items():
             if key not in ("intentVersion", "name", "kind", "workflows"):
                 print(f"  {_display(key)} = {_display(value)}")
@@ -154,5 +161,9 @@ def chat(args):
         print("Submitting this round of answers…", flush=True)
         state = resume(folder, canonical({"runId": state["runId"], "reviewerId": args.reviewer or getpass.getuser(),
                                           "answers": answers}))
-    show_result(session_view(folder, state))
+    view = session_view(folder, state)
+    show_result(view)
+    if view.get("candidateIntent") and view.get("requestFidelity") == "unassessed":
+        print("To check the operations you expected, use",
+              shlex.join(["flow-author", "check", "--run", str(folder)]), "--expect CAPABILITY [name=value ...]")
     return session_exit(state["status"])

@@ -19,28 +19,28 @@ SPEC.loader.exec_module(PROVIDER)
 class LocalProviderSetupTests(unittest.TestCase):
     def test_only_verified_complete_weights_reach_the_cache(self):
         expected = b"example model"
+        example = PROVIDER.ExampleModel("sample.gguf", "https://example.invalid/model", len(expected),
+                                        hashlib.sha256(expected).hexdigest())
         with tempfile.TemporaryDirectory() as cache, patch.dict(os.environ, XDG_CACHE_HOME=cache), \
-                patch.object(PROVIDER, "EXAMPLE_BYTES", len(expected)), \
-                patch.object(PROVIDER, "EXAMPLE_SHA256", hashlib.sha256(expected).hexdigest()), \
                 patch.object(PROVIDER, "urlopen") as download:
             directory = Path(cache) / "horistum/models"
             for bad in (expected[:-1], b"x" * len(expected), expected + b"x"):
                 download.return_value = io.BytesIO(bad)
                 with self.subTest(bad=bad), self.assertRaises(ValueError):
-                    PROVIDER.download_example()
+                    PROVIDER.download_example(example)
                 self.assertEqual([], list(directory.iterdir()))
 
             download.return_value = io.BytesIO(expected)
-            path = PROVIDER.download_example()
+            path = PROVIDER.download_example(example)
             self.assertEqual(expected, path.read_bytes())
             download.reset_mock()
-            self.assertEqual(path, PROVIDER.download_example())
+            self.assertEqual(path, PROVIDER.download_example(example))
             download.assert_not_called()
 
             path.write_bytes(b"x" * len(expected))
             download.side_effect = OSError("network unavailable")
             with self.assertRaises(OSError):
-                PROVIDER.download_example()
+                PROVIDER.download_example(example)
             self.assertEqual(b"x" * len(expected), path.read_bytes())
             self.assertEqual([path], list(directory.iterdir()))
 

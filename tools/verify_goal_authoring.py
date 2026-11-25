@@ -48,6 +48,22 @@ def verify(root, cli, work, config, sequence, counter):
                 review["graphDigest"] == loads(read(plan["reviewFile"]))["graphDigest"] and
                 counter.read_text() == "1", "Independent review did not bind the original plan")
 
+    # Both positive and negative checks use the ordinary installed reader on the saved graph.
+    folder = work / "deploy"
+    original_state = read(folder / "state.json")
+    for flags, code, text in (
+        (["--expect", "DEPLOY", "environment=staging", "--expect", "VERIFY", "resource=payments",
+          "--in-order", "--forbid", "CHECKOUT"], 0, "SATISFIED order:"),
+        (["--expect", "VERIFY", "resource=payments", "--expect", "DEPLOY", "--in-order"], 4, "VIOLATED order:"),
+        (["--expect", "VERIFY", "resource=another", "--forbid", "DEPLOY"], 4, "VIOLATED excluded operation: DEPLOY"),
+        (["--expect", "BACKUP", "typo=payments"], 2, "catalog parameter"),
+    ):
+        result = subprocess.run([str(author), "check", "--run", str(folder), *flags],
+                                capture_output=True, text=True, cwd=work, timeout=180)
+        require(result.returncode == code and text in result.stdout + result.stderr, "Unexpected saved-plan check result")
+    require(counter.read_text() == "1" and read(folder / "state.json") == original_state,
+            "Checking expectations replayed or modified a session")
+
     # Selecting a target later must preserve the reviewed graph. The existing-image
     # fixture currently has no authorized executable Jenkins rendering.
     target_dir = work / "selected-target"

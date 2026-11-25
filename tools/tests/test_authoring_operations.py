@@ -46,6 +46,14 @@ class OperationsProfileTests(unittest.TestCase):
         self.assertEqual("extended sample", nodes[1]["params"]["object"])
         self.assertEqual([[], [], [nodes[0]["id"]]], [node["requires"] for node in nodes])
 
+    def test_only_one_missing_decision_is_presented_per_operations_turn(self):
+        choices = self.dialogue.schema()["oneOf"]
+        self.assertEqual(1, choices[0]["properties"]["questions"]["maxItems"])
+        with self.assertRaises(ValueError):
+            self.dialogue.reply({"summary": "Missing decisions.", "questions": ["Which object?", "Which site?"]})
+        reply = self.dialogue.reply(self.graph({"object": {"ask": "Which object?"}, "site": {"ask": "Which site?"}}))
+        self.assertEqual(["Which object?"], [q["question"] for q in reply["questions"]])
+
     def test_generated_values_and_partial_resource_names_cannot_supply_evidence(self):
         for ref in ("made-up", {"quote": "compiler-only"}, {"quote": "Café"}, {"context": "/absent"}):
             with self.subTest(ref=ref):

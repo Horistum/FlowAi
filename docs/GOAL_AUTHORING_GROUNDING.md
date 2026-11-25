@@ -1,5 +1,7 @@
 # Grounding a draft in the capability catalog
 
+The Qwen2.5 measurements below describe the earlier operations profile at commit `10e8ff19`. Use that revision to reproduce those prompts. The current quickstart offers Qwen3.5 models, limits each operations clarification turn to one question and supports checking saved candidates with `flow-author check`. [Current setup and operation checks](GOAL_AUTHORING.md)
+
 The optional `operations` profile of `flow-author chat` lets a local GGUF model ask for a missing decision or propose a graph of unbound operations. It constrains which operations, fields and literal values the model can submit. On three fresh goals, both tested models asked for the missing inventory name, but neither produced a fully correct plan on any of the goals. Keep the result in review before selecting a target. [Getting started](GOAL_AUTHORING.md#first-conversation)
 
 ## What changed for authors
