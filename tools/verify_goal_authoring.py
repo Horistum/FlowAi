@@ -94,6 +94,12 @@ def verify(root, cli, work, config, sequence, counter):
     run(2, "plan", goal, "--config", config_file, "--out", forbidden, "--target", "jenkins", "--render")
     require(not forbidden.exists() and counter.read_text() == "2", "Unreviewed target request spent quota")
 
+    catalog = loads(read(work / "deploy/attempt-000/provider-request.json"))["input"]["capabilityCatalog"]
+    operations = {entry["capability"]: entry for entry in catalog}
+    require(operations["DATA_SYNC"]["requiredParams"] == ["source", "destination"]
+            and "resource" in operations["VERIFY"]["optionalParams"]
+            and "system" in operations["VERIFY"]["bindingOnlyParams"],
+            "Installed provider request must carry the executable catalog and binding restrictions")
     verify_dialogue(run, work, config_file, structured, sequence, counter)
     verify_conversation(author, work, config_file, structured, sequence, counter)
 

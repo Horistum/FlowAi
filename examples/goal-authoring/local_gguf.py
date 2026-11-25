@@ -46,10 +46,15 @@ def configure(args):
     backend = version("llama-cpp-python")
     commit = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
     model_id = model_identity(model)
+    argv = [sys.executable, str(source), "generate", str(model)]
+    version_label = "llama-cpp-python/" + backend
+    if args.profile == "operations":
+        argv.extend(["--profile", "operations"])
+        version_label += "/operations-v1"
     config = {"formatVersion": 1,
-              "provider": {"id": "local-gguf", "model": model_id, "version": "llama-cpp-python/" + backend,
+              "provider": {"id": "local-gguf", "model": model_id, "version": version_label,
                            "evidenceKind": "live", "credentialEnv": [],
-                           "argv": [sys.executable, str(source), "generate", str(model)]},
+                           "argv": argv},
               "compiler": {"argv": [str(compiler)], "commit": commit, "contracts": str(root)},
               "budget": {"maxInputTokensPerCall": 150000, "maxOutputTokensPerCall": 2048,
                          "maxCalls": 3, "maxRepairs": 1, "maxTotalTokens": 456144,
@@ -76,18 +81,30 @@ def model_messages(payload):
             {"role": "user", "content": compact({**inputs, "request": request})}]
 
 
-def generate(model):
-    from llama_cpp import Llama
+def generate(model, profile):
+    from llama_cpp import Llama, LlamaGrammar
     payload = json.load(sys.stdin)
     model_id = model_identity(model)
     if payload["schema"] != "command-reasoning/v2" or payload["model"] != model_id:
         raise ValueError("Provider protocol or GGUF digest changed.")
-    messages = model_messages(payload)
+    dialogue = None
+    if profile == "operations":
+        from operations_profile import OperationDialogue
+        dialogue = OperationDialogue(payload)
+        decoding = {"grammar": LlamaGrammar.from_json_schema(json.dumps(dialogue.schema()), verbose=False)}
+        messages = dialogue.messages()
+    else:
+        decoding = {"response_format": {"type": "json_object"}}
+        messages = model_messages(payload)
     llm = Llama(model_path=str(model), n_ctx=16384, n_threads=min(4, os.cpu_count() or 1),
                 n_threads_batch=min(4, os.cpu_count() or 1), verbose=False)
-    answer = llm.create_chat_completion(messages, response_format={"type": "json_object"},
+    answer = llm.create_chat_completion(messages, **decoding,
                                         temperature=0, seed=42, max_tokens=2048)
     result = json.loads(answer["choices"][0]["message"]["content"])
+    if dialogue is not None:
+        if answer["choices"][0]["finish_reason"] == "length":
+            raise ValueError("Incomplete operation reply.")
+        result = dialogue.reply(result)
     usage = answer["usage"]
     print(json.dumps({"schema": "command-reasoning/v2", "result": result,
                       "usage": {"input_tokens": usage["prompt_tokens"], "output_tokens": usage["completion_tokens"]},
@@ -104,12 +121,14 @@ def main():
     setup.add_argument("--out", type=Path, default=default_config)
     inference = commands.add_parser("generate")
     inference.add_argument("model", type=Path)
+    for command in (setup, inference):
+        command.add_argument("--profile", choices=("full", "operations"), default="full")
     args = parser.parse_args()
     try:
         if args.command == "configure":
             configure(args)
         else:
-            generate(args.model)
+            generate(args.model, args.profile)
     except FileExistsError:
         parser.exit(2, "The configuration path already exists. Select a new path.\n")
     except (ImportError, OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
