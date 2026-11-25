@@ -27,6 +27,24 @@ python3 -m venv .venv-author
 flow-author chat
 ```
 
+For goals that name resources and a set of operations, the optional `operations`
+profile restricts the local model to capabilities and parameter names published
+by the installed compiler. Create a separate configuration and use the same chat
+command. The existing `full` profile supports the complete proposal format,
+including conditions, schedules, failure handlers and explicit module bindings.
+
+```sh
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure /path/to/model.gguf --profile operations --out local-operations.json
+flow-author chat --config local-operations.json
+```
+
+A missing argument can produce a question before a draft. Plain-text argument
+values are copied from the goal or answers. Structured values, including
+numbers, lists and objects, can be selected from a request's `context` using
+a JSON pointer. A graph can still omit requested work or select the wrong
+supplied value. Read the operations, arguments and prerequisites before using
+the candidate. [Measured results and limits](GOAL_AUTHORING_GROUNDING.md)
+
 Enter your goal at the prompt. When a decision is missing, answer it in plain
 text. Type `:pause` or close the input to leave a question round pending. The
 terminal prints the command to continue from the saved session. Answers from a
