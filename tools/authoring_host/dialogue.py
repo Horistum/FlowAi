@@ -6,7 +6,8 @@ from .contracts import keys, nonblank, require
 VERSION = "goal-dialogue/1"
 INSTRUCTIONS = """Ask for missing decisions with {"kind":"clarify","questions":[{"id":"...","question":"..."}]}.
 If the available contracts cannot express the goal, return {"kind":"cannot-plan","reason":"..."}.
-Neither reply contains a draft. Once enough is known, return the complete proposal described below.
+Explain the concrete missing capability or conflicting constraint in the user's language.
+When all decisions are known, return the complete proposal described below.
 Previously answered questions and the original request are authoritative inputs to that proposal."""
 IDENTIFIER = r"[a-z][a-z0-9-]{0,63}"
 MAX_QUESTIONS = 32

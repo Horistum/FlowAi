@@ -43,6 +43,11 @@ def _display(value):
     return printable[1:-1] if isinstance(value, str) else printable
 
 
+def describe_selector(selector):
+    return " ".join([_display(selector["capability"]), *(
+        f"{_display(k)}={_display(v)}" for k, v in selector["parameters"].items())])
+
+
 def _statements(statements, indent):
     for statement in statements:
         label = statement.get("capability", statement.get("kind", "statement"))
@@ -83,7 +88,9 @@ def show_result(view):
             print("Fidelity has not been assessed. Review the operations, resources and ordering against your goal.")
         else:
             print("Request fidelity:", view["requestFidelity"])
-        print("Compiler-checked plan:", _display(intent["name"]))
+        if view.get("targetDisposition") == "not-requested":
+            print("Output: portable draft for review. This session produced no target pipeline file.")
+        print("Proposed workflow:", _display(intent["name"]))
         for key, value in intent.items():
             if key not in ("intentVersion", "name", "kind", "workflows"):
                 print(f"  {_display(key)} = {_display(value)}")
@@ -110,13 +117,15 @@ def chat(args):
     if args.run is not None:
         require(args.config is None and args.out is None, "Use --config and --out only for a new session")
         folder = args.run.absolute()
+        require((folder / "state.json").is_file(),
+                f"No saved session at {_display(str(folder))}. Start a new session with flow-author chat.")
         state = load_session(folder)
     else:
         config_file = args.config or os.environ.get("FLOW_AUTHOR_CONFIG") or (
             _xdg("XDG_CONFIG_HOME", ".config") / "horistum/authoring.json")
         require(Path(config_file).is_file(),
-                "Provider configuration missing. From a FlowAi checkout, configure a local GGUF model with "
-                "examples/goal-authoring/local_gguf.py configure MODEL, or select a provider file with --config.")
+                f"Provider configuration missing at {_display(str(config_file))}. From your FlowAi checkout, "
+                "follow docs/GOAL_AUTHORING.md for local model setup, or select an existing provider JSON with --config.")
         config = loads(read(config_file))
         goal = args.goal if args.goal else _input("What would you like to automate? ")
         if goal is None:
@@ -152,5 +161,9 @@ def chat(args):
         print("Submitting this round of answers…", flush=True)
         state = resume(folder, canonical({"runId": state["runId"], "reviewerId": args.reviewer or getpass.getuser(),
                                           "answers": answers}))
-    show_result(session_view(folder, state))
+    view = session_view(folder, state)
+    show_result(view)
+    if view.get("candidateIntent") and view.get("requestFidelity") == "unassessed":
+        print("To check the operations you expected, use",
+              shlex.join(["flow-author", "check", "--run", str(folder)]), "--expect CAPABILITY [name=value ...]")
     return session_exit(state["status"])

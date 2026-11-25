@@ -1,6 +1,8 @@
 """Presentation behavior for compiler-admitted nested control structures."""
 import io
+import subprocess
 import sys
+import tempfile
 import unittest
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -13,6 +15,22 @@ finally:
 
 
 class TerminalReviewTests(unittest.TestCase):
+    def test_missing_provider_does_not_create_a_session_to_resume(self):
+        author = Path(__file__).resolve().parents[1] / "flow-author"
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory) / "my review"
+            config = Path(directory) / "missing.json"
+            start = subprocess.run([sys.executable, str(author), "chat", "Inspect the catalog", "--config", str(config),
+                                    "--out", str(folder)], capture_output=True, text=True)
+            self.assertEqual(2, start.returncode)
+            self.assertIn(str(config), start.stderr)
+            self.assertFalse(folder.exists())
+            resume = subprocess.run([sys.executable, str(author), "chat", "--run", str(folder)],
+                                    capture_output=True, text=True)
+            self.assertEqual(2, resume.returncode)
+            self.assertIn(f"No saved session at {folder}", resume.stderr)
+            self.assertFalse(folder.exists())
+
     def test_failure_handler_and_retry_stay_nested_and_limits_are_visible(self):
         nested = {"kind": "retry", "id": "poll", "maxAttempts": 2, "delaySeconds": 4, "body": [
             {"kind": "operation", "id": "check", "capability": "VERIFY", "params": {"resource": "catalog"}}]}

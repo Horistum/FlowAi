@@ -1,0 +1,26 @@
+[
+  {
+    "id": "policy",
+    "goal": "Check the policy retention-17 for the repository library-audits. Perform only this policy check.",
+    "expect": [
+      {"capability": "POLICY_CHECK", "params": {"policy": "retention-17", "subject": "library-audits"}, "after": []}
+    ]
+  },
+  {
+    "id": "rotation",
+    "goal": "I need to rotate a secret. Before you make a plan, ask me for its name.",
+    "question": "Ask for the secret name before offering a plan. Do not choose one.",
+    "answer": "Rotate the secret named mint-signing.",
+    "expect": [
+      {"capability": "SECRET_ROTATE", "params": {"subject": "mint-signing"}, "after": []}
+    ]
+  },
+  {
+    "id": "backup-check",
+    "goal": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+    "expect": [
+      {"capability": "BACKUP", "params": {"subject": "marsh-ledger", "destination": "safe-4"}, "after": []},
+      {"capability": "VERIFY", "params": {"resource": "reader-east"}, "after": [1]}
+    ]
+  }
+]

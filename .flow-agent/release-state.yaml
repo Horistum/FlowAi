@@ -911,6 +911,16 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  goalAuthoringGrounding:
+    selectedSlice: AI-A3-S4.3
+    baselineMain: 741729d693686bc8f11226cb8208b9e46ffe9745
+    predecessorPullRequest: 280
+    profile: operations-v1
+    report: docs/GOAL_AUTHORING_GROUNDING.md
+    evidence: .flow-agent/reports/goal-authoring-capability-grounding.json
+    heldOutRenderVerified: false
+    recoveryClosure: false
+    nextSlice: S4-independent-goal-review-before-target-selection
   goalAuthoringLiveTrial:
     selectedSlice: AI-A3-S4.2
     baselineMain: d54107a75f3f4778c1165eff2aaeb5c721a90164

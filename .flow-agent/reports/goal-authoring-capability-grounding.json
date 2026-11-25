@@ -1,0 +1,1543 @@
+{
+  "implementation": "738eb8718d0ada59f4d376f1e8fd53f3df94a92f",
+  "pilotImplementation": "3b4901f9de3ad30f48973895d6db5d1e7f4ef8d7",
+  "mainBaseline": "741729d693686bc8f11226cb8208b9e46ffe9745",
+  "protocol": {
+    "backend": "llama-cpp-python 0.3.38",
+    "models": "Qwen2.5-Instruct Q4_K_M",
+    "seed": 42,
+    "temperature": 0,
+    "contextTokens": 16384,
+    "maximumGeneratedTokens": 2048,
+    "maxRepairs": 0,
+    "maxCallsForCompleteGoal": 1,
+    "maxCallsWithClarification": 2,
+    "grading": "One canonical workflow with exactly the expected operations, exact authored parameter maps, the required canonical argument values, direct preceding edges, and native requirements-satisfied. Where a missing name is specified the first turn must also ask for that name before proposing any operation. Repeating a supplied fact or stopping at a question is insufficient.",
+    "weightsSha256": {
+      "1.5b": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+      "3b": "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d"
+    },
+    "goalFilesSha256": {
+      "grounding-goals.json": "91dc13e03f6d4cee446388120a44855aa79c5e1f5fda94b89551647523175183",
+      "grounding-evaluation.json": "1f0b0748206667970ca6ed2116e94b93b253d8a7abe0b57935f4f81eda89493a",
+      "grounding-acceptance.json": "6dd65fa357536c49ca15a836c48e1bcee4dff891cd55d5c2cda7fb95702c6bb1"
+    }
+  },
+  "development": {
+    "previous-full-1.5b": {
+      "manifest": {
+        "status": "provider-cannot-plan",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "provider-cannot-plan",
+            "providerResponseSha256": "66b06c2d2f982fa1d1a51fd3aa218e548f65934c673144a3f558f74ee97b9806",
+            "latencyMs": 210453,
+            "tokens": {
+              "input_tokens": 10513,
+              "output_tokens": 19
+            },
+            "reply": {
+              "kind": "cannot-plan",
+              "reason": "The goal cannot be expressed with the available contracts."
+            }
+          }
+        ]
+      },
+      "inventory": {
+        "status": "provider-cannot-plan",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "provider-cannot-plan",
+            "providerResponseSha256": "eed789989dd226070173cee989ee16c6ef8aca5c062c925a7337ea68a3ee5a15",
+            "latencyMs": 224857,
+            "tokens": {
+              "input_tokens": 10520,
+              "output_tokens": 35
+            },
+            "reply": {
+              "kind": "cannot-plan",
+              "reason": "The goal of backing up the inventory birch-ledger requires a specific backup destination, which is not provided in the available contracts."
+            }
+          }
+        ]
+      },
+      "replica": {
+        "status": "provider-cannot-plan",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "provider-cannot-plan",
+            "providerResponseSha256": "dc4eb950c378f2980585a442c6f6f4b0854645abdab428cec58bd2ccce9c5c76",
+            "latencyMs": 276833,
+            "tokens": {
+              "input_tokens": 10518,
+              "output_tokens": 40
+            },
+            "reply": {
+              "kind": "cannot-plan",
+              "reason": "The provided contracts cannot express the goal of copying a dataset and validating it against a schema. The contracts do not cover the specific actions required for these operations."
+            }
+          }
+        ]
+      }
+    },
+    "operations-pilot-1.5b": {
+      "manifest": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "8c73a88f6364bbd13fac93912aaba75c9411c38e438aca45980f03873c4b28d0",
+            "latencyMs": 18602,
+            "tokens": {
+              "input_tokens": 1314,
+              "output_tokens": 53
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "0c3fedc33e5d52606ab877e1ed2beec01d2bc3879fb5945ea1cffc3f2281214c",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "VALIDATE",
+                "params": {
+                  "operation": "Validate",
+                  "schema": "parcel-v3",
+                  "target": "willow-47"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ]
+      },
+      "inventory": {
+        "status": "plan-ready-for-review",
+        "answers": [
+          {
+            "answer": "Use vault-copper as the backup destination.",
+            "id": "1:decision-1",
+            "question": "Which destination should the backup be stored in?"
+          }
+        ],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "2cd0d42d98fd41fea527ecea074112b2967a264df95c137478b7b3e316bf8f07",
+            "latencyMs": 18163,
+            "tokens": {
+              "input_tokens": 1321,
+              "output_tokens": 24
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "Which destination should the backup be stored in?"
+                }
+              ]
+            }
+          },
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "a08b5694c29fc4a10a9eed21182100d8763b042cb89c811648f42ecc75b828ee",
+            "latencyMs": 35196,
+            "tokens": {
+              "input_tokens": 1349,
+              "output_tokens": 39
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "6c8f7671511b0d848c8ccb7d4209309e81968759053788d45b8d1ea203e49a0e",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "inventory",
+                  "destination": "vault-copper"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ]
+      },
+      "replica": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "390bb315c4b5c99f13956a7a8b1274332aa55d05ea97d80ef84f77bbf5c3cfe7",
+            "latencyMs": 21204,
+            "tokens": {
+              "input_tokens": 1319,
+              "output_tokens": 53
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "3ef32563d9a9e3e3bd0bcbd643709a52e09ae816ab2be8776f8c1295b86635e4",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "DATA_SYNC",
+                "params": {
+                  "source": "reed-index",
+                  "destination": "reed-mirror"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "operations-pilot-3b": {
+      "manifest": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "036c04a0b3c090281763f8a456d55be360f34c84b82f5135355d8f9c256ff049",
+            "latencyMs": 55962,
+            "tokens": {
+              "input_tokens": 1314,
+              "output_tokens": 49
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "129406eda365dfbcbd7f40275234324f4dd6fcbadd060ea76414356d00b58d8b",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "VALIDATE",
+                "params": {
+                  "operation": "parcel-v3",
+                  "schema": "parcel-v3",
+                  "target": "willow-47"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ]
+      },
+      "inventory": {
+        "status": "plan-ready-for-review",
+        "answers": [
+          {
+            "answer": "Use vault-copper as the backup destination.",
+            "id": "1:decision-1",
+            "question": "What is the destination for the backup of inventory birch-ledger?"
+          }
+        ],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "299e34776f550216d2ff441bd7aab733a34e7d9d7317af2d08a9697984c08fe9",
+            "latencyMs": 58663,
+            "tokens": {
+              "input_tokens": 1321,
+              "output_tokens": 33
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "What is the destination for the backup of inventory birch-ledger?"
+                }
+              ]
+            }
+          },
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "eab609d1a545781646982743246702595432d76ae1b82ce44f9bc082d9e25ab9",
+            "latencyMs": 63290,
+            "tokens": {
+              "input_tokens": 1354,
+              "output_tokens": 69
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "d6dbe48abf88f0d7ef8736512ce76af426f2a0186e1b0ae3b60bbe08a4a5d1c7",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "inventory",
+                  "destination": "vault-copper"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-2",
+                "capability": "PUSH_IMAGE",
+                "params": {
+                  "image": "vault-copper"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-3",
+                "capability": "PUSH_IMAGE",
+                "params": {
+                  "image": "vault-copper"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ]
+      },
+      "replica": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "7a3a5e8769e23d1807f602c371c3b6844742b2cede952d3b9b203031acd50ea2",
+            "latencyMs": 78056,
+            "tokens": {
+              "input_tokens": 1319,
+              "output_tokens": 72
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "a1e5d620915ec80e488525b1501cfa2dc959b050d111dedb48828b7be4ee7c15",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "SYNC",
+                "params": {
+                  "source": "reed-index",
+                  "destination": "reed-mirror"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-2",
+                "capability": "VALIDATE",
+                "params": {
+                  "operation": "validate",
+                  "schema": "record-v4",
+                  "target": "reed-mirror"
+                },
+                "requires": [
+                  "step-1"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "firstBlind": {
+    "1.5b": {
+      "policy": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "ea7998315f6e0511b7ef441513905bea3728f614f0122035ebe37d4134058a8d",
+            "latencyMs": 44085,
+            "tokens": {
+              "input_tokens": 1312,
+              "output_tokens": 50
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "0f62f0210a0951dcc1b47cd3095eed4a471f5b9fc8a93450c20dba761274f64f",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "POLICY_CHECK",
+                "params": {
+                  "policy": "retention-17",
+                  "subject": "library-audits"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "requirements-satisfied",
+          "graphDigest": "0f62f0210a0951dcc1b47cd3095eed4a471f5b9fc8a93450c20dba761274f64f",
+          "canonicalGraphMatches": true,
+          "authoredSteps": [
+            {
+              "capability": "POLICY_CHECK",
+              "id": "step-1",
+              "params": {
+                "policy": "retention-17",
+                "subject": "library-audits"
+              },
+              "requires": []
+            }
+          ]
+        },
+        "passed": true
+      },
+      "rotation": {
+        "status": "plan-ready-for-review",
+        "answers": [
+          {
+            "answer": "Rotate the secret named mint-signing.",
+            "id": "1:decision-1",
+            "question": "What is the name of the secret to rotate?"
+          }
+        ],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "548c81f0f3f66d4b013ddbd64a487f037ddfa07bd6d799e0c64be6003dd980ea",
+            "latencyMs": 36841,
+            "tokens": {
+              "input_tokens": 1310,
+              "output_tokens": 26
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "What is the name of the secret to rotate?"
+                }
+              ]
+            }
+          },
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "e20ca67ee7b5edb291cf03325973d8bb927d8b5251efc03ab08748a6b4ff26c9",
+            "latencyMs": 32929,
+            "tokens": {
+              "input_tokens": 1338,
+              "output_tokens": 39
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "90f376ccd0da246f7e84739ee25ba56b3c810e3d2cb365925ba1760b7c25b601",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "SECRET_ROTATE",
+                "params": {
+                  "subject": "mint-signing"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "requirements-satisfied",
+          "graphDigest": "90f376ccd0da246f7e84739ee25ba56b3c810e3d2cb365925ba1760b7c25b601",
+          "canonicalGraphMatches": true,
+          "authoredSteps": [
+            {
+              "capability": "SECRET_ROTATE",
+              "id": "step-1",
+              "params": {
+                "subject": "mint-signing"
+              },
+              "requires": []
+            }
+          ]
+        },
+        "requestedDecisionAskedFirst": true,
+        "passed": true
+      },
+      "backup-check": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "2213a58d176ea98ea816299c9a80e01ee56fcca87cbeea2cba639ba5fe283198",
+            "latencyMs": 33135,
+            "tokens": {
+              "input_tokens": 1320,
+              "output_tokens": 40
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "d1f02cf92a1ccacda7a06cb8454f4f884b9b7d0d929062eec8d31e20394d525a",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "marsh-ledger",
+                  "destination": "safe-4",
+                  "target": "backup"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "violated",
+          "graphDigest": "d1f02cf92a1ccacda7a06cb8454f4f884b9b7d0d929062eec8d31e20394d525a",
+          "canonicalGraphMatches": false,
+          "authoredSteps": [
+            {
+              "capability": "BACKUP",
+              "id": "step-1",
+              "params": {
+                "destination": "safe-4",
+                "subject": "marsh-ledger",
+                "target": "backup"
+              },
+              "requires": []
+            }
+          ]
+        },
+        "passed": false
+      }
+    },
+    "3b": {
+      "policy": {
+        "status": "awaiting-user",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "9929df01cd8d7717a574c9b18b814fc78f50127a380f64a3b50d75a45b7ceb51",
+            "latencyMs": 64222,
+            "tokens": {
+              "input_tokens": 1312,
+              "output_tokens": 31
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "Which policy retention should be checked?"
+                },
+                {
+                  "id": "decision-2",
+                  "question": "Which repository should be checked?"
+                }
+              ]
+            }
+          }
+        ],
+        "passed": false
+      },
+      "rotation": {
+        "status": "awaiting-user",
+        "answers": [
+          {
+            "answer": "Rotate the secret named mint-signing.",
+            "id": "1:decision-1",
+            "question": "Which secret subject should be rotated?"
+          }
+        ],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "9f1b4dcb7ac3e63f21f6871e60129e11764c061a86e1d8dd75dded6adec5f7e3",
+            "latencyMs": 55960,
+            "tokens": {
+              "input_tokens": 1310,
+              "output_tokens": 20
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "Which secret subject should be rotated?"
+                }
+              ]
+            }
+          },
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "49ca3bc44193709e744365cd941bd78d4ab2e3f6e8df65be64998bca7932bb99",
+            "latencyMs": 46993,
+            "tokens": {
+              "input_tokens": 1335,
+              "output_tokens": 41
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "Which secret subject should be rotated?"
+                },
+                {
+                  "id": "decision-2",
+                  "question": "What provider or secret store owns the secret?"
+                },
+                {
+                  "id": "decision-3",
+                  "question": "Which service must be verified after the secret is renewed?"
+                }
+              ]
+            }
+          }
+        ],
+        "requestedDecisionAskedFirst": true,
+        "passed": false
+      },
+      "backup-check": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "778dbf4f5cf5b57a5252b8170058fc369926cce9192201487961f52b16630732",
+            "latencyMs": 71914,
+            "tokens": {
+              "input_tokens": 1320,
+              "output_tokens": 58
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "34319f98d5243709e8de13209356020527ede5f53fb88c376c4793621c17095c",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "marsh-ledger",
+                  "destination": "safe-4"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-2",
+                "capability": "TEST",
+                "params": {
+                  "target": "reader-east"
+                },
+                "requires": [
+                  "step-1"
+                ]
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "violated",
+          "graphDigest": "34319f98d5243709e8de13209356020527ede5f53fb88c376c4793621c17095c",
+          "canonicalGraphMatches": false,
+          "authoredSteps": [
+            {
+              "capability": "BACKUP",
+              "id": "step-1",
+              "params": {
+                "destination": "safe-4",
+                "subject": "marsh-ledger"
+              },
+              "requires": []
+            },
+            {
+              "capability": "TEST",
+              "id": "step-2",
+              "params": {
+                "target": "reader-east"
+              },
+              "requires": [
+                "step-1"
+              ]
+            }
+          ]
+        },
+        "passed": false
+      }
+    }
+  },
+  "acceptance": {
+    "1.5b": {
+      "certificate": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "ebbb28f20c2b72e640a35ed708c032fbbd72e5a09c8ad4d08731c96d9639cd7b",
+            "latencyMs": 102733,
+            "tokens": {
+              "input_tokens": 1273,
+              "output_tokens": 50
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "23b1718c3c0a3d2d54e7528eb2d4f1fa471a713f5cbb811bd8058c60463310be",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "CERTIFICATE_RENEW",
+                "params": {
+                  "certificate": "cedar-web",
+                  "service": "ticket-hub",
+                  "target": "service"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "requirements-satisfied",
+          "graphDigest": "23b1718c3c0a3d2d54e7528eb2d4f1fa471a713f5cbb811bd8058c60463310be",
+          "canonicalGraphMatches": false,
+          "authoredSteps": [
+            {
+              "capability": "CERTIFICATE_RENEW",
+              "id": "step-1",
+              "params": {
+                "certificate": "cedar-web",
+                "service": "ticket-hub",
+                "target": "service"
+              },
+              "requires": []
+            }
+          ]
+        },
+        "passed": false
+      },
+      "inventory-name": {
+        "status": "awaiting-user",
+        "answers": [
+          {
+            "answer": "The inventory to back up is 'stock-north'.",
+            "id": "1:decision-1",
+            "question": "What is the name of the inventory to be backed up?"
+          }
+        ],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "a3efe42b7a145ef7e0756da26c6864fedbbc3ccbb93eefdcba84aa7dd6e11b22",
+            "latencyMs": 24618,
+            "tokens": {
+              "input_tokens": 1281,
+              "output_tokens": 26
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "What is the name of the inventory to be backed up?"
+                }
+              ]
+            }
+          },
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "b22f8536f08aebd3a1fad258c240c8de29f808e9c87b8a5357b82ceeaf686763",
+            "latencyMs": 43433,
+            "tokens": {
+              "input_tokens": 1314,
+              "output_tokens": 35
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "What is the name of the inventory to be backed up?"
+                }
+              ]
+            }
+          }
+        ],
+        "requestedDecisionAskedFirst": true,
+        "passed": false
+      },
+      "validate-backup": {
+        "status": "awaiting-user",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "3fc918c212193634c616ee5d1345a8d7012d57a435ec7d634074f2d07e88efab",
+            "latencyMs": 29982,
+            "tokens": {
+              "input_tokens": 1281,
+              "output_tokens": 45
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "What is the schema 'shift-v2'?"
+                }
+              ]
+            }
+          }
+        ],
+        "passed": false
+      }
+    },
+    "3b": {
+      "certificate": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "0ed5608b47fc73eccb8883b7ea6c5aa3707c236db7c4c88f6e6da192d5b0246a",
+            "latencyMs": 130849,
+            "tokens": {
+              "input_tokens": 1273,
+              "output_tokens": 75
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "20cfe2ac46f4818a918622a1c15a75287b8daa78f0a463196f0959ec5b3eef0b",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "CERTIFICATE_RENEW",
+                "params": {
+                  "certificate": "cedar-web",
+                  "provider": "service",
+                  "service": "ticket-hub"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-2",
+                "capability": "NOTIFY",
+                "params": {
+                  "subject": "Renew",
+                  "body": "Renew",
+                  "to": "ticket-hub"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "requirements-satisfied",
+          "graphDigest": "20cfe2ac46f4818a918622a1c15a75287b8daa78f0a463196f0959ec5b3eef0b",
+          "canonicalGraphMatches": false,
+          "authoredSteps": [
+            {
+              "capability": "CERTIFICATE_RENEW",
+              "id": "step-1",
+              "params": {
+                "certificate": "cedar-web",
+                "provider": "service",
+                "service": "ticket-hub"
+              },
+              "requires": []
+            },
+            {
+              "capability": "NOTIFY",
+              "id": "step-2",
+              "params": {
+                "body": "Renew",
+                "subject": "Renew",
+                "to": "ticket-hub"
+              },
+              "requires": []
+            }
+          ]
+        },
+        "passed": false
+      },
+      "inventory-name": {
+        "status": "plan-ready-for-review",
+        "answers": [
+          {
+            "answer": "The inventory to back up is 'stock-north'.",
+            "id": "1:decision-1",
+            "question": "What is the name of the inventory to be backed up?"
+          }
+        ],
+        "attempts": [
+          {
+            "status": "clarification-requested",
+            "providerResponseSha256": "d770c24fcf810e387d74fe6433a34234eb8cfcd67f3b03e528d54f23401f837d",
+            "latencyMs": 52512,
+            "tokens": {
+              "input_tokens": 1281,
+              "output_tokens": 46
+            },
+            "reply": {
+              "kind": "clarify",
+              "questions": [
+                {
+                  "id": "decision-1",
+                  "question": "What is the name of the inventory to be backed up?"
+                }
+              ]
+            }
+          },
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "4f1a535a951073b56905829abb592577eb3884799075fce6a262185a75b0ccc9",
+            "latencyMs": 53424,
+            "tokens": {
+              "input_tokens": 1314,
+              "output_tokens": 68
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "a0ceec9332f416c6d86bb5b3d5a161f536981e9b74e4a894c70749a22e6eef3f",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "stock-north",
+                  "target": "archive-5"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-2",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "stock-north",
+                  "target": "archive-5"
+                },
+                "requires": [
+                  "step-1"
+                ]
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "violated",
+          "graphDigest": "a0ceec9332f416c6d86bb5b3d5a161f536981e9b74e4a894c70749a22e6eef3f",
+          "canonicalGraphMatches": false,
+          "authoredSteps": [
+            {
+              "capability": "BACKUP",
+              "id": "step-1",
+              "params": {
+                "subject": "stock-north",
+                "target": "archive-5"
+              },
+              "requires": []
+            },
+            {
+              "capability": "BACKUP",
+              "id": "step-2",
+              "params": {
+                "subject": "stock-north",
+                "target": "archive-5"
+              },
+              "requires": [
+                "step-1"
+              ]
+            }
+          ]
+        },
+        "requestedDecisionAskedFirst": true,
+        "passed": false
+      },
+      "validate-backup": {
+        "status": "plan-ready-for-review",
+        "answers": [],
+        "attempts": [
+          {
+            "status": "reviewed",
+            "providerResponseSha256": "50549ef79e31dd86c18810720889aaa97163fb3e77c080dfa64ddbe1ab049f5d",
+            "latencyMs": 45604,
+            "tokens": {
+              "input_tokens": 1281,
+              "output_tokens": 78
+            },
+            "compiler": {
+              "semanticAcceptance": "accepted",
+              "requestFidelity": "unassessed",
+              "graphDigest": "991a30217e8614a6031df996059eea8910c52a1402e45323c52562aba92116c9",
+              "diagnostics": []
+            },
+            "steps": [
+              {
+                "id": "step-1",
+                "capability": "VALIDATE",
+                "params": {
+                  "operation": "shift-v2",
+                  "target": "shift-table"
+                },
+                "requires": []
+              },
+              {
+                "id": "step-2",
+                "capability": "BACKUP",
+                "params": {
+                  "subject": "shift-table",
+                  "destination": "night-vault"
+                },
+                "requires": []
+              }
+            ]
+          }
+        ],
+        "independentReview": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "violated",
+          "graphDigest": "991a30217e8614a6031df996059eea8910c52a1402e45323c52562aba92116c9",
+          "canonicalGraphMatches": false,
+          "authoredSteps": [
+            {
+              "capability": "VALIDATE",
+              "id": "step-1",
+              "params": {
+                "operation": "shift-v2",
+                "target": "shift-table"
+              },
+              "requires": []
+            },
+            {
+              "capability": "BACKUP",
+              "id": "step-2",
+              "params": {
+                "destination": "night-vault",
+                "subject": "shift-table"
+              },
+              "requires": []
+            }
+          ]
+        },
+        "passed": false
+      }
+    }
+  },
+  "requirements": {
+    "policy": {
+      "formatVersion": 1,
+      "request": {
+        "userText": "Check the policy retention-17 for the repository library-audits. Perform only this policy check.",
+        "context": {},
+        "mode": "DRAFT"
+      },
+      "origin": "REVIEWER_AUTHORED",
+      "confirmation": "CONFIRMED",
+      "reviewerId": "grounding-evaluation",
+      "requirements": [
+        {
+          "id": "rule-1",
+          "sourceQuote": "Check the policy retention-17 for the repository library-audits. Perform only this policy check.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "POLICY_CHECK"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-2",
+          "sourceQuote": "Check the policy retention-17 for the repository library-audits. Perform only this policy check.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "POLICY_CHECK"
+            },
+            "parameter": "policy",
+            "expected": "retention-17"
+          }
+        },
+        {
+          "id": "rule-3",
+          "sourceQuote": "Check the policy retention-17 for the repository library-audits. Perform only this policy check.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "POLICY_CHECK"
+            },
+            "parameter": "subject",
+            "expected": "library-audits"
+          }
+        }
+      ]
+    },
+    "rotation": {
+      "formatVersion": 1,
+      "request": {
+        "userText": "I need to rotate a secret. Before you make a plan, ask me for its name.",
+        "context": {},
+        "mode": "DRAFT"
+      },
+      "origin": "REVIEWER_AUTHORED",
+      "confirmation": "CONFIRMED",
+      "reviewerId": "grounding-evaluation",
+      "requirements": [
+        {
+          "id": "rule-1",
+          "sourceQuote": "I need to rotate a secret. Before you make a plan, ask me for its name.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "SECRET_ROTATE"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-2",
+          "sourceQuote": "I need to rotate a secret. Before you make a plan, ask me for its name.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "SECRET_ROTATE"
+            },
+            "parameter": "subject",
+            "expected": "mint-signing"
+          }
+        }
+      ]
+    },
+    "backup-check": {
+      "formatVersion": 1,
+      "request": {
+        "userText": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+        "context": {},
+        "mode": "DRAFT"
+      },
+      "origin": "REVIEWER_AUTHORED",
+      "confirmation": "CONFIRMED",
+      "reviewerId": "grounding-evaluation",
+      "requirements": [
+        {
+          "id": "rule-1",
+          "sourceQuote": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-2",
+          "sourceQuote": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "parameter": "subject",
+            "expected": "marsh-ledger"
+          }
+        },
+        {
+          "id": "rule-3",
+          "sourceQuote": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "parameter": "destination",
+            "expected": "safe-4"
+          }
+        },
+        {
+          "id": "rule-4",
+          "sourceQuote": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "VERIFY"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-5",
+          "sourceQuote": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "VERIFY"
+            },
+            "parameter": "resource",
+            "expected": "reader-east"
+          }
+        },
+        {
+          "id": "rule-6",
+          "sourceQuote": "Back up marsh-ledger to safe-4. After that backup finishes, check the health of reader-east. These are the only two operations.",
+          "check": {
+            "kind": "before",
+            "before": {
+              "capability": "BACKUP"
+            },
+            "after": {
+              "capability": "VERIFY"
+            }
+          }
+        }
+      ]
+    },
+    "certificate": {
+      "formatVersion": 1,
+      "request": {
+        "userText": "Renew certificate cedar-web for the service ticket-hub. Include only the renewal in this plan.",
+        "context": {},
+        "mode": "DRAFT"
+      },
+      "origin": "REVIEWER_AUTHORED",
+      "confirmation": "CONFIRMED",
+      "reviewerId": "grounding-evaluation",
+      "requirements": [
+        {
+          "id": "rule-1",
+          "sourceQuote": "Renew certificate cedar-web for the service ticket-hub. Include only the renewal in this plan.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "CERTIFICATE_RENEW"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-2",
+          "sourceQuote": "Renew certificate cedar-web for the service ticket-hub. Include only the renewal in this plan.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "CERTIFICATE_RENEW"
+            },
+            "parameter": "certificate",
+            "expected": "cedar-web"
+          }
+        },
+        {
+          "id": "rule-3",
+          "sourceQuote": "Renew certificate cedar-web for the service ticket-hub. Include only the renewal in this plan.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "CERTIFICATE_RENEW"
+            },
+            "parameter": "service",
+            "expected": "ticket-hub"
+          }
+        }
+      ]
+    },
+    "inventory-name": {
+      "formatVersion": 1,
+      "request": {
+        "userText": "Back up an inventory to 'archive-5'. I haven't provided the inventory name yet. Ask me for it before making the plan.",
+        "context": {},
+        "mode": "DRAFT"
+      },
+      "origin": "REVIEWER_AUTHORED",
+      "confirmation": "CONFIRMED",
+      "reviewerId": "grounding-evaluation",
+      "requirements": [
+        {
+          "id": "rule-1",
+          "sourceQuote": "Back up an inventory to 'archive-5'. I haven't provided the inventory name yet. Ask me for it before making the plan.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-2",
+          "sourceQuote": "Back up an inventory to 'archive-5'. I haven't provided the inventory name yet. Ask me for it before making the plan.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "parameter": "subject",
+            "expected": "stock-north"
+          }
+        },
+        {
+          "id": "rule-3",
+          "sourceQuote": "Back up an inventory to 'archive-5'. I haven't provided the inventory name yet. Ask me for it before making the plan.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "parameter": "destination",
+            "expected": "archive-5"
+          }
+        }
+      ]
+    },
+    "validate-backup": {
+      "formatVersion": 1,
+      "request": {
+        "userText": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+        "context": {},
+        "mode": "DRAFT"
+      },
+      "origin": "REVIEWER_AUTHORED",
+      "confirmation": "CONFIRMED",
+      "reviewerId": "grounding-evaluation",
+      "requirements": [
+        {
+          "id": "rule-1",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "VALIDATE"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-2",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "VALIDATE"
+            },
+            "parameter": "target",
+            "expected": "shift-table"
+          }
+        },
+        {
+          "id": "rule-3",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "VALIDATE"
+            },
+            "parameter": "schema",
+            "expected": "shift-v2"
+          }
+        },
+        {
+          "id": "rule-4",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "capability-count",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "minimum": 1,
+            "maximum": 1
+          }
+        },
+        {
+          "id": "rule-5",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "parameter": "subject",
+            "expected": "shift-table"
+          }
+        },
+        {
+          "id": "rule-6",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "literal-parameter",
+            "selector": {
+              "capability": "BACKUP"
+            },
+            "parameter": "destination",
+            "expected": "night-vault"
+          }
+        },
+        {
+          "id": "rule-7",
+          "sourceQuote": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+          "check": {
+            "kind": "before",
+            "before": {
+              "capability": "VALIDATE"
+            },
+            "after": {
+              "capability": "BACKUP"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "interruptedFirstAttempt": {
+    "status": "provider-error",
+    "answers": [],
+    "attempts": [
+      {
+        "status": "provider-process-error",
+        "providerResponseSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "latencyMs": 32804,
+        "tokens": null,
+        "providerReturnCode": -9
+      }
+    ]
+  },
+  "scores": {
+    "firstBlind": {
+      "1.5b": {
+        "passed": 2,
+        "total": 3
+      },
+      "3b": {
+        "passed": 0,
+        "total": 3
+      }
+    },
+    "acceptance": {
+      "1.5b": {
+        "passed": 0,
+        "total": 3
+      },
+      "3b": {
+        "passed": 0,
+        "total": 3
+      }
+    }
+  },
+  "demonstrationRegressionReplay": {
+    "status": "plan-ready-for-review",
+    "answers": [
+      {
+        "answer": "Use vault-copper as the backup destination.",
+        "id": "1:decision-1",
+        "question": "Ask for the destination where the backup should be stored."
+      }
+    ],
+    "attempts": [
+      {
+        "status": "clarification-requested",
+        "providerResponseSha256": "796ac2aa3a6814d948be3ac4a86a59ad8a8609fcb5248f55c7c5f31f317e93f7",
+        "latencyMs": 37375,
+        "tokens": {
+          "input_tokens": 1283,
+          "output_tokens": 26
+        },
+        "reply": {
+          "kind": "clarify",
+          "questions": [
+            {
+              "id": "decision-1",
+              "question": "Ask for the destination where the backup should be stored."
+            }
+          ]
+        }
+      },
+      {
+        "status": "reviewed",
+        "providerResponseSha256": "26185e8d740e34738b225c6dc75caa6946b6f92259ce2eacd8756f10e248767f",
+        "latencyMs": 47030,
+        "tokens": {
+          "input_tokens": 1313,
+          "output_tokens": 80
+        },
+        "compiler": {
+          "semanticAcceptance": "accepted",
+          "requestFidelity": "unassessed",
+          "graphDigest": "52e7363888ebd7caa60370e65034bafa55d59dfcebe005ae805d0dc2bdc5469b",
+          "diagnostics": []
+        },
+        "steps": [
+          {
+            "id": "step-1",
+            "capability": "BACKUP",
+            "params": {
+              "subject": "inventory",
+              "destination": "vault-copper",
+              "target": "birch-ledger"
+            },
+            "requires": []
+          },
+          {
+            "id": "step-2",
+            "capability": "CHECKOUT",
+            "params": {
+              "url": "backup",
+              "branch": "vault-copper",
+              "target": "birch-ledger"
+            },
+            "requires": [
+              "step-1"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

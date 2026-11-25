@@ -2,30 +2,52 @@
 
 ## First conversation
 
-From a checkout with Java 25 and Python 3.10 or later on Linux or macOS:
+Run the following from the FlowAi checkout on Linux (including WSL) or macOS, with Java 25 and Python 3.10 or later. Build the CLI and make it available in this terminal:
 
 ```sh
-./gradlew :flow-cli:installDist
-export PATH="$PWD/flow-cli/build/install/flow-core/bin:$PATH"
+./gradlew :flow-cli:installDist && export PATH="$PWD/flow-cli/build/install/flow-core/bin:$PATH"
 ```
 
-If you already configured a command-reasoning/v2 provider, run
-`flow-author chat --config /path/to/provider.json`. To reuse that choice, set
-`FLOW_AUTHOR_CONFIG` or place the configuration in
-`${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`.
-[External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
-
-To use your own local GGUF instruction model, create its configuration once from
-the same checkout. The optional CPU backend runs in its own Python environment.
-The model stays on your machine. For a split GGUF, place every shard in the same directory and pass the first file. The configuration binds all shard digests in order. Supply a GGUF model file you already have, or
-reproduce the [local trial](GOAL_AUTHORING_LIVE_TRIAL.md). Its 1.5B model struggled to produce valid plans for simple requests. Review the results before choosing weights for daily use.
+For a local model, install the Python inference backend once:
 
 ```sh
-python3 -m venv .venv-author
-.venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
-.venv-author/bin/python examples/goal-authoring/local_gguf.py configure /path/to/model.gguf
-flow-author chat
+python3 -m venv .venv-author && \
+  .venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
 ```
+
+**If the build and pip installation already succeeded, start here.** This command downloads the Qwen3.5-4B Q4_K_M GGUF from Unsloth (2.74 GB), verifies its SHA-256, saves a provider configuration, then opens the chat. The model runs on your machine. The first prompt is `What would you like to automate?`.
+
+```sh
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example && \
+  ./flow-cli/build/install/flow-core/bin/flow-author chat
+```
+
+The file stays in `${XDG_CACHE_HOME:-$HOME/.cache}/horistum/models`. Subsequent chats need only `flow-author chat`. The sample model is suitable for trying the conversation. Use the operation checks below to compare a proposed plan with your goal. [Measured Qwen3.5 and Qwen2.5 results](GOAL_AUTHORING_GROUNDING.md)
+
+If you already have a GGUF model, you can configure it offline. Enter the actual filename when prompted. For a split model, keep all shards together and enter the path to the first one.
+
+```sh
+printf 'Path to your existing GGUF model: '
+IFS= read -r model && .venv-author/bin/python examples/goal-authoring/local_gguf.py configure "$model"
+```
+
+The local setup writes `${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`. An existing configuration is preserved. To use a different provider configuration, pass its JSON file with `flow-author chat --config` or set `FLOW_AUTHOR_CONFIG`. [External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
+
+The quickstart selects the `operations` profile for goals about named resources and operations. Its grammar comes from the installed capability catalog. For a smaller 1.28 GB download, select Qwen3.5-2B. Using a new config path lets you try a different model alongside your existing configuration:
+
+```sh
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example qwen3.5-2b --out local-2b.json && \
+  flow-author chat --config local-2b.json
+```
+
+An existing model file uses `full` by default. Use `--profile full` with either downloaded model for proposals involving conditions, schedules, failure handlers or module bindings. Local inference speed depends on your hardware, model size and prompt. Each call starts a fresh inference process. [2B GGUF](https://huggingface.co/unsloth/Qwen3.5-2B-GGUF) · [4B GGUF](https://huggingface.co/unsloth/Qwen3.5-4B-GGUF)
+
+A missing argument can produce a question before a draft. Plain-text argument
+values are copied from the goal or answers. Structured values, including
+numbers, lists and objects, can be selected from a request's `context` using
+a JSON pointer. A graph can still omit requested work or select the wrong
+supplied value. Read the operations, arguments and prerequisites before using
+the candidate. [Measured results and limits](GOAL_AUTHORING_GROUNDING.md)
 
 Enter your goal at the prompt. When a decision is missing, answer it in plain
 text. Type `:pause` or close the input to leave a question round pending. The
@@ -35,8 +57,15 @@ calling the model again.
 
 ```sh
 flow-author chat --out my-review 'Check the catalog during the maintenance window. Notify the owner otherwise.'
+```
+
+After the terminal prints a saved session path, you can reopen it:
+
+```sh
 flow-author chat --run my-review
 ```
+
+If startup reports a missing provider configuration, finish the model setup and start a new chat. The failed start created no session to reopen.
 
 Without `--out` each new conversation uses its own directory under
 `${XDG_STATE_HOME:-$HOME/.local/state}/horistum/sessions`. The terminal shows the
@@ -44,6 +73,24 @@ compiler's decision and the reviewed operations. Conditional branches and failur
 handlers are indented separately. Keep the printed plan and review paths for
 machine-readable evidence. Provider limitations and compiler rejection are possible
 outcomes. Conversation mode performs no deployment or resource changes.
+
+## Check what the proposed plan would do
+
+Start with the work you actually want. For example:
+
+```sh
+flow-author chat --out backup-review 'Back up sensor-feed to mirror-42. Then verify the health of sensor-feed.'
+```
+
+When the chat produces a candidate, check it against your own expectations:
+
+```sh
+flow-author check --run backup-review \
+  --expect BACKUP subject=sensor-feed destination=mirror-42 \
+  --expect VERIFY resource=sensor-feed --in-order --forbid CHECKOUT
+```
+
+Each `--expect` requires at least one operation matching the named capability and each literal string argument you supply. Use `flow-core catalog` to see operation and parameter names. Leave off parameters to check the operation alone. Field names matter: a check for `resource` requires that specific field. Use `--in-order` for prerequisite relationships and `--forbid` for exclusions. The installed compiler checks the saved graph without a model call and prints a result for each expectation. Exit 0 means the listed expectations passed. Other operations and arguments can still be present. A violated requirement returns 4. The original session remains available for further checks.
 
 ## Machine-readable commands
 

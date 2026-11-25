@@ -1,0 +1,26 @@
+[
+  {
+    "id": "certificate",
+    "goal": "Renew certificate cedar-web for the service ticket-hub. Include only the renewal in this plan.",
+    "expect": [
+      {"capability": "CERTIFICATE_RENEW", "params": {"certificate": "cedar-web", "service": "ticket-hub"}, "after": []}
+    ]
+  },
+  {
+    "id": "inventory-name",
+    "goal": "Back up an inventory to 'archive-5'. I haven't provided the inventory name yet. Ask me for it before making the plan.",
+    "question": "Ask which inventory to back up and wait for an answer before proposing work.",
+    "answer": "The inventory to back up is 'stock-north'.",
+    "expect": [
+      {"capability": "BACKUP", "params": {"subject": "stock-north", "destination": "archive-5"}, "after": []}
+    ]
+  },
+  {
+    "id": "validate-backup",
+    "goal": "Validate 'shift-table' against schema 'shift-v2'. After the validation, back up 'shift-table' to 'night-vault'.",
+    "expect": [
+      {"capability": "VALIDATE", "params": {"target": "shift-table", "schema": "shift-v2"}, "after": []},
+      {"capability": "BACKUP", "params": {"subject": "shift-table", "destination": "night-vault"}, "after": [1]}
+    ]
+  }
+]

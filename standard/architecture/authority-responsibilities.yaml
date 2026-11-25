@@ -384,6 +384,7 @@ authorities:
       - "src/main/kotlin/org/flowlang/intent/IntentDesignAnalyzer.kt"
       - "src/main/kotlin/org/flowlang/intent/IntentStructure.kt"
       - "src/main/kotlin/org/flowlang/intent/IntentToAstPlanner.kt"
+      - "src/main/kotlin/org/flowlang/standard/StandardIntentCatalog.kt"
   - name: "CanonicalExecutionPlanSemanticsAuthority"
     path: "src/main/kotlin/org/flowlang/planner/CanonicalExecutionPlanSemanticsAuthority.kt"
     role: "semantic-invariant-owner"

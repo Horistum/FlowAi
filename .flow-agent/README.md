@@ -140,3 +140,9 @@ model on three new first-turn goals. See the [first-run guide](../docs/GOAL_AUTH
 and the [measured outcomes](../docs/GOAL_AUTHORING_LIVE_TRIAL.md). The next slice
 tests capability grounding on fresh inputs. The original live portfolio and held-out
 render gates remain open.
+
+After PR #280, S4.3 uses the installed compiler's contracts for local operation
+authoring. Independent review measures named objects, parameters and direct
+dependencies on fresh goals. The next slice addresses missing operations and
+incorrect arguments during goal review before target selection.
+[Evaluation and reproduction](../docs/GOAL_AUTHORING_GROUNDING.md)

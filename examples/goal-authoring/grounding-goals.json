@@ -1,0 +1,18 @@
+[
+  {
+    "id": "manifest",
+    "goal": "Validate the parcel manifest willow-47 against schema parcel-v3. This validation is the only work requested.",
+    "criteria": "One VALIDATE operation on willow-47 against parcel-v3, with the object and schema in the correct parameter roles."
+  },
+  {
+    "id": "inventory",
+    "goal": "Back up the inventory birch-ledger. I still need to choose where to keep the backup. Ask me for the destination before drafting any work.",
+    "answer": "Use vault-copper as the backup destination.",
+    "criteria": "First ask for the missing destination without proposing work. After the answer, produce exactly one BACKUP of birch-ledger to vault-copper."
+  },
+  {
+    "id": "replica",
+    "goal": "Copy dataset reed-index to reed-mirror. Only after the copy finishes, validate reed-mirror against schema record-v4.",
+    "criteria": "Copy reed-index to reed-mirror and then validate reed-mirror against record-v4. The second operation must depend on the first. No additional work."
+  }
+]
