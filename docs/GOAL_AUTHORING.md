@@ -2,40 +2,42 @@
 
 ## First conversation
 
-From a checkout with Java 25 and Python 3.10 or later on Linux or macOS:
+Run the following from the FlowAi checkout on Linux (including WSL) or macOS, with Java 25 and Python 3.10 or later. Build the CLI and make it available in this terminal:
 
 ```sh
-./gradlew :flow-cli:installDist
-export PATH="$PWD/flow-cli/build/install/flow-core/bin:$PATH"
+./gradlew :flow-cli:installDist && export PATH="$PWD/flow-cli/build/install/flow-core/bin:$PATH"
 ```
 
-If you already configured a command-reasoning/v2 provider, run
-`flow-author chat --config /path/to/provider.json`. To reuse that choice, set
-`FLOW_AUTHOR_CONFIG` or place the configuration in
-`${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`.
-[External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
-
-To use your own local GGUF instruction model, create its configuration once from
-the same checkout. The optional CPU backend runs in its own Python environment.
-The model stays on your machine. For a split GGUF, place every shard in the same directory and pass the first file. The configuration binds all shard digests in order. Supply a GGUF model file you already have, or
-reproduce the [local trial](GOAL_AUTHORING_LIVE_TRIAL.md). Its 1.5B model struggled to produce valid plans for simple requests. Review the results before choosing weights for daily use.
+For a local model, install the Python inference backend once:
 
 ```sh
-python3 -m venv .venv-author
-.venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
-.venv-author/bin/python examples/goal-authoring/local_gguf.py configure /path/to/model.gguf
-flow-author chat
+python3 -m venv .venv-author && \
+  .venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
 ```
 
-For goals that name resources and a set of operations, the optional `operations`
-profile restricts the local model to capabilities and parameter names published
-by the installed compiler. Create a separate configuration and use the same chat
-command. The existing `full` profile supports the complete proposal format,
-including conditions, schedules, failure handlers and explicit module bindings.
+**If the build and pip installation already succeeded, start here.** This command downloads the public Qwen2.5-1.5B-Instruct Q4_K_M model (1.12 GB), verifies its SHA-256, saves a provider configuration, then opens the chat. The model runs on your machine. The first prompt is `What would you like to automate?`.
 
 ```sh
-.venv-author/bin/python examples/goal-authoring/local_gguf.py configure /path/to/model.gguf --profile operations --out local-operations.json
-flow-author chat --config local-operations.json
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example && \
+  ./flow-cli/build/install/flow-core/bin/flow-author chat
+```
+
+The file stays in `${XDG_CACHE_HOME:-$HOME/.cache}/horistum/models`. Subsequent chats need only `flow-author chat`. The sample model is suitable for trying the conversation. Check the operations and their arguments in any proposed plan. [Measured local-model results](GOAL_AUTHORING_GROUNDING.md)
+
+If you already have a GGUF model, you can configure it offline. Enter the actual filename when prompted. For a split model, keep all shards together and enter the path to the first one.
+
+```sh
+printf 'Path to your existing GGUF model: '
+IFS= read -r model && .venv-author/bin/python examples/goal-authoring/local_gguf.py configure "$model"
+```
+
+The local setup writes `${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`. An existing configuration is preserved. To use a different provider configuration, pass its JSON file with `flow-author chat --config` or set `FLOW_AUTHOR_CONFIG`. [External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
+
+For goals that name resources and a set of operations, the optional `operations` profile restricts the local model to capabilities and parameter names published by the installed compiler. The existing `full` profile supports the complete proposal format, including conditions, schedules, failure handlers and explicit module bindings. This example reuses the verified model and creates a separate configuration:
+
+```sh
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example --profile operations --out local-operations.json && \
+  flow-author chat --config local-operations.json
 ```
 
 A missing argument can produce a question before a draft. Plain-text argument
@@ -53,8 +55,15 @@ calling the model again.
 
 ```sh
 flow-author chat --out my-review 'Check the catalog during the maintenance window. Notify the owner otherwise.'
+```
+
+After the terminal prints a saved session path, you can reopen it:
+
+```sh
 flow-author chat --run my-review
 ```
+
+If startup reports a missing provider configuration, finish the model setup and start a new chat. The failed start created no session to reopen.
 
 Without `--out` each new conversation uses its own directory under
 `${XDG_STATE_HOME:-$HOME/.local/state}/horistum/sessions`. The terminal shows the

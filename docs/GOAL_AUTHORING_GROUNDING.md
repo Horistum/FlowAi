@@ -31,11 +31,11 @@ An earlier version at `3b4901f9de3ad30f48973895d6db5d1e7f4ef8d7` was tested on a
 
 Build the CLI and install the optional Python backend as described in the first-run guide. The trials used llama-cpp-python 0.3.38, Qwen2.5-Instruct GGUF Q4_K_M, CPU inference with up to four threads, a 16,384-token context, 2,048 output tokens, temperature zero and seed 42. The evidence file includes the exact weight and input file hashes. CPU and runtime differences can affect decoding. [1.5B weights](https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/tree/91cad51170dc346986eccefdc2dd33a9da36ead9) · [3B weights](https://huggingface.co/Qwen/Qwen2.5-3B-Instruct-GGUF/tree/7dabda4d13d513e3e842b20f0d435c732f172cbe)
 
-Run from the checkout and use a fresh directory per model. For a complete goal, the following example starts the installed chat, preserves the first response and extracts the independent requirements for separate review.
+Run from the checkout and use a fresh directory per model. The command below selects the measured 1.5B model. To repeat with 3B, pass its downloaded GGUF filename in place of `--download-example`. For a complete goal, the following example starts the installed chat, preserves the first response and extracts the independent requirements for separate review.
 
 ```sh
 mkdir trial
-.venv-author/bin/python examples/goal-authoring/local_gguf.py configure /path/to/model.gguf \
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure --download-example \
   --profile operations --out trial/provider.json
 jq '.budget.maxCalls = 1 | .budget.maxRepairs = 0' trial/provider.json > trial/one-turn.json
 cases=examples/goal-authoring/grounding-acceptance.json

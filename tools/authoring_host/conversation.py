@@ -110,13 +110,15 @@ def chat(args):
     if args.run is not None:
         require(args.config is None and args.out is None, "Use --config and --out only for a new session")
         folder = args.run.absolute()
+        require((folder / "state.json").is_file(),
+                f"No saved session at {_display(str(folder))}. Start a new session with flow-author chat.")
         state = load_session(folder)
     else:
         config_file = args.config or os.environ.get("FLOW_AUTHOR_CONFIG") or (
             _xdg("XDG_CONFIG_HOME", ".config") / "horistum/authoring.json")
         require(Path(config_file).is_file(),
-                "Provider configuration missing. From a FlowAi checkout, configure a local GGUF model with "
-                "examples/goal-authoring/local_gguf.py configure MODEL, or select a provider file with --config.")
+                f"Provider configuration missing at {_display(str(config_file))}. From your FlowAi checkout, "
+                "follow docs/GOAL_AUTHORING.md for local model setup, or select an existing provider JSON with --config.")
         config = loads(read(config_file))
         goal = args.goal if args.goal else _input("What would you like to automate? ")
         if goal is None:

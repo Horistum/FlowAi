@@ -2,6 +2,7 @@
 """Configure or run a data-only local model for the installed Horistum authoring host."""
 import argparse
 import hashlib
+from http.client import HTTPException
 from importlib.metadata import version
 import json
 import os
@@ -10,6 +11,14 @@ import re
 import subprocess
 import sys
 import tempfile
+from urllib.request import urlopen
+
+
+EXAMPLE_FILE = "qwen2.5-1.5b-instruct-q4_k_m.gguf"
+EXAMPLE_URL = ("https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/"
+               "91cad51170dc346986eccefdc2dd33a9da36ead9/" + EXAMPLE_FILE)
+EXAMPLE_SHA256 = "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e"
+EXAMPLE_BYTES = 1_117_320_736
 
 
 def sha256(path):
@@ -34,18 +43,51 @@ def model_identity(path):
     return "sha256-shards:" + digest.hexdigest()
 
 
+def download_example():
+    cache = Path(os.environ.get("XDG_CACHE_HOME", ""))
+    directory = (cache if cache.is_absolute() else Path.home() / ".cache") / "horistum/models"
+    directory.mkdir(mode=0o700, parents=True, exist_ok=True)
+    model = directory / EXAMPLE_FILE
+    if model.is_file() and model.stat().st_size == EXAMPLE_BYTES and sha256(model) == EXAMPLE_SHA256:
+        return model
+
+    print(f"Downloading {EXAMPLE_FILE} (1.12 GB) to {directory} ...", file=sys.stderr, flush=True)
+    # Publish verified bytes atomically so interrupted or concurrent first runs
+    # never expose a partial model to a saved provider configuration.
+    with tempfile.TemporaryDirectory(dir=directory) as staging:
+        temporary = Path(staging) / EXAMPLE_FILE
+        digest = hashlib.sha256()
+        with urlopen(EXAMPLE_URL, timeout=60) as response, temporary.open("wb") as output:
+            size = 0
+            for block in iter(lambda: response.read(1024 * 1024), b""):
+                size += len(block)
+                if size > EXAMPLE_BYTES:
+                    raise ValueError("The example model download exceeds its published size.")
+                digest.update(block)
+                output.write(block)
+        if size != EXAMPLE_BYTES or digest.hexdigest() != EXAMPLE_SHA256:
+            raise ValueError("The example model download did not match its published size and SHA-256. Retry the download.")
+        os.replace(temporary, model)
+    return model
+
+
 def configure(args):
     source = Path(__file__).resolve()
     root = source.parents[2]
     compiler = root / "flow-cli/build/install/flow-core/bin/flow-core"
     if not compiler.is_file():
         raise ValueError("Build the product with ./gradlew :flow-cli:installDist first.")
-    model = args.model.resolve(strict=True)
-    if not model.is_file():
-        raise ValueError("Select a regular GGUF file.")
     backend = version("llama-cpp-python")
     commit = subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip()
-    model_id = model_identity(model)
+    if args.download_example:
+        model = download_example()
+        model_id = "sha256:" + EXAMPLE_SHA256
+    else:
+        model = args.model.expanduser().resolve()
+        if not model.is_file():
+            raise ValueError(f"GGUF model file not found at {str(model)!r}. Supply an existing .gguf file "
+                             "or use configure --download-example to download the 1.12 GB sample model.")
+        model_id = model_identity(model)
     argv = [sys.executable, str(source), "generate", str(model)]
     version_label = "llama-cpp-python/" + backend
     if args.profile == "operations":
@@ -115,7 +157,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     setup = commands.add_parser("configure")
-    setup.add_argument("model", type=Path)
+    model_choice = setup.add_mutually_exclusive_group(required=True)
+    model_choice.add_argument("model", nargs="?", type=Path, help="Existing GGUF model file (first shard for split models)")
+    model_choice.add_argument("--download-example", action="store_true",
+                              help="Download and verify the 1.12 GB Qwen2.5-1.5B-Instruct example, or use its verified cache")
     config_home = Path(os.environ.get("XDG_CONFIG_HOME", ""))
     default_config = (config_home if config_home.is_absolute() else Path.home() / ".config") / "horistum/authoring.json"
     setup.add_argument("--out", type=Path, default=default_config)
@@ -131,7 +176,7 @@ def main():
             generate(args.model, args.profile)
     except FileExistsError:
         parser.exit(2, "The configuration path already exists. Select a new path.\n")
-    except (ImportError, OSError, ValueError, KeyError, subprocess.CalledProcessError) as error:
+    except (ImportError, OSError, HTTPException, ValueError, KeyError, subprocess.CalledProcessError) as error:
         if args.command == "configure":
             parser.exit(2, f"Configuration failed: {error}\n")
         parser.exit(2, "Local model inference failed. Check the model, context length and runtime.\n")
