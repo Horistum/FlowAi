@@ -70,6 +70,14 @@ class OperationsProfileTests(unittest.TestCase):
         grammar = PROFILE.OperationDialogue(self.payload).schema()
         self.assertFalse(any("steps" in option["properties"] for option in grammar["oneOf"]))
 
+    def test_examples_never_become_caller_history_or_evidence_for_an_argument(self):
+        messages = self.dialogue.messages()
+        self.assertEqual(["system", "user", "assistant", "user"], [m["role"] for m in messages])
+        self.assertIn(self.payload["input"]["request"]["userText"], messages[1]["content"])
+        self.assertEqual("Use east-9.", messages[-1]["content"])
+        self.assertNotIn("<first value>", self.dialogue.arguments.atoms)
+        self.assertNotIn("<operation>", self.dialogue.catalog)
+
     def test_other_host_protocols_require_the_full_profile(self):
         self.payload["output_schema"] = {"properties": {}}
         with self.assertRaisesRegex(ValueError, "draft goal dialogue"):

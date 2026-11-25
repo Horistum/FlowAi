@@ -151,24 +151,19 @@ class OperationDialogue:
         goal = request["userText"]
         if background:
             goal = "Session data: " + json.dumps(background, ensure_ascii=False) + "\n\n" + goal
-        messages = [{"role": "system", "content": directions + "\nAvailable operations:\n" + "\n".join(rows)},
-                    {"role": "user", "content": "I have yet to select a date. Ask me for it before drafting anything."},
-                    {"role": "assistant", "content": '{"summary":"The date needs to be selected first.",'
-                                                     '"questions":["Which date should be used?"]}'}]
-        # Demonstrate a complete graph as well as a clarification. The operation
-        # comes from this compiler. Demonstration values are never input evidence.
-        example = next(((name, required) for name, (_, required, _) in self.catalog.items() if required), None)
-        if example:
-            name, keys = example
-            first = {key: f"example-a-{i}" for i, key in enumerate(keys, 1)}
-            second = {key: f"example-b-{i}" for i, key in enumerate(keys, 1)}
-            prompt = f"Perform {name} with {json.dumps(first)}. After it finishes, perform {name} with {json.dumps(second)}."
-            result = {"summary": f"Perform the two {name} operations in order.", "questions": [],
-                      "steps": [{"capability": name, "params": first}, {"capability": name, "params": second}],
-                      "dependencies": [{"from": 1, "to": 2}]}
-            messages.extend([{"role": "user", "content": prompt},
-                             {"role": "assistant", "content": json.dumps(result, separators=(",", ":"))}])
-        messages.append({"role": "user", "content": goal})
+        # Examples describe the wire format. Keep them outside user history and
+        # outside the compiler's capability vocabulary and argument evidence.
+        examples = (
+            '\nFormat examples only. A pending date can be represented by '
+            '{"summary":"A date needs to be selected.","questions":["Which date should be used?"]}. '
+            'A two-step graph has this form: '
+            '{"summary":"Perform the two requested operations in order.","questions":[],'
+            '"steps":[{"capability":"<operation>","params":{"<parameter>":"<first value>"}},'
+            '{"capability":"<operation>","params":{"<parameter>":"<second value>"}}],'
+            '"dependencies":[{"from":1,"to":2}]}. Choose actual operations from the catalog below.'
+        )
+        messages = [{"role": "system", "content": directions + examples + "\nAvailable operations:\n" + "\n".join(rows)},
+                    {"role": "user", "content": goal}]
         for answer in self.inputs["userAnswers"]:
             messages.extend([{"role": "assistant", "content": answer["question"]},
                              {"role": "user", "content": answer["answer"]}])
