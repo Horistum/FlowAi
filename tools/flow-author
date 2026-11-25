@@ -7,14 +7,16 @@ import sys
 
 sys.dont_write_bytecode = True
 
-from authoring_host.contracts import HostError, canonical, loads, read, verify_inventory
-from authoring_host.presentation import session_view
+from authoring_host.contracts import HostError, canonical, loads, read
+from authoring_host import conversation
+from authoring_host.presentation import load_session, session_exit, session_view
 from authoring_host.session import resume, review_discovery, start
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
+    conversation.add_command(commands)
     plan = commands.add_parser("plan", help="Propose and compile a plan for the original goal")
     source = plan.add_mutually_exclusive_group(required=True)
     source.add_argument("goal", nargs="?", help="Original goal in natural language")
@@ -36,6 +38,8 @@ def main():
     discovery.add_argument("--review", required=True, type=Path)
     args = parser.parse_args()
     try:
+        if args.command == "chat":
+            return conversation.chat(args)
         if args.command == "plan":
             directory = args.out.absolute()
             request = (read(args.request) if args.request else
@@ -51,12 +55,9 @@ def main():
             elif args.command == "review-discovery":
                 state = review_discovery(directory, read(args.review))
             else:
-                state = loads(read(directory / "state.json"))
-                verify_inventory(directory, state)
+                state = load_session(directory)
         print(json.dumps(session_view(directory, state), ensure_ascii=False, indent=2))
-        if state["status"] == "accepted":
-            return 0
-        return 3 if state["status"] in ("plan-ready-for-review", "awaiting-user", "awaiting-discovery-review") else 4
+        return session_exit(state["status"])
     except HostError as error:
         print(str(error), file=sys.stderr)
     except FileExistsError:

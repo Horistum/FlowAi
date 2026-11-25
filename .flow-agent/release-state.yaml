@@ -911,6 +911,17 @@ recoveryBoundedAuthoring:
   status: candidate
   workPackage: .flow-agent/work-packages/bounded-authoring-host.yaml
   report: .flow-agent/reports/bounded-authoring-host.md
+  goalAuthoringLiveTrial:
+    selectedSlice: AI-A3-S4.2
+    baselineMain: d54107a75f3f4778c1165eff2aaeb5c721a90164
+    predecessorPullRequest: 279
+    entryPoint: flow-author chat
+    report: docs/GOAL_AUTHORING_LIVE_TRIAL.md
+    liveModelScope: Three English goals, one local instruction model and a fresh session for each first turn.
+    independentClarificationCheck: Separate retirement goal with two missing facts. The 3B reply failed input validation and the 7B process ended before replying.
+    heldOutRenderVerified: false
+    recoveryClosure: false
+    nextSlice: S4-capability-grounding-on-new-goals
   goalAuthoring:
     selectedSlice: AI-A3-S4.1
     baselineMain: 833b8f0a880b14b9658b546596c0d5877dc8ed77

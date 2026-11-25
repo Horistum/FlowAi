@@ -134,3 +134,9 @@ After merged PR #278, the selected slice is S4.1. An operator enters a goal in
 plain text and reviews the compiler-checked plan or answers a missing decision.
 The next evaluation uses new goals with a live provider. Earlier corpus, target
 render and portfolio measurements remain open. [Product entry point](../docs/GOAL_AUTHORING.md)
+
+After PR #279, S4.2 adds a terminal conversation and evaluates a local instruction
+model on three new first-turn goals. See the [first-run guide](../docs/GOAL_AUTHORING.md#first-conversation)
+and the [measured outcomes](../docs/GOAL_AUTHORING_LIVE_TRIAL.md). The next slice
+tests capability grounding on fresh inputs. The original live portfolio and held-out
+render gates remain open.

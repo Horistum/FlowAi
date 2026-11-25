@@ -1,0 +1,1271 @@
+{
+  "model": {
+    "repository": "Qwen/Qwen2.5-1.5B-Instruct-GGUF",
+    "revision": "91cad51170dc346986eccefdc2dd33a9da36ead9",
+    "file": "qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e"
+  },
+  "compilerCommit": "d54107a75f3f4778c1165eff2aaeb5c721a90164",
+  "goalSetSha256": "7309d33c0efd3f44e1b10a0bd34e1519feb7e6d9bef6710dba5551928fe46a7f",
+  "passes": {
+    "baseline": [
+      {
+        "case": "fresh-check",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 219724,
+        "providerResponseSha256": "0e911b17a9321439bea0599de5b9663f327fa006ba9757af34ae86837b16019e",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The goal cannot be expressed with the available contracts."
+        },
+        "usage": {
+          "input_tokens": 10526,
+          "output_tokens": 19
+        }
+      },
+      {
+        "case": "fresh-question",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 217921,
+        "providerResponseSha256": "593b944ed84836461dfcd6e6cd09d63456450051a8725e9ceb03dec1b6e50ce4",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The request is incomplete and lacks specific details about the collection or recovery point to be used for the restore operation."
+        },
+        "usage": {
+          "input_tokens": 10522,
+          "output_tokens": 31
+        }
+      },
+      {
+        "case": "fresh-scope",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 206893,
+        "providerResponseSha256": "eb48235340772915cc5baea51a6d6a98b501792c05d69affda7918c1cdbe9316",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The goal is unrepresentable because the provided contracts cannot express the goal."
+        },
+        "usage": {
+          "input_tokens": 10519,
+          "output_tokens": 24
+        }
+      }
+    ],
+    "guided": [
+      {
+        "case": "fresh-check",
+        "sessionStatus": "provider-or-compiler-error",
+        "attemptStatus": "unusable-result",
+        "latencyMs": 233025,
+        "providerResponseSha256": "c95dfde102078cc2d9ba450d962cfcf1ea2cdc4f941e162a0a6de34ff800b6da",
+        "result": {
+          "kind": "FlowIntentDocument",
+          "name": "Check and Notify Catalog Health",
+          "description": "Check the health of the read-only catalog named north-archive and notify audit-desk that the check is complete.",
+          "inputs": [
+            {
+              "id": "source",
+              "type": "text",
+              "value": "north-archive"
+            }
+          ],
+          "policies": [
+            {
+              "id": "source",
+              "type": "text",
+              "value": "north-archive"
+            }
+          ],
+          "systems": [
+            {
+              "id": "source",
+              "type": "text",
+              "value": "north-archive"
+            }
+          ],
+          "triggers": [
+            {
+              "id": "source",
+              "type": "text",
+              "value": "north-archive"
+            }
+          ],
+          "workflows": [
+            {
+              "name": "Check and Notify Catalog Health",
+              "kind": "flow",
+              "body": [
+                {
+                  "id": "source",
+                  "kind": "operation",
+                  "description": "Check the health of the read-only catalog named north-archive",
+                  "params": {
+                    "id": "source",
+                    "type": "text",
+                    "value": "north-archive"
+                  },
+                  "produces": [
+                    {
+                      "id": "source",
+                      "type": "text",
+                      "value": "north-archive"
+                    }
+                  ],
+                  "requires": [
+                    {
+                      "id": "source",
+                      "type": "text",
+                      "value": "north-archive"
+                    }
+                  ],
+                  "uses": [
+                    {
+                      "id": "source",
+                      "type": "text",
+                      "value": "north-archive"
+                    }
+                  ]
+                },
+                "otherwise:[{"
+              ]
+            },
+            "then:[{"
+          ]
+        },
+        "usage": {
+          "input_tokens": 7159,
+          "output_tokens": 221
+        },
+        "diagnostic": "Missing or unknown host fields"
+      },
+      {
+        "case": "fresh-question",
+        "sessionStatus": "provider-or-compiler-error",
+        "attemptStatus": "unusable-result",
+        "latencyMs": 142749,
+        "providerResponseSha256": "50362c40a3d0123c625f2b63ac8276f6bba69ae5aa7e0bf3abffcffc9a155e6c",
+        "result": {
+          "kind": "FlowIntentDocument",
+          "name": "Restore Collection",
+          "description": "Restore an archived collection into the empty lab environment.",
+          "inputs": [
+            {
+              "id": "collection",
+              "type": "string",
+              "description": "Name of the archived collection to be restored."
+            },
+            {
+              "id": "recoveryPoint",
+              "type": "string",
+              "description": "Recovery point to use for the restore operation."
+            }
+          ],
+          "policies": [
+            {
+              "id": "collection",
+              "type": "string",
+              "description": "Name of the archived collection to be restored."
+            },
+            {
+              "id": "recoveryPoint",
+              "type": "string",
+              "description": "Recovery point to use for the restore operation."
+            }
+          ],
+          "systems": [
+            {
+              "id": "source",
+              "type": "string",
+              "description": "Source repository to restore from."
+            }
+          ],
+          "triggers": [
+            {
+              "id": "trigger",
+              "type": "string",
+              "description": "Trigger to execute the restore operation."
+            }
+          ],
+          "workflows": [
+            {
+              "id": "workflow",
+              "name": "Restore Collection",
+              "kind": "flow",
+              "body": [
+                {
+                  "id": "collection",
+                  "kind": "value",
+                  "value": "archive_collection_name"
+                },
+                {
+                  "id": "recoveryPoint",
+                  "kind": "value",
+                  "value": "archive_recovery_point_name"
+                },
+                {
+                  "id": "source",
+                  "kind": "value",
+                  "value": "source_repository_url"
+                }
+              ]
+            }
+          ]
+        },
+        "usage": {
+          "input_tokens": 7155,
+          "output_tokens": 224
+        },
+        "diagnostic": "Missing or unknown host fields"
+      },
+      {
+        "case": "fresh-scope",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 131450,
+        "providerResponseSha256": "5125eb3ff52090f0f9e2725eb0f083bd72038db268fb87a44742c2f5b03e3189",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The user request is incomplete and lacks specific details about the directory paths and the required health checks."
+        },
+        "usage": {
+          "input_tokens": 7152,
+          "output_tokens": 28
+        }
+      }
+    ],
+    "fullGrammar": [
+      {
+        "case": "fresh-check",
+        "sessionStatus": "provider-error",
+        "attemptStatus": "provider-process-error",
+        "latencyMs": 121314,
+        "providerResponseSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "case": "fresh-question",
+        "sessionStatus": "provider-error",
+        "attemptStatus": "provider-process-error",
+        "latencyMs": 203113,
+        "providerResponseSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "case": "fresh-scope",
+        "sessionStatus": "provider-error",
+        "attemptStatus": "provider-process-error",
+        "latencyMs": 123810,
+        "providerResponseSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "boundedGrammar": [
+      {
+        "case": "fresh-check",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 131184,
+        "providerResponseSha256": "10d9d5d4c92f7dfa8879623695c2912244be836f84808bf349afb61c93547b18",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The user did not specify the target environment for the deployment."
+        },
+        "usage": {
+          "input_tokens": 7159,
+          "output_tokens": 21
+        }
+      },
+      {
+        "case": "fresh-question",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 122713,
+        "providerResponseSha256": "167e5a046c9ed03351ebff2c74f37fac8449d4a581782e536cb44c999565f641",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The user has not specified the collection or recovery point to use for the restore operation."
+        },
+        "usage": {
+          "input_tokens": 7155,
+          "output_tokens": 26
+        }
+      },
+      {
+        "case": "fresh-scope",
+        "sessionStatus": "provider-cannot-plan",
+        "attemptStatus": "provider-cannot-plan",
+        "latencyMs": 118739,
+        "providerResponseSha256": "00f4309a3875ca4c9aea1294b16814c08af86f835432bb43a37f7678bb71e757",
+        "result": {
+          "kind": "cannot-plan",
+          "reason": "The user request is incomplete and lacks specific details about the directory paths and the required health checks."
+        },
+        "usage": {
+          "input_tokens": 7152,
+          "output_tokens": 28
+        }
+      }
+    ]
+  },
+  "compilerControls": [
+    {
+      "case": "fresh-check",
+      "proposal": {
+        "formatVersion": 1,
+        "providerId": "manual-representability-control",
+        "request": {
+          "userText": "Check the health of the read-only catalog named north-archive. Then notify audit-desk that the check is complete. Preserve the catalog and do not add any build or deployment work.",
+          "context": {},
+          "mode": "DRAFT"
+        },
+        "response": {
+          "normalizedIntent": {
+            "intentVersion": "2.0",
+            "kind": "FlowIntentDocument",
+            "name": "catalog-review",
+            "workflows": [
+              {
+                "name": "check",
+                "kind": "CUSTOM",
+                "steps": [
+                  {
+                    "id": "health",
+                    "capability": "VERIFY",
+                    "params": {
+                      "resource": "north-archive"
+                    },
+                    "requires": []
+                  },
+                  {
+                    "id": "notice",
+                    "capability": "NOTIFY",
+                    "params": {
+                      "channel": "audit-desk",
+                      "subject": "Health check complete",
+                      "body": "north-archive check completed"
+                    },
+                    "requires": [
+                      "health"
+                    ]
+                  }
+                ]
+              }
+            ],
+            "failure": {
+              "notify": false,
+              "rollback": false,
+              "stopOnError": true
+            }
+          },
+          "report": {
+            "mode": "DRAFT",
+            "classification": {
+              "type": "manual-fidelity-fixture",
+              "confidence": 0
+            },
+            "confidence": {
+              "overall": 0,
+              "intentType": 0,
+              "entities": 0,
+              "dependencies": 0,
+              "safety": 0
+            },
+            "explanation": [
+              "Manually authored representability control."
+            ],
+            "guardrails": [
+              "Compiler safety obligations remain independent of request-fidelity checks."
+            ]
+          }
+        }
+      },
+      "graphDigest": "f4ebe44f4ef6d4b6ec53c7db6140f45ba6c6a2a3db9adf0ebd4f4de79464cec4",
+      "semanticAcceptance": "accepted",
+      "requestFidelity": "unassessed"
+    },
+    {
+      "case": "fresh-scope",
+      "proposal": {
+        "formatVersion": 1,
+        "providerId": "manual-representability-control",
+        "request": {
+          "userText": "Verify the health of the amber directory only. The blue directory shares its host and must be left alone. Do not restart or repair either directory.",
+          "context": {},
+          "mode": "DRAFT"
+        },
+        "response": {
+          "normalizedIntent": {
+            "intentVersion": "2.0",
+            "kind": "FlowIntentDocument",
+            "name": "catalog-review",
+            "workflows": [
+              {
+                "name": "check",
+                "kind": "CUSTOM",
+                "steps": [
+                  {
+                    "id": "health",
+                    "capability": "VERIFY",
+                    "params": {
+                      "resource": "amber directory"
+                    },
+                    "requires": []
+                  }
+                ]
+              }
+            ],
+            "failure": {
+              "notify": false,
+              "rollback": false,
+              "stopOnError": true
+            }
+          },
+          "report": {
+            "mode": "DRAFT",
+            "classification": {
+              "type": "manual-fidelity-fixture",
+              "confidence": 0
+            },
+            "confidence": {
+              "overall": 0,
+              "intentType": 0,
+              "entities": 0,
+              "dependencies": 0,
+              "safety": 0
+            },
+            "explanation": [
+              "Manually authored representability control."
+            ],
+            "guardrails": [
+              "Compiler safety obligations remain independent of request-fidelity checks."
+            ]
+          }
+        }
+      },
+      "graphDigest": "a6c2acac4577679391cd3e83a4ee2fe7f4734fd9c014d31ad15a2f3025b62768",
+      "semanticAcceptance": "accepted",
+      "requestFidelity": "unassessed"
+    }
+  ],
+  "boundedDecoderSchema": {
+    "oneOf": [
+      {
+        "type": "object",
+        "properties": {
+          "normalizedIntent": {
+            "oneOf": [
+              {
+                "type": "object",
+                "properties": {
+                  "intentVersion": {
+                    "const": "2.0"
+                  },
+                  "kind": {
+                    "const": "FlowIntentDocument"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "workflows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string"
+                        },
+                        "steps": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {},
+                            "required": [],
+                            "additionalProperties": true
+                          }
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "kind",
+                        "steps"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "intentVersion",
+                  "kind",
+                  "name",
+                  "workflows"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "intentVersion": {
+                    "const": "3.0"
+                  },
+                  "kind": {
+                    "const": "FlowIntentDocument"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "workflows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "kind",
+                        "body"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "intentVersion",
+                  "kind",
+                  "name",
+                  "workflows"
+                ],
+                "additionalProperties": true
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "intentVersion": {
+                    "const": "3.1"
+                  },
+                  "kind": {
+                    "const": "FlowIntentDocument"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "workflows": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "kind": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "array"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "kind",
+                        "body"
+                      ],
+                      "additionalProperties": false
+                    }
+                  }
+                },
+                "required": [
+                  "intentVersion",
+                  "kind",
+                  "name",
+                  "workflows"
+                ],
+                "additionalProperties": true
+              }
+            ]
+          },
+          "report": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "enum": [
+                  "DRAFT",
+                  "STRICT",
+                  "EXPLAIN",
+                  "REPAIR"
+                ]
+              },
+              "classification": {
+                "type": "object",
+                "properties": {
+                  "type": {
+                    "type": "string"
+                  },
+                  "confidence": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "type",
+                  "confidence"
+                ],
+                "additionalProperties": true
+              },
+              "confidence": {
+                "type": "object",
+                "properties": {
+                  "overall": {
+                    "type": "number"
+                  },
+                  "intentType": {
+                    "type": "number"
+                  },
+                  "entities": {
+                    "type": "number"
+                  },
+                  "dependencies": {
+                    "type": "number"
+                  },
+                  "safety": {
+                    "type": "number"
+                  }
+                },
+                "required": [
+                  "overall",
+                  "intentType",
+                  "entities",
+                  "dependencies",
+                  "safety"
+                ],
+                "additionalProperties": false
+              }
+            },
+            "required": [
+              "mode",
+              "classification",
+              "confidence"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "normalizedIntent",
+          "report"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "clarify"
+          },
+          "questions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "question": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "question"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "kind",
+          "questions"
+        ],
+        "additionalProperties": false
+      },
+      {
+        "type": "object",
+        "properties": {
+          "kind": {
+            "const": "cannot-plan"
+          },
+          "reason": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "reason"
+        ],
+        "additionalProperties": false
+      }
+    ]
+  },
+  "separateGoalTrial": {
+    "input": {
+      "id": "clinic-archive",
+      "goal": "Before we change anything, ask me which archive collection we are retiring and who owns the decision. I have not supplied either value. Wait for my reply before drafting any work.",
+      "criteria": "Ask for both the archive collection and the decision owner, with no proposed work or invented values."
+    },
+    "runs": [
+      {
+        "repository": "Qwen/Qwen2.5-7B-Instruct-GGUF",
+        "revision": "bb5d59e06d9551d752d08b292a50eb208b07ab1f",
+        "files": [
+          {
+            "name": "qwen2.5-7b-instruct-q4_k_m-00001-of-00002.gguf",
+            "bytes": 3993201344,
+            "sha256": "dfce12e3862a5283ccfb88221b48480e58745165de856439950d0f22590580db"
+          },
+          {
+            "name": "qwen2.5-7b-instruct-q4_k_m-00002-of-00002.gguf",
+            "bytes": 689872288,
+            "sha256": "539cf93f78e887edea1c04e2d7d8cdaca9d01dae9c9025bcb8accbe29df3d72a"
+          }
+        ],
+        "modelId": "sha256-shards:7940175a3ab60e02258555c465273737d860dca88ed495f798441c0e7ab098c6",
+        "turns": [
+          {
+            "status": "provider-process-error",
+            "latencyMs": 10848,
+            "responseSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          }
+        ],
+        "sessionStatus": "provider-error",
+        "diagnosticReplay": "Process terminated by SIGKILL after loading model weights. No model reply was available for assessment."
+      },
+      {
+        "repository": "Qwen/Qwen2.5-3B-Instruct-GGUF",
+        "revision": "7dabda4d13d513e3e842b20f0d435c732f172cbe",
+        "files": [
+          {
+            "name": "qwen2.5-3b-instruct-q4_k_m.gguf",
+            "bytes": 2104932768,
+            "sha256": "626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d"
+          }
+        ],
+        "modelId": "sha256:626b4a6678b86442240e33df819e00132d3ba7dddfe1cdc4fbb18e0a9615c62d",
+        "turns": [
+          {
+            "status": "reviewed",
+            "latencyMs": 684384,
+            "usage": {
+              "input_tokens": 10525,
+              "output_tokens": 1971
+            },
+            "responseSha256": "f6ef70f97cc5a4042123c60324cea365d03e4f7e28a23f9bb68e8ff97d6e5378",
+            "reply": {
+              "$defs": {
+                "intent-v3.1.schema.json": {
+                  "$defs": {
+                    "failure": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "notify": {
+                          "type": "boolean"
+                        },
+                        "rollback": {
+                          "type": "boolean"
+                        },
+                        "stopOnError": {
+                          "type": "boolean"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "input": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "default": {
+                          "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "required": {
+                          "type": "boolean"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ],
+                      "type": "object"
+                    },
+                    "intentValue": {
+                      "oneOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "boolean"
+                        },
+                        {
+                          "type": "null"
+                        },
+                        {
+                          "items": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "array"
+                        },
+                        {
+                          "additionalProperties": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "object"
+                        }
+                      ]
+                    },
+                    "policy": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "condition": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "message": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    "schedule": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "expression": {
+                          "minLength": 1,
+                          "type": "string"
+                        },
+                        "kind": {
+                          "enum": [
+                            "CRON",
+                            "INTERVAL",
+                            "CALENDAR"
+                          ]
+                        },
+                        "timezone": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "kind",
+                        "expression"
+                      ],
+                      "type": "object"
+                    },
+                    "statement": {
+                      "oneOf": [
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "capability": {
+                              "not": {
+                                "const": "SCHEDULE"
+                              },
+                              "type": "string"
+                            },
+                            "description": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            },
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "operation"
+                            },
+                            "params": {
+                              "additionalProperties": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                              },
+                              "type": "object"
+                            },
+                            "produces": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "requires": {
+                              "items": {
+                                "type": "string"
+                              },
+                              "type": "array"
+                            },
+                            "uses": {
+                              "pattern": "^([A-Za-z0-9_-]+\\.[A-Za-z0-9_-]+)$"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "capability",
+                            "kind"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "branch"
+                            },
+                            "otherwise": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "then": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "when": {
+                              "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "when",
+                            "then"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "value"
+                            },
+                            "value": {
+                              "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "value"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "merge"
+                            },
+                            "sources": {
+                              "items": {
+                                "pattern": "^ref:[A-Za-z_][A-Za-z0-9_]*$"
+                              },
+                              "minItems": 2,
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array",
+                              "uniqueItems": true
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "sources"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "body": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "disposition": {
+                              "enum": [
+                                "propagate",
+                                "recover"
+                              ]
+                            },
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "attempt"
+                            },
+                            "onFailure": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "body",
+                            "onFailure",
+                            "disposition"
+                          ],
+                          "type": "object"
+                        },
+                        {
+                          "additionalProperties": false,
+                          "properties": {
+                            "body": {
+                              "items": {
+                                "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                              },
+                              "minItems": 1,
+                              "not": {
+                                "minItems": 2001
+                              },
+                              "type": "array"
+                            },
+                            "delaySeconds": {
+                              "minimum": 0,
+                              "not": {
+                                "minimum": 3601
+                              },
+                              "type": "integer"
+                            },
+                            "id": {
+                              "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                            },
+                            "kind": {
+                              "const": "retry"
+                            },
+                            "maxAttempts": {
+                              "minimum": 1,
+                              "not": {
+                                "minimum": 101
+                              },
+                              "type": "integer"
+                            }
+                          },
+                          "required": [
+                            "kind",
+                            "id",
+                            "body",
+                            "maxAttempts",
+                            "delaySeconds"
+                          ],
+                          "type": "object"
+                        }
+                      ],
+                      "type": "object"
+                    },
+                    "system": {
+                      "additionalProperties": true,
+                      "properties": {
+                        "config": {
+                          "additionalProperties": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "object"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "purpose": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "type": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ],
+                      "type": "object"
+                    },
+                    "trigger": {
+                      "additionalProperties": false,
+                      "allOf": [
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "const": "SCHEDULE"
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "schedule"
+                            ]
+                          }
+                        },
+                        {
+                          "if": {
+                            "properties": {
+                              "type": {
+                                "enum": [
+                                  "EVENT",
+                                  "WEBHOOK"
+                                ]
+                              }
+                            }
+                          },
+                          "then": {
+                            "required": [
+                              "event"
+                            ]
+                          }
+                        }
+                      ],
+                      "properties": {
+                        "event": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "id": {
+                          "pattern": "^[A-Za-z_][A-Za-z0-9_-]*$"
+                        },
+                        "params": {
+                          "additionalProperties": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/intentValue"
+                          },
+                          "type": "object"
+                        },
+                        "schedule": {
+                          "$ref": "#/$defs/intent-v3.1.schema.json/$defs/schedule"
+                        },
+                        "type": {
+                          "enum": [
+                            "MANUAL",
+                            "SCHEDULE",
+                            "EVENT",
+                            "WEBHOOK"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "type",
+                        "workflows"
+                      ],
+                      "type": "object"
+                    },
+                    "workflow": {
+                      "additionalProperties": false,
+                      "properties": {
+                        "body": {
+                          "items": {
+                            "$ref": "#/$defs/intent-v3.1.schema.json/$defs/statement"
+                          },
+                          "not": {
+                            "minItems": 2001
+                          },
+                          "type": "array"
+                        },
+                        "kind": {
+                          "not": {
+                            "const": "SCHEDULE"
+                          },
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "kind",
+                        "body"
+                      ],
+                      "type": "object"
+                    }
+                  }
+                }
+              }
+            },
+            "review": {
+              "semanticAcceptance": "not-assessed",
+              "requestFidelity": "unassessed",
+              "diagnostics": [
+                {
+                  "code": "PROPOSAL_INVALID_INPUT",
+                  "field": "$.response.normalizedIntent",
+                  "message": "Supply one strict UTF-8 JSON document matching the proposal schema.",
+                  "severity": "ERROR"
+                }
+              ]
+            }
+          }
+        ],
+        "sessionStatus": "repair-limit"
+      }
+    ]
+  }
+}

@@ -1,6 +1,7 @@
 """Exercise the installed text entry point with a bounded deterministic peer and the real compiler."""
 import copy
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -94,6 +95,7 @@ def verify(root, cli, work, config, sequence, counter):
     require(not forbidden.exists() and counter.read_text() == "2", "Unreviewed target request spent quota")
 
     verify_dialogue(run, work, config_file, structured, sequence, counter)
+    verify_conversation(author, work, config_file, structured, sequence, counter)
 
 
 def verify_dialogue(run, work, config_file, structured, sequence, counter):
@@ -145,3 +147,34 @@ def verify_dialogue(run, work, config_file, structured, sequence, counter):
             notification["semanticCapability"] == "NOTIFY" and
             [json.loads(notification["params"][key]) for key in ("subject", "body")] == replies and
             counter.read_text() == "3", "Compiled branches lost context or answered parameters")
+
+
+def verify_conversation(author, work, config_file, structured, sequence, counter):
+    proposal = loads(read(structured))
+    body = proposal["response"]["normalizedIntent"]["workflows"][0]["body"][0]
+    body["then"][0]["params"]["description"] = {"fromInput": ["userAnswers", 0, "answer"]}
+    body["otherwise"][0]["params"]["body"] = {"fromInput": ["userAnswers", 1, "answer"]}
+    questions = [{"id": "task", "question": "What maintenance task?"},
+                 {"id": "notice", "question": "What should the owner be told?"}]
+    sequence([{"response": {"kind": "clarify", "questions": questions}}, proposal])
+    env = {**os.environ, "FLOW_AUTHOR_CONFIG": str(config_file), "XDG_STATE_HOME": str(work / "state")}
+
+    def chat(args, lines):
+        return subprocess.run([str(author), "chat", *map(str, args)], input=lines, cwd=work, env=env,
+                              capture_output=True, text=True, timeout=180)
+
+    suspended = chat([], "Perform maintenance during the allowed window. Otherwise notify the owner.\npartial reply\n")
+    folder, = (work / "state/horistum/sessions").iterdir()
+    saved = loads(read(folder / "state.json"))
+    require(suspended.returncode == 3 and "What should the owner be told?" in suspended.stdout and
+            str(folder) in suspended.stdout and saved["answers"] == [] and counter.read_text() == "1",
+            "An interrupted question round spent a call or submitted a partial answer")
+    resumed = chat(["--run", folder, "--reviewer", "operator"], "rotate the archive credential\nwindow closed\n")
+    text = resumed.stdout
+    require(resumed.returncode == 3 and "plan-ready-for-review" in text and
+            text.index("then:") < text.index("rotate the archive credential") < text.index("otherwise:") <
+            text.index("window closed") and "Fidelity has not been assessed" in text and counter.read_text() == "2",
+            "Terminal conversation lost branch placement, review status or caller answers")
+    checked = chat(["--run", folder], "")
+    require(checked.returncode == 3 and "Portable plan:" in checked.stdout and counter.read_text() == "2",
+            "Reopening a completed conversation replayed the provider")

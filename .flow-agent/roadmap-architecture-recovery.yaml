@@ -31,12 +31,12 @@ currentDecision:
 authoringDevelopment:
   selectedSlice: AI-A3
   investigationFollowup: .flow-agent/work-packages/evidence-driven-authoring.yaml
-  selectedFollowup: docs/GOAL_AUTHORING.md
+  selectedFollowup: docs/GOAL_AUTHORING_LIVE_TRIAL.md
   systemAutomationDirection: docs/SYSTEM_AUTOMATION_DIRECTION.md
-  selectedFollowupSlice: AI-A3-S4.1
-  selectedFollowupCorrection: Start from an original goal and return a compiler-checked portable plan or explicit questions through the installed authoring command.
-  previousFollowupCorrection: Independent planning portfolio review merged in PR 278 at 833b8f0a880b14b9658b546596c0d5877dc8ed77.
-  nextFollowupSlice: S4-goal-authoring-live-evaluation
+  selectedFollowupSlice: AI-A3-S4.2
+  selectedFollowupCorrection: Make the first conversation usable at a terminal and measure first turns on new goals with a local model.
+  previousFollowupCorrection: Plain-text goal authoring and decision-bound answers merged in PR 279 at d54107a75f3f4778c1165eff2aaeb5c721a90164.
+  nextFollowupSlice: S4-capability-grounding-on-new-goals
   outcome: Whole environment changes across infrastructure, DevOps, identity, data, recovery and retirement; delivery is one use case.
   parentMilestone: AR-07
   status: active

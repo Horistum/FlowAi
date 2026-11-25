@@ -142,8 +142,10 @@ def validate_config(config):
          ("maxCalls", "maxRepairs", "timeoutSeconds"))
     for name, default in (("maxCalls", 3), ("maxRepairs", 2), ("timeoutSeconds", 120)):
         budget.setdefault(name, default)
+    # Local inference can have zero provider token charges.
+    may_be_zero = {"maxRepairs", "inputMicrousdPerMillionTokens", "outputMicrousdPerMillionTokens", "maxCostMicrousd"}
     for name, value in budget.items():
-        integer(value, 0 if name == "maxRepairs" else 1)
+        integer(value, 0 if name in may_be_zero else 1)
     require(budget["maxCalls"] <= 20 and budget["maxRepairs"] <= 10 and budget["timeoutSeconds"] <= 7200,
             "Host loop limits exceeded")
     tokens, cost = reservation(config)

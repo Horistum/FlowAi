@@ -1,11 +1,54 @@
 # Plan from plain text
 
-Install the product with `./gradlew :flow-cli:installDist` and put
-`flow-cli/build/install/flow-core/bin` on PATH. On Linux or macOS, the authoring
-command uses Python 3.10+ and the existing Java 25 compiler. Configure a
-command-reasoning/v2 provider once with its executable, credentials, matching
-compiler and spending limits. The same configuration serves different goals.
-[Provider configuration example](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
+## First conversation
+
+From a checkout with Java 25 and Python 3.10 or later on Linux or macOS:
+
+```sh
+./gradlew :flow-cli:installDist
+export PATH="$PWD/flow-cli/build/install/flow-core/bin:$PATH"
+```
+
+If you already configured a command-reasoning/v2 provider, run
+`flow-author chat --config /path/to/provider.json`. To reuse that choice, set
+`FLOW_AUTHOR_CONFIG` or place the configuration in
+`${XDG_CONFIG_HOME:-$HOME/.config}/horistum/authoring.json`.
+[External provider configuration](BOUNDED_AUTHORING_HOST.md#configuration-and-one-run)
+
+To use your own local GGUF instruction model, create its configuration once from
+the same checkout. The optional CPU backend runs in its own Python environment.
+The model stays on your machine. For a split GGUF, place every shard in the same directory and pass the first file. The configuration binds all shard digests in order. Supply a GGUF model file you already have, or
+reproduce the [local trial](GOAL_AUTHORING_LIVE_TRIAL.md). Its 1.5B model struggled to produce valid plans for simple requests. Review the results before choosing weights for daily use.
+
+```sh
+python3 -m venv .venv-author
+.venv-author/bin/python -m pip install --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cpu llama-cpp-python==0.3.38
+.venv-author/bin/python examples/goal-authoring/local_gguf.py configure /path/to/model.gguf
+flow-author chat
+```
+
+Enter your goal at the prompt. When a decision is missing, answer it in plain
+text. Type `:pause` or close the input to leave a question round pending. The
+terminal prints the command to continue from the saved session. Answers from a
+partially filled round are not sent. A completed session can be reopened without
+calling the model again.
+
+```sh
+flow-author chat --out my-review 'Check the catalog during the maintenance window. Notify the owner otherwise.'
+flow-author chat --run my-review
+```
+
+Without `--out` each new conversation uses its own directory under
+`${XDG_STATE_HOME:-$HOME/.local/state}/horistum/sessions`. The terminal shows the
+compiler's decision and the reviewed operations. Conditional branches and failure
+handlers are indented separately. Keep the printed plan and review paths for
+machine-readable evidence. Provider limitations and compiler rejection are possible
+outcomes. Conversation mode performs no deployment or resource changes.
+
+## Machine-readable commands
+
+Use `flow-author plan`, `answer` and `status` for automation. They retain their JSON
+output and existing exit codes.
 
 ```sh
 flow-author plan 'After approval, deploy the existing payments image pinned to its digest to staging. Verify payments after deployment.' \
@@ -74,5 +117,4 @@ and records `goal-dialogue/1` with the session.
 The installed-command checks exercise deployment, retirement and a conditional
 maintenance workflow. The conditional case obtains a task from the supplied
 context and the notification content from two separate user answers. CI uses
-a deterministic provider peer and the actual compiler. Measuring live model quality
-on new goals remains a separate roadmap step.
+a deterministic provider peer and the actual compiler. The [local trial](GOAL_AUTHORING_LIVE_TRIAL.md) records independent live first turns on new goals.

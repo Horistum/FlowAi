@@ -45,6 +45,17 @@ class AuthoringHostTests(unittest.TestCase):
             self.responses.write_text(json.dumps(responses))
         return start(self.config, canonical(self.request), canonical(self.requirements), self.out)
 
+    def test_zero_provider_charges_keep_the_call_limit_and_reject_a_positive_rate(self):
+        self.config["budget"].update(inputMicrousdPerMillionTokens=0, outputMicrousdPerMillionTokens=0,
+                                     maxCostMicrousd=0, maxCalls=1)
+        state = self.run_host([{"marker": "reject"}])
+        self.assertEqual("budget-exhausted", state["status"])
+        self.assertEqual(0, state["reservedCostMicrousd"])
+        self.assertEqual("1", self.counter.read_text())
+        self.config["budget"]["inputMicrousdPerMillionTokens"] = 1
+        with self.assertRaises(HostError):
+            validate_config(self.config)
+
     def test_provider_can_report_a_limitation_without_emitting_a_candidate(self):
         explanation = "The catalog has no operation that preserves this resource's retention lock."
         self.responses.write_bytes(canonical([{"response": {"kind": "cannot-plan", "reason": explanation}}]))
@@ -190,6 +201,10 @@ class AuthoringHostTests(unittest.TestCase):
                 self.out = self.root / response
                 state = self.run_host([response])
                 self.assertIn(state["status"], ("provider-error", "provider-or-compiler-error"))
+                if response == "fail":
+                    self.assertEqual(9, state["attempts"][0]["providerReturnCode"])
+                else:
+                    self.assertNotIn("providerReturnCode", state["attempts"][0])
                 self.assertEqual(1, len(state["attempts"]))
                 self.assertEqual(108192, state["reservedTokens"])
 

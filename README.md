@@ -1,9 +1,9 @@
 # Horistum
 
-Describe an automation goal with `flow-author plan`. Horistum asks the configured
-provider for a portable proposal, checks it with the compiler and shows the
-operations, parameters and dependencies for review. A missing decision can be
-answered in the same session. [Plan from plain text](docs/GOAL_AUTHORING.md).
+Run `flow-author chat`, describe the change you want, and answer any missing
+decisions in the terminal. Review the proposed operations and their dependencies
+before selecting a target. You can leave a conversation and resume it later.
+[First run and local model setup](docs/GOAL_AUTHORING.md#first-conversation)
 
 Start with the [current architecture](docs/ARCHITECTURE.md) and the
 [active-roadmap route](.flow-agent/README.md#active-roadmap-route).
