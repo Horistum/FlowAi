@@ -2,7 +2,8 @@
 
 Run `flow-author chat`, describe the change you want, and answer any missing
 decisions in the terminal. Review the proposed operations and their dependencies
-before selecting a target. You can leave a conversation and resume it later.
+with `flow-author check --only`. Use `flow-author export` to write a pipeline
+when the target adapter supports the reviewed plan. You can resume a saved conversation later.
 [First run and local model setup](docs/GOAL_AUTHORING.md#first-conversation)
 
 Start with the [current architecture](docs/ARCHITECTURE.md) and the

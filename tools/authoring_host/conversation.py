@@ -1,13 +1,12 @@
 """Terminal conversation over the same durable authoring session used by JSON clients."""
 import getpass
-import json
 import os
 from pathlib import Path
 import shlex
 import uuid
 
 from .contracts import canonical, loads, read, require
-from .presentation import load_session, session_exit, session_view
+from .presentation import child_blocks, display_value as _display, load_session, session_exit, session_view
 from .session import resume, start
 
 
@@ -36,23 +35,11 @@ def _input(prompt):
         print("Enter a value, or type :pause to leave.")
 
 
-def _display(value):
-    text = json.dumps(value, ensure_ascii=False, separators=(", ", ": "))
-    # A provider can return arbitrary strings, including terminal control characters.
-    printable = "".join(char if char.isprintable() else ascii(char)[1:-1] for char in text)
-    return printable[1:-1] if isinstance(value, str) else printable
-
-
-def describe_selector(selector):
-    return " ".join([_display(selector["capability"]), *(
-        f"{_display(k)}={_display(v)}" for k, v in selector["parameters"].items())])
-
-
 def _statements(statements, indent):
     for statement in statements:
         label = statement.get("capability", statement.get("kind", "statement"))
         print(f"{indent}{_display(statement.get('id'))}  {_display(label)}")
-        children = [k for k in ("then", "otherwise", "body", "onFailure") if isinstance(statement.get(k), list)]
+        children = child_blocks(statement)
         for key, value in statement.items():
             if key in ("id", "capability", "kind") or key in children:
                 continue
@@ -164,6 +151,6 @@ def chat(args):
     view = session_view(folder, state)
     show_result(view)
     if view.get("candidateIntent") and view.get("requestFidelity") == "unassessed":
-        print("To check the operations you expected, use",
-              shlex.join(["flow-author", "check", "--run", str(folder)]), "--expect CAPABILITY [name=value ...]")
+        print("To check the complete list of operations you expected, use",
+              shlex.join(["flow-author", "check", "--run", str(folder), "--only"]), "--expect CAPABILITY [name=value ...]")
     return session_exit(state["status"])

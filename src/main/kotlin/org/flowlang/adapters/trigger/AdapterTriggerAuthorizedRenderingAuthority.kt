@@ -5,6 +5,7 @@ import org.flowlang.adapters.rendering.AdapterArtifactRenderingAuthority
 import org.flowlang.adapters.rendering.AdapterArtifactRenderingBundle
 import org.flowlang.adapters.rendering.AdapterRenderedArtifactKind
 import org.flowlang.generators.manifest.TargetManifest
+import org.flowlang.generators.manifest.TargetRenderReadiness
 import org.flowlang.adapters.contract.AdapterCatalog
 import org.flowlang.generators.manifest.TargetProjectionProvider
 import org.flowlang.generators.manifest.providerFor
@@ -23,6 +24,8 @@ class AdapterTriggerAuthorizedRenderingAuthority(
     private val delegate: AdapterArtifactRenderingAuthority =
         AdapterArtifactRenderingAuthority(rootDir, projections)
 ) {
+    fun readiness(manifest: TargetManifest): TargetRenderReadiness = delegate.readiness(manifest)
+
     fun render(manifest: TargetManifest): AdapterArtifactRenderingBundle {
         val decision = requireAssessment(manifest)
         val bundle = delegate.render(manifest)
