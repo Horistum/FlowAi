@@ -47,7 +47,9 @@ def verify(root, cli):
         def sequence(values):
             source.write_bytes(canonical([{"response": v["response"]} for v in values]))
             counter.unlink(missing_ok=True)
-        verify_goal_authoring(root, cli, work, config, sequence, counter)
+        goal_work = work / "goal-authoring"
+        goal_work.mkdir()
+        verify_goal_authoring(root, cli, goal_work, config, sequence, counter)
         proposal = fixture("deployment-specified")
         req = read(corpus / "deployment-specified.requirements.json")
         invalid = copy.deepcopy(proposal)
